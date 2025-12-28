@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start -H 0.0.0.0 -p $PORT",
+  "lint": "next lint"
+}
+,
   "dependencies": {
     "next": "14.2.35",
     "react": "^18",
