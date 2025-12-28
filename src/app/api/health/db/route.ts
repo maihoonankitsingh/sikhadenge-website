@@ -9,12 +9,12 @@ export async function GET() {
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
-      database: process.env.DB_NAME,
       password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       port: 3306,
     });
 
-    await connection.query("SELECT 1 AS ok");
+    await connection.query("SELECT 1");
     await connection.end();
 
     return NextResponse.json({ ok: true });
