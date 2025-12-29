@@ -3,69 +3,45 @@ import mysql from "mysql2/promise";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function requiredEnv(name: string) {
-  const v = process.env[name];
-  return (v && v.trim()) ? v.trim() : "";
-}
+export const revalidate = 0;
 
 export async function GET() {
-  const DB_HOST = requiredEnv("DB_HOST");
-  const DB_PORT_RAW = requiredEnv("DB_PORT");
-  const DB_NAME = requiredEnv("DB_NAME");
-  const DB_USER = requiredEnv("DB_USER");
-  const DB_PASSWORD = requiredEnv("DB_PASSWORD");
+  const missing: string[] = [];
+  const DB_HOST = process.env.DB_HOST;
+  const DB_USER = process.env.DB_USER;
+  const DB_PASSWORD = process.env.DB_PASSWORD ?? "";
+  const DB_NAME = process.env.DB_NAME;
+  const DB_PORT = process.env.DB_PORT;
 
-  const missing = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"].filter(
-    (k) => !requiredEnv(k)
-  );
+  if (!DB_HOST) missing.push("DB_HOST");
+  if (!DB_USER) missing.push("DB_USER");
+  if (!DB_NAME) missing.push("DB_NAME");
 
-  // If env missing, do NOT try localhost (prevents "::1" / empty-user attempts)
   if (missing.length) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "Missing required environment variables in runtime.",
-        missing,
-        hint:
-          "Set these in Hostinger -> Node.js app -> Environment variables, then redeploy.",
-      },
+      { ok: false, error: "Missing DB env vars", missing },
       { status: 500 }
     );
   }
 
-  const DB_PORT = Number(DB_PORT_RAW);
-  if (!Number.isFinite(DB_PORT) || DB_PORT <= 0) {
-    return NextResponse.json(
-      { ok: false, error: `Invalid DB_PORT: ${DB_PORT_RAW}` },
-      { status: 500 }
-    );
-  }
-
-  let conn: mysql.Connection | null = null;
+  const port = DB_PORT ? Number(DB_PORT) : 3306;
 
   try {
-    conn = await mysql.createConnection({
+    const conn = await mysql.createConnection({
       host: DB_HOST,
-      port: DB_PORT,
       user: DB_USER,
       password: DB_PASSWORD,
       database: DB_NAME,
-      connectTimeout: 10_000,
+      port,
+      connectTimeout: 8000,
     });
 
-    const [rows] = await conn.query("SELECT 1 AS ok, NOW() AS now");
-    return NextResponse.json({ ok: true, result: rows });
+    const [rows] = await conn.query("SELECT 1 AS ok");
+    await conn.end();
+
+    return NextResponse.json({ ok: true, rows });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
-  } finally {
-    if (conn) {
-      try {
-        await conn.end();
-      } catch {
-        // ignore
-      }
-    }
   }
 }
