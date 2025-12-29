@@ -4,19 +4,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const host = process.env.DB_HOST ?? "";
-  const port = process.env.DB_PORT ?? "";
-  const name = process.env.DB_NAME ?? "";
-  const user = process.env.DB_USER ?? "";
-  const pass = process.env.DB_PASSWORD ?? "";
-
   return NextResponse.json({
     ok: true,
-    DB_HOST: host,
-    DB_PORT: port,
-    DB_NAME: name,
-    DB_USER: user,
-    DB_PASSWORD: pass ? `set(len=${pass.length})` : "missing",
-    nodeEnv: process.env.NODE_ENV ?? "",
+    DB_HOST: process.env.DB_HOST ?? null,
+    DB_PORT: process.env.DB_PORT ?? null,
+    DB_NAME: process.env.DB_NAME ?? null,
+    DB_USER: process.env.DB_USER ?? null,
+    DB_PASSWORD: process.env.DB_PASSWORD
+      ? `set(len=${process.env.DB_PASSWORD.length})`
+      : null,
+    nodeEnv: process.env.NODE_ENV ?? null,
   });
 }
