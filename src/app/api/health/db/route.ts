@@ -12,7 +12,6 @@ function mustEnv(key: string): string {
 
 export async function GET() {
   try {
-    // Read env INSIDE handler (runtime)
     const host = mustEnv("DB_HOST");
     const database = mustEnv("DB_NAME");
     const user = mustEnv("DB_USER");
