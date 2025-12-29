@@ -1,72 +1,65 @@
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs"; // IMPORTANT: ensure Node runtime (env vars available)
 
-type EnvKey = "DB_HOST" | "DB_PORT" | "DB_NAME" | "DB_USER" | "DB_PASSWORD";
+type DbEnv = {
+  host: string;
+  port: number;
+  name: string;
+  user: string;
+  password: string;
+};
 
-function getEnv(key: EnvKey): string | undefined {
-  const v = process.env[key];
-  return v && v.trim().length > 0 ? v.trim() : undefined;
+function getDbEnv(): DbEnv {
+  const host = process.env.DB_HOST?.trim() || "";
+  const portStr = process.env.DB_PORT?.trim() || "3306";
+  const name = process.env.DB_NAME?.trim() || "";
+  const user = process.env.DB_USER?.trim() || "";
+  const password = process.env.DB_PASSWORD ?? ""; // keep as-is (can contain special chars)
+
+  const port = Number(portStr);
+
+  const missing: string[] = [];
+  if (!host) missing.push("DB_HOST");
+  if (!portStr || Number.isNaN(port)) missing.push("DB_PORT");
+  if (!name) missing.push("DB_NAME");
+  if (!user) missing.push("DB_USER");
+  if (!password) missing.push("DB_PASSWORD");
+
+  if (missing.length) {
+    // This is the exact reason your current error is happening.
+    throw new Error(`Missing env: ${missing.join(", ")}`);
+  }
+
+  return { host, port, name, user, password };
 }
 
 export async function GET() {
-  const DB_HOST = getEnv("DB_HOST");
-  const DB_PORT = getEnv("DB_PORT") || "3306";
-  const DB_NAME = getEnv("DB_NAME");
-  const DB_USER = getEnv("DB_USER");
-  const DB_PASSWORD = getEnv("DB_PASSWORD");
-
-  const missing: EnvKey[] = [];
-  if (!DB_HOST) missing.push("DB_HOST");
-  if (!DB_NAME) missing.push("DB_NAME");
-  if (!DB_USER) missing.push("DB_USER");
-  if (!DB_PASSWORD) missing.push("DB_PASSWORD");
-
-  // If env missing, return which keys are missing (so you can verify Hostinger env vars)
-  if (missing.length > 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Missing environment variables",
-        missing,
-        seen: {
-          DB_HOST: Boolean(DB_HOST),
-          DB_PORT: Boolean(DB_PORT),
-          DB_NAME: Boolean(DB_NAME),
-          DB_USER: Boolean(DB_USER),
-          DB_PASSWORD: Boolean(DB_PASSWORD),
-        },
-      },
-      { status: 500 }
-    );
-  }
-
   try {
-    const connection = await mysql.createConnection({
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER!,
-      password: DB_PASSWORD!,
-      database: DB_NAME!,
-      ssl: { rejectUnauthorized: false }, // Hostinger remote MySQL often needs SSL
+    const db = getDbEnv();
+
+    const conn = await mysql.createConnection({
+      host: db.host,
+      port: db.port,
+      user: db.user,
+      password: db.password,
+      database: db.name,
+      // optional hardening:
+      ssl: "Amazon RDS", // harmless on most hosts; if it causes issue, remove this line
     });
 
-    const [rows] = await connection.query("SELECT 1 AS ok");
-    await connection.end();
+    const [rows] = await conn.query("SELECT 1 AS ok");
+    await conn.end();
 
-    return NextResponse.json({ ok: true, db: DB_HOST, test: rows });
+    return NextResponse.json({
+      ok: true,
+      dbHost: db.host,
+      dbName: db.name,
+      result: rows,
+    });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json(
-      {
-        ok: false,
-        error: message,
-        hint:
-          "If you see user '' or host ::1, your DB_* env vars are not being read by the runtime.",
-      },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
