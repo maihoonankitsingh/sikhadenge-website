@@ -1,64 +1,70 @@
-// src/app/api/health/db/route.ts
-
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type EnvKey = "DB_HOST" | "DB_PORT" | "DB_NAME" | "DB_USER" | "DB_PASSWORD";
+
+function getEnv(key: EnvKey): string | undefined {
+  const v = process.env[key];
+  return v && v.trim().length > 0 ? v.trim() : undefined;
+}
+
 export async function GET() {
-  const host = process.env.DB_HOST;
-  const user = process.env.DB_USER;
-  const password = process.env.DB_PASSWORD;
-  const database = process.env.DB_NAME;
-  const port = process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306;
+  const DB_HOST = getEnv("DB_HOST");
+  const DB_PORT = getEnv("DB_PORT") || "3306";
+  const DB_NAME = getEnv("DB_NAME");
+  const DB_USER = getEnv("DB_USER");
+  const DB_PASSWORD = getEnv("DB_PASSWORD");
 
-  try {
-    if (!host || !user || !password || !database) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing DB env vars",
-          env: {
-            host: host ? "OK" : "MISSING",
-            user: user ? "OK" : "MISSING",
-            password: password ? "OK" : "MISSING",
-            db: database ? "OK" : "MISSING",
-            port: process.env.DB_PORT ? "OK" : "DEFAULT(3306)",
-          },
-        },
-        { status: 500 }
-      );
-    }
+  const missing: EnvKey[] = [];
+  if (!DB_HOST) missing.push("DB_HOST");
+  if (!DB_NAME) missing.push("DB_NAME");
+  if (!DB_USER) missing.push("DB_USER");
+  if (!DB_PASSWORD) missing.push("DB_PASSWORD");
 
-    const connection = await mysql.createConnection({
-      host,
-      user,
-      password,
-      database,
-      port,
-    });
-
-    await connection.ping();
-    await connection.end();
-
-    return NextResponse.json({
-      ok: true,
-      message: "DB connected",
-      host,
-      database,
-      user,
-      port,
-    });
-  } catch (error: unknown) {
+  // If env missing, return which keys are missing (so you can verify Hostinger env vars)
+  if (missing.length > 0) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : String(error),
-        env: {
-          host: process.env.DB_HOST ? "OK" : "MISSING",
-          user: process.env.DB_USER ? "OK" : "MISSING",
-          password: process.env.DB_PASSWORD ? "OK" : "MISSING",
-          db: process.env.DB_NAME ? "OK" : "MISSING",
-          port: process.env.DB_PORT ? "OK" : "DEFAULT(3306)",
+        error: "Missing environment variables",
+        missing,
+        seen: {
+          DB_HOST: Boolean(DB_HOST),
+          DB_PORT: Boolean(DB_PORT),
+          DB_NAME: Boolean(DB_NAME),
+          DB_USER: Boolean(DB_USER),
+          DB_PASSWORD: Boolean(DB_PASSWORD),
         },
+      },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const connection = await mysql.createConnection({
+      host: DB_HOST,
+      port: Number(DB_PORT),
+      user: DB_USER!,
+      password: DB_PASSWORD!,
+      database: DB_NAME!,
+      ssl: { rejectUnauthorized: false }, // Hostinger remote MySQL often needs SSL
+    });
+
+    const [rows] = await connection.query("SELECT 1 AS ok");
+    await connection.end();
+
+    return NextResponse.json({ ok: true, db: DB_HOST, test: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: message,
+        hint:
+          "If you see user '' or host ::1, your DB_* env vars are not being read by the runtime.",
       },
       { status: 500 }
     );
