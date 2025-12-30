@@ -54,3 +54,10 @@ node_modules
 
 # misc
 prisma-studio.sh
+
+# accidental files
+next
+sikhadenge-web@*
+prisma/*.bak*
+prisma/*.backup
+src/lib/
