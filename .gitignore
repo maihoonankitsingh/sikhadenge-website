@@ -35,3 +35,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+/src/generated/prisma
+
+# env (never commit)
+.env
+.env.*
+!.env.example
+
+# env backups
+.env.bak*
+*.bak
+
+# logs / runtime
+*.log
+.next
+node_modules
+
+# misc
+prisma-studio.sh
