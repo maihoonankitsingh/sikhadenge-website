@@ -1,73 +1,58 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import CounsellingModal from '../components/CounsellingModal';
 
-export default function Home() {
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [msg, setMsg] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setMsg(null)
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim() || null,
-          phone: phone.trim() || null,
-          source: 'website',
-          status: 'new',
-          notes: 'website form',
-        }),
-      })
-
-      const data = await res.json()
-      if (!data?.ok) throw new Error(data?.error || 'Lead not saved')
-
-      setMsg('Saved')
-      setName('')
-      setPhone('')
-    } catch (err: any) {
-      setMsg(err?.message || 'Error')
-    } finally {
-      setLoading(false)
-    }
-  }
+export default function HomePage() {
+  const [open, setOpen] = useState(false);
 
   return (
-    <main style={{ maxWidth: 520, margin: '40px auto', padding: 16, fontFamily: 'system-ui' }}>
-      <h1>Lead Form</h1>
+    <main
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, var(--sd-bg-1), var(--sd-bg-2))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          width: 'min(980px, 100%)',
+          background: 'rgba(255,255,255,.06)',
+          border: '1px solid rgba(255,255,255,.14)',
+          borderRadius: 18,
+          padding: 28,
+          color: '#fff',
+        }}
+      >
+        <h1 style={{ margin: 0, fontSize: 38, fontWeight: 900, letterSpacing: '-.02em' }}>
+          Sikhadenge
+        </h1>
 
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-        <label>
-          Name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{ width: '100%', padding: 10, marginTop: 6 }}
-            placeholder="Name"
-          />
-        </label>
+        <p style={{ marginTop: 10, marginBottom: 18, opacity: 0.9, maxWidth: 680, lineHeight: 1.5 }}>
+          Graphic Design • Video Editing • AI-powered creative skills (live online).
+        </p>
 
-        <label>
-          Phone
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            style={{ width: '100%', padding: 10, marginTop: 6 }}
-            placeholder="Phone"
-          />
-        </label>
-
-        <button type="submit" disabled={loading} style={{ padding: 12 }}>
-          {loading ? 'Saving...' : 'Submit'}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{
+            height: 46,
+            padding: '0 18px',
+            borderRadius: 12,
+            border: 'none',
+            background: 'var(--sd-accent)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          Open Counselling Form
         </button>
-      </form>
+      </div>
 
-      {msg && <p style={{ marginTop: 12 }}>{msg}</p>}
+      <CounsellingModal open={open} onClose={() => setOpen(false)} />
     </main>
-  )
+  );
 }
