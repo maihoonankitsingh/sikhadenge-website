@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String?
+  source    String?
+  status    String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Admission {
+  id        String   @id @default(cuid())
+  leadId    String?
+  name      String
+  phone     String
+  course    String?
+  feeTotal  Int?
+  feePaid   Int?     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
