@@ -9,14 +9,17 @@ datasource db {
 }
 
 model Lead {
-  id        String   @id @default(cuid())
-  name      String?
-  phone     String?
-  source    String?
-  status    String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(cuid())
+  name         String?
+  phone        String?
+  source       String?
+  status       String?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  promoCode    String?
+  influencerId String?
+  influencer   Influencer? @relation(fields: [influencerId], references: [id])
 }
 
 model Admission {
@@ -29,4 +32,35 @@ model Admission {
   feePaid   Int?     @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Influencer {
+  id           String  @id @default(cuid())
+  name         String
+  email        String? @unique
+  passwordHash String
+  promoCode    String  @unique
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  leads Lead[]
+  sessions InfluencerSession[]
+
+}
+
+model InfluencerSession {
+
+  id           String   @id @default(cuid())
+  influencerId String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  influencer Influencer @relation(fields: [influencerId], references: [id])
+
+  @@index([influencerId])
+  @@index([expiresAt])
 }
