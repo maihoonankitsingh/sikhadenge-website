@@ -1,21 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root{
-  --sd-bg-1:#140032;
-  --sd-bg-2:#2b0b6a;
-  --sd-card:#ffffff;
-  --sd-text:#0f172a;
-  --sd-muted:#64748b;
-  --sd-accent:#ff6b5a;
-  --sd-accent-2:#7c3aed;
-  --sd-border:rgba(15,23,42,.12);
+  --sd-base: 11 18 32;        /* #0B1220 */
+  --sd-surface: 17 24 39;     /* #111827 */
+  --sd-blue: 37 99 235;       /* #2563EB */
+  --sd-blue-dark: 29 78 216;  /* #1D4ED8 */
+  --sd-gold: 245 179 1;       /* #F5B301 */
+  --sd-text: 255 255 255;     /* #FFFFFF */
+  --sd-secondary: 176 183 195;/* #B0B7C3 */
+  --sd-muted: 156 163 175;    /* #9CA3AF */
 }
 
-*{ box-sizing:border-box; }
-html,body{ padding:0; margin:0; }
+html, body { height: 100%; }
 
 body{
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-  background: linear-gradient(135deg, var(--sd-bg-1), var(--sd-bg-2));
-  color: #fff;
+  background: rgb(var(--sd-base));
+  color: rgb(var(--sd-text));
 }
 
-a{ color:inherit; }
+@layer components{
+  .sd-card{
+    @apply rounded-2xl border border-white/10 bg-sd-surface shadow-sm;
+  }
+
+  .sd-input{
+    @apply w-full rounded-xl border border-white/10 bg-sd-surface px-4 py-3 text-sd-text placeholder:text-sd-muted outline-none;
+    @apply focus:ring-2 focus:ring-sd-blue/50;
+  }
+
+  .sd-btn-primary{
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold;
+    @apply bg-sd-gold text-sd-base;
+    @apply hover:shadow-glow-gold;
+  }
+
+  .sd-btn-secondary{
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold;
+    @apply border border-sd-blue/30 text-sd-text;
+    @apply hover:shadow-glow-blue;
+  }
+}
+
+@layer utilities{
+  .sd-glow-blue{ box-shadow: 0 0 18px rgba(37,99,235,0.55); }
+  .sd-glow-gold{ box-shadow: 0 0 18px rgba(245,179,1,0.55); }
+}

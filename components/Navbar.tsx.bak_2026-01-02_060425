@@ -1,0 +1,51 @@
+import Link from "next/link";
+import { useRouter } from "next/router";
+
+const nav = [
+  { href: "/", label: "Home" },
+  { href: "/about-us", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/blog", label: "Blog" },
+];
+
+export default function Navbar() {
+  const router = useRouter();
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-sd-border bg-sd-navy/90 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+        <Link href="/" className="text-lg font-extrabold tracking-tight text-sd-text">
+          Sikhadenge
+        </Link>
+
+        <nav className="hidden items-center gap-6 md:flex">
+          {nav.map((x) => {
+            const active = router.pathname === x.href;
+            return (
+              <Link
+                key={x.href}
+                href={x.href}
+                className={
+                  active
+                    ? "text-sd-gold font-semibold"
+                    : "text-sd-textSecondary hover:text-sd-text transition"
+                }
+              >
+                {x.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <Link href="/contact" className="sd-btn-secondary">
+            Contact
+          </Link>
+          <Link href="/#counselling" className="sd-btn-primary">
+            Counselling
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}

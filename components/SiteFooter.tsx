@@ -26,6 +26,7 @@ export default function SiteFooter() {
           <div style={{ marginTop: 10, display: 'grid', gap: 8, fontSize: 13 }}>
             <Link href="/terms" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Terms</Link>
             <Link href="/privacy-policy" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link href="/refund-policy" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Refund Policy</Link>
           </div>
         </div>
       </div>

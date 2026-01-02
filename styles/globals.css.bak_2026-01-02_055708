@@ -1,0 +1,21 @@
+:root{
+  --sd-bg-1:#140032;
+  --sd-bg-2:#2b0b6a;
+  --sd-card:#ffffff;
+  --sd-text:#0f172a;
+  --sd-muted:#64748b;
+  --sd-accent:#ff6b5a;
+  --sd-accent-2:#7c3aed;
+  --sd-border:rgba(15,23,42,.12);
+}
+
+*{ box-sizing:border-box; }
+html,body{ padding:0; margin:0; }
+
+body{
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  background: linear-gradient(135deg, var(--sd-bg-1), var(--sd-bg-2));
+  color: #fff;
+}
+
+a{ color:inherit; }
