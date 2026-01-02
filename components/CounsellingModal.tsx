@@ -55,6 +55,14 @@ const ICONS = {
       />
     </svg>
   ),
+  check: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 8-8 1.4 1.4-9.4 9.4Z"
+      />
+    </svg>
+  ),
 };
 
 export default function CounsellingModal({ open, onClose }: Props) {
@@ -69,6 +77,7 @@ export default function CounsellingModal({ open, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedInfo, setSubmittedInfo] = useState<{ course?: string; phone?: string }>({});
 
   const COURSE_OPTIONS = useMemo(
     () => [
@@ -79,7 +88,6 @@ export default function CounsellingModal({ open, onClose }: Props) {
     ],
     []
   );
-
 
   const IAM_OPTIONS = useMemo(
     () => ["Student", "Working professional", "Business / Freelancer"],
@@ -96,6 +104,7 @@ export default function CounsellingModal({ open, onClose }: Props) {
     if (!open) return;
     setError(null);
     setSubmitted(false);
+    setSubmittedInfo({});
   }, [open]);
 
   useEffect(() => {
@@ -139,22 +148,24 @@ export default function CounsellingModal({ open, onClose }: Props) {
     setSubmitting(true);
 
     try {
+      const payload = {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        promoCode: promoCode.trim() ? promoCode.trim().toUpperCase() : undefined,
+        source: "website-modal",
+        notes: {
+          page: "counselling-modal",
+          course,
+          iam,
+          level,
+          specialization,
+        },
+      };
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          phone: phone.trim(),
-          promoCode: promoCode.trim() ? promoCode.trim().toUpperCase() : undefined,
-          source: "website-modal",
-          notes: {
-            page: "counselling-modal",
-            course,
-            iam,
-            level,
-            specialization,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -162,6 +173,10 @@ export default function CounsellingModal({ open, onClose }: Props) {
         throw new Error(t || "Request failed");
       }
 
+      // Keep some info for welcome screen
+      setSubmittedInfo({ course, phone: phone.trim() });
+
+      // Reset fields
       setSubmitted(true);
       setFullName("");
       setPhone("");
@@ -177,13 +192,20 @@ export default function CounsellingModal({ open, onClose }: Props) {
     }
   }
 
+  function closeAll() {
+    setSubmitted(false);
+    setSubmittedInfo({});
+    onClose();
+  }
+
   if (!open) return null;
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Counselling form">
-      <button className={styles.backdrop} onClick={onClose} aria-label="Close overlay" />
+      <button className={styles.backdrop} onClick={closeAll} aria-label="Close overlay" />
+
       <div className={styles.modal}>
-        <button className={styles.closeBtn} onClick={onClose} aria-label="Close form">
+        <button className={styles.closeBtn} onClick={closeAll} aria-label="Close form">
           <span aria-hidden>×</span>
         </button>
 
@@ -203,145 +225,168 @@ export default function CounsellingModal({ open, onClose }: Props) {
         </div>
 
         <div className={styles.right}>
-          <form className={styles.form} onSubmit={submitLead}>
-            <div className={styles.field}>
-              <label className={styles.label}>Course interested in *</label>
-              <div className={styles.control}>
-                <span className={styles.icon}>{ICONS.box}</span>
-                <select className={styles.select} value={course} onChange={(e) => setCourse(e.target.value)}>
-                  <option value="">Select course</option>
-                  {COURSE_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+          {!submitted ? (
+            <form className={styles.form} onSubmit={submitLead}>
+              <div className={styles.field}>
+                <label className={styles.label}>Course interested in *</label>
+                <div className={styles.control}>
+                  <span className={styles.icon}>{ICONS.box}</span>
+                  <select className={styles.select} value={course} onChange={(e) => setCourse(e.target.value)}>
+                    <option value="">Select course</option>
+                    {COURSE_OPTIONS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>Full name *</label>
-              <div className={styles.control}>
-                <span className={styles.icon}>{ICONS.user}</span>
-                <input
-                  className={styles.input}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Full name"
-                  autoComplete="name"
-                />
-              </div>
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Phone *</label>
-              <div className={styles.phoneWrap}>
-                <div className={styles.country}>IN&nbsp;&nbsp;+91</div>
-                <div className={styles.controlNoPad}>
-                  <span className={styles.iconPhone}>{ICONS.phone}</span>
+              <div className={styles.field}>
+                <label className={styles.label}>Full name *</label>
+                <div className={styles.control}>
+                  <span className={styles.icon}>{ICONS.user}</span>
                   <input
-                    className={styles.inputPhone}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="10-digit number"
-                    inputMode="numeric"
-                    autoComplete="tel"
+                    className={styles.input}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Full name"
+                    autoComplete="name"
                   />
                 </div>
               </div>
-            </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>Promo code (optional)</label>
-              <div className={styles.control}>
-                <span className={styles.icon}>{ICONS.tag}</span>
-                <input
-                  className={styles.input}
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder="e.g. SDRAM10"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            <div className={styles.grid2}>
               <div className={styles.field}>
-                <label className={styles.label}>I am *</label>
-                <div className={styles.control}>
-                  <span className={styles.icon}>{ICONS.cap}</span>
-                  <select className={styles.select} value={iam} onChange={(e) => setIam(e.target.value)}>
-                    <option value="">Select</option>
-                    {IAM_OPTIONS.map((x) => (
-                      <option key={x} value={x}>
-                        {x}
-                      </option>
-                    ))}
-                  </select>
+                <label className={styles.label}>Phone *</label>
+                <div className={styles.phoneWrap}>
+                  <div className={styles.country}>IN&nbsp;&nbsp;+91</div>
+                  <div className={styles.controlNoPad}>
+                    <span className={styles.iconPhone}>{ICONS.phone}</span>
+                    <input
+                      className={styles.inputPhone}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      placeholder="10-digit number"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>Level</label>
+                <label className={styles.label}>Promo code (optional)</label>
+                <div className={styles.control}>
+                  <span className={styles.icon}>{ICONS.tag}</span>
+                  <input
+                    className={styles.input}
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="e.g. SDRAM10"
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.grid2}>
+                <div className={styles.field}>
+                  <label className={styles.label}>I am *</label>
+                  <div className={styles.control}>
+                    <span className={styles.icon}>{ICONS.cap}</span>
+                    <select className={styles.select} value={iam} onChange={(e) => setIam(e.target.value)}>
+                      <option value="">Select</option>
+                      {IAM_OPTIONS.map((x) => (
+                        <option key={x} value={x}>
+                          {x}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>Level</label>
+                  <div className={styles.control}>
+                    <span className={styles.icon}>{ICONS.layers}</span>
+                    <select className={styles.select} value={level} onChange={(e) => setLevel(e.target.value)}>
+                      {LEVEL_OPTIONS.map((x) => (
+                        <option key={x} value={x}>
+                          {x}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Select specialization *</label>
                 <div className={styles.control}>
                   <span className={styles.icon}>{ICONS.layers}</span>
-                  <select className={styles.select} value={level} onChange={(e) => setLevel(e.target.value)}>
-                    {LEVEL_OPTIONS.map((x) => (
-                      <option key={x} value={x}>
-                        {x}
+                  <select
+                    className={styles.select}
+                    value={specialization}
+                    onChange={(e) => setSpecialization(e.target.value)}
+                  >
+                    <option value="">Select specialization</option>
+                    {SPECIALIZATION_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
-            </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>Select specialization *</label>
-              <div className={styles.control}>
-                <span className={styles.icon}>{ICONS.layers}</span>
-                <select
-                  className={styles.select}
-                  value={specialization}
-                  onChange={(e) => setSpecialization(e.target.value)}
-                >
-                  <option value="">Select specialization</option>
-                  {SPECIALIZATION_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+              {error && <div className={styles.error}>{error}</div>}
+
+              <button
+                className={`${styles.cta} ${canSubmit ? styles.ctaReady : styles.ctaMuted}`}
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Get Free Counselling"} <span className={styles.arrow}>→</span>
+              </button>
+
+              <div className={styles.meta}>
+                By submitting, you agree to Sikhadenge&apos;s{" "}
+                <a className={styles.link} href="/terms">
+                  Terms
+                </a>{" "}
+                and{" "}
+                <a className={styles.link} href="/privacy-policy">
+                  Privacy policy
+                </a>
+                .
               </div>
+            </form>
+          ) : (
+            <div className={styles.successPane}>
+              <div className={styles.successIcon}>{ICONS.check}</div>
+
+              <div className={styles.successTitle}>Request received</div>
+              <div className={styles.successMsg}>We will connect with you within 2 hours.</div>
+
+              <div className={styles.successMeta}>
+                {submittedInfo.course ? (
+                  <div>
+                    <b>Course:</b> {submittedInfo.course}
+                  </div>
+                ) : null}
+                {submittedInfo.phone ? (
+                  <div>
+                    <b>Phone:</b> +91 {submittedInfo.phone}
+                  </div>
+                ) : null}
+              </div>
+
+              <button className={styles.successClose} type="button" onClick={closeAll}>
+                Close
+              </button>
             </div>
-
-            {error && <div className={styles.error}>{error}</div>}
-            {submitted && <div className={styles.success}>Submitted.</div>}
-
-            {/* Button is clickable; validation runs on submit */}
-
-             
-<button className={`${styles.cta} ${canSubmit ? styles.ctaReady : styles.ctaMuted}`} type="submit" disabled={submitting}>
-
-              Get Free Counselling <span className={styles.arrow}>→</span>
-            </button>
-
-            <div className={styles.meta}>
-              By submitting, you agree to Sikhadenge&apos;s{" "}
-              <a className={styles.link} href="/terms">
-                Terms
-              </a>{" "}
-              and{" "}
-              <a className={styles.link} href="/privacy-policy">
-                Privacy policy
-              </a>
-              .
-            </div>
-          </form>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-

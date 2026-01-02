@@ -1,6 +1,6 @@
-import type { AppProps } from "next/app";
-import SiteLayout from "../components/SiteLayout";
-import "../styles/globals.css";
+import type { AppProps } from 'next/app';
+import '../styles/globals.css';
+import SiteLayout from '../components/SiteLayout';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -9,4 +9,3 @@ export default function App({ Component, pageProps }: AppProps) {
     </SiteLayout>
   );
 }
-
