@@ -2,99 +2,77 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
-const nav = [
+const NAV = [
   { href: "/", label: "Home" },
   { href: "/about-us", label: "About" },
-  { href: "/reviews", label: "Reviews" },
-  { href: "/collab", label: "Collab" },
   { href: "/contact", label: "Contact" },
+  { href: "/blog", label: "Blog" },
 ];
-
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname.startsWith(href);
-}
 
 export default function SiteHeader() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-[#0B1220]/85 backdrop-blur">
-      <div className="mx-auto flex h-[72px] max-w-[1100px] items-center justify-between px-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-white font-extrabold tracking-tight"
-          onClick={() => setOpen(false)}
-        >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#111827] border border-white/10">
-            <span className="text-[#F5B301] font-black">SD</span>
-          </span>
-          <span>Sikhadenge</span>
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0B1220]/85 backdrop-blur">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4">
+        <Link href="/" className="text-lg font-extrabold text-white">
+          Sikhadenge
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
-          {nav.map((item) => {
-            const active = isActive(router.pathname, item.href);
+        <nav className="hidden items-center gap-7 md:flex">
+          {NAV.map((i) => {
+            const active = router.pathname === i.href;
             return (
               <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  active
-                    ? "text-[#F5B301] font-semibold"
-                    : "text-[#B0B7C3] hover:text-white transition"
-                }
+                key={i.href}
+                href={i.href}
+                className={[
+                  "text-sm transition-colors",
+                  active ? "text-[#F5B301]" : "text-[#B0B7C3] hover:text-white",
+                ].join(" ")}
               >
-                {item.label}
+                {i.label}
               </Link>
             );
           })}
+
           <Link
-            href="/contact"
-            className="ml-2 inline-flex h-10 items-center justify-center rounded-xl bg-[#F5B301] px-4 text-[#0B1220] font-semibold border border-white/10 transition hover:shadow-[0_0_18px_rgba(245,179,1,0.55)]"
+            href="/#counselling"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#F5B301] px-4 text-sm font-semibold text-[#0B1220] hover:shadow-[0_0_18px_rgba(245,179,1,0.55)] transition-shadow"
           >
-            Get Support
+            Counselling
           </Link>
         </nav>
 
-        {/* Mobile button */}
         <button
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#111827]"
-          aria-label="Open menu"
-          onClick={() => setOpen((s) => !s)}
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#111827] text-white"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Menu"
         >
-          <span className="text-white text-xl leading-none">{open ? "×" : "≡"}</span>
+          ☰
         </button>
       </div>
 
-      {/* Mobile nav panel */}
       {open && (
-        <div className="md:hidden border-t border-white/10 bg-[#0B1220]">
-          <div className="mx-auto max-w-[1100px] px-4 py-3 grid gap-2">
-            {nav.map((item) => {
-              const active = isActive(router.pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={
-                    "rounded-xl px-3 py-2 border border-white/10 bg-[#111827] " +
-                    (active ? "text-[#F5B301] font-semibold" : "text-[#B0B7C3]")
-                  }
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+        <div className="md:hidden border-t border-white/10 bg-[#0B1220]/95 backdrop-blur">
+          <div className="mx-auto max-w-7xl px-4 py-3 grid gap-2">
+            {NAV.map((i) => (
+              <Link
+                key={i.href}
+                href={i.href}
+                onClick={() => setOpen(false)}
+                className="rounded-xl border border-white/10 bg-[#111827] px-4 py-3 text-sm text-[#B0B7C3] hover:text-white"
+              >
+                {i.label}
+              </Link>
+            ))}
             <Link
-              href="/contact"
+              href="/#counselling"
               onClick={() => setOpen(false)}
-              className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-[#F5B301] text-[#0B1220] font-semibold border border-white/10 hover:shadow-[0_0_18px_rgba(245,179,1,0.55)]"
+              className="rounded-xl bg-[#F5B301] px-4 py-3 text-center text-sm font-semibold text-[#0B1220] hover:shadow-[0_0_18px_rgba(245,179,1,0.55)] transition-shadow"
             >
-              Get Support
+              Counselling
             </Link>
           </div>
         </div>

@@ -16,7 +16,7 @@ const features = [
 export default function FeatureRow() {
   return (
     <section className="bg-sd-navy">
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="flex items-end justify-between gap-6">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-sd-text">Highlights</h2>

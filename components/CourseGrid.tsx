@@ -20,7 +20,7 @@ const courses = [
 export default function CourseGrid() {
   return (
     <section className="bg-sd-navy">
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <h2 className="text-2xl font-extrabold tracking-tight text-sd-text">Courses</h2>
         <div className="mt-2 text-sm text-sd-textSecondary">
           Premium EdTech style. No gaming neon. Only blue + gold accents.

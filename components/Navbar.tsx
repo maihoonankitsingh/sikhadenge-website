@@ -20,7 +20,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-sd-border bg-sd-navy/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4">
         <Link href="/" className="text-lg font-extrabold tracking-tight text-sd-text">
           Sikhadenge
         </Link>
@@ -74,7 +74,7 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       <div className={open ? "md:hidden" : "hidden"}>
         <div className="border-t border-sd-border bg-sd-navy/95">
-          <div className="mx-auto max-w-6xl px-4 py-4">
+          <div className="mx-auto max-w-7xl px-4 py-4">
             <div className="grid gap-2">
               {nav.map((x) => {
                 const active = router.pathname === x.href;

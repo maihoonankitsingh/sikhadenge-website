@@ -1,14 +1,12 @@
-
-import React from "react";
+import type { ReactNode } from "react";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#0B1220] text-white">
+    <div className="min-h-screen flex flex-col bg-[#0B1220] text-white">
       <SiteHeader />
-      {/* header height = 72px, so content starts below it */}
-      <div className="pt-[72px]">{children}</div>
+      <main className="flex-1">{children}</main>
       <SiteFooter />
     </div>
   );

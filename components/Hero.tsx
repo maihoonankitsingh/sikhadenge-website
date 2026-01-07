@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Hero() {
   return (
     <section className="bg-sd-navy bg-sd-hero">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-sd-border bg-sd-surface px-3 py-1 text-xs text-sd-textSecondary">
             <span className="h-2 w-2 rounded-full bg-sd-gold" />

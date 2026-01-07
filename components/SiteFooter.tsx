@@ -1,39 +1,41 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function SiteFooter() {
   return (
-    <footer style={{ borderTop: '1px solid rgba(255,255,255,.10)', marginTop: 40 }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 18px', color: 'rgba(255,255,255,.75)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 }}>
+    <footer className="border-t border-white/10 bg-[#0B1220]">
+      <div className="mx-auto max-w-7xl px-4 py-10 grid gap-8 md:grid-cols-3 text-sm">
         <div>
-          <div style={{ fontWeight: 900, color: '#fff' }}>Sikhadenge</div>
-          <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.6 }}>
+          <div className="text-white font-extrabold">Sikhadenge</div>
+          <div className="mt-2 text-[#B0B7C3] leading-6">
             Live online training: Graphic Design, Video Editing, AI-powered creative skills.
           </div>
+          <div className="mt-4 text-[#9CA3AF] text-xs">Parent company: ThinkGrow Pvt Ltd.</div>
         </div>
 
         <div>
-          <div style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>Pages</div>
-          <div style={{ marginTop: 10, display: 'grid', gap: 8, fontSize: 13 }}>
-            <Link href="/" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Home</Link>
-            <Link href="/about-us" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>About</Link>
-            <Link href="/contact" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Contact</Link>
-            <Link href="/blog" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Blog</Link>
+          <div className="text-white font-bold text-sm">Pages</div>
+          <div className="mt-3 grid gap-2 text-[#B0B7C3]">
+            <Link className="hover:text-white" href="/">Home</Link>
+            <Link className="hover:text-white" href="/about-us">About</Link>
+            <Link className="hover:text-white" href="/contact">Contact</Link>
+            <Link className="hover:text-white" href="/blog">Blog</Link>
           </div>
         </div>
 
         <div>
-          <div style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>Policies</div>
-          <div style={{ marginTop: 10, display: 'grid', gap: 8, fontSize: 13 }}>
-            <Link href="/terms" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Terms</Link>
-            <Link href="/privacy-policy" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Privacy Policy</Link>
-            <Link href="/refund-policy" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>Refund Policy</Link>
+          <div className="text-white font-bold text-sm">Policies</div>
+          <div className="mt-3 grid gap-2 text-[#B0B7C3]">
+            <Link className="hover:text-white" href="/terms">Terms</Link>
+            <Link className="hover:text-white" href="/privacy-policy">Privacy Policy</Link>
+            <Link className="hover:text-white" href="/refund-policy">Refund Policy</Link>
           </div>
         </div>
       </div>
 
-      <div style={{ padding: '12px 18px', textAlign: 'center', color: 'rgba(255,255,255,.55)', fontSize: 12 }}>
+      <div className="px-4 py-4 text-center text-xs text-[#9CA3AF]">
         © {new Date().getFullYear()} Sikhadenge
       </div>
     </footer>
   );
 }
+
