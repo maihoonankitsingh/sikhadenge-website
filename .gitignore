@@ -61,3 +61,12 @@ sikhadenge-web@*
 prisma/*.bak*
 prisma/*.backup
 src/lib/
+
+# backups / temp
+_bak_pages/
+*.bak
+*.bak.*
+*.bak_*
+*.save
+*.tmp
+.DS_Store
