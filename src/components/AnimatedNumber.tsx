@@ -1,0 +1,72 @@
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+type Props = {
+  value: number;
+  durationMs?: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  format?: (n: number) => string;
+  className?: string;
+};
+
+export default function AnimatedNumber({
+  value,
+  durationMs = 900,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
+  format,
+  className,
+}: Props) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+
+  const fmt = useMemo(() => {
+    if (format) return format;
+    return (n: number) => {
+      const fixed = n.toFixed(decimals);
+      const parts = fixed.split(".");
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      return parts.join(".");
+    };
+  }, [format, decimals]);
+
+  useEffect(() => {
+    const startValue = 0;
+    const endValue = value;
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    startRef.current = null;
+
+    const tick = (t: number) => {
+      if (startRef.current === null) startRef.current = t;
+      const elapsed = t - (startRef.current ?? t);
+      const p = Math.min(1, elapsed / durationMs);
+
+      const eased = 1 - Math.pow(1 - p, 3);
+      const current = startValue + (endValue - startValue) * eased;
+
+      setDisplay(current);
+
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [value, durationMs]);
+
+  return (
+    <span className={className}>
+      {prefix}
+      {fmt(display)}
+      {suffix}
+    </span>
+  );
+}

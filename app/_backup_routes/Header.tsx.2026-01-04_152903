@@ -1,0 +1,56 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const nav = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about-us" },
+  { label: "Contact", href: "/contact" },
+  { label: "Blog", href: "/blog" },
+];
+
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
+export default function Header() {
+  const pathname = usePathname();
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#0B1220]/85 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="text-lg font-semibold tracking-tight text-white">
+          Sikhadenge
+        </Link>
+
+        <nav className="hidden items-center gap-6 md:flex">
+          {nav.map((item) => {
+            const active = isActive(pathname ?? "", item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  active
+                    ? "text-[#F5B301] text-sm font-medium"
+                    : "text-[#B0B7C3] hover:text-white text-sm font-medium"
+                }
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <Link
+          href="/counselling"
+          className="inline-flex items-center justify-center rounded-full bg-[#F5B301] px-5 py-2 text-sm font-semibold text-[#0B1220] hover:opacity-95"
+        >
+          Counselling
+        </Link>
+      </div>
+    </header>
+  );
+}

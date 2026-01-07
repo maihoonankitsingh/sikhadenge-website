@@ -1,0 +1,661 @@
+// app/about-us/page.tsx
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Sparkles,
+  Target,
+  Users,
+  GraduationCap,
+  CheckCircle2,
+  ShieldCheck,
+  Wand2,
+  Handshake,
+  Pencil,
+  Video,
+  Briefcase,
+  BarChart3,
+  Layers,
+  BadgeCheck,
+} from "lucide-react";
+
+/**
+ * IMPORTANT (copy-paste location)
+ * Paste this FULL file content into:
+ *   /var/www/sikhadenge.space/sikhadenge-website/app/about-us/page.tsx
+ *
+ * Images:
+ * Put these files inside /public/images/about/ (or change paths below):
+ *  - /public/images/about/who-we-are.jpg
+ *  - /public/images/about/mission.jpg
+ *  - /public/images/about/goal.jpg
+ *  - /public/images/about/team.jpg
+ */
+
+const BRAND = {
+  base: "#0B1220",
+  surface: "#111827",
+  border: "rgba(255,255,255,0.10)",
+  blue: "#2563EB",
+  blueGlow: "0 0 18px rgba(37,99,235,0.55)",
+  gold: "#F5B301",
+  goldGlow: "0 0 18px rgba(245,179,1,0.55)",
+  text: "#FFFFFF",
+  text2: "#B0B7C3",
+  muted: "#9CA3AF",
+};
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function useInViewOnce<T extends HTMLElement>(threshold = 0.25) {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold }
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [threshold]);
+
+  return { ref, inView };
+}
+
+function useCountUp(enabled: boolean, to: number, durationMs = 900) {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let raf = 0;
+    const start = performance.now();
+    const from = 0;
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setVal(from + (to - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [enabled, to, durationMs]);
+
+  return val;
+}
+
+function SectionTitle({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+        {title}
+      </h2>
+      {subtitle ? (
+        <p className="mx-auto mt-2 max-w-3xl text-base leading-7 text-[#B0B7C3] md:text-lg">
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "blue" | "gold";
+}) {
+  const toneCls =
+    tone === "blue"
+      ? "border-white/15 bg-white/10 shadow-[0_0_18px_rgba(37,99,235,0.35)]"
+      : tone === "gold"
+      ? "border-white/15 bg-white/10 shadow-[0_0_18px_rgba(245,179,1,0.35)]"
+      : "border-white/10 bg-white/5";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide text-white/90",
+        toneCls
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function IconCircle({
+  children,
+  glow = "blue",
+  size = "md",
+}: {
+  children: React.ReactNode;
+  glow?: "blue" | "gold";
+  size?: "sm" | "md" | "lg";
+}) {
+  const dim = size === "lg" ? "h-12 w-12" : size === "sm" ? "h-10 w-10" : "h-11 w-11";
+  const shadow =
+    glow === "gold"
+      ? `shadow-[${BRAND.goldGlow}]`
+      : `shadow-[${BRAND.blueGlow}]`;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-full border border-white/15 bg-white/10",
+        dim,
+        shadow
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-3xl border border-white/10 bg-[#111827] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FeatureMiniCard({
+  icon: Icon,
+  title,
+  desc,
+  glow,
+}: {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  glow: "blue" | "gold";
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0B1220] p-4">
+      <div className="flex items-start gap-3">
+        <IconCircle glow={glow} size="sm">
+          <Icon className="h-5 w-5 text-white" />
+        </IconCircle>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-white">{title}</div>
+          <div className="mt-1 text-sm leading-5 text-[#B0B7C3]">{desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ImagePanel({
+  src,
+  label,
+  overlayTitle,
+  overlayDesc,
+  overlayIcon: OverlayIcon,
+  overlayGlow,
+}: {
+  src: string;
+  label: string;
+  overlayTitle: string;
+  overlayDesc: string;
+  overlayIcon: React.ElementType;
+  overlayGlow: "blue" | "gold";
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B1220]">
+      <div className="relative aspect-[4/3] w-full">
+        <Image
+          src={src}
+          alt={label}
+          fill
+          className="object-cover"
+          priority={false}
+        />
+        <div className="absolute left-4 top-4 z-10">
+          <Badge tone="neutral">{label}</Badge>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-transparent to-transparent" />
+      </div>
+
+      <div className="p-4 md:p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#111827] p-4">
+          <div className="flex items-start gap-3">
+            <IconCircle glow={overlayGlow} size="sm">
+              <OverlayIcon className="h-5 w-5 text-white" />
+            </IconCircle>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">{overlayTitle}</div>
+              <div className="mt-1 text-sm leading-5 text-[#B0B7C3]">
+                {overlayDesc}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatStrip() {
+  const { ref, inView } = useInViewOnce<HTMLDivElement>(0.25);
+
+  const items = useMemo(
+    () => [
+      { label: "CURATED COURSES", icon: Layers, to: 10, suffix: "+" },
+      { label: "CERTIFIED STUDENTS", icon: BadgeCheck, to: 12000, suffix: "+" },
+      { label: "COMPLETION RATE", icon: Sparkles, to: 95, suffix: "%" },
+      { label: "EXPERT INSTRUCTORS", icon: Users, to: 20, suffix: "+" },
+    ],
+    []
+  );
+
+  return (
+    <div ref={ref} className="mt-10">
+      <div
+        className={cn(
+          "overflow-hidden rounded-3xl border border-white/10",
+          "bg-[#2563EB] shadow-[0_0_18px_rgba(37,99,235,0.55)]"
+        )}
+      >
+        <div className="grid md:grid-cols-4">
+          {items.map((it, idx) => {
+            const Icon = it.icon;
+            const n = useCountUp(inView, it.to, 900);
+
+            const display =
+              it.to >= 1000
+                ? `${Math.round(n / 1000)}K${it.suffix === "+" ? "+" : ""}` // 12K+
+                : `${Math.round(n)}${it.suffix}`;
+
+            return (
+              <div
+                key={it.label}
+                className={cn(
+                  "flex items-center justify-center px-6 py-6 text-center",
+                  idx !== 0 && "border-t border-white/15 md:border-l md:border-t-0"
+                )}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Icon className="h-6 w-6 text-white/95" />
+                  <div className="text-4xl font-extrabold tracking-tight text-white">
+                    {display}
+                  </div>
+                  <div className="text-xs font-bold tracking-[0.22em] text-white/90">
+                    {it.label}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AboutUsPage() {
+  return (
+    <main className="min-h-screen bg-[#0B1220] text-white">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-10">
+        {/* WHO WE ARE */}
+        <SectionTitle
+          title="Who we are?"
+          subtitle="A structured learning system designed for consistency, clarity, and professional output — aligned with practical outcomes."
+        />
+
+        <Card className="mt-8 p-5 md:p-6">
+          <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
+            {/* Left image + overlay */}
+            <ImagePanel
+              src="/images/about/who-we-are.jpg"
+              label="ABOUT SIKHADENGE"
+              overlayTitle="Outcome-first execution"
+              overlayDesc="Daily practice + mentor review to build clean, industry-ready output consistently."
+              overlayIcon={CheckCircle2}
+              overlayGlow="blue"
+            />
+
+            {/* Right content */}
+            <div className="rounded-3xl border border-white/10 bg-[#0B1220] p-5 md:p-6">
+              <div className="mb-4">
+                <Badge>About us</Badge>
+              </div>
+
+              <h3 className="text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
+                We’re not just a platform — we’re a movement.
+              </h3>
+
+              <p className="mt-4 text-base leading-7 text-[#B0B7C3]">
+                Sikhadenge (ThinkGrow Pvt. Ltd.) is building a practical, future-ready
+                learning ecosystem that empowers individuals with real, industry-relevant
+                skills in design and creative technologies — with professional tools and real workflows.
+              </p>
+
+              <p className="mt-4 text-base leading-7 text-[#B0B7C3]">
+                Less theory, more capability. We focus on applied projects, structured execution,
+                and continuous improvement so learners stay ready for evolving roles.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Bottom 3 cards in separate container (as you asked) */}
+        <div className="mt-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <FeatureMiniCard
+              icon={GraduationCap}
+              title="Mentor-led learning"
+              desc="Clear guidance, feedback, and checkpoints for consistency."
+              glow="blue"
+            />
+            <FeatureMiniCard
+              icon={ShieldCheck}
+              title="Practical outcomes"
+              desc="Projects that build capability and professional confidence."
+              glow="gold"
+            />
+            <FeatureMiniCard
+              icon={Target}
+              title="Skilled India focus"
+              desc="A system designed to create real skill and long-term growth."
+              glow="blue"
+            />
+          </div>
+        </div>
+
+        {/* STATS STRIP */}
+        <StatStrip />
+
+        {/* MISSION */}
+        <Card className="mt-10 p-5 md:p-6">
+          <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
+            {/* Left image */}
+            <ImagePanel
+              src="/images/about/mission.jpg"
+              label="MENTOR-LED LEARNING"
+              overlayTitle="Applied learning + measurable improvement"
+              overlayDesc="Structured execution with reviews so output quality improves consistently."
+              overlayIcon={Sparkles}
+              overlayGlow="blue"
+            />
+
+            {/* Right content (shortened) */}
+            <div className="rounded-3xl border border-white/10 bg-[#0B1220] p-5 md:p-6">
+              <div className="flex items-start gap-4">
+                <IconCircle glow="blue" size="lg">
+                  <Users className="h-6 w-6 text-white" />
+                </IconCircle>
+                <div className="min-w-0">
+                  <h3 className="text-3xl font-extrabold tracking-tight md:text-4xl">
+                    Our Mission
+                  </h3>
+                  <p className="mt-3 text-base leading-7 text-[#B0B7C3]">
+                    Build a practical, future-ready learning platform that turns learners into
+                    capable professionals through hands-on training, real workflows, and consistent standards.
+                  </p>
+                  <p className="mt-3 text-base leading-7 text-[#B0B7C3]">
+                    Structured education + applied projects + continuous skill-building — so we help create a Skilled Bharat.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Badge>Practical learning</Badge>
+                    <Badge>Industry workflows</Badge>
+                    <Badge>Future-ready skills</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* GOAL */}
+        <Card className="mt-10 p-5 md:p-6">
+          <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
+            {/* Left content (shortened) */}
+            <div className="rounded-3xl border border-white/10 bg-[#0B1220] p-5 md:p-6">
+              <div className="flex items-start gap-4">
+                <IconCircle glow="gold" size="lg">
+                  <Target className="h-6 w-6 text-white" />
+                </IconCircle>
+                <div className="min-w-0">
+                  <h3 className="text-3xl font-extrabold tracking-tight md:text-4xl">
+                    Our Goal
+                  </h3>
+                  <p className="mt-3 text-base leading-7 text-[#B0B7C3]">
+                    Build a multi-domain skill education ecosystem that grows with the future of work —
+                    expanding beyond today’s specializations into high-impact fields.
+                  </p>
+                  <p className="mt-3 text-base leading-7 text-[#B0B7C3]">
+                    We bridge learning with long-term career growth through modern curricula, continuous innovation,
+                    and outcome-focused execution across India.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Badge>Multi-domain ecosystem</Badge>
+                    <Badge>Future of work</Badge>
+                    <Badge>Career growth</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right image */}
+            <ImagePanel
+              src="/images/about/goal.jpg"
+              label="INDUSTRY-READY OUTPUT"
+              overlayTitle="Future-of-work ecosystem"
+              overlayDesc="Expanding domains while staying outcome-first, structured, and industry-aligned."
+              overlayIcon={BarChart3}
+              overlayGlow="gold"
+            />
+          </div>
+        </Card>
+
+        {/* DIFFERENT */}
+        <div className="mt-12">
+          <SectionTitle
+            title="What makes Sikhadenge different?"
+            subtitle="A brand built around execution, review, and professional output — not just content delivery."
+          />
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "Outcome-first learning",
+                desc: "Daily execution + review to build presentable, market-ready output.",
+                icon: Wand2,
+                glow: "blue" as const,
+              },
+              {
+                title: "AI-enabled creative skills",
+                desc: "Modern workflows aligned with current and future industry needs.",
+                icon: Sparkles,
+                glow: "gold" as const,
+              },
+              {
+                title: "Mentor support + community",
+                desc: "Guidance, corrections, and structured improvement cycles.",
+                icon: Handshake,
+                glow: "blue" as const,
+              },
+            ].map((c) => {
+              const Icon = c.icon;
+              const hoverGlow =
+                c.glow === "gold"
+                  ? "hover:shadow-[0_0_18px_rgba(245,179,1,0.55)]"
+                  : "hover:shadow-[0_0_18px_rgba(37,99,235,0.55)]";
+
+              return (
+                <div
+                  key={c.title}
+                  className={cn(
+                    "rounded-2xl border border-white/10 bg-[#111827] p-6",
+                    "min-h-[132px] transition-all duration-200",
+                    hoverGlow
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    <IconCircle glow={c.glow} size="lg">
+                      <Icon className="h-6 w-6 text-white" />
+                    </IconCircle>
+                    <div className="min-w-0">
+                      <div className="text-lg font-bold text-white">{c.title}</div>
+                      <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">{c.desc}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* CTA buttons (optional) */}
+          <div className="mt-8 grid gap-3 md:grid-cols-3">
+            <Link
+              href="/contact"
+              className="flex items-center justify-center rounded-2xl bg-[#2563EB] px-6 py-4 text-base font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)]"
+            >
+              Counselling
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#111827] px-6 py-4 text-base font-semibold text-white hover:bg-[#0B1220]"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#111827] px-6 py-4 text-base font-semibold text-white hover:bg-[#0B1220]"
+            >
+              Explore Courses
+            </Link>
+          </div>
+        </div>
+
+        {/* WORKSHOPS + WHAT DO WE DO */}
+        <div className="mt-14">
+          <SectionTitle
+            title="Get one-of-a-kind workshops"
+            subtitle="Practical sessions designed for real skills and real outcomes."
+          />
+
+          <div className="mt-8 grid gap-4 md:grid-cols-4">
+            {[
+              { title: "Graphic Design", desc: "Systems + workflows that match industry delivery.", icon: Pencil, glow: "blue" as const },
+              { title: "Video Editing", desc: "Editing structure, speed, and output quality.", icon: Video, glow: "gold" as const },
+              { title: "AI Creative Workflows", desc: "Tooling + execution aligned with modern teams.", icon: Sparkles, glow: "blue" as const },
+              { title: "Career Workshops", desc: "Portfolio, presentation, and professional readiness.", icon: Briefcase, glow: "gold" as const },
+            ].map((c) => {
+              const Icon = c.icon;
+              const hoverGlow =
+                c.glow === "gold"
+                  ? "hover:shadow-[0_0_18px_rgba(245,179,1,0.55)]"
+                  : "hover:shadow-[0_0_18px_rgba(37,99,235,0.55)]";
+
+              return (
+                <div
+                  key={c.title}
+                  className={cn(
+                    "rounded-2xl border border-white/10 bg-[#111827] px-5 py-6",
+                    "min-h-[140px] transition-all duration-200",
+                    hoverGlow
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <IconCircle glow={c.glow} size="md">
+                      <Icon className="h-5 w-5 text-white" />
+                    </IconCircle>
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold text-white">{c.title}</div>
+                      <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">{c.desc}</div>
+                    </div>
+                  </div>
+                  <div className="mt-5 h-px w-full bg-white/10" />
+                  <div className="mt-3 text-xs text-[#9CA3AF]">Practical • Output-focused</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-10 rounded-3xl border border-white/10 bg-[#111827] p-6 md:p-8">
+            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+              <div>
+                <h3 className="text-2xl font-extrabold text-white">What do we do?</h3>
+
+                <div className="mt-6 space-y-5">
+                  {[
+                    { text: "Build AI-enabled creative skills with structured execution and clear standards.", icon: CheckCircle2, glow: "blue" as const },
+                    { text: "Run mentor-led learning with assignments, reviews, and quality checkpoints.", icon: GraduationCap, glow: "gold" as const },
+                    { text: "Help learners produce market-ready work with professional presentation.", icon: BadgeCheck, glow: "blue" as const },
+                    { text: "Provide structured support so progress stays consistent and measurable.", icon: Target, glow: "gold" as const },
+                  ].map((i, idx) => {
+                    const Icon = i.icon;
+                    return (
+                      <div key={idx} className="flex items-start gap-4">
+                        <IconCircle glow={i.glow} size="md">
+                          <Icon className="h-5 w-5 text-white" />
+                        </IconCircle>
+                        <p className="pt-1 text-base leading-7 text-[#B0B7C3]">{i.text}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-[#0B1220] p-2">
+                <div className="relative h-[320px] overflow-hidden rounded-xl md:h-[360px]">
+                  <Image
+                    src="/images/about/team.jpg"
+                    alt="Team"
+                    fill
+                    className="object-cover"
+                    priority={false}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOT SPACE */}
+        <div className="mt-16" />
+      </div>
+    </main>
+  );
+}
+

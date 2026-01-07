@@ -1,5 +1,5 @@
 import React from "react";
-import SiteLayout from "../components/SiteLayout";
+
 
 function Badge({ text }: { text: string }) {
   return (
@@ -143,7 +143,7 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 
 export default function TermsPage() {
   return (
-    <SiteLayout>
+    
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "26px 18px 40px" }}>
         <div
           style={{
@@ -362,6 +362,6 @@ export default function TermsPage() {
           </Section>
         </div>
       </div>
-    </SiteLayout>
+    
   );
 }

@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --sd-bg:#0B1220;
+  --sd-surface:#111827;
+  --sd-border:rgba(255,255,255,0.10);
+  --sd-primary:#2563EB;
+  --sd-primary-dark:#1D4ED8;
+  --sd-gold:#F5B301;
+  --sd-text:#FFFFFF;
+  --sd-text-2:#B0B7C3;
+  --sd-text-3:#9CA3AF;
+}
+
+/* base */
+html, body { height: 100%; }
+body{
+  background: var(--sd-bg);
+  color: var(--sd-text);
+}
+
+/* optional: smoother */
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }

@@ -1,0 +1,586 @@
+import Image from "next/image";
+import Link from "next/link";
+import AnimatedNumber from "../../components/AnimatedNumber";
+import {
+  Layers,
+  BadgeCheck,
+  Sparkles,
+  Users,
+  GraduationCap,
+  Target,
+  PenTool,
+  Video,
+  Briefcase,
+  CheckCircle2,
+} from "lucide-react";
+
+type IconType = React.ComponentType<{ className?: string }>;
+
+const COLORS = {
+  base: "#0B1220",
+  surface: "#111827",
+  border: "rgba(255,255,255,0.10)",
+  primary: "#2563EB",
+  blueDark: "#1D4ED8",
+  gold: "#F5B301",
+  textSecondary: "#B0B7C3",
+  textMuted: "#9CA3AF",
+};
+
+function IconBubble({
+  icon: Icon,
+  tone = "blue",
+  size = 44,
+}: {
+  icon: IconType;
+  tone?: "blue" | "gold";
+  size?: number;
+}) {
+  const glow =
+    tone === "blue"
+      ? "shadow-[0_0_18px_rgba(37,99,235,0.55)]"
+      : "shadow-[0_0_18px_rgba(245,179,1,0.55)]";
+  const ring =
+    tone === "blue"
+      ? "border-white/10 bg-white/5"
+      : "border-white/10 bg-white/5";
+
+  const iconColor = tone === "blue" ? "text-[#2563EB]" : "text-[#F5B301]";
+
+  return (
+    <span
+      className={[
+        "inline-flex items-center justify-center rounded-full border",
+        ring,
+        glow,
+      ].join(" ")}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <Icon className={["h-5 w-5", iconColor].join(" ")} />
+    </span>
+  );
+}
+
+function SectionShell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={[
+        "rounded-3xl border border-white/10 bg-[#111827]/40 p-6 md:p-8",
+        "shadow-[0_0_40px_rgba(0,0,0,0.35)]",
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </section>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
+      {children}
+    </span>
+  );
+}
+
+function SmallFeatureCard({
+  title,
+  desc,
+  icon,
+  tone,
+}: {
+  title: string;
+  desc: string;
+  icon: IconType;
+  tone: "blue" | "gold";
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0B1220]/40 p-4 md:p-5">
+      <div className="flex items-start gap-3">
+        <IconBubble icon={icon} tone={tone} />
+        <div>
+          <div className="text-sm font-semibold text-white">{title}</div>
+          <div className="mt-1 text-sm text-white/70">{desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({
+  title,
+  desc,
+  icon,
+  tone,
+}: {
+  title: string;
+  desc: string;
+  icon: IconType;
+  tone: "blue" | "gold";
+}) {
+  return (
+    <div className="h-full rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6">
+      <div className="flex items-start gap-4">
+        <IconBubble icon={icon} tone={tone} size={46} />
+        <div>
+          <div className="text-base font-semibold text-white">{title}</div>
+          <div className="mt-2 text-sm leading-relaxed text-white/70">{desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkshopCard({
+  title,
+  desc,
+  icon,
+  tone,
+}: {
+  title: string;
+  desc: string;
+  icon: IconType;
+  tone: "blue" | "gold";
+}) {
+  return (
+    <div className="h-full rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6">
+      <div className="flex items-start gap-4">
+        <IconBubble icon={icon} tone={tone} size={48} />
+        <div>
+          <div className="text-base font-semibold text-white">{title}</div>
+          <div className="mt-2 text-sm text-white/70">{desc}</div>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-white/10 pt-4 text-sm text-white/60">
+        Practical • Output-focused
+      </div>
+    </div>
+  );
+}
+
+function StatBand() {
+  const stats = [
+    { value: 10, suffix: "+", label: "CURATED COURSES", icon: Layers },
+    { value: 12, suffix: "K+", label: "CERTIFIED STUDENTS", icon: BadgeCheck },
+    { value: 95, suffix: "%", label: "COMPLETION RATE", icon: Sparkles },
+    { value: 20, suffix: "+", label: "EXPERT INSTRUCTORS", icon: Users },
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#2563EB] shadow-[0_0_18px_rgba(37,99,235,0.55)]">
+      <div className="grid md:grid-cols-4">
+        {stats.map((s, idx) => (
+          <div
+            key={s.label}
+            className={[
+              "flex flex-col items-center justify-center px-6 py-6 text-center",
+              idx < stats.length - 1 ? "md:border-r md:border-white/10" : "",
+              idx % 2 === 0 ? "border-white/10" : "",
+            ].join(" ")}
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10">
+              <s.icon className="h-5 w-5 text-white" />
+            </div>
+
+            <div className="text-4xl font-extrabold tracking-tight text-white">
+              <AnimatedNumber value={s.value} suffix={s.suffix} />
+            </div>
+            <div className="mt-2 text-xs font-semibold tracking-[0.24em] text-white/90">
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function AboutUsPage() {
+  return (
+    <div className="min-h-screen bg-[#0B1220] text-white">
+      {/* header overlap spacing */}
+      <div className="pt-24 md:pt-28" />
+
+      <div className="mx-auto max-w-6xl px-4 pb-20">
+        {/* HERO */}
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
+            Who we are?
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+            A structured learning system designed for consistency, clarity, and professional output —
+            aligned with practical outcomes.
+          </p>
+        </div>
+
+        <SectionShell className="mt-10">
+          {/* Top 2-column */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left image card */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/50">
+              <div className="absolute left-4 top-4 z-10">
+                <span className="inline-flex items-center rounded-full bg-black/40 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+                  ABOUT SIKHADENGE
+                </span>
+              </div>
+
+              <div className="relative aspect-[16/10] w-full">
+                <Image
+                  src="/images/about/about-hero-desk.webp"
+                  alt="Sikhadenge learning setup"
+                  fill
+                  priority
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Bottom overlay */}
+              <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-black/35 p-4 backdrop-blur">
+                <div className="flex items-start gap-3">
+                  <IconBubble icon={Sparkles} tone="blue" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">
+                      Outcome-first execution
+                    </div>
+                    <div className="mt-1 text-sm text-white/75">
+                      Daily practice + mentor review to build clean, industry-ready output consistently.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right text card */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6 md:p-7">
+              <div className="mb-4">
+                <Chip>About us</Chip>
+              </div>
+
+              <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">
+                We’re not just a platform —
+                <br />
+                we’re a movement.
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                Sikhadenge (ThinkGrow Pvt. Ltd.) builds practical, future-ready learning that helps learners
+                develop industry-relevant skills with professional workflows.
+              </p>
+
+              <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                Less theory, more capability — structured education, applied projects, and continuous
+                improvement to keep learners confident and work-ready.
+              </p>
+            </div>
+          </div>
+
+          {/* MINI CARDS (moved to bottom, full width) */}
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <SmallFeatureCard
+              title="Mentor-led learning"
+              desc="Clear guidance, feedback, and checkpoints."
+              icon={GraduationCap}
+              tone="blue"
+            />
+            <SmallFeatureCard
+              title="Practical outcomes"
+              desc="Projects that build capability and confidence."
+              icon={BadgeCheck}
+              tone="gold"
+            />
+            <SmallFeatureCard
+              title="Skilled India focus"
+              desc="A system designed for real skill + growth."
+              icon={Target}
+              tone="blue"
+            />
+          </div>
+        </SectionShell>
+
+        {/* STATS */}
+        <div className="mt-8">
+          <StatBand />
+        </div>
+
+        {/* MISSION */}
+        <SectionShell className="mt-10">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left image */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/50">
+              <div className="absolute left-4 top-4 z-10">
+                <span className="inline-flex items-center rounded-full bg-black/40 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+                  MENTOR-LED LEARNING
+                </span>
+              </div>
+
+              <div className="relative aspect-[16/11] w-full">
+                <Image
+                  src="/images/about/about-mission-class.webp"
+                  alt="Mentor-led training"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-black/35 p-4 backdrop-blur">
+                <div className="flex items-start gap-3">
+                  <IconBubble icon={Sparkles} tone="blue" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">
+                      Applied learning + measurable improvement
+                    </div>
+                    <div className="mt-1 text-sm text-white/75">
+                      Structured execution with reviews so output quality improves consistently.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right mission text */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6 md:p-7">
+              <div className="flex items-start gap-4">
+                <IconBubble icon={Users} tone="blue" size={52} />
+                <div>
+                  <h3 className="text-3xl font-extrabold md:text-4xl">Our Mission</h3>
+
+                  <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                    Build a practical, future-ready learning platform that transforms learners into capable
+                    professionals through hands-on training, real industry workflows, and clear performance
+                    standards. We focus on applied learning that helps learners move beyond theory and develop
+                    skills that are directly usable in real work environments.
+                  </p>
+
+                  <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                    By combining structured education, guided practice, and continuous skill improvement, our
+                    mission is to ensure learners remain industry-ready, adaptable to change, and confident in
+                    their professional growth.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Chip>Practical learning</Chip>
+                    <Chip>Industry workflows</Chip>
+                    <Chip>Future-ready skills</Chip>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SectionShell>
+
+        {/* GOAL */}
+        <SectionShell className="mt-10">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left goal text */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6 md:p-7">
+              <div className="flex items-start gap-4">
+                <IconBubble icon={Target} tone="gold" size={52} />
+                <div>
+                  <h3 className="text-3xl font-extrabold md:text-4xl">Our Goal</h3>
+
+                  <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                    Build a scalable skill-learning ecosystem that evolves with the future of work. While our
+                    current focus is on Graphic Design and Video Editing, our goal is to expand into Interior
+                    Design, AI-driven automation, digital marketing, and other high-impact, emerging domains.
+                  </p>
+
+                  <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
+                    We aim to bridge the gap between learning and long-term career growth by offering education
+                    that stays relevant as industries change, enabling learners to build sustainable skills and
+                    adapt confidently to new technologies.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Chip>Multi-domain ecosystem</Chip>
+                    <Chip>Future of work</Chip>
+                    <Chip>Career growth</Chip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right image */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/50">
+              <div className="absolute left-4 top-4 z-10">
+                <span className="inline-flex items-center rounded-full bg-black/40 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+                  INDUSTRY-READY OUTPUT
+                </span>
+              </div>
+
+              <div className="relative aspect-[16/11] w-full">
+                <Image
+                  src="/images/about/about-goal-portfolio.webp"
+                  alt="Industry-ready output"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-black/35 p-4 backdrop-blur">
+                <div className="flex items-start gap-3">
+                  <IconBubble icon={Target} tone="gold" />
+                  <div>
+                    <div className="text-sm font-semibold text-white">Future-of-work ecosystem</div>
+                    <div className="mt-1 text-sm text-white/75">
+                      Expanding domains while staying outcome-first, structured, and industry-aligned.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SectionShell>
+
+        {/* DIFFERENT */}
+        <div className="mt-14 text-center">
+          <h2 className="text-3xl font-extrabold md:text-4xl">What makes Sikhadenge different?</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/70 md:text-base">
+            A brand built around execution, review, and professional output — not just content delivery.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <InfoCard
+            title="Outcome-first learning"
+            desc="Daily execution + review to build presentable, market-ready output."
+            icon={Sparkles}
+            tone="blue"
+          />
+          <InfoCard
+            title="AI-enabled creative skills"
+            desc="Modern workflows aligned with current and future industry needs."
+            icon={PenTool}
+            tone="gold"
+          />
+          <InfoCard
+            title="Mentor support + community"
+            desc="Guidance, corrections, and structured improvement cycles."
+            icon={Users}
+            tone="blue"
+          />
+        </div>
+
+        {/* CTA buttons (no extra strip text) */}
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <Link
+            href="/contact"
+            className="rounded-2xl bg-[#2563EB] px-6 py-5 text-center text-base font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)]"
+          >
+            Counselling
+          </Link>
+          <Link
+            href="/contact"
+            className="rounded-2xl border border-white/10 bg-[#0B1220]/40 px-6 py-5 text-center text-base font-semibold text-white hover:bg-white/5"
+          >
+            Contact
+          </Link>
+          <Link
+            href="/#courses"
+            className="rounded-2xl border border-white/10 bg-[#0B1220]/40 px-6 py-5 text-center text-base font-semibold text-white hover:bg-white/5"
+          >
+            Explore Courses
+          </Link>
+        </div>
+
+        {/* WORKSHOPS */}
+        <div className="mt-14 text-center">
+          <h2 className="text-3xl font-extrabold md:text-4xl">Get one-of-a-kind workshops</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/70 md:text-base">
+            Practical sessions designed for real skills and real outcomes.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <WorkshopCard
+            title="Graphic Design"
+            desc="Systems + workflows that match industry delivery."
+            icon={PenTool}
+            tone="blue"
+          />
+          <WorkshopCard
+            title="Video Editing"
+            desc="Editing structure, speed, and output quality."
+            icon={Video}
+            tone="gold"
+          />
+          <WorkshopCard
+            title="AI Creative Workflows"
+            desc="Tooling + execution aligned with modern teams."
+            icon={Sparkles}
+            tone="blue"
+          />
+          <WorkshopCard
+            title="Career Workshops"
+            desc="Portfolio, presentation, and professional readiness."
+            icon={Briefcase}
+            tone="gold"
+          />
+        </div>
+
+        {/* WHAT DO WE DO */}
+        <SectionShell className="mt-10">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-6 md:p-7">
+              <h3 className="text-3xl font-extrabold md:text-4xl">What do we do?</h3>
+
+              <div className="mt-6 space-y-5">
+                <div className="flex items-start gap-4">
+                  <IconBubble icon={Sparkles} tone="blue" size={52} />
+                  <p className="text-sm leading-relaxed text-white/70 md:text-base">
+                    Build AI-enabled creative skills with structured execution and clear standards.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <IconBubble icon={GraduationCap} tone="gold" size={52} />
+                  <p className="text-sm leading-relaxed text-white/70 md:text-base">
+                    Run mentor-led learning with assignments, reviews, and quality checkpoints.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <IconBubble icon={BadgeCheck} tone="blue" size={52} />
+                  <p className="text-sm leading-relaxed text-white/70 md:text-base">
+                    Help learners produce market-ready work with professional presentation.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <IconBubble icon={Target} tone="gold" size={52} />
+                  <p className="text-sm leading-relaxed text-white/70 md:text-base">
+                    Provide structured support so progress stays consistent and measurable.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/50">
+              <div className="absolute left-4 top-4 z-10">
+                <span className="inline-flex items-center rounded-full bg-black/40 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+                  Team →
+                </span>
+              </div>
+
+              <div className="relative aspect-[16/11] w-full">
+                <Image
+                  src="/images/about/about-whatwedo-group.webp"
+                  alt="Team and learners"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </SectionShell>
+      </div>
+    </div>
+  );
+}

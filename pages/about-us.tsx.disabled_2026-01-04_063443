@@ -1,0 +1,677 @@
+import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
+import type { NextPage } from "next";
+
+const BRAND = {
+  base: "#0B1220",
+  surface: "#111827",
+  border: "rgba(255,255,255,0.10)",
+  primary: "#2563EB",
+  blueDark: "#1D4ED8",
+  gold: "#F5B301",
+  text: "#FFFFFF",
+  text2: "#B0B7C3",
+  muted: "#9CA3AF",
+  glowBlue: "0 0 18px rgba(37,99,235,0.55)",
+  glowGold: "0 0 18px rgba(245,179,1,0.55)",
+};
+
+const IMG = {
+  hero: "/images/about/about-hero-desk.webp",
+  mission: "/images/about/about-mission-class.webp",
+  goal: "/images/about/about-goal-portfolio.webp",
+  whatwedo: "/images/about/about-whatwedo-group.webp",
+};
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-3 py-1 text-xs"
+      style={{
+        border: `1px solid ${BRAND.border}`,
+        background: "rgba(17,24,39,0.55)",
+        color: BRAND.text2,
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function NeonIcon({
+  variant = "blue",
+  children,
+}: {
+  variant?: "blue" | "gold";
+  children: React.ReactNode;
+}) {
+  const glow = variant === "gold" ? BRAND.glowGold : BRAND.glowBlue;
+  const tint =
+    variant === "gold" ? "rgba(245,179,1,0.12)" : "rgba(37,99,235,0.14)";
+  return (
+    <div
+      className="flex h-11 w-11 items-center justify-center rounded-2xl"
+      style={{
+        border: `1px solid ${BRAND.border}`,
+        background: `linear-gradient(180deg, rgba(17,24,39,0.75), rgba(17,24,39,0.45))`,
+        boxShadow: glow,
+        outline: `1px solid ${tint}`,
+      }}
+    >
+      <div style={{ color: BRAND.text }}>{children}</div>
+    </div>
+  );
+}
+
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-[28px] ${className}`}
+      style={{
+        border: `1px solid ${BRAND.border}`,
+        background: "rgba(17,24,39,0.55)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeading({
+  title,
+  subtitle,
+  center = true,
+}: {
+  title: string;
+  subtitle?: string;
+  center?: boolean;
+}) {
+  return (
+    <div className={center ? "text-center" : ""}>
+      <h2
+        className="text-3xl font-semibold tracking-tight md:text-4xl"
+        style={{ color: BRAND.text }}
+      >
+        {title}
+      </h2>
+      {subtitle ? (
+        <p
+          className={`mx-auto mt-2 max-w-3xl text-sm leading-relaxed md:text-base ${
+            center ? "" : ""
+          }`}
+          style={{ color: BRAND.text2 }}
+        >
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+const AboutUs: NextPage = () => {
+  return (
+    <>
+      <Head>
+        <title>About | Sikhadenge</title>
+        <meta
+          name="description"
+          content="Sikhadenge — mentor-led upskilling institute for practical outcomes, daily practice, and portfolio-ready work."
+        />
+      </Head>
+
+      {/* NOTE: header fixed hai to padding-top zaroori */}
+      <main style={{ background: BRAND.base }} className="min-h-screen pt-24">
+        {/* Background glows */}
+        <div className="pointer-events-none fixed inset-0 -z-10">
+          <div style={{ background: BRAND.base }} className="absolute inset-0" />
+          <div className="absolute -left-40 top-24 h-[420px] w-[420px] rounded-full bg-[rgba(37,99,235,0.18)] blur-3xl" />
+          <div className="absolute -right-40 top-44 h-[420px] w-[420px] rounded-full bg-[rgba(245,179,1,0.14)] blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_55%)]" />
+        </div>
+
+        <div className="mx-auto max-w-6xl px-4">
+          {/* ===== Section 1 (TOP) — "Who we are ?" with 2 cards (same as reference) ===== */}
+          <div className="pt-6">
+            <SectionHeading
+              title="Who we are ?"
+              subtitle="Sikhadenge is a mentor-led upskilling institute. We deliver structured live online training for Graphic Design, Video Editing, Motion Graphics, and AI-powered creative workflows — focused on real projects, strong fundamentals, and portfolio output."
+              center
+            />
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {/* Left image card */}
+              <div className="relative overflow-hidden rounded-[28px]" style={{ border: `1px solid ${BRAND.border}` }}>
+                <Image
+                  src={IMG.hero}
+                  alt="About hero"
+                  width={1400}
+                  height={900}
+                  unoptimized
+                  className="h-[320px] w-full object-cover md:h-[340px]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,18,32,0.85)] via-[rgba(11,18,32,0.25)] to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <Card className="p-4">
+                    <div className="text-sm font-semibold" style={{ color: BRAND.text }}>
+                      Vetted for personalised upskilling
+                    </div>
+                    <div className="mt-1 text-xs leading-relaxed" style={{ color: BRAND.text2 }}>
+                      Deep practice + mentor review. Learners improve output quality with a repeatable learning system.
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Right content card */}
+              <div
+                className="rounded-[28px] p-6 md:p-7"
+                style={{
+                  border: `1px solid ${BRAND.border}`,
+                  background:
+                    "linear-gradient(135deg, rgba(17,24,39,0.70), rgba(17,24,39,0.40))",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                <Chip>About us</Chip>
+                <h1
+                  className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl"
+                  style={{ color: BRAND.text }}
+                >
+                  We’re not just a platform — we’re a learning system.
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed md:text-base" style={{ color: BRAND.text2 }}>
+                  We focus on fundamentals, daily practice, and modern workflows — so learners finish with portfolio-ready work and become confident for jobs, internships, and freelancing.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== Section 2 — "What we are working towards" strip (same placement) ===== */}
+          <div className="mt-10">
+            <Card className="flex items-start gap-4 p-6 md:items-center">
+              <div>
+                <NeonIcon variant="gold">
+                  {/* trophy icon */}
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M8 4h8v3a4 4 0 0 1-8 0V4Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M6 4H4v2a4 4 0 0 0 4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M18 4h2v2a4 4 0 0 1-4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M10 19h4M9 22h6"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M12 11v8"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </NeonIcon>
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs tracking-widest" style={{ color: BRAND.muted }}>
+                  WHAT WE ARE WORKING TOWARDS
+                </div>
+                <div className="mt-1 text-lg font-semibold md:text-xl" style={{ color: BRAND.text }}>
+                  To build India’s most practical Design & Editing school
+                </div>
+                <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                  Skilled India focus: strong fundamentals + modern workflows + daily practice — so every learner completes a clean portfolio and becomes job-ready.
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* ===== Section 3 — "Who we are?" + 3 feature cards + 3 buttons (exact block) ===== */}
+          <div className="mt-16">
+            <SectionHeading
+              title="Who we are?"
+              subtitle="A structured learning system designed for consistency, clarity, and professional output — aligned with practical outcomes."
+              center
+            />
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <Card className="p-6">
+                <div className="flex items-start gap-4">
+                  <NeonIcon variant="blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M7 7h10v10H7V7Z" stroke="currentColor" strokeWidth="1.8" />
+                      <path
+                        d="M5 12h14"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </NeonIcon>
+                  <div>
+                    <div className="text-base font-semibold" style={{ color: BRAND.text }}>
+                      Outcome-first learning
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                      Real assignments + portfolio builds so work is presentable and industry-aligned.
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-start gap-4">
+                  <NeonIcon variant="gold">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </NeonIcon>
+                  <div>
+                    <div className="text-base font-semibold" style={{ color: BRAND.text }}>
+                      Industry-standard tools
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                      Professional workflows with the Adobe stack + modern AI support.
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-start gap-4">
+                  <NeonIcon variant="blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 12a4 4 0 1 0-4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M19 8v6"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M22 11h-6"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </NeonIcon>
+                  <div>
+                    <div className="text-base font-semibold" style={{ color: BRAND.text }}>
+                      Mentor support + community
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                      Corrections, doubt support, and review-based improvement to keep consistency high.
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <Link
+                href="/counselling"
+                className="rounded-2xl px-5 py-4 text-center text-sm font-medium"
+                style={{
+                  background: BRAND.primary,
+                  color: BRAND.text,
+                  boxShadow: BRAND.glowBlue,
+                }}
+              >
+                Counselling
+              </Link>
+              <Link
+                href="/contact"
+                className="rounded-2xl px-5 py-4 text-center text-sm font-medium"
+                style={{
+                  border: `1px solid ${BRAND.border}`,
+                  background: "rgba(17,24,39,0.55)",
+                  color: BRAND.text,
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                Contact
+              </Link>
+              <Link
+                href="/"
+                className="rounded-2xl px-5 py-4 text-center text-sm font-medium"
+                style={{
+                  border: `1px solid ${BRAND.border}`,
+                  background: "rgba(17,24,39,0.55)",
+                  color: BRAND.text,
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                Explore Courses
+              </Link>
+            </div>
+          </div>
+
+          {/* ===== Section 4 — Mission row (text left, image right) ===== */}
+          <div className="mt-16 grid gap-6 md:grid-cols-2" id="mission">
+            <div>
+              <h3 className="text-3xl font-semibold" style={{ color: BRAND.text }}>
+                Our Mission
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed md:text-base" style={{ color: BRAND.text2 }}>
+                To build Skilled India creators through a repeatable, outcome-driven learning system — where learners gain fundamentals, execution speed, and professional presentation standards.
+              </p>
+
+              <div className="mt-6">
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <NeonIcon variant="blue">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M12 6v6l4 2"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </NeonIcon>
+                    <div>
+                      <div className="text-base font-semibold" style={{ color: BRAND.text }}>
+                        Practice + feedback loop
+                      </div>
+                      <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                        Daily tasks, mentor review, and corrections to push output quality consistently.
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[28px]" style={{ border: `1px solid ${BRAND.border}` }}>
+              <Image
+                src={IMG.mission}
+                alt="Mentor-led class session"
+                width={1400}
+                height={900}
+                unoptimized
+                className="h-[320px] w-full object-cover md:h-[380px]"
+              />
+              <div className="absolute left-5 top-5">
+                <Chip>Mentor-led class session</Chip>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,18,32,0.35)] via-transparent to-transparent" />
+            </div>
+          </div>
+
+          {/* ===== Section 5 — Goal row (image left, text right) ===== */}
+          <div className="mt-8 grid gap-6 md:grid-cols-2" id="goal">
+            <div className="relative overflow-hidden rounded-[28px]" style={{ border: `1px solid ${BRAND.border}` }}>
+              <Image
+                src={IMG.goal}
+                alt="Goal driven learning"
+                width={1400}
+                height={900}
+                unoptimized
+                className="h-[320px] w-full object-cover md:h-[380px]"
+              />
+              <div className="absolute left-5 top-5">
+                <Chip>Goal-driven learning</Chip>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,18,32,0.35)] via-transparent to-transparent" />
+            </div>
+
+            <div>
+              <h3 className="text-3xl font-semibold" style={{ color: BRAND.text }}>
+                Our Goal
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed md:text-base" style={{ color: BRAND.text2 }}>
+                To build India’s most practical design & editing school — where every learner finishes a clean portfolio, becomes confident for jobs/internships/freelancing, and delivers professional-level work.
+              </p>
+
+              <div className="mt-6">
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <NeonIcon variant="gold">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M7 17l4-4 2 2 4-4"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M5 5h14v14H5V5Z"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </NeonIcon>
+                    <div>
+                      <div className="text-base font-semibold" style={{ color: BRAND.text }}>
+                        Portfolio-ready output
+                      </div>
+                      <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                        Real briefs, clean presentation, and workflows aligned with industry expectations.
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== Section 6 — Stats strip (exact 4 columns) ===== */}
+          <div className="mt-12 overflow-hidden rounded-[22px]" style={{ border: `1px solid ${BRAND.border}` }}>
+            <div
+              className="grid grid-cols-2 md:grid-cols-4"
+              style={{
+                background: `linear-gradient(90deg, ${BRAND.primary}, ${BRAND.blueDark})`,
+              }}
+            >
+              {[
+                { top: "10+", bottom: "CURATED MODULES" },
+                { top: "1000+", bottom: "LEARNERS (RECENT)" },
+                { top: "4 MONTH", bottom: "LIVE PROGRAM" },
+                { top: "DAILY", bottom: "PRACTICE + REVIEW" },
+              ].map((x, i) => (
+                <div
+                  key={i}
+                  className="px-6 py-6 text-center"
+                  style={{
+                    borderRight:
+                      i % 4 !== 3 ? "1px solid rgba(255,255,255,0.16)" : "none",
+                  }}
+                >
+                  <div className="text-3xl font-semibold text-white">{x.top}</div>
+                  <div className="mt-1 text-xs tracking-widest text-white/80">{x.bottom}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ===== Section 7 — Workshops headline + 4 pills ===== */}
+          <div className="mt-14">
+            <div className="text-xs tracking-widest" style={{ color: BRAND.muted }}>
+              THIS IS WHAT MAKES OUR TRAINING SPECIAL
+            </div>
+            <div className="mt-2 text-4xl font-semibold tracking-tight md:text-5xl" style={{ color: BRAND.text }}>
+              Get one-of-a-kind workshops with
+            </div>
+
+            <div className="mt-7 grid gap-3 md:grid-cols-4">
+              {[
+                { t: "Best-in-class mentors", v: "blue" as const },
+                { t: "Immersive & cohort learning", v: "gold" as const },
+                { t: "Access to community", v: "blue" as const },
+                { t: "Learn beyond borders", v: "gold" as const },
+              ].map((x) => (
+                <div
+                  key={x.t}
+                  className="flex items-center justify-center gap-3 rounded-2xl px-4 py-4 text-sm font-medium"
+                  style={{
+                    border: `1px solid ${BRAND.border}`,
+                    background: "rgba(17,24,39,0.55)",
+                    color: BRAND.text,
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  <NeonIcon variant={x.v}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </NeonIcon>
+                  <span className="text-center">{x.t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ===== Section 8 — What do we do (text left, image right) ===== */}
+          <div className="mt-16 grid gap-6 md:grid-cols-2" id="what">
+            <div>
+              <h3 className="text-4xl font-semibold tracking-tight" style={{ color: BRAND.text }}>
+                What do we do?
+              </h3>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: BRAND.text }}>
+                    Job-ready mentorship programs
+                  </div>
+                  <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                    Live sessions + assignments + review to build professional output quality.
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: BRAND.text }}>
+                    Project & scenario based learning
+                  </div>
+                  <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                    Real tasks: posters, branding, edits, motion, and portfolio builds.
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: BRAND.text }}>
+                    Together till last mile
+                  </div>
+                  <div className="mt-1 text-sm" style={{ color: BRAND.text2 }}>
+                    Structured path so learners stay consistent and complete modules.
+                  </div>
+                </div>
+
+                <div className="pt-2 text-xs" style={{ color: BRAND.muted }}>
+                  Sikhadenge is operated under ThinkGrow Pvt. Ltd.
+                </div>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[28px]" style={{ border: `1px solid ${BRAND.border}` }}>
+              <Image
+                src={IMG.whatwedo}
+                alt="Learners and mentors"
+                width={1400}
+                height={900}
+                unoptimized
+                className="h-[340px] w-full object-cover md:h-[420px]"
+              />
+              <div className="absolute left-5 top-5">
+                <Chip>Learners and mentors</Chip>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,18,32,0.35)] via-transparent to-transparent" />
+            </div>
+          </div>
+
+          {/* ===== Section 9 — Bottom CTA (same as your about screenshot block) ===== */}
+          <div className="mt-14 pb-16">
+            <Card className="p-7">
+              <div className="text-2xl font-semibold" style={{ color: BRAND.text }}>
+                Need training / collaboration details?
+              </div>
+              <div className="mt-2 text-sm" style={{ color: BRAND.text2 }}>
+                For training / collaboration queries, use the form category.
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  href="/contact"
+                  className="rounded-xl px-5 py-3 text-sm font-medium"
+                  style={{
+                    background: BRAND.primary,
+                    color: BRAND.text,
+                    boxShadow: BRAND.glowBlue,
+                  }}
+                >
+                  Go to form
+                </Link>
+                <Link
+                  href="/contact"
+                  className="rounded-xl px-5 py-3 text-sm font-medium"
+                  style={{
+                    border: `1px solid ${BRAND.border}`,
+                    background: "rgba(17,24,39,0.55)",
+                    color: BRAND.text,
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  Contact
+                </Link>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+};
+
+export default AboutUs;
+

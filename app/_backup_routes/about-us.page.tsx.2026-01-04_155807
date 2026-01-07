@@ -1,0 +1,589 @@
+import Image from "next/image";
+import Link from "next/link";
+import AnimatedNumber from "@/components/AnimatedNumber";
+import {
+  BadgeCheck,
+  Bot,
+  Briefcase,
+  CheckCircle2,
+  GraduationCap,
+  Layers,
+  MessagesSquare,
+  PencilRuler,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Users,
+  Video,
+  Wand2,
+} from "lucide-react";
+
+const BLUE = "shadow-[0_0_18px_rgba(37,99,235,0.55)]";
+const GOLD = "shadow-[0_0_18px_rgba(245,179,1,0.55)]";
+
+function StatFormat(value: number) {
+  // 12000 -> 12K+
+  if (value >= 1000) return `${Math.round(value / 1000)}K`;
+  return `${value}`;
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
+      {children}
+    </span>
+  );
+}
+
+function IconBadge({
+  icon: Icon,
+  glow = "blue",
+}: {
+  icon: any;
+  glow?: "blue" | "gold";
+}) {
+  const glowClass =
+    glow === "gold"
+      ? "bg-[#111827] ring-1 ring-white/10 " + GOLD
+      : "bg-[#111827] ring-1 ring-white/10 " + BLUE;
+
+  const iconColor = glow === "gold" ? "text-[#F5B301]" : "text-[#2563EB]";
+
+  return (
+    <span
+      className={[
+        "grid h-12 w-12 place-items-center rounded-full",
+        glowClass,
+      ].join(" ")}
+    >
+      <Icon className={`h-6 w-6 ${iconColor}`} />
+    </span>
+  );
+}
+
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-3xl border border-white/10 bg-[#111827]/40",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default function AboutUsPage() {
+  return (
+    <main className="min-h-screen bg-[#0B1220] text-white">
+      {/* header overlap fix */}
+      <div className="pt-24 md:pt-28" />
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-10">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">
+            Who we are?
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-[#B0B7C3] md:text-base">
+            A structured learning system designed for consistency, clarity, and professional output — aligned with practical outcomes.
+          </p>
+        </div>
+
+        {/* HERO: container 1 */}
+        <Card className="mt-10 p-5 md:p-8">
+          <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+            {/* left: image card */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+              <div className="absolute left-4 top-4 z-10">
+                <Pill>ABOUT SIKHADENGE</Pill>
+              </div>
+
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src="/about/hero.jpg"
+                  alt="Sikhadenge"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-transparent to-transparent" />
+              </div>
+
+              {/* overlay mini card */}
+              <div className="p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0B1220]/60 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5">
+                      <CheckCircle2 className="h-5 w-5 text-[#2563EB]" />
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold">
+                        Outcome-first execution
+                      </div>
+                      <div className="mt-1 text-xs text-[#B0B7C3]">
+                        Daily practice + mentor review for clean, industry-ready output.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* right: text card */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-5 md:p-7">
+              <div className="mb-3">
+                <Pill>About us</Pill>
+              </div>
+
+              <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
+                We’re not just a platform —
+                <br />
+                we’re a movement.
+              </h2>
+
+              <p className="mt-5 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                Sikhadenge (ThinkGrow Pvt. Ltd.) builds practical, future-ready learning for design and creative technologies — using professional tools and real workflows.
+              </p>
+
+              <p className="mt-4 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                Less theory, more capability: structured education, applied projects, and continuous improvement so learners stay ready for evolving roles.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* HERO: container 2 (bottom 3 cards separate) */}
+        <Card className="mt-6 p-5 md:p-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "Mentor-led learning",
+                desc: "Clear guidance, feedback, and checkpoints.",
+                icon: GraduationCap,
+                glow: "blue" as const,
+              },
+              {
+                title: "Practical outcomes",
+                desc: "Projects that build capability and confidence.",
+                icon: BadgeCheck,
+                glow: "gold" as const,
+              },
+              {
+                title: "Skilled India focus",
+                desc: "A system designed for real skill + long-term growth.",
+                icon: ShieldCheck,
+                glow: "blue" as const,
+              },
+            ].map((c) => (
+              <div
+                key={c.title}
+                className="rounded-2xl border border-white/10 bg-[#0B1220]/40 p-4 md:p-5"
+              >
+                <div className="flex items-start gap-3">
+                  <IconBadge icon={c.icon} glow={c.glow} />
+                  <div>
+                    <div className="text-sm font-semibold md:text-base">
+                      {c.title}
+                    </div>
+                    <div className="mt-1 text-xs text-[#B0B7C3] md:text-sm">
+                      {c.desc}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* STATS */}
+        <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#2563EB] shadow-[0_0_18px_rgba(37,99,235,0.55)]">
+          <div className="grid md:grid-cols-4">
+            {[
+              { value: 10, suffix: "+", label: "CURATED COURSES", icon: Layers },
+              { value: 12000, suffix: "+", label: "CERTIFIED STUDENTS", icon: BadgeCheck },
+              { value: 95, suffix: "%", label: "COMPLETION RATE", icon: Sparkles },
+              { value: 20, suffix: "+", label: "EXPERT INSTRUCTORS", icon: Users },
+            ].map((s, idx) => (
+              <div
+                key={s.label}
+                className={[
+                  "flex flex-col items-center justify-center px-6 py-7 text-center",
+                  idx < 3 ? "border-b border-white/15 md:border-b-0 md:border-r md:border-white/15" : "",
+                ].join(" ")}
+              >
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 ring-1 ring-white/15">
+                  <s.icon className="h-6 w-6 text-white" />
+                </span>
+
+                <div className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
+                  <AnimatedNumber
+                    value={s.value}
+                    durationMs={900}
+                    format={(n) => {
+                      const v = Math.round(n);
+                      if (s.suffix === "+" && s.value >= 1000) return StatFormat(v);
+                      return String(v);
+                    }}
+                  />
+                  <span className="ml-1">{s.suffix}</span>
+                </div>
+
+                <div className="mt-2 text-xs font-semibold tracking-[0.28em] text-white/85">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* MISSION */}
+        <Card className="mt-10 p-5 md:p-8">
+          <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+              <div className="absolute left-4 top-4 z-10">
+                <Pill>MENTOR-LED LEARNING</Pill>
+              </div>
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src="/about/mission.jpg"
+                  alt="Mentor-led learning"
+                  fill
+                  className="object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/60 via-transparent to-transparent" />
+              </div>
+
+              <div className="p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0B1220]/60 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5">
+                      <Wand2 className="h-5 w-5 text-[#2563EB]" />
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold">
+                        Applied learning + measurable improvement
+                      </div>
+                      <div className="mt-1 text-xs text-[#B0B7C3]">
+                        Structured reviews so output quality improves consistently.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-5 md:p-7">
+              <div className="flex items-center gap-3">
+                <IconBadge icon={Users} glow="blue" />
+                <h3 className="text-3xl font-semibold md:text-4xl">
+                  Our Mission
+                </h3>
+              </div>
+
+              <p className="mt-5 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                Build a practical, future-ready learning platform that turns learners into capable professionals through hands-on training, real workflows, and consistent standards.
+              </p>
+
+              <p className="mt-4 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                Structured education + applied projects + continuous skill-building — so learners stay industry-ready.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <Pill>Practical learning</Pill>
+                <Pill>Industry workflows</Pill>
+                <Pill>Future-ready skills</Pill>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* GOAL */}
+        <Card className="mt-10 p-5 md:p-8">
+          <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+            <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-5 md:p-7">
+              <div className="flex items-center gap-3">
+                <IconBadge icon={Target} glow="gold" />
+                <h3 className="text-3xl font-semibold md:text-4xl">Our Goal</h3>
+              </div>
+
+              <p className="mt-5 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                Build a multi-domain skill education ecosystem that grows with the future of work — expanding beyond today’s specializations into high-impact fields.
+              </p>
+
+              <p className="mt-4 text-sm leading-7 text-[#B0B7C3] md:text-base">
+                We bridge learning with long-term career growth through modern curricula and outcome-focused execution across India.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <Pill>Multi-domain ecosystem</Pill>
+                <Pill>Future of work</Pill>
+                <Pill>Career growth</Pill>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+              <div className="absolute left-4 top-4 z-10">
+                <Pill>INDUSTRY-READY OUTPUT</Pill>
+              </div>
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src="/about/goal.jpg"
+                  alt="Industry-ready output"
+                  fill
+                  className="object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/60 via-transparent to-transparent" />
+              </div>
+
+              <div className="p-4">
+                <div className="rounded-2xl border border-white/10 bg-[#0B1220]/60 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5">
+                      <Rocket className="h-5 w-5 text-[#F5B301]" />
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold">
+                        Future-of-work ecosystem
+                      </div>
+                      <div className="mt-1 text-xs text-[#B0B7C3]">
+                        Outcome-first, structured, and industry-aligned.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* DIFFERENT */}
+        <section className="mt-14">
+          <div className="text-center">
+            <h2 className="text-3xl font-semibold md:text-5xl">
+              What makes Sikhadenge different?
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-[#B0B7C3] md:text-base">
+              Built around execution, review, and professional output — not just content delivery.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "Outcome-first learning",
+                desc: "Daily execution + review for presentable, market-ready output.",
+                icon: CheckCircle2,
+                glow: "blue" as const,
+              },
+              {
+                title: "AI-enabled creative skills",
+                desc: "Modern workflows aligned with current and future industry needs.",
+                icon: Bot,
+                glow: "gold" as const,
+              },
+              {
+                title: "Mentor support + community",
+                desc: "Guidance, corrections, and structured improvement cycles.",
+                icon: MessagesSquare,
+                glow: "blue" as const,
+              },
+            ].map((c) => (
+              <div
+                key={c.title}
+                className={[
+                  "rounded-2xl border border-white/10 bg-[#111827]/35 p-5",
+                  "min-h-[140px] md:min-h-[160px]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <IconBadge icon={c.icon} glow={c.glow} />
+                  <div>
+                    <div className="text-base font-semibold md:text-lg">
+                      {c.title}
+                    </div>
+                    <div className="mt-2 text-sm text-[#B0B7C3]">
+                      {c.desc}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <Link
+              href="/contact"
+              className={[
+                "flex items-center justify-center rounded-2xl border border-white/10 bg-[#2563EB] px-6 py-4",
+                "text-base font-semibold hover:bg-[#1D4ED8] transition",
+                BLUE,
+              ].join(" ")}
+            >
+              Counselling
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#111827]/35 px-6 py-4 text-base font-semibold hover:bg-[#0B1220] transition"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#111827]/35 px-6 py-4 text-base font-semibold hover:bg-[#0B1220] transition"
+            >
+              Explore Courses
+            </Link>
+          </div>
+        </section>
+
+        {/* WORKSHOPS */}
+        <section className="mt-14">
+          <div className="text-center">
+            <h2 className="text-3xl font-semibold md:text-5xl">
+              Get one-of-a-kind workshops
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-[#B0B7C3] md:text-base">
+              Practical sessions designed for real skills and real outcomes.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-4">
+            {[
+              {
+                title: "Graphic Design",
+                desc: "Systems + workflows that match industry delivery.",
+                icon: PencilRuler,
+                glow: "blue" as const,
+              },
+              {
+                title: "Video Editing",
+                desc: "Editing structure, speed, and output quality.",
+                icon: Video,
+                glow: "gold" as const,
+              },
+              {
+                title: "AI Creative Workflows",
+                desc: "Tooling + execution aligned with modern teams.",
+                icon: Sparkles,
+                glow: "blue" as const,
+              },
+              {
+                title: "Career Workshops",
+                desc: "Portfolio, presentation, and professional readiness.",
+                icon: Briefcase,
+                glow: "gold" as const,
+              },
+            ].map((c) => (
+              <div
+                key={c.title}
+                className={[
+                  "rounded-2xl border border-white/10 bg-[#111827]/35 p-5",
+                  "min-h-[150px] md:min-h-[170px]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <IconBadge icon={c.icon} glow={c.glow} />
+                  <div>
+                    <div className="text-sm font-semibold md:text-base">
+                      {c.title}
+                    </div>
+                    <div className="mt-2 text-sm text-[#B0B7C3]">
+                      {c.desc}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-white/10 pt-3 text-xs text-[#9CA3AF]">
+                  Practical • Output-focused
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* What do we do + Team */}
+          <Card className="mt-10 p-5 md:p-8">
+            <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+              <div className="rounded-2xl border border-white/10 bg-[#0B1220]/35 p-5 md:p-7">
+                <h3 className="text-2xl font-semibold md:text-3xl">
+                  What do we do?
+                </h3>
+
+                <div className="mt-6 space-y-6">
+                  {[
+                    { icon: Bot, text: "Build AI-enabled creative skills with structured execution and clear standards.", glow: "gold" as const },
+                    { icon: GraduationCap, text: "Run mentor-led learning with assignments, reviews, and quality checkpoints.", glow: "blue" as const },
+                    { icon: BadgeCheck, text: "Help learners produce market-ready work with professional presentation.", glow: "gold" as const },
+                    { icon: Target, text: "Provide structured support so progress stays consistent and measurable.", glow: "blue" as const },
+                  ].map((it) => (
+                    <div key={it.text} className="flex items-start gap-4">
+                      <span className={["grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/5",
+                        it.glow === "gold" ? GOLD : BLUE
+                      ].join(" ")}>
+                        <it.icon className={["h-6 w-6", it.glow === "gold" ? "text-[#F5B301]" : "text-[#2563EB]"].join(" ")} />
+                      </span>
+                      <p className="text-sm leading-7 text-[#B0B7C3] md:text-base">
+                        {it.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+                <div className="absolute left-4 top-4 z-10">
+                  <Pill>Team</Pill>
+                </div>
+
+                <div className="relative aspect-[4/3] w-full">
+                  <Image
+                    src="/about/team.jpg"
+                    alt="Team"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/55 via-transparent to-transparent" />
+                </div>
+
+                <div className="p-4">
+                  <div className="rounded-2xl border border-white/10 bg-[#0B1220]/60 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5">
+                        <Users className="h-5 w-5 text-[#2563EB]" />
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold">
+                          Mentors + structured review
+                        </div>
+                        <div className="mt-1 text-xs text-[#B0B7C3]">
+                          Clear checkpoints to keep output consistent.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        <div className="h-14" />
+        <div className="text-center text-xs text-[#9CA3AF]">
+          Images required: <span className="text-white/80">/public/about/hero.jpg</span>,{" "}
+          <span className="text-white/80">mission.jpg</span>,{" "}
+          <span className="text-white/80">goal.jpg</span>,{" "}
+          <span className="text-white/80">team.jpg</span>
+        </div>
+      </section>
+    </main>
+  );
+}

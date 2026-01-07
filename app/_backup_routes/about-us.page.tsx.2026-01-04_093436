@@ -1,0 +1,610 @@
+import Image from "next/image";
+import Link from "next/link";
+import {
+  BadgeCheck,
+  BookOpen,
+  Briefcase,
+  CheckCircle2,
+  ClipboardCheck,
+  GraduationCap,
+  Headphones,
+  Percent,
+  PhoneCall,
+  Presentation,
+  Sparkles,
+  Target,
+  Trophy,
+  UserCheck,
+  Users,
+} from "lucide-react";
+
+export const metadata = {
+  title: "About Us | Sikhadenge",
+  description:
+    "Sikhadenge (ThinkGrow Pvt. Ltd.) — practical, future-ready learning with mentor-led execution and industry-ready outcomes.",
+};
+
+type RingTone = "blue" | "gold";
+
+function cn(...classes: Array<string | false | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function Container({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">{children}</div>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-white/10 bg-[#111827]",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-[#0B1220] px-3 py-1 text-xs font-medium text-[#B0B7C3]">
+      {children}
+    </span>
+  );
+}
+
+/** Neon ring style (allowed glows only). Bigger icons. */
+function RingIcon({
+  tone,
+  icon: Icon,
+  size = "md",
+}: {
+  tone: RingTone;
+  icon: React.ElementType;
+  size?: "sm" | "md";
+}) {
+  const ring = size === "sm" ? "h-11 w-11" : "h-14 w-14";
+  const icon = size === "sm" ? "h-5 w-5" : "h-7 w-7";
+
+  const toneClass =
+    tone === "gold"
+      ? "text-[#F5B301] shadow-[0_0_18px_rgba(245,179,1,0.55)]"
+      : "text-[#2563EB] shadow-[0_0_18px_rgba(37,99,235,0.55)]";
+
+  return (
+    <span
+      className={cn(
+        "flex items-center justify-center rounded-full border border-white/10 bg-[#111827]",
+        ring,
+        toneClass
+      )}
+      aria-hidden="true"
+    >
+      <Icon className={cn(icon)} strokeWidth={2} />
+    </span>
+  );
+}
+
+/** Image + bottom info card (like your sample). */
+function ImageWithBottomCard({
+  src,
+  alt,
+  topPill,
+  bottomIcon,
+  bottomTone,
+  bottomTitle,
+  bottomDesc,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  topPill?: string;
+  bottomIcon: React.ElementType;
+  bottomTone: RingTone;
+  bottomTitle: string;
+  bottomDesc: string;
+  priority?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+      <div className="relative h-[260px] sm:h-[320px] lg:h-[520px]">
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          priority={priority}
+          sizes="(max-width: 1024px) 100vw, 520px"
+          className="object-cover"
+        />
+        {topPill ? (
+          <div className="absolute left-4 top-4">
+            <Pill>{topPill}</Pill>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="p-4 sm:p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#0B1220] px-5 py-5">
+          <div className="flex items-start gap-4">
+            <RingIcon tone={bottomTone} icon={bottomIcon} />
+            <div>
+              <div className="text-base font-semibold text-white">
+                {bottomTitle}
+              </div>
+              <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">
+                {bottomDesc}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHead({ title, desc }: { title: string; desc?: string }) {
+  return (
+    <div className="mx-auto max-w-3xl text-center">
+      <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
+        {title}
+      </h2>
+      {desc ? (
+        <p className="mt-3 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+          {desc}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export default function AboutUsPage() {
+  const differentiators = [
+    {
+      title: "Outcome-first learning",
+      desc: "Daily execution + review to build presentable, market-ready output.",
+      icon: BadgeCheck,
+      tone: "blue" as RingTone,
+    },
+    {
+      title: "AI-enabled creative skills",
+      desc: "Modern workflows aligned with current and future industry needs.",
+      icon: Sparkles,
+      tone: "gold" as RingTone,
+    },
+    {
+      title: "Mentor support + community",
+      desc: "Guidance, corrections, and structured improvement cycles.",
+      icon: Headphones,
+      tone: "blue" as RingTone,
+    },
+  ];
+
+  const stats = [
+    { k: "10+", v: "Curated Courses", icon: BookOpen },
+    { k: "12K+", v: "Certified Students", icon: BadgeCheck },
+    { k: "95%", v: "Completion Rate", icon: Percent },
+    { k: "20+", v: "Expert Instructors", icon: UserCheck },
+  ];
+
+  const workshopChips = [
+    { label: "Graphic Design", icon: BookOpen, tone: "blue" as RingTone },
+    { label: "Video Editing", icon: Presentation, tone: "gold" as RingTone },
+    { label: "Motion Graphics", icon: Sparkles, tone: "blue" as RingTone },
+    { label: "Career Workshops", icon: Briefcase, tone: "gold" as RingTone },
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#0B1220] text-white">
+      {/* header fixed safe spacing */}
+      <div className="pt-24 sm:pt-28 pb-20">
+        <Container>
+          <div className="space-y-16">
+            {/* A) Top */}
+            <section className="space-y-6">
+              <SectionHead
+                title="Who we are?"
+                desc="A structured learning system designed for consistency, clarity, and professional output — aligned with practical outcomes."
+              />
+
+              <Card className="overflow-hidden">
+                {/* IMPORTANT: items-start prevents stretch gaps */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start p-5 sm:p-7">
+                  <div className="self-start">
+                    <ImageWithBottomCard
+                      src="/images/about/about-hero-desk.webp"
+                      alt="Sikhadenge workspace"
+                      topPill="ABOUT SIKHADENGE"
+                      bottomIcon={ClipboardCheck}
+                      bottomTone="blue"
+                      bottomTitle="Outcome-first execution"
+                      bottomDesc="Daily practice + mentor review to build clean, industry-ready output consistently."
+                      priority
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-[#111827] p-6 sm:p-8 self-start">
+                    <Pill>About us</Pill>
+
+                    <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
+                      We’re not just a platform —
+                      <br />
+                      we’re a movement.
+                    </h1>
+
+                    <p className="mt-4 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+                      Sikhadenge (ThinkGrow Pvt. Ltd.) is building a practical,
+                      future-ready learning ecosystem that empowers individuals
+                      with real, industry-relevant skills in design and creative
+                      technologies. The focus is simple: less theory, more
+                      capability — with professional tools and real workflows.
+                    </p>
+
+                    <p className="mt-4 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+                      Learning should translate into confidence. With structured
+                      education, applied projects, and continuous skill
+                      development, Sikhadenge prepares learners for today’s
+                      roles and the evolving demands of tomorrow’s digital
+                      economy.
+                    </p>
+                  </div>
+
+                  {/* MOVED: 3 cards now at bottom full-width */}
+                  <div className="lg:col-span-2 mt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex items-start gap-4 rounded-2xl border border-white/10 bg-[#0B1220] px-5 py-5">
+                        <RingIcon tone="blue" icon={GraduationCap} />
+                        <div>
+                          <div className="text-base font-semibold text-white">
+                            Mentor-led learning
+                          </div>
+                          <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">
+                            Clear guidance, feedback, and checkpoints for
+                            consistency.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-4 rounded-2xl border border-white/10 bg-[#0B1220] px-5 py-5">
+                        <RingIcon tone="gold" icon={BadgeCheck} />
+                        <div>
+                          <div className="text-base font-semibold text-white">
+                            Practical outcomes
+                          </div>
+                          <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">
+                            Projects that build capability and professional
+                            confidence.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-4 rounded-2xl border border-white/10 bg-[#0B1220] px-5 py-5">
+                        <RingIcon tone="blue" icon={Users} />
+                        <div>
+                          <div className="text-base font-semibold text-white">
+                            Skilled India focus
+                          </div>
+                          <div className="mt-1 text-sm leading-6 text-[#B0B7C3]">
+                            A system designed to create real skill and long-term
+                            growth.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            {/* B) Working towards strip */}
+            <section>
+              <Card className="p-5 sm:p-7">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                  <RingIcon tone="gold" icon={Trophy} />
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-semibold tracking-tight">
+                      What we are working towards
+                    </h3>
+                    <p className="mt-1 text-sm sm:text-base leading-relaxed text-[#B0B7C3]">
+                      A multi-domain skill education ecosystem that grows with
+                      the future of work — trusted for consistency, quality, and
+                      industry-ready outcomes.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            {/* C) Differentiators + buttons */}
+            <section className="space-y-6">
+              <SectionHead
+                title="What makes Sikhadenge different?"
+                desc="A brand built around execution, review, and professional output — not just content delivery."
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {differentiators.map((f) => (
+                  <Card key={f.title} className="p-6">
+                    <div className="flex items-start gap-4">
+                      <RingIcon tone={f.tone} icon={f.icon} />
+                      <div>
+                        <div className="text-base font-semibold">{f.title}</div>
+                        <p className="mt-2 text-sm leading-6 text-[#B0B7C3]">
+                          {f.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Link
+                  href="/counselling"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] px-6 py-4 text-base font-semibold text-white transition"
+                >
+                  Counselling
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#111827] hover:bg-[#0B1220] px-6 py-4 text-base font-semibold text-white transition"
+                >
+                  Contact
+                </Link>
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#111827] hover:bg-[#0B1220] px-6 py-4 text-base font-semibold text-white transition"
+                >
+                  Explore Courses
+                </Link>
+              </div>
+            </section>
+
+            {/* D) Mission */}
+            <section>
+              <Card className="overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start p-5 sm:p-7">
+                  <div className="self-start">
+                    <ImageWithBottomCard
+                      src="/images/about/about-mission-class.webp"
+                      alt="Mentor-led class"
+                      topPill="MENTOR-LED LEARNING"
+                      bottomIcon={CheckCircle2}
+                      bottomTone="blue"
+                      bottomTitle="Applied learning + measurable improvement"
+                      bottomDesc="Structured execution with reviews so output quality improves consistently."
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-[#111827] p-6 sm:p-8 self-start">
+                    <div className="flex items-center gap-4">
+                      <RingIcon tone="blue" icon={Users} />
+                      <h3 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+                        Our Mission
+                      </h3>
+                    </div>
+
+                    <div className="mt-4 space-y-4 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+                      <p>
+                        At Sikhadenge, our mission is to create a practical and
+                        future-ready learning platform that empowers individuals
+                        with real, industry-relevant skills. We focus on hands-on
+                        training in design and creative technologies, helping
+                        learners move beyond theory and gain the confidence to
+                        work with professional tools and real-world workflows.
+                      </p>
+                      <p>
+                        We believe learning should directly translate into
+                        capability. By combining structured education, applied
+                        projects, and continuous skill development, we aim to
+                        prepare learners not just for today’s roles, but for the
+                        evolving demands of tomorrow’s digital economy.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            {/* D) Goal */}
+            <section>
+              <Card className="overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start p-5 sm:p-7">
+                  <div className="rounded-2xl border border-white/10 bg-[#111827] p-6 sm:p-8 self-start order-1">
+                    <div className="flex items-center gap-4">
+                      <RingIcon tone="gold" icon={Target} />
+                      <h3 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+                        Our Goal
+                      </h3>
+                    </div>
+
+                    <div className="mt-4 space-y-4 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+                      <p>
+                        Our goal is to build a multi-domain skill education
+                        ecosystem that grows with the future of work. While we
+                        currently specialize in Graphic Design and Video Editing,
+                        we are steadily expanding into Interior Design, AI-driven
+                        automation, digital marketing, and other emerging,
+                        high-impact fields.
+                      </p>
+                      <p>
+                        We aspire to bridge the gap between learning and long-term
+                        career growth by offering education that remains relevant
+                        as industries evolve. Through continuous innovation,
+                        modern curricula, and a strong focus on practical
+                        outcomes, our goal is to enable learners across India to
+                        build sustainable careers, adapt to new technologies, and
+                        stay ahead in a rapidly changing professional landscape.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="self-start order-2">
+                    <ImageWithBottomCard
+                      src="/images/about/about-goal-portfolio.webp"
+                      alt="Goal and portfolio"
+                      topPill="INDUSTRY-READY OUTPUT"
+                      bottomIcon={Presentation}
+                      bottomTone="gold"
+                      bottomTitle="Future-of-work ecosystem"
+                      bottomDesc="Expanding domains while staying outcome-first, structured, and industry-aligned."
+                    />
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            {/* E) Stats strip */}
+            <section>
+              <Card className="overflow-hidden">
+                <div className="grid grid-cols-2 md:grid-cols-4">
+                  {stats.map((s, idx) => (
+                    <div
+                      key={s.v}
+                      className={cn(
+                        "px-5 py-7 text-center bg-[#2563EB] text-white",
+                        idx !== 0 && "border-l border-white/10",
+                        idx >= 2 && "border-t border-white/10 md:border-t-0"
+                      )}
+                    >
+                      <div className="mx-auto mb-3 flex items-center justify-center">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#111827] border border-white/10">
+                          <s.icon className="h-6 w-6" strokeWidth={2} />
+                        </span>
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-semibold">
+                        {s.k}
+                      </div>
+                      <div className="mt-1 text-xs tracking-widest uppercase opacity-90">
+                        {s.v}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </section>
+
+            {/* F) Workshops */}
+            <section className="space-y-6">
+              <SectionHead
+                title="Get one-of-a-kind workshops"
+                desc="Practical sessions designed for real skills and real outcomes."
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {workshopChips.map((c) => (
+                  <Card key={c.label} className="p-5">
+                    <div className="flex items-center gap-4">
+                      <RingIcon tone={c.tone} icon={c.icon} />
+                      <div className="text-base font-medium">{c.label}</div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </section>
+
+            {/* G) What do we do */}
+            <section>
+              <Card className="p-5 sm:p-7">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  <div className="space-y-4">
+                    <h3 className="text-xl sm:text-2xl font-semibold tracking-tight">
+                      What do we do?
+                    </h3>
+
+                    <ul className="space-y-4 text-base sm:text-lg leading-relaxed text-[#B0B7C3]">
+                      <li className="flex gap-4">
+                        <RingIcon tone="blue" icon={Sparkles} size="sm" />
+                        <span>
+                          Build AI-enabled creative skills with structured
+                          execution and clear standards.
+                        </span>
+                      </li>
+                      <li className="flex gap-4">
+                        <RingIcon tone="gold" icon={GraduationCap} size="sm" />
+                        <span>
+                          Run mentor-led learning with assignments, reviews, and
+                          quality checkpoints.
+                        </span>
+                      </li>
+                      <li className="flex gap-4">
+                        <RingIcon tone="blue" icon={Target} size="sm" />
+                        <span>
+                          Help learners produce market-ready work with
+                          professional presentation.
+                        </span>
+                      </li>
+                      <li className="flex gap-4">
+                        <RingIcon tone="gold" icon={Headphones} size="sm" />
+                        <span>
+                          Provide structured support so progress stays consistent
+                          and measurable.
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827]">
+                    <Image
+                      src="/images/about/about-whatwedo-group.webp"
+                      alt="Sikhadenge group"
+                      width={1200}
+                      height={900}
+                      className="h-auto w-full object-cover"
+                      sizes="(max-width: 1024px) 100vw, 520px"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            {/* H) CTA */}
+            <section>
+              <Card className="p-5 sm:p-7">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4">
+                      <RingIcon tone="gold" icon={PhoneCall} />
+                      <h3 className="text-lg sm:text-xl font-semibold tracking-tight">
+                        Need training / collaboration details?
+                      </h3>
+                    </div>
+                    <p className="mt-2 text-sm sm:text-base leading-relaxed text-[#B0B7C3]">
+                      For training and collaboration queries, use the form
+                      category. You can also contact us directly.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
+                    <Link
+                      href="/contact#form"
+                      className="inline-flex items-center justify-center rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] px-6 py-4 text-base font-semibold text-white transition"
+                    >
+                      Go to form
+                    </Link>
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#111827] hover:bg-[#0B1220] px-6 py-4 text-base font-semibold text-white transition"
+                    >
+                      Contact
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            </section>
+          </div>
+        </Container>
+      </div>
+    </main>
+  );
+}
+

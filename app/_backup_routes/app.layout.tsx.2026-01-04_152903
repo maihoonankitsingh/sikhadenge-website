@@ -1,0 +1,26 @@
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Sikhadenge",
+  description: "Live online training: Graphic Design, Video Editing, AI-powered creative skills.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <Header />
+        {/* header fixed hai, isliye page ko neeche push */}
+        <main className="pt-24">{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}
