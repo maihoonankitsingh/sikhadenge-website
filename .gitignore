@@ -70,3 +70,12 @@ _bak_pages/
 *.save
 *.tmp
 .DS_Store
+
+# do not commit temp backups
+app/_backup_routes/
+public/images/companies/_backup*/
+public/images/companies/backup_*/
+pages/*.disabled_*
+pages/*.save*
+pages/*.before_restore*
+pages/*.broken*
