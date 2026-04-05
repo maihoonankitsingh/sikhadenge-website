@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     prisma.lead.count({ where }),
   ]);
 
-  const items = itemsRaw.map((it) => ({
+  const items = itemsRaw.map((it: any) => ({
     ...it,
     course: tryGetCourseFromNotes(it.notes),
   }));
@@ -58,3 +58,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     items,
   });
 }
+
