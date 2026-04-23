@@ -3,7 +3,7 @@ export default function JsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Sikhadenge",
-    url: "https://sikhadenge.space",
+    url: "https://sikhadenge.in",
     parentOrganization: {
       "@type": "Organization",
       name: "ThinkGrow Pvt. Ltd.",
@@ -17,3 +17,4 @@ export default function JsonLd() {
     />
   );
 }
+

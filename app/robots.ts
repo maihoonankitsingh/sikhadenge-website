@@ -9,7 +9,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/admin/", "/api", "/api/", "/influencer/login"],
       },
     ],
-    sitemap: "https://sikhadenge.space/sitemap.xml",
-    host: "https://sikhadenge.space",
+    sitemap: "https://sikhadenge.in/sitemap.xml",
+    host: "https://sikhadenge.in",
   };
 }
+

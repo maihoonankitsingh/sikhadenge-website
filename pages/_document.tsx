@@ -17,7 +17,7 @@ class MyDocument extends Document<{ pixelId?: string }> {
         <Head>
           {/* Default SEO for Pages Router routes */}          <meta property="og:type" content="website" />
           <meta property="og:site_name" content="Sikhadenge" />
-          <meta property="og:url" content="https://sikhadenge.space" />
+          <meta property="og:url" content="https://sikhadenge.in" />
           <meta
             property="og:title"
             content="Sikhadenge"
@@ -28,7 +28,7 @@ class MyDocument extends Document<{ pixelId?: string }> {
           />
           <meta
             property="og:image"
-            content="https://sikhadenge.space/images/about/about-hero-desk.webp"
+            content="https://sikhadenge.in/images/about/about-hero-desk.webp"
           />
 
           <meta name="twitter:card" content="summary_large_image" />
@@ -39,7 +39,7 @@ class MyDocument extends Document<{ pixelId?: string }> {
           />
           <meta
             name="twitter:image"
-            content="https://sikhadenge.space/images/about/about-hero-desk.webp"
+            content="https://sikhadenge.in/images/about/about-hero-desk.webp"
           />
 
           {/* Meta Pixel (Pages Router) */}
@@ -83,3 +83,4 @@ class MyDocument extends Document<{ pixelId?: string }> {
 }
 
 export default MyDocument;
+

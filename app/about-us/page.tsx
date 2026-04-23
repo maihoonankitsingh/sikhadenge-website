@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   description:
     "Sikhadenge is a premium skill-training brand by ThinkGrow Pvt. Ltd., focused on outcomes, portfolios, and industry-ready creative skills.",
   alternates: {
-    canonical: "https://sikhadenge.space/about-us",
+    canonical: "https://sikhadenge.in/about-us",
   },
   openGraph: {
     type: "website",
-    url: "https://sikhadenge.space/about-us",
+    url: "https://sikhadenge.in/about-us",
     title: "About Sikhadenge",
     description:
       "Mission, goal, and an outcome-focused training approach built for portfolios and careers.",

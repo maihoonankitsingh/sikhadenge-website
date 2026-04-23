@@ -8,7 +8,7 @@ import JsonLd from "./_components/JsonLd";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-const SITE_URL = "https://sikhadenge.space";
+const SITE_URL = "https://sikhadenge.in";
 const OG_IMAGE = "/images/og/og-home.jpg"; // ensure this file exists in /public/images/og/
 
 export const metadata: Metadata = {
@@ -96,4 +96,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 
