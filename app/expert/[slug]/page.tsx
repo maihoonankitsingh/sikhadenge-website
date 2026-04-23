@@ -35,7 +35,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
              <Link 
-                href={`https://wa.me/916388424652?text=Hi, I am looking for ${pageData.skill} expert in ${pageData.city} for ${pageData.industry} industry.`}
+                href={`https://wa.me/918808505575?text=Hi, I am looking for ${pageData.skill} expert in ${pageData.city} for ${pageData.industry} industry.`}
                 className="group flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-5 rounded-2xl font-black transition-all shadow-xl hover:-translate-y-1 active:scale-95 text-lg"
              >
                <Phone className="h-6 w-6 fill-white" />
@@ -91,7 +91,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
                <h3 className="text-2xl font-black mb-4 relative">Need {pageData.skill} Help?</h3>
                <p className="text-slate-400 mb-8 font-medium">Get a call from our verified experts within 24 hours.</p>
                <Link 
-                 href="https://wa.me/916388424652"
+                 href="https://wa.me/918808505575"
                  className="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl transition-all shadow-lg active:scale-95"
                >
                  REQUEST A CALL
