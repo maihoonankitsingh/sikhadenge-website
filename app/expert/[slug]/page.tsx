@@ -16,14 +16,16 @@ export const revalidate = 2592000; // 30 days cache
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const pageData = generatedPages.find((p) => p.slug === params.slug);
-  if (!pageData) return { title: "Not Found" };
+  if (!pageData) return { title: "Not Found", robots: { index: false } };
+  const url = `https://sikhadenge.in/expert/${pageData.slug}`;
   return {
     title: `${pageData.title} | Sikhadenge`,
     description: pageData.description,
+    alternates: { canonical: url },
     openGraph: {
       title: `${pageData.title} | Sikhadenge`,
       description: pageData.description,
-      url: `https://sikhadenge.in/expert/${pageData.slug}`,
+      url,
     },
   };
 }

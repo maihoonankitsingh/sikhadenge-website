@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/admin/", "/api", "/api/", "/influencer/login"],
+        disallow: ["/admin/", "/api/", "/influencer/", "/v2-landing", "/reels"],
       },
     ],
     sitemap: "https://sikhadenge.in/sitemap.xml",

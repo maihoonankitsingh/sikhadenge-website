@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { skillsData } from "../../data/skillsData";
 import Link from "next/link";
 import { ArrowRight, Star } from "lucide-react";
+
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   return skillsData.map((skill) => ({
@@ -9,13 +12,22 @@ export async function generateStaticParams() {
   }));
 }
 
-export function generateMetadata({ params }: { params: { skill: string } }) {
+export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
   const skillInfo = skillsData.find((s) => s.slug === params.skill);
-  if (!skillInfo) return { title: "Skill Not Found" };
+  if (!skillInfo) return { title: "Skill Not Found", robots: { index: false } };
 
   return {
     title: `How to Become a ${skillInfo.title} | Sikhadenge`,
-    description: skillInfo.description,
+    description: `Learn ${skillInfo.title} with live mentor-led training at Sikhadenge. ${skillInfo.description}`,
+    alternates: {
+      canonical: `https://sikhadenge.in/${skillInfo.slug}`,
+    },
+    openGraph: {
+      type: "article",
+      url: `https://sikhadenge.in/${skillInfo.slug}`,
+      title: `How to Become a ${skillInfo.title} | Sikhadenge`,
+      description: skillInfo.description,
+    },
   };
 }
 

@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "Sikhadenge",
+    default: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
     template: "%s | Sikhadenge",
   },
 
   description:
-    "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+    "Sikhadenge by ThinkGrow Pvt. Ltd. offers live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. Join 12,000+ students across India.",
 
   alternates: {
-    canonical: "/",
+    canonical: "https://sikhadenge.in",
   },
 
   keywords: [
@@ -42,9 +42,10 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "Sikhadenge",
-    title: "Sikhadenge",
+    locale: "en_IN",
+    title: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
     description:
-      "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+      "Live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. 12,000+ students trained across India.",
     images: [
       {
         url: OG_IMAGE,
