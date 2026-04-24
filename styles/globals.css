@@ -32,14 +32,14 @@ body{
 
   .sd-btn-primary{
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold;
-    @apply bg-sd-gold text-sd-base;
-    @apply hover:shadow-glow-gold;
+    @apply bg-sd-gold text-slate-950;
+    @apply hover:shadow-lg;
   }
 
   .sd-btn-secondary{
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold;
     @apply border border-sd-blue/30 text-sd-text;
-    @apply hover:shadow-glow-blue;
+    @apply hover:shadow-lg;
   }
 }
 

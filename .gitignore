@@ -1,99 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-.env
-
-/src/generated/prisma
-
-# env (never commit)
-.env
-.env.*
-!.env.example
-
-# env backups
-.env.bak*
-*.bak
-
-# logs / runtime
-*.log
-.next
-node_modules
-
-# misc
-prisma-studio.sh
-
-# accidental files
-next
-sikhadenge-web@*
-prisma/*.bak*
-prisma/*.backup
-src/lib/
-
-# backups / temp
-_bak_pages/
-*.bak
-*.bak.*
-*.bak_*
-*.save
-*.tmp
-.DS_Store
-
-# do not commit temp backups
-app/_backup_routes/
-public/images/companies/_backup*/
-public/images/companies/backup_*/
-pages/*.disabled_*
-pages/*.save*
-pages/*.before_restore*
-pages/*.broken*
-
-# big media (keep on server, not in git)
-public/images/testimonials/*.mp4
-.env.local
-.env.production
-node_modules/
-.next/
-
-# production secrets
-.env
-.env.local
-.env.production
-.env.*.local
-
-# generated/build/runtime
+# dependencies/build/runtime
 node_modules/
 .next/
 out/
@@ -103,23 +8,32 @@ build/
 .vercel/
 .turbo/
 
-# logs/backups
-*.log
-*.bak
-*.backup
-*.bk_*
-*.tar
-*.tar.gz
-*.zip
-*.7z
-*.rar
+# env/secrets
+.env
+.env.local
+.env.production
+.env.*.local
 
-# large media / server-only assets
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# server user uploads / private documents
+public/uploads/
+public/uploads/admission/
+public/uploads/admissions/
+
+# large media
+public/reviews/videos/
 *.mp4
 *.mov
 *.mkv
 *.webm
 *.avi
+
+# archives/db dumps
 *.zip
 *.tar
 *.tar.gz
@@ -129,33 +43,11 @@ build/
 *.sql
 *.dump
 
-# backup copies
-*.bak
-*.bk_*
-*.backup
-*.before_restore_*
-*.pre_restore.*
-*.save.*
-*.fixbk_*
-*.bak-*
-*.bk-*
-
-# server user uploads - never commit
-public/uploads/
-public/uploads/admission/
-public/uploads/admissions/
-
-# review videos / large media
-public/reviews/videos/
-
-# generated temp SEO data
-data/tmp/
-data/**/*.bk_*
-data/**/*.bak*
-data/**/*.stable_*
+# backups/temp
 *.bk_*
 *.bak*
 *.backup*
 *.before_restore_*
 *.pre_restore*
 *.save.*
+data/tmp/

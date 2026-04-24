@@ -1,0 +1,141 @@
+import JsonLd from "@/app/components/JsonLd";
+import { articleSchema, breadcrumbSchema, faqSchema, absoluteUrl } from "@/lib/schema";
+
+export const metadata = {
+  title: "Best AI Skills to Learn (2026) | Practical AI Skills Guide",
+  description:
+    "Discover the best AI skills to learn in 2026 for students, freelancers, creators and digital work. A practical guide to useful AI skills.",
+  alternates: { canonical: "https://sikhadenge.in/best-ai-skills-to-learn" },
+  keywords: [
+    "best AI skills to learn",
+    "AI skills 2026",
+    "useful AI skills",
+    "AI learning roadmap",
+    "practical AI skills",
+  ],
+};
+
+const faqItems = [
+  {
+    question: "What are the best AI skills to learn in 2026?",
+    answer:
+      "The best AI skills to learn in 2026 include AI research, AI content creation, AI design support, AI video workflows, prompt structuring and workflow automation.",
+  },
+  {
+    question: "Which AI skills are most practical for beginners?",
+    answer:
+      "For beginners, the most practical AI skills are research, writing, visual support, presentation building and simple no-code workflow usage.",
+  },
+  {
+    question: "Why should people focus on practical AI skills?",
+    answer:
+      "Practical AI skills directly improve real output, speed and digital capability across study, freelancing, content creation and business work.",
+  },
+];
+
+const pageSchemaGraph = {
+  "@context": "https://schema.org",
+  "@graph": [
+    breadcrumbSchema([
+      { name: "Home", url: absoluteUrl("/") },
+      { name: "Best AI Skills to Learn", url: absoluteUrl("/best-ai-skills-to-learn") },
+    ]),
+    articleSchema({
+      url: absoluteUrl("/best-ai-skills-to-learn"),
+      title: "Best AI Skills to Learn",
+      description:
+        "A practical guide to the best AI skills to learn for students, freelancers, creators and modern digital work.",
+    }),
+    faqSchema(faqItems),
+  ],
+};
+
+export default function Page() {
+  return (
+    <>
+      <JsonLd data={pageSchemaGraph} />
+      <main className="bg-[#F8FAFC]">
+        <section className="py-16 md:py-20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+              AI Skills Guide
+            </p>
+            <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight text-[#0F172A]">
+              Best AI Skills to Learn in 2026
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-[#475569]">
+              The best AI skills are not just about using tools. They are about creating real
+              output, improving speed and building digital execution ability across multiple types
+              of work.
+            </p>
+          </div>
+        </section>
+
+        <section className="pb-12">
+          <div className="max-w-4xl mx-auto grid gap-4 px-4 sm:px-6 lg:px-8 md:grid-cols-2">
+            {[
+              ["AI Research Skills", "Use AI to explore topics, summarize faster and improve information handling."],
+              ["Create Content with AI Skills", "Create text, hooks, captions, outlines and structured written output."],
+              ["Design with AI Skills", "Generate visual directions, layout support and practical design assets."],
+              ["Edit Videos with AI Skills", "Support reels, short-form planning and content production workflows."],
+              ["Prompt Structuring", "Learn how to guide AI tools with better inputs and clearer intent."],
+              ["Workflow Automation", "Use simple process systems and no-code automation for repeatable tasks."],
+            ].map(([title, desc]) => (
+              <div key={title} className="rounded-2xl border border-[#0F172A]/10 bg-white p-6">
+                <h2 className="text-xl font-semibold text-[#0F172A]">{title}</h2>
+                <p className="mt-3 text-sm leading-7 text-[#475569]">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white py-14">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-[#0F172A]">Why these AI skills matter now</h2>
+            <div className="mt-6 space-y-5 text-[#475569] leading-8">
+              <p>
+                AI is changing how people study, work, create and deliver output. The most useful
+                skills are the ones that improve actual execution.
+              </p>
+              <p>
+                People who learn practical AI workflows can create better work with more speed,
+                better clarity and stronger repeatability.
+              </p>
+              <p>
+                The strongest path is cross-functional learning. That means using AI across content,
+                visuals, communication and systems.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white py-14">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-[#0F172A]">Related AI Guides</h2>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              <a href="/ai-skills-for-students" className="rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] p-5 transition-all hover:border-[#2563EB]/30"><h3 className="font-semibold text-[#0F172A]">AI Skills for Students</h3><p className="mt-2 text-sm leading-7 text-[#475569]">Practical AI skills for students, study and career growth.</p></a>
+              <a href="/ai-skills-for-freelancers" className="rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] p-5 transition-all hover:border-[#2563EB]/30"><h3 className="font-semibold text-[#0F172A]">AI Skills for Freelancers</h3><p className="mt-2 text-sm leading-7 text-[#475569]">Useful AI skills for client work, faster delivery and better output.</p></a>
+              <a href="/ai-skills-for-creators" className="rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] p-5 transition-all hover:border-[#2563EB]/30"><h3 className="font-semibold text-[#0F172A]">AI Skills for Creators</h3><p className="mt-2 text-sm leading-7 text-[#475569]">AI use cases for content planning, scripts, visuals and creator workflows.</p></a>
+              <a href="/best-ai-skills-to-learn" className="rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] p-5 transition-all hover:border-[#2563EB]/30"><h3 className="font-semibold text-[#0F172A]">Best AI Skills to Learn</h3><p className="mt-2 text-sm leading-7 text-[#475569]">A broader roadmap of the most useful AI skills in 2026.</p></a>
+              <a href="/ai-generalist" className="rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] p-5 transition-all hover:border-[#2563EB]/30 md:col-span-2"><h3 className="font-semibold text-[#0F172A]">What is an AI Generalist?</h3><p className="mt-2 text-sm leading-7 text-[#475569]">Understand the AI Generalist model and why multi-skill AI execution matters.</p></a>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-14">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-[#0F172A]">FAQs</h2>
+            <div className="mt-8 space-y-4">
+              {faqItems.map((item) => (
+                <div key={item.question} className="rounded-2xl border border-[#0F172A]/10 bg-white p-6">
+                  <h3 className="text-lg font-semibold text-[#0F172A]">{item.question}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#475569]">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
