@@ -45,6 +45,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // NOTE: /influencer is a private portal — never include in sitemap
   ];
 
+  const skillRoutes: MetadataRoute.Sitemap = skillsData.map((skill) => ({
+    url: `${BASE}/${skill.slug}`,
+    lastModified: DATE_STATIC,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
   const blogRoutes: MetadataRoute.Sitemap = getBlogSlugs().map((slug) => ({
     url: `${BASE}/blog/${slug}`,
     lastModified: DATE_BLOG,
@@ -60,5 +67,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // career routes excluded — app/career/ pages do not exist yet
-  return [...staticRoutes, ...blogRoutes, ...expertRoutes];
+  return [...staticRoutes, ...skillRoutes, ...blogRoutes, ...expertRoutes];
 }

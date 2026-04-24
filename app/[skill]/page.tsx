@@ -38,8 +38,37 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
     notFound();
   }
 
+  const courseSchema = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: `${skillInfo!.title} — Live Masterclass`,
+    description: skillInfo!.description,
+    url: `https://sikhadenge.in/${skillInfo!.slug}`,
+    provider: {
+      "@type": "EducationalOrganization",
+      name: "Sikhadenge",
+      url: "https://sikhadenge.in",
+    },
+    educationalCredentialAwarded: "Certificate of Completion",
+    inLanguage: ["en", "hi"],
+    isAccessibleForFree: true,
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "Online",
+      instructor: {
+        "@type": "Person",
+        name: "Sikhadenge Expert",
+        worksFor: { "@type": "Organization", name: "Sikhadenge" },
+      },
+    },
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }}
+      />
       <section className="bg-white border-b border-slate-200 pt-20 pb-16 sm:pt-28 sm:pb-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">

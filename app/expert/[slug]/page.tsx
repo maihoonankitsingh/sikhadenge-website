@@ -37,8 +37,73 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
 
   const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${pageData.skill} Masterclass on Sikhadenge.`;
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `Is the ${pageData.skill} masterclass really free?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Yes — the entry into the WhatsApp community and the overview Sunday session is completely free. You'll get a taste of the practical ${pageData.skill} workflows we teach before any investment.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Who is this ${pageData.skill} program for?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `It's designed for professionals, freelancers, business owners, and students who want to apply ${pageData.skill} practically — not just understand it theoretically.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What makes Sikhadenge different from YouTube or Udemy?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "We focus exclusively on real-world execution. Every session is live, interactive, and based on actual client scenarios — not pre-recorded theory lectures.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How do I join the masterclass?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Simply click the 'Join Free on WhatsApp' button. You'll be added to the community where session details, resources, and recordings are shared.",
+        },
+      },
+    ],
+  };
+
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: pageData.title,
+    description: pageData.description,
+    url: `https://sikhadenge.in/expert/${pageData.slug}`,
+    provider: {
+      "@type": "EducationalOrganization",
+      name: "Sikhadenge",
+      url: "https://sikhadenge.in",
+    },
+    areaServed: { "@type": "Country", name: "India" },
+    isRelatedTo: pageData.skill,
+    ...(pageData.city && pageData.city !== "Online" ? {
+      serviceArea: { "@type": "City", name: pageData.city },
+    } : {}),
+  };
+
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-200">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
 
       {/* ── 1. HERO ── */}
       <section className="relative pt-28 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-slate-100">
