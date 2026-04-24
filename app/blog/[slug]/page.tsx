@@ -166,6 +166,32 @@ const comparisonFaqMap: Record<string, string[]> = {
   "AI Search": ["ChatGPT", "Gemini", "Perplexity", "Google AI Overviews"],
 };
 
+const linkStopWords = new Set([
+  "ai",
+  "for",
+  "the",
+  "and",
+  "with",
+  "your",
+  "from",
+  "into",
+  "that",
+  "this",
+  "best",
+  "top",
+  "guide",
+  "how",
+  "to",
+  "using",
+  "use",
+  "in",
+  "of",
+  "on",
+  "a",
+  "an",
+  "2026",
+]);
+
 function parseSlug(slug: string, post?: BlogItem): ParsedSlug {
   const segments = slug.toLowerCase().split("-").filter(Boolean);
   const year = segments.find((segment) => /^\d{4}$/.test(segment)) ?? "2026";
@@ -280,6 +306,40 @@ function buildSmartFaqs({
   ]).slice(0, 8);
 }
 
+function slugTokens(slug: string) {
+  return slug
+    .toLowerCase()
+    .split("-")
+    .filter((token) => token && !linkStopWords.has(token));
+}
+
+function getSimilarityScore(basePost: BlogItem, candidate: BlogItem) {
+  const baseTokens = new Set(slugTokens(basePost.slug));
+  const candidateTokens = slugTokens(candidate.slug);
+
+  let score = 0;
+
+  for (const token of candidateTokens) {
+    if (baseTokens.has(token)) {
+      score += 3;
+    }
+  }
+
+  if (normalizeCategory(basePost.category) === normalizeCategory(candidate.category)) {
+    score += 5;
+  }
+
+  if ((candidate.title || "").includes("ChatGPT") && (basePost.title || "").includes("ChatGPT")) {
+    score += 2;
+  }
+
+  if ((candidate.title || "").includes("Gemini") && (basePost.title || "").includes("Gemini")) {
+    score += 2;
+  }
+
+  return score;
+}
+
 export async function generateStaticParams() {
   return getBlogs()
     .slice(0, 1200)
@@ -386,8 +446,19 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     ? uniqueFaqs(post.faqs).slice(0, 8)
     : buildSmartFaqs({ title, category, parsed, tools });
   const relatedPosts = allBlogs
-    .filter((item) => item.slug !== params.slug && normalizeCategory(item.category) === category)
-    .slice(0, 6);
+    .filter((item) => item.slug !== params.slug)
+    .map((item) => ({ item, score: getSimilarityScore(post, item) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 6)
+    .map((entry) => entry.item);
+
+  const topicClusterLinks = [
+    { href: "/blog", label: "Explore full AI blog hub", helper: "Latest guides, comparisons, and practical article clusters." },
+    { href: "/sitemap.xml", label: "Open XML sitemap", helper: "Useful for crawl discovery and structured route checks." },
+    { href: "/gen-ai-masterclass", label: "Visit Gen AI masterclass", helper: "Connect learning pages with conversion and authority paths." },
+    { href: "/courses", label: "See AI courses", helper: "Bridge informational blog traffic into course intent pages." },
+  ];
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -668,6 +739,28 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
                   </span>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <div className="flex items-center gap-3">
+            <Search className="h-8 w-8 text-sky-700" />
+            <h2 className="text-2xl font-black text-slate-900">Topic cluster links</h2>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {topicClusterLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:border-sky-300"
+              >
+                <div className="text-sm font-black text-slate-900">{item.label}</div>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{item.helper}</p>
+                <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-sky-700">
+                  Open link <ArrowRight className="h-4 w-4" />
+                </div>
+              </Link>
             ))}
           </div>
         </section>

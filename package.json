@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "blog:audit": "node scripts/audit-blog-foundation.mjs",
+    "blog:audit-routes": "node scripts/audit-blog-routes.mjs",
     "blog:audit-titles": "node scripts/audit-blog-titles.mjs",
     "blog:backfill-high-intent": "node scripts/backfill-high-intent-blogs.mjs",
     "blog:clusters": "node scripts/generate-blog-cluster-manifest.mjs",
