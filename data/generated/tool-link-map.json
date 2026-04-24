@@ -1,0 +1,1378 @@
+{
+  "chatgpt": {
+    "cards": [
+      {
+        "slug": "chatgpt",
+        "label": "ChatGPT Guide"
+      },
+      {
+        "slug": "chatgpt-course",
+        "label": "ChatGPT Course"
+      },
+      {
+        "slug": "chatgpt-prompts",
+        "label": "ChatGPT Prompts"
+      },
+      {
+        "slug": "chatgpt-best-prompts",
+        "label": "Chatgpt Best Prompts"
+      },
+      {
+        "slug": "chatgpt-expert",
+        "label": "ChatGPT Expert"
+      },
+      {
+        "slug": "chatgpt-master",
+        "label": "ChatGPT Master"
+      },
+      {
+        "slug": "expert-in-chatgpt",
+        "label": "Expert in ChatGPT"
+      },
+      {
+        "slug": "master-in-chatgpt",
+        "label": "Master in ChatGPT"
+      },
+      {
+        "slug": "chatgpt-alternatives",
+        "label": "Chatgpt Alternatives"
+      },
+      {
+        "slug": "chatgpt-best-use-cases",
+        "label": "Chatgpt Best Use Cases"
+      },
+      {
+        "slug": "chatgpt-for-students",
+        "label": "Chatgpt For Students"
+      },
+      {
+        "slug": "chatgpt-for-freelancers",
+        "label": "Chatgpt For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "claude",
+        "label": "Claude"
+      },
+      {
+        "slug": "gemini",
+        "label": "Gemini"
+      }
+    ]
+  },
+  "claude": {
+    "cards": [
+      {
+        "slug": "claude",
+        "label": "Claude Guide"
+      },
+      {
+        "slug": "claude-course",
+        "label": "Claude Course"
+      },
+      {
+        "slug": "claude-prompts",
+        "label": "Claude Prompts"
+      },
+      {
+        "slug": "claude-best-prompts",
+        "label": "Claude Best Prompts"
+      },
+      {
+        "slug": "claude-expert",
+        "label": "Claude Expert"
+      },
+      {
+        "slug": "claude-master",
+        "label": "Claude Master"
+      },
+      {
+        "slug": "expert-in-claude",
+        "label": "Expert in Claude"
+      },
+      {
+        "slug": "master-in-claude",
+        "label": "Master in Claude"
+      },
+      {
+        "slug": "claude-alternatives",
+        "label": "Claude Alternatives"
+      },
+      {
+        "slug": "claude-best-use-cases",
+        "label": "Claude Best Use Cases"
+      },
+      {
+        "slug": "claude-for-students",
+        "label": "Claude For Students"
+      },
+      {
+        "slug": "claude-for-freelancers",
+        "label": "Claude For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "chatgpt",
+        "label": "ChatGPT"
+      },
+      {
+        "slug": "gemini",
+        "label": "Gemini"
+      },
+      {
+        "slug": "perplexity",
+        "label": "Perplexity"
+      }
+    ]
+  },
+  "gemini": {
+    "cards": [
+      {
+        "slug": "gemini",
+        "label": "Gemini Guide"
+      },
+      {
+        "slug": "gemini-course",
+        "label": "Gemini Course"
+      },
+      {
+        "slug": "gemini-prompts",
+        "label": "Gemini Prompts"
+      },
+      {
+        "slug": "gemini-best-prompts",
+        "label": "Gemini Best Prompts"
+      },
+      {
+        "slug": "gemini-expert",
+        "label": "Gemini Expert"
+      },
+      {
+        "slug": "gemini-master",
+        "label": "Gemini Master"
+      },
+      {
+        "slug": "expert-in-gemini",
+        "label": "Expert in Gemini"
+      },
+      {
+        "slug": "master-in-gemini",
+        "label": "Master in Gemini"
+      },
+      {
+        "slug": "gemini-alternatives",
+        "label": "Gemini Alternatives"
+      },
+      {
+        "slug": "gemini-best-use-cases",
+        "label": "Gemini Best Use Cases"
+      },
+      {
+        "slug": "gemini-for-students",
+        "label": "Gemini For Students"
+      },
+      {
+        "slug": "gemini-for-freelancers",
+        "label": "Gemini For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "chatgpt",
+        "label": "ChatGPT"
+      },
+      {
+        "slug": "claude",
+        "label": "Claude"
+      },
+      {
+        "slug": "perplexity",
+        "label": "Perplexity"
+      },
+      {
+        "slug": "nano-banana",
+        "label": "Nano Banana"
+      }
+    ]
+  },
+  "perplexity": {
+    "cards": [
+      {
+        "slug": "perplexity",
+        "label": "Perplexity Guide"
+      },
+      {
+        "slug": "perplexity-course",
+        "label": "Perplexity Course"
+      },
+      {
+        "slug": "perplexity-prompts",
+        "label": "Perplexity Prompts"
+      },
+      {
+        "slug": "perplexity-best-prompts",
+        "label": "Perplexity Best Prompts"
+      },
+      {
+        "slug": "perplexity-expert",
+        "label": "Perplexity Expert"
+      },
+      {
+        "slug": "perplexity-master",
+        "label": "Perplexity Master"
+      },
+      {
+        "slug": "expert-in-perplexity",
+        "label": "Expert in Perplexity"
+      },
+      {
+        "slug": "master-in-perplexity",
+        "label": "Master in Perplexity"
+      },
+      {
+        "slug": "perplexity-alternatives",
+        "label": "Perplexity Alternatives"
+      },
+      {
+        "slug": "perplexity-best-use-cases",
+        "label": "Perplexity Best Use Cases"
+      },
+      {
+        "slug": "perplexity-for-students",
+        "label": "Perplexity For Students"
+      },
+      {
+        "slug": "perplexity-for-freelancers",
+        "label": "Perplexity For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "claude",
+        "label": "Claude"
+      },
+      {
+        "slug": "gemini",
+        "label": "Gemini"
+      },
+      {
+        "slug": "nano-banana",
+        "label": "Nano Banana"
+      },
+      {
+        "slug": "copilot",
+        "label": "Copilot"
+      }
+    ]
+  },
+  "nano-banana": {
+    "cards": [
+      {
+        "slug": "nano-banana",
+        "label": "Nano Banana Guide"
+      },
+      {
+        "slug": "nano-banana-course",
+        "label": "Nano Banana Course"
+      },
+      {
+        "slug": "nano-banana-prompts",
+        "label": "Nano Banana Prompts"
+      },
+      {
+        "slug": "nano-banana-best-prompts",
+        "label": "Nano Banana Best Prompts"
+      },
+      {
+        "slug": "nano-banana-expert",
+        "label": "Nano Banana Expert"
+      },
+      {
+        "slug": "nano-banana-master",
+        "label": "Nano Banana Master"
+      },
+      {
+        "slug": "expert-in-nano-banana",
+        "label": "Expert in Nano Banana"
+      },
+      {
+        "slug": "master-in-nano-banana",
+        "label": "Master in Nano Banana"
+      },
+      {
+        "slug": "nano-banana-alternatives",
+        "label": "Nano Banana Alternatives"
+      },
+      {
+        "slug": "nano-banana-best-use-cases",
+        "label": "Nano Banana Best Use Cases"
+      },
+      {
+        "slug": "nano-banana-for-students",
+        "label": "Nano Banana For Students"
+      },
+      {
+        "slug": "nano-banana-for-freelancers",
+        "label": "Nano Banana For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "gemini",
+        "label": "Gemini"
+      },
+      {
+        "slug": "perplexity",
+        "label": "Perplexity"
+      },
+      {
+        "slug": "copilot",
+        "label": "Copilot"
+      },
+      {
+        "slug": "canva-ai",
+        "label": "Canva AI"
+      }
+    ]
+  },
+  "copilot": {
+    "cards": [
+      {
+        "slug": "copilot",
+        "label": "Copilot Guide"
+      },
+      {
+        "slug": "copilot-course",
+        "label": "Copilot Course"
+      },
+      {
+        "slug": "copilot-prompts",
+        "label": "Copilot Prompts"
+      },
+      {
+        "slug": "copilot-best-prompts",
+        "label": "Copilot Best Prompts"
+      },
+      {
+        "slug": "copilot-expert",
+        "label": "Copilot Expert"
+      },
+      {
+        "slug": "copilot-master",
+        "label": "Copilot Master"
+      },
+      {
+        "slug": "expert-in-copilot",
+        "label": "Expert in Copilot"
+      },
+      {
+        "slug": "master-in-copilot",
+        "label": "Master in Copilot"
+      },
+      {
+        "slug": "copilot-alternatives",
+        "label": "Copilot Alternatives"
+      },
+      {
+        "slug": "copilot-best-use-cases",
+        "label": "Copilot Best Use Cases"
+      },
+      {
+        "slug": "copilot-for-students",
+        "label": "Copilot For Students"
+      },
+      {
+        "slug": "copilot-for-freelancers",
+        "label": "Copilot For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "perplexity",
+        "label": "Perplexity"
+      },
+      {
+        "slug": "nano-banana",
+        "label": "Nano Banana"
+      },
+      {
+        "slug": "canva-ai",
+        "label": "Canva AI"
+      },
+      {
+        "slug": "cursor",
+        "label": "Cursor"
+      }
+    ]
+  },
+  "canva-ai": {
+    "cards": [
+      {
+        "slug": "canva-ai",
+        "label": "Canva AI Guide"
+      },
+      {
+        "slug": "canva-ai-course",
+        "label": "Canva AI Course"
+      },
+      {
+        "slug": "canva-ai-prompts",
+        "label": "Canva AI Prompts"
+      },
+      {
+        "slug": "canva-ai-best-prompts",
+        "label": "Canva Ai Best Prompts"
+      },
+      {
+        "slug": "canva-ai-expert",
+        "label": "Canva AI Expert"
+      },
+      {
+        "slug": "canva-ai-master",
+        "label": "Canva AI Master"
+      },
+      {
+        "slug": "expert-in-canva-ai",
+        "label": "Expert in Canva AI"
+      },
+      {
+        "slug": "master-in-canva-ai",
+        "label": "Master in Canva AI"
+      },
+      {
+        "slug": "canva-ai-alternatives",
+        "label": "Canva Ai Alternatives"
+      },
+      {
+        "slug": "canva-ai-best-use-cases",
+        "label": "Canva Ai Best Use Cases"
+      },
+      {
+        "slug": "canva-ai-for-students",
+        "label": "Canva Ai For Students"
+      },
+      {
+        "slug": "canva-ai-for-freelancers",
+        "label": "Canva Ai For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "nano-banana",
+        "label": "Nano Banana"
+      },
+      {
+        "slug": "copilot",
+        "label": "Copilot"
+      },
+      {
+        "slug": "cursor",
+        "label": "Cursor"
+      },
+      {
+        "slug": "midjourney",
+        "label": "Midjourney"
+      }
+    ]
+  },
+  "cursor": {
+    "cards": [
+      {
+        "slug": "cursor",
+        "label": "Cursor Guide"
+      },
+      {
+        "slug": "cursor-course",
+        "label": "Cursor Course"
+      },
+      {
+        "slug": "cursor-prompts",
+        "label": "Cursor Prompts"
+      },
+      {
+        "slug": "cursor-best-prompts",
+        "label": "Cursor Best Prompts"
+      },
+      {
+        "slug": "cursor-expert",
+        "label": "Cursor Expert"
+      },
+      {
+        "slug": "cursor-master",
+        "label": "Cursor Master"
+      },
+      {
+        "slug": "expert-in-cursor",
+        "label": "Expert in Cursor"
+      },
+      {
+        "slug": "master-in-cursor",
+        "label": "Master in Cursor"
+      },
+      {
+        "slug": "cursor-alternatives",
+        "label": "Cursor Alternatives"
+      },
+      {
+        "slug": "cursor-best-use-cases",
+        "label": "Cursor Best Use Cases"
+      },
+      {
+        "slug": "cursor-for-students",
+        "label": "Cursor For Students"
+      },
+      {
+        "slug": "cursor-for-freelancers",
+        "label": "Cursor For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "copilot",
+        "label": "Copilot"
+      },
+      {
+        "slug": "canva-ai",
+        "label": "Canva AI"
+      },
+      {
+        "slug": "midjourney",
+        "label": "Midjourney"
+      },
+      {
+        "slug": "elevenlabs",
+        "label": "ElevenLabs"
+      }
+    ]
+  },
+  "midjourney": {
+    "cards": [
+      {
+        "slug": "midjourney",
+        "label": "Midjourney Guide"
+      },
+      {
+        "slug": "midjourney-course",
+        "label": "Midjourney Course"
+      },
+      {
+        "slug": "midjourney-prompts",
+        "label": "Midjourney Prompts"
+      },
+      {
+        "slug": "midjourney-best-prompts",
+        "label": "Midjourney Best Prompts"
+      },
+      {
+        "slug": "midjourney-expert",
+        "label": "Midjourney Expert"
+      },
+      {
+        "slug": "midjourney-master",
+        "label": "Midjourney Master"
+      },
+      {
+        "slug": "expert-in-midjourney",
+        "label": "Expert in Midjourney"
+      },
+      {
+        "slug": "master-in-midjourney",
+        "label": "Master in Midjourney"
+      },
+      {
+        "slug": "midjourney-alternatives",
+        "label": "Midjourney Alternatives"
+      },
+      {
+        "slug": "midjourney-best-use-cases",
+        "label": "Midjourney Best Use Cases"
+      },
+      {
+        "slug": "midjourney-for-students",
+        "label": "Midjourney For Students"
+      },
+      {
+        "slug": "midjourney-for-freelancers",
+        "label": "Midjourney For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "canva-ai",
+        "label": "Canva AI"
+      },
+      {
+        "slug": "cursor",
+        "label": "Cursor"
+      },
+      {
+        "slug": "elevenlabs",
+        "label": "ElevenLabs"
+      },
+      {
+        "slug": "heygen",
+        "label": "HeyGen"
+      }
+    ]
+  },
+  "elevenlabs": {
+    "cards": [
+      {
+        "slug": "elevenlabs",
+        "label": "ElevenLabs Guide"
+      },
+      {
+        "slug": "elevenlabs-course",
+        "label": "ElevenLabs Course"
+      },
+      {
+        "slug": "elevenlabs-prompts",
+        "label": "ElevenLabs Prompts"
+      },
+      {
+        "slug": "elevenlabs-best-prompts",
+        "label": "Elevenlabs Best Prompts"
+      },
+      {
+        "slug": "elevenlabs-expert",
+        "label": "ElevenLabs Expert"
+      },
+      {
+        "slug": "elevenlabs-master",
+        "label": "ElevenLabs Master"
+      },
+      {
+        "slug": "expert-in-elevenlabs",
+        "label": "Expert in ElevenLabs"
+      },
+      {
+        "slug": "master-in-elevenlabs",
+        "label": "Master in ElevenLabs"
+      },
+      {
+        "slug": "elevenlabs-alternatives",
+        "label": "Elevenlabs Alternatives"
+      },
+      {
+        "slug": "elevenlabs-best-use-cases",
+        "label": "Elevenlabs Best Use Cases"
+      },
+      {
+        "slug": "elevenlabs-for-students",
+        "label": "Elevenlabs For Students"
+      },
+      {
+        "slug": "elevenlabs-for-freelancers",
+        "label": "Elevenlabs For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "cursor",
+        "label": "Cursor"
+      },
+      {
+        "slug": "midjourney",
+        "label": "Midjourney"
+      },
+      {
+        "slug": "heygen",
+        "label": "HeyGen"
+      },
+      {
+        "slug": "gamma",
+        "label": "Gamma"
+      }
+    ]
+  },
+  "heygen": {
+    "cards": [
+      {
+        "slug": "heygen",
+        "label": "HeyGen Guide"
+      },
+      {
+        "slug": "heygen-course",
+        "label": "HeyGen Course"
+      },
+      {
+        "slug": "heygen-prompts",
+        "label": "HeyGen Prompts"
+      },
+      {
+        "slug": "heygen-best-prompts",
+        "label": "Heygen Best Prompts"
+      },
+      {
+        "slug": "heygen-expert",
+        "label": "HeyGen Expert"
+      },
+      {
+        "slug": "heygen-master",
+        "label": "HeyGen Master"
+      },
+      {
+        "slug": "expert-in-heygen",
+        "label": "Expert in HeyGen"
+      },
+      {
+        "slug": "master-in-heygen",
+        "label": "Master in HeyGen"
+      },
+      {
+        "slug": "heygen-alternatives",
+        "label": "Heygen Alternatives"
+      },
+      {
+        "slug": "heygen-best-use-cases",
+        "label": "Heygen Best Use Cases"
+      },
+      {
+        "slug": "heygen-for-students",
+        "label": "Heygen For Students"
+      },
+      {
+        "slug": "heygen-for-freelancers",
+        "label": "Heygen For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "midjourney",
+        "label": "Midjourney"
+      },
+      {
+        "slug": "elevenlabs",
+        "label": "ElevenLabs"
+      },
+      {
+        "slug": "gamma",
+        "label": "Gamma"
+      },
+      {
+        "slug": "notion-ai",
+        "label": "Notion AI"
+      }
+    ]
+  },
+  "gamma": {
+    "cards": [
+      {
+        "slug": "gamma",
+        "label": "Gamma Guide"
+      },
+      {
+        "slug": "gamma-course",
+        "label": "Gamma Course"
+      },
+      {
+        "slug": "gamma-prompts",
+        "label": "Gamma Prompts"
+      },
+      {
+        "slug": "gamma-best-prompts",
+        "label": "Gamma Best Prompts"
+      },
+      {
+        "slug": "gamma-expert",
+        "label": "Gamma Expert"
+      },
+      {
+        "slug": "gamma-master",
+        "label": "Gamma Master"
+      },
+      {
+        "slug": "expert-in-gamma",
+        "label": "Expert in Gamma"
+      },
+      {
+        "slug": "master-in-gamma",
+        "label": "Master in Gamma"
+      },
+      {
+        "slug": "gamma-alternatives",
+        "label": "Gamma Alternatives"
+      },
+      {
+        "slug": "gamma-best-use-cases",
+        "label": "Gamma Best Use Cases"
+      },
+      {
+        "slug": "gamma-for-students",
+        "label": "Gamma For Students"
+      },
+      {
+        "slug": "gamma-for-freelancers",
+        "label": "Gamma For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "elevenlabs",
+        "label": "ElevenLabs"
+      },
+      {
+        "slug": "heygen",
+        "label": "HeyGen"
+      },
+      {
+        "slug": "notion-ai",
+        "label": "Notion AI"
+      },
+      {
+        "slug": "leonardo-ai",
+        "label": "Leonardo AI"
+      }
+    ]
+  },
+  "notion-ai": {
+    "cards": [
+      {
+        "slug": "notion-ai",
+        "label": "Notion AI Guide"
+      },
+      {
+        "slug": "notion-ai-course",
+        "label": "Notion AI Course"
+      },
+      {
+        "slug": "notion-ai-prompts",
+        "label": "Notion AI Prompts"
+      },
+      {
+        "slug": "notion-ai-best-prompts",
+        "label": "Notion Ai Best Prompts"
+      },
+      {
+        "slug": "notion-ai-expert",
+        "label": "Notion AI Expert"
+      },
+      {
+        "slug": "notion-ai-master",
+        "label": "Notion AI Master"
+      },
+      {
+        "slug": "expert-in-notion-ai",
+        "label": "Expert in Notion AI"
+      },
+      {
+        "slug": "master-in-notion-ai",
+        "label": "Master in Notion AI"
+      },
+      {
+        "slug": "notion-ai-alternatives",
+        "label": "Notion Ai Alternatives"
+      },
+      {
+        "slug": "notion-ai-best-use-cases",
+        "label": "Notion Ai Best Use Cases"
+      },
+      {
+        "slug": "notion-ai-for-students",
+        "label": "Notion Ai For Students"
+      },
+      {
+        "slug": "notion-ai-for-freelancers",
+        "label": "Notion Ai For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "heygen",
+        "label": "HeyGen"
+      },
+      {
+        "slug": "gamma",
+        "label": "Gamma"
+      },
+      {
+        "slug": "leonardo-ai",
+        "label": "Leonardo AI"
+      },
+      {
+        "slug": "replit-ai",
+        "label": "Replit AI"
+      }
+    ]
+  },
+  "leonardo-ai": {
+    "cards": [
+      {
+        "slug": "leonardo-ai",
+        "label": "Leonardo AI Guide"
+      },
+      {
+        "slug": "leonardo-ai-course",
+        "label": "Leonardo AI Course"
+      },
+      {
+        "slug": "leonardo-ai-prompts",
+        "label": "Leonardo AI Prompts"
+      },
+      {
+        "slug": "leonardo-ai-best-prompts",
+        "label": "Leonardo Ai Best Prompts"
+      },
+      {
+        "slug": "leonardo-ai-expert",
+        "label": "Leonardo AI Expert"
+      },
+      {
+        "slug": "leonardo-ai-master",
+        "label": "Leonardo AI Master"
+      },
+      {
+        "slug": "expert-in-leonardo-ai",
+        "label": "Expert in Leonardo AI"
+      },
+      {
+        "slug": "master-in-leonardo-ai",
+        "label": "Master in Leonardo AI"
+      },
+      {
+        "slug": "leonardo-ai-alternatives",
+        "label": "Leonardo Ai Alternatives"
+      },
+      {
+        "slug": "leonardo-ai-best-use-cases",
+        "label": "Leonardo Ai Best Use Cases"
+      },
+      {
+        "slug": "leonardo-ai-for-students",
+        "label": "Leonardo Ai For Students"
+      },
+      {
+        "slug": "leonardo-ai-for-freelancers",
+        "label": "Leonardo Ai For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "gamma",
+        "label": "Gamma"
+      },
+      {
+        "slug": "notion-ai",
+        "label": "Notion AI"
+      },
+      {
+        "slug": "replit-ai",
+        "label": "Replit AI"
+      },
+      {
+        "slug": "bolt-new",
+        "label": "Bolt.new"
+      }
+    ]
+  },
+  "replit-ai": {
+    "cards": [
+      {
+        "slug": "replit-ai",
+        "label": "Replit AI Guide"
+      },
+      {
+        "slug": "replit-ai-course",
+        "label": "Replit AI Course"
+      },
+      {
+        "slug": "replit-ai-prompts",
+        "label": "Replit AI Prompts"
+      },
+      {
+        "slug": "replit-ai-best-prompts",
+        "label": "Replit Ai Best Prompts"
+      },
+      {
+        "slug": "replit-ai-expert",
+        "label": "Replit AI Expert"
+      },
+      {
+        "slug": "replit-ai-master",
+        "label": "Replit AI Master"
+      },
+      {
+        "slug": "expert-in-replit-ai",
+        "label": "Expert in Replit AI"
+      },
+      {
+        "slug": "master-in-replit-ai",
+        "label": "Master in Replit AI"
+      },
+      {
+        "slug": "replit-ai-alternatives",
+        "label": "Replit Ai Alternatives"
+      },
+      {
+        "slug": "replit-ai-best-use-cases",
+        "label": "Replit Ai Best Use Cases"
+      },
+      {
+        "slug": "replit-ai-for-students",
+        "label": "Replit Ai For Students"
+      },
+      {
+        "slug": "replit-ai-for-freelancers",
+        "label": "Replit Ai For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "notion-ai",
+        "label": "Notion AI"
+      },
+      {
+        "slug": "leonardo-ai",
+        "label": "Leonardo AI"
+      },
+      {
+        "slug": "bolt-new",
+        "label": "Bolt.new"
+      },
+      {
+        "slug": "suno",
+        "label": "Suno"
+      }
+    ]
+  },
+  "bolt-new": {
+    "cards": [
+      {
+        "slug": "bolt-new",
+        "label": "Bolt.new Guide"
+      },
+      {
+        "slug": "bolt-new-course",
+        "label": "Bolt.new Course"
+      },
+      {
+        "slug": "bolt-new-prompts",
+        "label": "Bolt.new Prompts"
+      },
+      {
+        "slug": "bolt-new-best-prompts",
+        "label": "Bolt New Best Prompts"
+      },
+      {
+        "slug": "bolt-new-expert",
+        "label": "Bolt.new Expert"
+      },
+      {
+        "slug": "bolt-new-master",
+        "label": "Bolt.new Master"
+      },
+      {
+        "slug": "expert-in-bolt-new",
+        "label": "Expert in Bolt.new"
+      },
+      {
+        "slug": "master-in-bolt-new",
+        "label": "Master in Bolt.new"
+      },
+      {
+        "slug": "bolt-new-alternatives",
+        "label": "Bolt New Alternatives"
+      },
+      {
+        "slug": "bolt-new-best-use-cases",
+        "label": "Bolt New Best Use Cases"
+      },
+      {
+        "slug": "bolt-new-for-students",
+        "label": "Bolt New For Students"
+      },
+      {
+        "slug": "bolt-new-for-freelancers",
+        "label": "Bolt New For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "leonardo-ai",
+        "label": "Leonardo AI"
+      },
+      {
+        "slug": "replit-ai",
+        "label": "Replit AI"
+      },
+      {
+        "slug": "suno",
+        "label": "Suno"
+      },
+      {
+        "slug": "grok",
+        "label": "Grok"
+      }
+    ]
+  },
+  "suno": {
+    "cards": [
+      {
+        "slug": "suno",
+        "label": "Suno Guide"
+      },
+      {
+        "slug": "suno-course",
+        "label": "Suno Course"
+      },
+      {
+        "slug": "suno-prompts",
+        "label": "Suno Prompts"
+      },
+      {
+        "slug": "suno-best-prompts",
+        "label": "Suno Best Prompts"
+      },
+      {
+        "slug": "suno-expert",
+        "label": "Suno Expert"
+      },
+      {
+        "slug": "suno-master",
+        "label": "Suno Master"
+      },
+      {
+        "slug": "expert-in-suno",
+        "label": "Expert in Suno"
+      },
+      {
+        "slug": "master-in-suno",
+        "label": "Master in Suno"
+      },
+      {
+        "slug": "suno-alternatives",
+        "label": "Suno Alternatives"
+      },
+      {
+        "slug": "suno-best-use-cases",
+        "label": "Suno Best Use Cases"
+      },
+      {
+        "slug": "suno-for-students",
+        "label": "Suno For Students"
+      },
+      {
+        "slug": "suno-for-freelancers",
+        "label": "Suno For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "replit-ai",
+        "label": "Replit AI"
+      },
+      {
+        "slug": "bolt-new",
+        "label": "Bolt.new"
+      },
+      {
+        "slug": "grok",
+        "label": "Grok"
+      },
+      {
+        "slug": "sora",
+        "label": "Sora"
+      }
+    ]
+  },
+  "grok": {
+    "cards": [
+      {
+        "slug": "grok",
+        "label": "Grok Guide"
+      },
+      {
+        "slug": "grok-course",
+        "label": "Grok Course"
+      },
+      {
+        "slug": "grok-prompts",
+        "label": "Grok Prompts"
+      },
+      {
+        "slug": "grok-best-prompts",
+        "label": "Grok Best Prompts"
+      },
+      {
+        "slug": "grok-expert",
+        "label": "Grok Expert"
+      },
+      {
+        "slug": "grok-master",
+        "label": "Grok Master"
+      },
+      {
+        "slug": "expert-in-grok",
+        "label": "Expert in Grok"
+      },
+      {
+        "slug": "master-in-grok",
+        "label": "Master in Grok"
+      },
+      {
+        "slug": "grok-alternatives",
+        "label": "Grok Alternatives"
+      },
+      {
+        "slug": "grok-best-use-cases",
+        "label": "Grok Best Use Cases"
+      },
+      {
+        "slug": "grok-for-students",
+        "label": "Grok For Students"
+      },
+      {
+        "slug": "grok-for-freelancers",
+        "label": "Grok For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "bolt-new",
+        "label": "Bolt.new"
+      },
+      {
+        "slug": "suno",
+        "label": "Suno"
+      },
+      {
+        "slug": "sora",
+        "label": "Sora"
+      },
+      {
+        "slug": "runway",
+        "label": "Runway"
+      }
+    ]
+  },
+  "sora": {
+    "cards": [
+      {
+        "slug": "sora",
+        "label": "Sora Guide"
+      },
+      {
+        "slug": "sora-course",
+        "label": "Sora Course"
+      },
+      {
+        "slug": "sora-prompts",
+        "label": "Sora Prompts"
+      },
+      {
+        "slug": "sora-best-prompts",
+        "label": "Sora Best Prompts"
+      },
+      {
+        "slug": "sora-expert",
+        "label": "Sora Expert"
+      },
+      {
+        "slug": "sora-master",
+        "label": "Sora Master"
+      },
+      {
+        "slug": "expert-in-sora",
+        "label": "Expert in Sora"
+      },
+      {
+        "slug": "master-in-sora",
+        "label": "Master in Sora"
+      },
+      {
+        "slug": "sora-alternatives",
+        "label": "Sora Alternatives"
+      },
+      {
+        "slug": "sora-best-use-cases",
+        "label": "Sora Best Use Cases"
+      },
+      {
+        "slug": "sora-for-students",
+        "label": "Sora For Students"
+      },
+      {
+        "slug": "sora-for-freelancers",
+        "label": "Sora For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "suno",
+        "label": "Suno"
+      },
+      {
+        "slug": "grok",
+        "label": "Grok"
+      },
+      {
+        "slug": "runway",
+        "label": "Runway"
+      }
+    ]
+  },
+  "runway": {
+    "cards": [
+      {
+        "slug": "runway",
+        "label": "Runway Guide"
+      },
+      {
+        "slug": "runway-course",
+        "label": "Runway Course"
+      },
+      {
+        "slug": "runway-prompts",
+        "label": "Runway Prompts"
+      },
+      {
+        "slug": "runway-best-prompts",
+        "label": "Runway Best Prompts"
+      },
+      {
+        "slug": "runway-expert",
+        "label": "Runway Expert"
+      },
+      {
+        "slug": "runway-master",
+        "label": "Runway Master"
+      },
+      {
+        "slug": "expert-in-runway",
+        "label": "Expert in Runway"
+      },
+      {
+        "slug": "master-in-runway",
+        "label": "Master in Runway"
+      },
+      {
+        "slug": "runway-alternatives",
+        "label": "Runway Alternatives"
+      },
+      {
+        "slug": "runway-best-use-cases",
+        "label": "Runway Best Use Cases"
+      },
+      {
+        "slug": "runway-for-students",
+        "label": "Runway For Students"
+      },
+      {
+        "slug": "runway-for-freelancers",
+        "label": "Runway For Freelancers"
+      }
+    ],
+    "relatedTools": [
+      {
+        "slug": "grok",
+        "label": "Grok"
+      },
+      {
+        "slug": "sora",
+        "label": "Sora"
+      }
+    ]
+  }
+}

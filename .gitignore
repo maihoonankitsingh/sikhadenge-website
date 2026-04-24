@@ -82,3 +82,80 @@ pages/*.broken*
 
 # big media (keep on server, not in git)
 public/images/testimonials/*.mp4
+.env.local
+.env.production
+node_modules/
+.next/
+
+# production secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# generated/build/runtime
+node_modules/
+.next/
+out/
+dist/
+build/
+.cache/
+.vercel/
+.turbo/
+
+# logs/backups
+*.log
+*.bak
+*.backup
+*.bk_*
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# large media / server-only assets
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.sql
+*.dump
+
+# backup copies
+*.bak
+*.bk_*
+*.backup
+*.before_restore_*
+*.pre_restore.*
+*.save.*
+*.fixbk_*
+*.bak-*
+*.bk-*
+
+# server user uploads - never commit
+public/uploads/
+public/uploads/admission/
+public/uploads/admissions/
+
+# review videos / large media
+public/reviews/videos/
+
+# generated temp SEO data
+data/tmp/
+data/**/*.bk_*
+data/**/*.bak*
+data/**/*.stable_*
+*.bk_*
+*.bak*
+*.backup*
+*.before_restore_*
+*.pre_restore*
+*.save.*

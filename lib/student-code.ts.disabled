@@ -1,0 +1,73 @@
+import { prisma } from "@/lib/prisma";
+
+function pad4(n: number) {
+  return String(n).padStart(4, "0");
+}
+
+function formatDateParts(d: Date) {
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = String(d.getFullYear()).slice(-2);
+  return { day, month, year };
+}
+
+function rangeForLocalDay(d: Date) {
+  const start = new Date(d);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(d);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+export async function generateNextStudentCode(createdAt?: Date) {
+  const baseDate = createdAt ? new Date(createdAt) : new Date();
+  const { day, month, year } = formatDateParts(baseDate);
+  const { start, end } = rangeForLocalDay(baseDate);
+
+  const existing = await prisma.admission.findMany({
+    where: {
+      createdAt: { gte: start, lte: end },
+      studentCode: { not: null },
+    },
+    select: { studentCode: true },
+  });
+
+  const used = new Set<number>();
+  for (const row of existing) {
+    const code = row.studentCode || "";
+    const m = code.match(/(\d{4})$/);
+    if (m) used.add(Number(m[1]));
+  }
+
+  let seq = 1;
+  while (used.has(seq)) seq += 1;
+
+  return `TGSD-IN-${day}${month}${year}${pad4(seq)}`;
+}
+
+export async function assignStudentCode(admissionId: string, maxRetry = 25) {
+  const admission = await prisma.admission.findUnique({
+    where: { id: admissionId },
+    select: { id: true, studentCode: true, createdAt: true },
+  });
+
+  if (!admission) return null;
+  if (admission.studentCode) return admission.studentCode;
+
+  for (let i = 0; i < maxRetry; i++) {
+    const code = await generateNextStudentCode(admission.createdAt);
+    try {
+      const updated = await prisma.admission.update({
+        where: { id: admissionId },
+        data: { studentCode: code },
+        select: { studentCode: true },
+      });
+      return updated.studentCode;
+    } catch (err: any) {
+      const msg = String(err?.message || "");
+      if (!msg.includes("Unique constraint") && !msg.includes("unique")) throw err;
+    }
+  }
+
+  throw new Error("Could not assign unique studentCode");
+}

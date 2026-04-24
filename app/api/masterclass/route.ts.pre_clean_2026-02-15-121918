@@ -1,0 +1,92 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({ ok: false, error: "method_not_allowed" }, { status: 405 });
+}
+
+function pick(v: any) {
+  return String(v ?? "").trim();
+}
+
+function buildPublicBase(req: Request) {
+  const proto =
+    req.headers.get("x-forwarded-proto") ||
+    (req.headers.get("cf-visitor")?.includes('"https"') ? "https" : "") ||
+    "https";
+
+  const host =
+    req.headers.get("x-forwarded-host") ||
+    req.headers.get("host") ||
+    "sikhadenge.in";
+
+  return `${proto}://${host}`;
+}
+
+export async function POST(req: Request) {
+  try {
+    const ct = (req.headers.get("content-type") || "").toLowerCase();
+
+    let name = "";
+    let phone = "";
+    let email = "";
+    let source: string | null = null;
+    let page: string | null = null;
+
+    if (ct.includes("application/json")) {
+      const body: any = await req.json();
+      name = pick(body?.name);
+      phone = pick(body?.phone || body?.mobile);
+      email = pick(body?.email);
+      source = pick(body?.source) || null;
+      page = pick(body?.page) || null;
+source = pick(body?.source) || null;
+      page = pick(body?.page) || null;
+    } else if (ct.includes("application/x-www-form-urlencoded") || ct.includes("multipart/form-data")) {
+      const form = await req.formData();
+      name = pick(form.get("name"));
+      phone = pick(form.get("phone") || form.get("mobile"));
+      email = pick(form.get("email"));
+      source = pick(form.get("source")) || null;
+      page = pick(form.get("page")) || null;
+source = pick(form.get("source")) || null;
+      page = pick(form.get("page")) || null;
+    } else {
+      const text = await req.text();
+      const p = new URLSearchParams(text);
+      name = pick(p.get("name"));
+      phone = pick(p.get("phone") || p.get("mobile"));
+      email = pick(p.get("email"));
+      source = pick(p.get("source")) || null;
+      page = pick(p.get("page")) || null;
+source = pick(p.get("source")) || null;
+      page = pick(p.get("page")) || null;
+    }
+
+    if (!name || !phone || !email) {
+      return NextResponse.json({ ok: false, error: "missing_fields" }, { status: 400 });
+    }
+
+    phone = phone.replace(/\D/g, "");
+    if (phone.length > 10) phone = phone.slice(-10);
+
+    await prisma.masterclassLead.upsert({
+      where: { phone },
+      update: { name, email, source, page },
+      create: { name, phone, email, source, page },
+    });
+
+    const url = new URL("/masterclass?ok=1", buildPublicBase(req));
+    return NextResponse.redirect(url, 303);
+  } catch (e: any) {
+    if (e?.code === "P2002" || e?.meta?.code === "23505") {
+      const url = new URL("/masterclass?ok=1", buildPublicBase(req));
+      return NextResponse.redirect(url, 303);
+    }
+    console.error("masterclass api error:", e);
+    return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 });
+  }
+}

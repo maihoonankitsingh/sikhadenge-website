@@ -1,0 +1,1154 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "AI Generalist Program Syllabus | Sikhadenge",
+  description:
+    "Explore the complete AI Generalist Program syllabus by Sikhadenge, including program overview, modules, class structure, workflows, assignments, outputs, freelancing foundation, and outcomes.",
+};
+
+type CardItem = {
+  title: string;
+  desc: string;
+  tags?: string[];
+};
+
+const heroHighlights = [
+  "50 Total Classes",
+  "25 Live Classes + 25 Assignment Classes",
+  "3 Hours Per Day",
+  "Freelancing Foundation Included",
+];
+
+const programIntroCards: CardItem[] = [
+  {
+    title: "What This Program Is",
+    desc: "A modern AI-first digital capability program designed to help learners move from random tool usage to structured workflow-based creation across practical digital work areas.",
+  },
+  {
+    title: "Why This Program Matters",
+    desc: "Digital work has shifted from single-skill dependency toward workflow-based multi-skill execution. This program is built around that market reality.",
+  },
+  {
+    title: "AI-First Learning",
+    desc: "Students learn digital work through modern AI workflows instead of isolated old-style fragmented methods.",
+  },
+  {
+    title: "Portfolio-Oriented Approach",
+    desc: "The goal is not only understanding concepts but creating real visible work that can support future opportunities.",
+  },
+];
+
+const traditionalVsModern = [
+  [
+    "Single-Skill Dependency",
+    "Learners focus on only one narrow area and often struggle outside that scope.",
+    "Multi-Skill Capability",
+    "Students learn to work across design, video, content, websites, marketing, and automation with AI-supported workflows.",
+  ],
+  [
+    "Slow Learning-to-Work Transition",
+    "Students often understand theory but do not know how to execute real tasks.",
+    "Faster Practical Execution",
+    "AI-supported workflows reduce manual friction and help learners execute faster and more clearly.",
+  ],
+  [
+    "Fragmented Tools and Methods",
+    "Traditional learning often teaches isolated tools rather than connected digital systems.",
+    "Workflow-Based Learning",
+    "Students understand how tools connect together inside practical execution systems.",
+  ],
+  [
+    "Low Adaptability",
+    "Learners find it difficult to adjust when platforms, job roles, or tool stacks change.",
+    "Higher Adaptability",
+    "Students become more flexible and future-ready for changing digital work demands.",
+  ],
+  [
+    "Limited Output Readiness",
+    "Many learners finish without building practical visible work.",
+    "Real Output Creation",
+    "The program emphasizes practical output building rather than passive consumption.",
+  ],
+];
+
+const aiGeneralistModel = [
+  "Design with AI",
+  "Edit Videos with AI Creation",
+  "Create Content with AI Creation",
+  "Market with AI Assets",
+  "Build Pages with AI & Landing Pages",
+  "AI Automation & Workflow",
+];
+
+const modules: CardItem[] = [
+  {
+    title: "Design with AI",
+    desc: "Create social media creatives, posters, banners, visual assets, brand material, and communication designs using AI-supported workflows.",
+    tags: ["Social Media Creatives", "Posters & Banners", "Brand Visuals", "Design Assets"],
+  },
+  {
+    title: "Edit Videos with AI Creation",
+    desc: "Understand short-form video planning, reel creation, AI-supported scripting, promo videos, and workflow-driven content execution.",
+    tags: ["Reels & Shorts", "Video Storytelling", "Promo Videos", "Edit Videos with AI Workflow"],
+  },
+  {
+    title: "Create Content with AI Creation",
+    desc: "Use AI for captions, ad copy, written content, ideas, and communication assets for digital platforms and marketing use.",
+    tags: ["Captions", "Ad Copy", "Content Ideas", "Writing Workflows"],
+  },
+  {
+    title: "Market with AI Assets",
+    desc: "Build campaign visuals, promotional creatives, content packs, and audience-facing marketing assets.",
+    tags: ["Ad Creatives", "Promo Graphics", "Campaign Assets", "Content Packs"],
+  },
+  {
+    title: "Build Pages with AI & Landing Pages",
+    desc: "Learn how to structure sections, page flow, landing page drafts, and simple website layouts with AI support.",
+    tags: ["Landing Page Layout", "Website Structure", "Page Flow", "Digital Product Pages"],
+  },
+  {
+    title: "AI Automation & Workflow",
+    desc: "Understand workflow systems, tool connections, repetitive task reduction, and faster digital execution logic.",
+    tags: ["Workflow Systems", "Tool Connection", "Task Automation", "Faster Execution"],
+  },
+];
+
+const structureCards: CardItem[] = [
+  {
+    title: "25 Live Classes",
+    desc: "Concept clarity, workflow explanation, demonstrations, guided learning, and structured execution exposure.",
+    tags: ["Concept Clarity", "Tool Demonstration", "Workflow Understanding", "Guided Live Learning"],
+  },
+  {
+    title: "50 Total Classes",
+    desc: "25 live classes plus 25 assignment classes, designed as a balanced guided practical learning system.",
+    tags: ["50 Total Classes", "3 Hours Per Day", "Guided Learning"],
+  },
+  {
+    title: "25 Assignment Classes",
+    desc: "Guided practice, task implementation, output building, correction, and execution improvement through repetition.",
+    tags: ["Hands-On Practice", "Task Implementation", "Output Building", "Execution Improvement"],
+  },
+];
+
+const classJourney: CardItem[] = [
+  {
+    title: "Phase 01 — Foundation & Prompt Thinking",
+    desc: "Understand the AI Generalist idea, the AI tool ecosystem, and better prompt thinking for stronger digital execution.",
+    tags: ["Classes 1–3"],
+  },
+  {
+    title: "Phase 02 — Design with Automate Work with AI",
+    desc: "Learn to create creatives, posters, and campaign visuals with AI-assisted design workflows.",
+    tags: ["Classes 4–7"],
+  },
+  {
+    title: "Phase 03 — Edit Videos with AI Creation",
+    desc: "Understand short-form video structure, scripting, scene planning, and reel-style execution.",
+    tags: ["Classes 8–11"],
+  },
+  {
+    title: "Phase 04 — Create Content with AI Creation",
+    desc: "Learn how AI can help generate captions, copy, ideas, and communication material.",
+    tags: ["Classes 12–14"],
+  },
+  {
+    title: "Phase 05 — Market with AI Assets",
+    desc: "Create campaign visuals, promotional graphics, content packs, and communication assets.",
+    tags: ["Classes 15–17"],
+  },
+  {
+    title: "Phase 06 — Websites & Landing Pages",
+    desc: "Structure simple landing pages, sections, content flow, and practical page-building logic.",
+    tags: ["Classes 18–20"],
+  },
+  {
+    title: "Phase 07 — Automation & Freelancing",
+    desc: "Understand automation basics, execution systems, freelancing foundation, pricing, and offer thinking.",
+    tags: ["Classes 21–24"],
+  },
+  {
+    title: "Phase 08 — Final Project & Portfolio",
+    desc: "Bring everything together into a final project, output presentation, and next-step execution plan.",
+    tags: ["Class 25"],
+  },
+];
+
+const assignmentModel: CardItem[] = [
+  {
+    title: "Hands-On Practice",
+    desc: "Students work on real tasks after live learning so that concepts are understood through doing.",
+  },
+  {
+    title: "Guided Implementation",
+    desc: "Assignment classes provide structured implementation support instead of passive revision.",
+  },
+  {
+    title: "Output Creation",
+    desc: "Students create creatives, content pieces, landing page drafts, workflow outlines, and practical assets.",
+  },
+  {
+    title: "Skill Improvement",
+    desc: "Repeated guided implementation improves clarity, speed, confidence, and execution quality.",
+  },
+];
+
+const toolCards: CardItem[] = [
+  {
+    title: "AI Text & Prompt Tools",
+    desc: "Prompt writing, script generation, idea development, planning support, and communication workflows.",
+    tags: ["Prompt Writing", "Idea Generation", "Scripts", "Content Support"],
+  },
+  {
+    title: "AI Image & Design Tools",
+    desc: "Poster creation, social creatives, graphics, brand material, and visual asset workflows.",
+    tags: ["Creatives", "Posters", "Visual Assets", "Design Workflows"],
+  },
+  {
+    title: "Edit Videos with AI Tools",
+    desc: "Scripting, visual generation, short-form planning, scene development, and video execution support.",
+    tags: ["Reels", "Shorts", "Scene Creation", "Video Workflow"],
+  },
+  {
+    title: "Create Content with AI & Marketing Tools",
+    desc: "Ad copy, campaigns, communication assets, and promotional content support systems.",
+    tags: ["Ad Copy", "Campaigns", "Promotion", "Content Assets"],
+  },
+  {
+    title: "Website & Landing Page Tools",
+    desc: "Section structure, layout building, landing page planning, and page flow creation.",
+    tags: ["Page Structure", "Layout Building", "Landing Pages", "Website Flow"],
+  },
+  {
+    title: "Automation & Productivity Tools",
+    desc: "Workflow systems, repetitive task reduction, tool connection, and productivity logic.",
+    tags: ["Workflow Systems", "Task Automation", "Tool Connection", "Productivity"],
+  },
+];
+
+const outputs: CardItem[] = [
+  {
+    title: "Social Media Creatives",
+    desc: "Modern visuals for educational, promotional, and brand communication purposes.",
+  },
+  {
+    title: "Ad Banners & Posters",
+    desc: "Campaign posters, ad graphics, and promotional visual material for digital use.",
+  },
+  {
+    title: "Reels & Short Videos",
+    desc: "Short-form promotional content, reels, clips, and AI-supported video outputs.",
+  },
+  {
+    title: "Captions & Ad Copy",
+    desc: "Written communication assets including hooks, captions, promotional lines, and ad copy.",
+  },
+  {
+    title: "Content Packs",
+    desc: "Organized content bundles for campaigns, posting sequences, and communication use.",
+  },
+  {
+    title: "Landing Page Drafts",
+    desc: "Simple page structures, website section layouts, and page-flow drafts.",
+  },
+  {
+    title: "Workflow Systems",
+    desc: "Connected task systems that show how tools and execution logic fit together.",
+  },
+  {
+    title: "Freelancing Starter Assets",
+    desc: "Basic service outlines, proposal drafts, starter positioning assets, and offer thinking.",
+  },
+];
+
+const audience: CardItem[] = [
+  {
+    title: "Students",
+    desc: "Learners who want practical digital capability aligned with modern AI-powered work.",
+  },
+  {
+    title: "Beginners",
+    desc: "People who want a guided structured entry into digital work without deep prior experience.",
+  },
+  {
+    title: "Freelancers",
+    desc: "Freelancers who want broader capabilities, faster execution, and AI-supported service delivery.",
+  },
+  {
+    title: "Content Creators",
+    desc: "Creators who want to produce stronger content, visuals, communication assets, and short videos.",
+  },
+  {
+    title: "Career Switchers",
+    desc: "People moving toward digital work who need a practical, modern capability path.",
+  },
+  {
+    title: "Curious Professionals",
+    desc: "Professionals who want to understand how AI can improve speed, adaptability, and future relevance.",
+  },
+];
+
+const learningExperience: CardItem[] = [
+  {
+    title: "Live Guided Sessions",
+    desc: "Structured live learning where concepts, tools, workflows, and execution methods are explained clearly.",
+  },
+  {
+    title: "Practical Demonstrations",
+    desc: "Students see how digital tasks are performed through guided examples and real workflows.",
+  },
+  {
+    title: "Assignment-Based Learning",
+    desc: "Learners apply what they study through guided assignments that turn explanation into execution.",
+  },
+  {
+    title: "Real Output Building",
+    desc: "Students build visible work throughout the journey instead of only learning passively.",
+  },
+  {
+    title: "Workflow Understanding",
+    desc: "Students see how tools and work areas connect through modern AI-supported systems.",
+  },
+  {
+    title: "Progressive Skill Development",
+    desc: "The learning journey is designed to improve clarity, confidence, speed, and execution step by step.",
+  },
+];
+
+const learningJourney = [
+  "Understand",
+  "Observe",
+  "Practice",
+  "Create",
+  "Improve",
+];
+
+const freelancingCards: CardItem[] = [
+  {
+    title: "Service Thinking",
+    desc: "Convert digital skills into simple beginner-friendly services such as creatives, content, short videos, landing pages, and support work.",
+  },
+  {
+    title: "Niche Understanding",
+    desc: "Understand how to choose a work direction and position early services more clearly.",
+  },
+  {
+    title: "Offer Packaging",
+    desc: "Organize skills into simple service offers that are easier to explain, present, and deliver.",
+  },
+  {
+    title: "Basic Client Outreach",
+    desc: "Learn beginner-level outreach thinking through WhatsApp, Instagram, LinkedIn, and direct communication.",
+  },
+  {
+    title: "Pricing & Proposal Basics",
+    desc: "Understand simple pricing logic, starter proposal structure, and practical offer presentation.",
+  },
+  {
+    title: "Starter Freelancing Assets",
+    desc: "Create service outlines, proposal drafts, basic pricing sheets, and positioning material.",
+  },
+];
+
+const outcomes: CardItem[] = [
+  {
+    title: "AI Workflow Understanding",
+    desc: "Students understand how modern AI tools can be used together inside connected digital workflows.",
+  },
+  {
+    title: "Multi-Skill Digital Capability",
+    desc: "Learners build broader practical capability across design, video, content, websites, marketing, and automation.",
+  },
+  {
+    title: "Practical Output Confidence",
+    desc: "Students gain confidence by creating visible outputs throughout the program.",
+  },
+  {
+    title: "Better Execution Speed",
+    desc: "AI-supported workflows improve execution speed and reduce repetitive manual friction.",
+  },
+  {
+    title: "Portfolio Foundation",
+    desc: "Students finish with early-stage work material that supports portfolio improvement.",
+  },
+  {
+    title: "Freelancing Direction",
+    desc: "Learners gain a practical beginner-level understanding of digital freelancing direction.",
+  },
+];
+
+const snapshotLeft = [
+  "Program Name — AI Generalist Program",
+  "Platform — Sikhadenge",
+  "Program Type — Guided Online Program",
+  "Format — AI-First Digital Capability Training",
+  "Duration — 25 Teaching Days",
+  "Class Model — 50 Total Classes",
+  "Live Classes — 25",
+  "Assignment Classes — 25",
+  "Daily Class Time — 3 Hours Per Day",
+  "Special Module — Freelancing Foundation Included",
+];
+
+const snapshotRightA = [
+  "Design with AI",
+  "Edit Videos with AI Creation",
+  "Create Content with AI Creation",
+  "Market with AI Assets",
+  "Websites & Landing Pages",
+  "Automation & Workflow",
+];
+
+const snapshotRightB = [
+  "Live guided sessions",
+  "Practical demonstrations",
+  "Assignment-based learning",
+  "Workflow understanding",
+  "Real output building",
+];
+
+const snapshotRightC = [
+  "Students",
+  "Beginners",
+  "Freelancers",
+  "Creators",
+  "Career Switchers",
+  "Curious Professionals",
+];
+
+const snapshotRightD = [
+  "Workflow understanding",
+  "Practical outputs",
+  "Multi-skill capability",
+  "Portfolio foundation",
+  "Freelancing direction",
+  "Better execution confidence",
+];
+
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="min-h-screen bg-[#EEF3F9] text-[#0F172A]">
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-8">
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function Section({
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+}: {
+  id?: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className="relative overflow-hidden rounded-[28px] border border-[#C9D7E8] bg-white/70 p-5 shadow-[0_10px_35px_rgba(15,23,42,0.07)] backdrop-blur-sm md:p-8"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.06),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(245,179,1,0.07),transparent_24%)]" />
+      <div className="relative z-10">
+        {eyebrow ? (
+          <div className="mb-4">
+            <span className="inline-flex rounded-full border border-[#D7E2F0] bg-[#EAF1FB] px-4 py-1.5 text-sm font-semibold text-[#355B94]">
+              {eyebrow}
+            </span>
+          </div>
+        ) : null}
+        <h2 className="max-w-6xl text-3xl font-extrabold leading-tight tracking-[-0.03em] text-[#0B1530] md:text-5xl">
+          {title}
+        </h2>
+        {subtitle ? (
+          <p className="mt-4 max-w-6xl text-base leading-7 text-[#334155] md:text-[22px] md:leading-9">
+            {subtitle}
+          </p>
+        ) : null}
+        <div className="mt-8">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function GlassBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex rounded-full border border-[#D6C28A] bg-white px-4 py-2 text-sm font-semibold text-[#1F2937] shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+      {children}
+    </span>
+  );
+}
+
+function SimpleCard({ item }: { item: CardItem }) {
+  return (
+    <div className="rounded-[24px] border border-[#C8D6E6] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+      <h3 className="text-2xl font-bold tracking-[-0.02em] text-[#111827]">{item.title}</h3>
+      <p className="mt-3 text-lg leading-8 text-[#334155]">{item.desc}</p>
+      {item.tags?.length ? (
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          {item.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-[#D7E4F5] bg-[#F8FBFF] px-3 py-1 text-sm font-medium text-[#335281]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-3">
+      {items.map((item) => (
+        <li key={item} className="flex items-start gap-3 text-lg leading-8 text-[#1F2937]">
+          <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#2563EB]" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function SyllabusPage() {
+  return (
+    <PageShell>
+      <div className="space-y-6 md:space-y-8">
+        <section className="relative overflow-hidden rounded-[32px] border border-[#C9D7E8] bg-[linear-gradient(180deg,#F9FBFE_0%,#EFF4FA_100%)] p-5 shadow-[0_12px_36px_rgba(15,23,42,0.08)] md:p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(37,99,235,0.10),transparent_18%),radial-gradient(circle_at_90%_80%,rgba(245,179,1,0.08),transparent_20%)]" />
+          <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <div className="flex items-center gap-3 text-[#2563EB]">
+                <div className="text-xl font-bold md:text-2xl">Sikhadenge Presents</div>
+              </div>
+              <h1 className="mt-6 max-w-4xl text-[44px] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#08152F] md:text-[96px]">
+                AI Generalist
+                <span className="block">Program</span>
+              </h1>
+              <p className="mt-6 max-w-4xl text-2xl leading-tight text-[#0F172A] md:text-[44px]">
+                Master AI-Powered Digital Skills for the Modern Future
+              </p>
+              <p className="mt-5 text-lg leading-8 text-[#334155] md:text-[28px] md:leading-[1.5]">
+                Design • Video • Content • Marketing • Websites • Automation • Freelancing
+              </p>
+
+              <div className="mt-8 space-y-3 border-y border-[#D6DEE8] py-5 text-xl font-semibold text-[#0F172A] md:text-[28px]">
+                <div>50 Total Classes | 25 Live Classes + 25 Assignment Classes</div>
+                <div>3 Hours Per Day | Guided Practical Learning</div>
+              </div>
+
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-[#475569] md:text-[32px] md:leading-[1.4]">
+                A structured AI-first program for students, freelancers, creators, and career switchers.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href="/admission"
+                  className="rounded-2xl bg-[#2563EB] px-6 py-3 text-base font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.28)] transition hover:bg-[#1D4ED8]"
+                >
+                  Apply Now
+                </Link>
+                <Link
+                  href="/contact"
+                  className="rounded-2xl border border-[#C6D5E7] bg-white px-6 py-3 text-base font-semibold text-[#0F172A] transition hover:bg-[#F8FBFF]"
+                >
+                  Talk to Team
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-[#D9E3EF] bg-white/70 p-5 shadow-[0_12px_34px_rgba(15,23,42,0.08)]">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {heroHighlights.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-[#D6E0EC] bg-[#FAFCFF] p-4 text-center text-base font-semibold text-[#0F172A] md:text-xl"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-[24px] border border-[#D6E0EC] bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FB_100%)] p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-[#0F172A] md:text-3xl">AI-First Digital Capability Learning</div>
+                  <p className="mt-3 text-base leading-7 text-[#475569] md:text-lg">
+                    One program designed to help modern learners build connected digital capability instead of isolated skill dependency.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Section
+          eyebrow="Program Overview"
+          title="A Practical AI-First Digital Skills Program for the Modern Future"
+          subtitle="AI Generalist Program is a structured guided learning program designed to help learners build practical digital capability using AI workflows across multiple modern work areas. Instead of focusing on only one skill, the program trains learners to create across design, video, content, marketing, websites, automation, and freelancing."
+        >
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
+              {programIntroCards.map((item) => (
+                <SimpleCard key={item.title} item={item} />
+              ))}
+            </div>
+
+            <div className="rounded-[24px] border border-[#C9D7E8] bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+              <h3 className="text-3xl font-bold tracking-[-0.03em] text-[#111827]">Old Model → New Model</h3>
+              <div className="mt-6 grid gap-4 md:grid-cols-[0.8fr_0.2fr_1fr]">
+                <div className="space-y-3">
+                  {["Graphic Design", "Video Editing", "Content Writing", "Marketing", "Website Work"].map((item) => (
+                    <div key={item} className="rounded-full border border-[#D8E1EC] bg-[#FBFDFF] px-4 py-3 text-lg font-medium text-[#1F2937]">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-center text-4xl font-black text-[#2563EB]">→</div>
+                <div className="rounded-[24px] border border-[#D5C48D] bg-[linear-gradient(180deg,#FFFDF8_0%,#F7FBFF_100%)] p-6 text-center">
+                  <div className="text-4xl font-extrabold text-[#2563EB] md:text-5xl">AI Generalist</div>
+                  <p className="mt-4 text-xl leading-8 text-[#1F2937]">
+                    One person. Multiple digital capabilities. AI-powered execution.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Industry Shift"
+          title="Why Traditional Learning Is No Longer Enough"
+          subtitle="Digital work is changing faster than traditional learning models. Earlier, learners could focus on only one skill and still find opportunities. Today, AI is reshaping execution across design, content, video, marketing, websites, and operations. The market is moving toward speed, adaptability, and multi-skill capability."
+        >
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-[#111827] md:text-3xl">Traditional Learning Model</h3>
+              {traditionalVsModern.map(([leftTitle, leftDesc]) => (
+                <div key={leftTitle} className="rounded-2xl border border-[#D8E0EA] bg-white p-5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+                  <h4 className="text-xl font-bold text-[#111827]">{leftTitle}</h4>
+                  <p className="mt-2 text-lg leading-8 text-[#475569]">{leftDesc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-[#2563EB] md:text-3xl">Modern AI-Powered Learning Model</h3>
+              {traditionalVsModern.map(([, , rightTitle, rightDesc]) => (
+                <div key={rightTitle} className="rounded-2xl border border-[#BFD2EA] bg-[#F8FBFF] p-5 shadow-[0_8px_18px_rgba(37,99,235,0.08)]">
+                  <h4 className="text-xl font-bold text-[#2563EB]">{rightTitle}</h4>
+                  <p className="mt-2 text-lg leading-8 text-[#334155]">{rightDesc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#D5C48D] bg-white p-6 text-center">
+            <h3 className="text-3xl font-bold text-[#111827]">What the Market Is Moving Toward</h3>
+            <p className="mx-auto mt-3 max-w-5xl text-lg leading-8 text-[#475569]">
+              The future belongs to professionals who can think, create, adapt, and execute across multiple digital areas with the help of AI.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <GlassBadge>Execution &gt; Theory</GlassBadge>
+              <GlassBadge>Workflows &gt; Isolated Tools</GlassBadge>
+              <GlassBadge>Adaptability &gt; Single Skill</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Capability Framework"
+          title="The AI Generalist Model"
+          subtitle="An AI Generalist is a modern digital professional who can use AI to create, execute, and deliver work across multiple digital areas. Instead of depending on only one narrow skill, they understand how to combine design, video, content, marketing, websites, and automation into practical workflow-driven execution."
+        >
+          <div className="grid gap-5 lg:grid-cols-[1fr_0.92fr_1fr]">
+            <div className="space-y-4">
+              {aiGeneralistModel.slice(0, 3).map((item) => (
+                <div key={item} className="rounded-[24px] border border-[#C9D7E8] bg-white p-6 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+                  <div className="text-3xl font-bold text-[#111827]">{item}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center">
+              <div className="flex h-[320px] w-[320px] items-center justify-center rounded-full border-[10px] border-[#2563EB] bg-white text-center shadow-[0_18px_40px_rgba(37,99,235,0.18)]">
+                <div className="max-w-[220px]">
+                  <div className="text-4xl font-extrabold text-[#0B1530]">AI Generalist</div>
+                  <p className="mt-4 text-xl leading-8 text-[#334155]">
+                    One person. Multiple digital capabilities. AI-powered execution.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {aiGeneralistModel.slice(3).map((item) => (
+                <div key={item} className="rounded-[24px] border border-[#C9D7E8] bg-white p-6 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+                  <div className="text-3xl font-bold text-[#111827]">{item}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <SimpleCard
+              item={{
+                title: "What Makes This Powerful",
+                desc: "Learners do not just learn tools. They learn how digital work connects across different practical execution areas.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "How This Changes Learning",
+                desc: "Instead of learning one isolated skill, students build broader capability with stronger workflow understanding.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "What This Creates",
+                desc: "A more adaptable learner who can handle multiple digital tasks with better speed, confidence, and flexibility.",
+              }}
+            />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Learning Modules"
+          title="What Students Will Learn in the Program"
+          subtitle="The AI Generalist Program is built around six core practical modules. Each module is designed to help learners build execution capability in a different digital work area using AI workflows, guided practice, and real project-based learning."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {modules.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <SimpleCard
+              item={{
+                title: "Practical Learning",
+                desc: "Every module focuses on real implementation, guided practice, and hands-on execution.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Connected Skill Building",
+                desc: "Students do not learn skills in isolation. They understand how design, content, video, websites, and workflows connect.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Real Digital Output",
+                desc: "The goal is not only concept learning but practical outputs that can support portfolio growth.",
+              }}
+            />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Program Structure"
+          title="A Guided 50-Class Learning System Built for Real Execution"
+          subtitle="The AI Generalist Program follows a structured format designed to help students learn, implement, practice, and improve consistently. Instead of relying only on lectures, the program combines live learning with guided assignment classes so that students can turn concepts into practical work."
+        >
+          <div className="grid gap-5 lg:grid-cols-3">
+            {structureCards.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#C9D7E8] bg-[#F8FBFF] p-6">
+            <h3 className="text-center text-3xl font-bold text-[#111827]">How the Learning Cycle Works</h3>
+            <div className="mt-6 grid gap-4 md:grid-cols-4">
+              {["Learn", "Apply", "Build", "Improve"].map((step) => (
+                <div key={step} className="rounded-2xl border border-[#D6E0EC] bg-white p-5 text-center shadow-[0_8px_16px_rgba(15,23,42,0.05)]">
+                  <div className="text-2xl font-bold text-[#0F172A]">{step}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <GlassBadge>Learning by Doing</GlassBadge>
+              <GlassBadge>Theory + Practice Balance</GlassBadge>
+              <GlassBadge>Consistent Skill Building</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Live Class Roadmap"
+     ecution"
+          subtitle="The live class structure is designed as a step-by-step learning journey. Students begin with AI fundamentals, tool understanding, and prompt thinking, then move into practical capability building across design, video, content, marketing assets, websites, automation, freelancing, and final execution."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {classJourney.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <SimpleCard
+              item={{
+                title: "Structured Progression",
+                desc: "The learning moves step by step from understanding to execution, making the journey easy to follow.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Practical Capability Building",
+                desc: "Every phase focuses on real digital work areas and practical outputs instead of passive theory.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Portfolio-Oriented Journey",
+                desc: "The class structure is designed to help students build useful work that supports confidence and future opportunities.",
+              }}
+            />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Practice & Implementation"
+          title="25 Assignment Classes Designed for Real Practice and Output Building"
+          subtitle="The assignment class model is built to help students apply what they learn in live sessions through guided implementation. Instead of stopping at explanation, the program gives learners a structured space to practice, build, improve, and turn concepts into actual digital outputs."
+        >
+          <div className="rounded-[24px] border border-[#D5C48D] bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+            <div className="grid items-center gap-6 lg:grid-cols-[0.3fr_1fr]">
+              <div className="text-center">
+                <div className="text-7xl font-extrabold tracking-[-0.06em] text-[#2563EB] md:text-9xl">25</div>
+              </div>
+              <div>
+                <h3 className="text-4xl font-extrabold text-[#111827]">Assignment Classes</h3>
+                <p className="mt-2 text-xl leading-8 text-[#334155]">
+                  Guided Practice • Implementation • Output Building • Improvement
+                </p>
+                <p className="mt-3 text-lg leading-8 text-[#475569]">
+                  A practical system that helps students convert learning into execution.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {assignmentModel.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#C9D7E8] bg-[#F8FBFF] p-6">
+            <h3 className="text-center text-3xl font-bold text-[#111827]">How Assignment Learning Works</h3>
+            <div className="mt-6 grid gap-4 md:grid-cols-5">
+              {["Understand", "Practice", "Execute", "Refine", "Build Confidence"].map((step, index) => (
+                <div key={step} className="rounded-2xl border border-[#C7D6E6] bg-white p-4 shadow-[0_8px_16px_rgba(15,23,42,0.05)]">
+                  <div className="text-sm font-semibold text-[#2563EB]">Step {index + 1}</div>
+                  <div className="mt-2 text-xl font-bold text-[#111827]">{step}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <GlassBadge>Learning by Doing</GlassBadge>
+              <GlassBadge>Implementation-Driven</GlassBadge>
+              <GlassBadge>Output-Focused Training</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Tools & Workflows"
+          title="Students Learn How to Work with Modern AI Tools Through Real Digital Workflows"
+          subtitle="The AI Generalist Program is built around workflow-based learning. Students are introduced to modern AI tool categories across design, video, content, marketing, websites, and automation. The focus is not only on using tools individually, but on understanding how tools connect together to support faster, smarter digital execution."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {toolCards.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#C9D7E8] bg-white p-6">
+            <h3 className="text-3xl font-bold text-[#111827]">The Real Skill Is Workflow Thinking</h3>
+            <p className="mt-3 max-w-5xl text-lg leading-8 text-[#475569]">
+              The most valuable skill is not simply knowing many tools. It is understanding how the right tools can be combined into practical workflows.
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-5">
+              {["Think", "Prompt", "Create", "Assemble", "Execute"].map((step) => (
+                <div key={step} className="rounded-2xl border border-[#D5DFEA] bg-[#F8FBFF] p-4 text-center shadow-[0_8px_16px_rgba(15,23,42,0.05)]">
+                  <div className="text-xl font-bold text-[#0F172A]">{step}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <GlassBadge>Tool Categories, Not Confusion</GlassBadge>
+              <GlassBadge>Workflow-Based Learning</GlassBadge>
+              <GlassBadge>Execution Over Random Usage</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Practical Outputs"
+          title="Students Build Real Digital Work Throughout the Program"
+          subtitle="The AI Generalist Program is designed around practical output creation. As students move through each module, they work on real digital tasks and build visible assets across design, video, content, marketing, websites, workflows, and freelancing."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {outputs.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+            <SimpleCard
+              item={{
+                title: "From Learning to Portfolio-Ready Work",
+                desc: "By the end of the journey, learners do not just understand AI workflows. They also build practical outputs that reflect execution capability.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Visible Work",
+                desc: "Students finish with real work they can review, improve, and present.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Practical Confidence",
+                desc: "Building outputs regularly helps strengthen execution confidence and digital clarity.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Portfolio Support",
+                desc: "The learning journey creates a foundation for future portfolio building and real project thinking.",
+              }}
+            />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Ideal Audience"
+          title="Who Should Join the AI Generalist Program"
+          subtitle="The AI Generalist Program is designed for learners who want to build practical future-ready digital capability using AI workflows. Whether someone is starting fresh, switching direction, building freelance skills, or creating online content, this program is structured to support modern digital growth."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {audience.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#D6E0EC] bg-[#F8FBFF] p-6">
+            <h3 className="text-center text-4xl font-extrabold tracking-[-0.03em] text-[#111827]">
+              This Program Is a Strong Fit If You Want To
+            </h3>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <BulletList
+                items={[
+                  "Build practical digital capability using AI",
+                  "Learn through guided sessions and implementation",
+                  "Create outputs instead of only watching lessons",
+                  "Develop skills across multiple digital work areas",
+                ]}
+              />
+              <BulletList
+                items={[
+                  "Understand workflow-based execution",
+                  "Improve speed and adaptability in digital tasks",
+                  "Build a foundation for portfolio and freelancing",
+                  "Learn modern future-focused digital methods",
+                ]}
+              />
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <GlassBadge>Beginner-Friendly</GlassBadge>
+              <GlassBadge>Practical Learning</GlassBadge>
+              <GlassBadge>Future-Oriented Skills</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Learning Experience"
+          title="How Students Learn Inside the Program"
+          subtitle="The AI Generalist Program is designed to create an active learning experience. Students do not only watch lessons — they move through a guided journey that includes concept learning, workflow demonstrations, practical assignments, implementation support, and repeated output creation."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {learningExperience.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#D6E0EC] bg-white p-6">
+            <h3 className="text-center text-4xl font-extrabold tracking-[-0.03em] text-[#111827]">
+              The Learning Journey Inside the Program
+            </h3>
+            <div className="mt-6 grid gap-4 md:grid-cols-5">
+              {learningJourney.map((step, index) => (
+                <div key={step} className="rounded-2xl border border-[#D6E0EC] bg-[#FBFDFF] p-5 text-center shadow-[0_8px_16px_rgba(15,23,42,0.05)]">
+                  <div className="text-3xl font-extrabold text-[#BCC7D6]">{index + 1}</div>
+                  <div className="mt-2 text-2xl font-bold text-[#111827]">{step}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <GlassBadge>Guided Learning</GlassBadge>
+              <GlassBadge>Practical Execution</GlassBadge>
+              <GlassBadge>Step-by-Step Growth</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Freelancing Direction"
+          title="Students Also Learn How to Turn Skills into Beginner Freelancing Opportunities"
+          subtitle="The AI Generalist Program includes a dedicated freelancing module to help students understand how their digital skills can be applied in real market situations. The goal is to give learners a practical foundation in service thinking, client communication, basic pricing, and starter-level opportunity creation."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {freelancingCards.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <SimpleCard
+              item={{
+                title: "Practical Service Thinking",
+                desc: "Students learn how skills can be presented as useful market-facing services.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Beginner-Level Clarity",
+                desc: "The freelancing module reduces confusion around where to start and how to structure early work.",
+              }}
+            />
+            <SimpleCard
+              item={{
+                title: "Foundation for Future Growth",
+                desc: "Students gain starter-level direction that can support future client work, portfolio growth, and skill monetization.",
+              }}
+            />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Program Outcomes"
+          title="What Students Gain by the End of the Program"
+          subtitle="By the end of the AI Generalist Program, students complete a guided journey across multiple AI-powered digital work areas. The outcome is a stronger understanding of modern workflows, practical output creation capability, and a more confident foundation for future digital work, portfolio development, and beginner freelancing direction."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {outcomes.map((item) => (
+              <SimpleCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+            <SimpleCard
+              item={{
+                title: "A Stronger Foundation for the AI-Powered Digital Future",
+                desc: "The value of the program is not just learning tools. It is building the ability to think, create, adapt, and execute across modern digital work areas using AI.",
+              }}
+            />
+            <SimpleCard item={{ title: "Clarity", desc: "Students understand what to learn, how to apply it, and how modern digital workflows fit together." }} />
+            <SimpleCard item={{ title: "Capability", desc: "Students build useful cross-functional skill foundations instead of depending on one narrow path." }} />
+            <SimpleCard item={{ title: "Confidence", desc: "Students leave with practical work experience, stronger execution comfort, and better future-readiness." }} />
+          </div>
+        </Section>
+
+        <Section
+          eyebrow="Program Snapshot"
+          title="A Quick Overview of the AI Generalist Program"
+          subtitle="The AI Generalist Program is a structured AI-first digital capability course designed to help learners build practical modern skills across multiple digital work areas through guided classes, assignment-based learning, and real output creation."
+        >
+          <div className="grid gap-5 xl:grid-cols-[1.1fr_1fr]">
+            <div className="rounded-[24px] border border-[#BED1E8] bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.07)]">
+              <h3 className="text-4xl font-extrabold tracking-[-0.03em] text-[#111827]">Program Details</h3>
+              <div className="mt-6 space-y-3">
+                {snapshotLeft.map((item) => (
+                  <div key={item} className="border-b border-[#E4EBF3] pb-3 text-lg leading-8 text-[#1F2937]">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-[24px] border border-[#BED1E8] bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.07)]">
+                <h3 className="text-3xl font-bold text-[#111827]">Core Learning Areas</h3>
+                <div className="mt-4"><BulletList items={snapshotRightA} /></div>
+              </div>
+
+              <div className="rounded-[24px] border border-[#BED1E8] bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.07)]">
+                <h3 className="text-3xl font-bold text-[#111827]">How Students Learn</h3>
+                <div className="mt-4"><BulletList items={snapshotRightB} /></div>
+              </div>
+
+              <div className="rounded-[24px] border border-[#BED1E8] bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.07)]">
+                <h3 className="text-3xl font-bold text-[#111827]">Who It Is For</h3>
+                <div className="mt-4"><BulletList items={snapshotRightC} /></div>
+              </div>
+
+              <div className="rounded-[24px] border border-[#BED1E8] bg-white p-6 shadow-[0_10px_22px_rgba(15,23,42,0.07)]">
+                <h3 className="text-3xl font-bold text-[#111827]">What Students Gain</h3>
+                <div className="mt-4"><BulletList items={snapshotRightD} /></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#BED1E8] bg-[#F8FBFF] p-6">
+            <h3 className="text-4xl font-extrabold tracking-[-0.03em] text-[#111827]">Why This Program Stands Out</h3>
+            <p className="mt-3 text-lg leading-8 text-[#475569]">
+              It brings together AI workflows, practical learning, multiple capability areas, and real output creation in one structured guided format.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <GlassBadge>AI-First Learning</GlassBadge>
+              <GlassBadge>Practical Output Focus</GlassBadge>
+              <GlassBadge>Modern Multi-Skill Capability</GlassBadge>
+            </div>
+          </div>
+        </Section>
+
+        <section className="rounded-[28px] border border-[#C9D7E8] bg-[linear-gradient(180deg,#F9FBFE_0%,#EFF4FA_100%)] p-6 text-center shadow-[0_10px_26px_rgba(15,23,42,0.07)] md:p-10">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-4xl font-extrabold tracking-[-0.04em] text-[#0B1530] md:text-6xl">
+              AI Generalist Program
+            </div>
+            <p className="mt-4 text-xl leading-8 text-[#334155] md:text-2xl">
+              A structured AI-first learning journey designed for students, beginners, freelancers, creators, and career switchers who want to build practical digital capability across design, video, content, marketing, websites, workflow systems, and freelancing through guided learning and real output creation.
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              {heroHighlights.map((item) => (
+                <GlassBadge key={item}>{item}</GlassBadge>
+              ))}
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/admission"
+                className="rounded-2xl bg-[#2563EB] px-7 py-3.5 text-base font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.28)] transition hover:bg-[#1D4ED8]"
+              >
+                Apply Now
+              </Link>
+              <Link
+                href="/contact"
+                className="rounded-2xl border border-[#C6D5E7] bg-white px-7 py-3.5 text-base font-semibold text-[#0F172A] transition hover:bg-[#F8FBFF]"
+              >
+                Contact Team
+              </Link>
+            </div>
+
+            <div className="mt-8 border-t border-[#D8E1EC] pt-6 text-center">
+              <div className="text-2xl font-bold text-[#2563EB] md:text-4xl">www.sikhadenge.in</div>
+              <p className="mt-2 text-lg text-[#475569]">AI-First Digital Capability Program</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </PageShell>
+  );
+}

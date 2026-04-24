@@ -1,0 +1,402 @@
+import generatedPages from "../../../data/generated-seo-merged.json";
+import { notFound } from "next/navigation";
+
+type GeneratedPage = {
+  slug: string;
+  title?: string;
+  description?: string;
+  skill?: string;
+  city?: string;
+  industry?: string;
+  familyKey?: string;
+  rootSlug?: string;
+  pageKind?: string;
+  relatedFamilies?: string[];
+  dynamicValues?: {
+    audience?: string;
+    city?: string;
+    location?: string;
+    usecase?: string;
+    modifier?: string;
+  };
+};
+
+export async function generateStaticParams() {
+  return (generatedPages as GeneratedPage[])
+    .filter((item) => item?.slug)
+    .map((item) => ({ slug: item.slug }));
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const page = (generatedPages as GeneratedPage[]).find((item) => item.slug === params.slug);
+  if (!page) {
+    return {
+      title: "Expert Page Not Found | Sikhadenge",
+      description: "The requested expert page could not be found.",
+    };
+  }
+
+  return {
+    title: page.title || "Expert Guide | Sikhadenge",
+    description:
+      page.description ||
+      "Premium expert guide by Sikhadenge with practical structure for SEO, AEO, GEO, and modern digital work.",
+  };
+}
+
+function safeText(value?: string, fallback: string = "India") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+export default function ExpertDetailPage({ params }: { params: { slug: string } }) {
+  const generatedPage = (generatedPages as GeneratedPage[]).find((item) => item.slug === params.slug);
+
+  if (!generatedPage) {
+    notFound();
+  }
+
+  const title = generatedPage.title || "Expert Guide";
+  const description =
+    generatedPage.description ||
+    "Premium expert guide by Sikhadenge for practical growth, execution, and long-term authority.";
+  const topic =
+    generatedPage.skill ||
+    generatedPage.title?.replace(/\s+\|\s+Sikhadenge$/, "") ||
+    generatedPage.familyKey ||
+    "AI Skill";
+  const pageKind = safeText(generatedPage.pageKind, "guide");
+  const familyKey = safeText(generatedPage.familyKey, generatedPage.rootSlug || "expert");
+  const rootSlug = safeText(generatedPage.rootSlug, familyKey);
+  const audience = safeText(generatedPage.dynamicValues?.audience, "learners");
+  const city = safeText(
+    generatedPage.dynamicValues?.city || generatedPage.dynamicValues?.location || generatedPage.city,
+    "India"
+  );
+  const usecase = safeText(generatedPage.dynamicValues?.usecase, "practical work");
+  const modifier = safeText(generatedPage.dynamicValues?.modifier, "practical growth");
+  const relatedFamilies = Array.isArray(generatedPage.relatedFamilies)
+    ? generatedPage.relatedFamilies.slice(0, 8)
+    : [];
+
+  const relatedTopicLinks = [
+    rootSlug,
+    ...relatedFamilies,
+    familyKey,
+    "ai-tools",
+    "ai-skills",
+    "ai-career",
+    "make-money-with-ai"
+  ]
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .slice(0, 8);
+
+  const premiumCtaTitle =
+    pageKind === "salary"
+      ? `Turn ${topic} into real career growth`
+      : pageKind === "jobs"
+      ? `Build job-ready capability in ${topic}`
+      : pageKind === "roadmap"
+      ? `Follow a practical roadmap for ${topic}`
+      : pageKind === "usecase"
+      ? `Use ${topic} in practical execution`
+      : `Build practical authority in ${topic}`;
+
+  const premiumCtaText = `Sikhadenge focuses on structured, practical, execution-first learning so topics like ${topic} become useful for output, growth, freelance work, jobs, and long-term positioning.`;
+
+  const internalLinkGroups = [
+    {
+      title: "Core topic paths",
+      links: relatedTopicLinks.slice(0, 4),
+    },
+    {
+      title: "Growth paths",
+      links: relatedTopicLinks.slice(2, 6),
+    },
+    {
+      title: "Action paths",
+      links: relatedTopicLinks.slice(4, 8),
+    },
+  ].filter((group) => group.links.length > 0);
+
+  const premiumSections = [
+    {
+      title: `Why ${topic} is important in real work`,
+      paragraphs: [
+        `${topic} matters because practical digital work now rewards clarity, speed, execution quality, and repeatable systems. A user who understands where this topic fits can improve decisions, output quality, workflow structure, and long-term positioning. That is true for students, freelancers, job seekers, creators, founders, and working professionals who want to move from scattered effort to structured capability.`,
+        `Most people read pages that define a topic but do not show why it matters. A premium expert page should do more than explain. It should connect the topic to practical reality. That means showing where the topic helps, what it changes, which workflows it improves, and how it supports career growth, authority building, service delivery, or digital execution.`
+      ]
+    },
+    {
+      title: `Who this expert page is useful for`,
+      paragraphs: [
+        `This page is useful for ${audience} because the topic can support better direction, better execution, and stronger positioning in competitive environments. A beginner can use it to reduce confusion. A freelancer can use it to improve client delivery. A working professional can use it to improve productivity and output quality. A founder can use it to build stronger systems and decision support.`,
+        `A premium expert page should not assume only one user intent. Some visitors want to learn. Some want to earn. Some want better systems. Some want market-ready clarity. This page is built to support that wider intent structure while staying focused on one clear topic cluster.`
+      ]
+    },
+    {
+      title: `How ${topic} supports SEO, AEO, and GEO`,
+      paragraphs: [
+        `From an SEO point of view, ${topic} becomes more useful when it is mapped to user role, practical intent, geo relevance, and modern search phrasing. From an AEO point of view, the topic becomes stronger when the page clearly explains what it is, who it helps, how it works, and what outcomes it creates. From a GEO point of view, the page becomes more valuable when relevance is connected with ${city} and broader location-sensitive demand.`,
+        `That is why premium expert pages should cover meaning, use case, role relevance, market relevance, and action path together. This creates a better answerable structure for AI systems and a stronger clustering signal for search engines.`
+      ]
+    },
+    {
+      title: `Practical use cases of ${topic}`,
+      paragraphs: [
+        `${topic} becomes far more useful when it is connected to real use cases such as ${usecase}, growth workflows, service delivery, content systems, business execution, portfolio development, and practical learning. Without context, the topic remains abstract. With context, it becomes usable.`,
+        `This is one of the biggest differences between low-value pages and premium authority pages. Low-value pages stop at explanation. Premium pages connect explanation with execution. That is how users build trust and how search systems identify meaningful topical depth.`
+      ]
+    },
+    {
+      title: `Career and growth value of ${topic}`,
+      paragraphs: [
+        `A topic like ${topic} has real growth value because it influences how clearly a person can work, communicate capability, and create usable output. That improves positioning in learning, interviews, freelance pitching, portfolio development, client discussions, or business planning. The topic gains even more value when it is linked with one repeatable workflow instead of being treated only as a concept.`,
+        `For many users, the practical question is not whether the topic sounds important. The practical question is whether it helps with earning, growth, confidence, or results. A premium page should answer that clearly, and this page is structured to do exactly that.`
+      ]
+    },
+    {
+      title: `A premium way to learn and apply ${topic}`,
+      paragraphs: [
+        `The strongest way to learn ${topic} is to begin with one clear use case, understand the workflow, create one practical output, and then repeat that process until quality improves. That is much more effective than trying to learn everything at once. Premium learning means structured learning, not overloaded learning.`,
+        `Once a learner understands the topic, the next step is to connect it with adjacent families, such as tools, workflows, content, earning, marketing, design, or career growth. That is how the topic becomes part of an authority network rather than a one-off keyword idea.`
+      ]
+    }
+  ];
+
+  const faqItems = [
+    {
+      q: `What does ${topic} actually mean in practical work?`,
+      a: `${topic} means using a structured skill, workflow, or system in a way that improves output quality, execution speed, and long-term practical results.`
+    },
+    {
+      q: `Is ${topic} useful for ${audience}?`,
+      a: `Yes. ${topic} becomes useful when it is tied to a real use case, clear workflow, and practical output goal.`
+    },
+    {
+      q: `How does ${topic} help in ${city}?`,
+      a: `It helps by improving competitiveness, clarity, and execution quality in a market where practical digital capability matters more every year.`
+    },
+    {
+      q: `Can a beginner start with ${topic}?`,
+      a: `Yes. Beginners do best when they start with one use case, one workflow, and one output goal instead of trying to master everything together.`
+    },
+    {
+      q: `Why is this page useful for SEO, AEO, and GEO?`,
+      a: `Because it connects the topic with structured meaning, practical use, audience relevance, and geo-aware context instead of keeping the page shallow.`
+    },
+    {
+      q: `What is the best next step after reading this page?`,
+      a: `Pick one practical use case, connect it with a real workflow, and then move into structured execution so the topic becomes useful in real work.`
+    }
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#0B1220] text-white">
+      <section className="border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.18),transparent_45%),linear-gradient(180deg,#0B1220_0%,#111827_100%)]">
+        <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 lg:px-8 lg:pt-28">
+          <div className="max-w-4xl">
+            <div className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#B0B7C3]">
+              Premium Expert {pageKind.replace(/-/g, " ")}
+            </div>
+            <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
+              {title}
+            </h1>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-[#B0B7C3] sm:text-lg">
+              {description}
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
+                Audience: <span className="font-semibold text-[#F5B301]">{audience}</span>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
+                Location: <span className="font-semibold text-[#F5B301]">{city}</span>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
+                Use case: <span className="font-semibold text-[#F5B301]">{usecase}</span>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
+                Focus: <span className="font-semibold text-[#F5B301]">{modifier}</span>
+              </div>
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-4">
+              <a
+                href="/gen-ai-masterclass/register-one-step"
+                className="rounded-2xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
+              >
+                Join Free Masterclass
+              </a>
+              <a
+                href={`/${rootSlug}`}
+                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+              >
+                Explore Root Topic
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <div className="space-y-8">
+              {premiumSections.map((section, idx) => (
+                <section
+                  key={section.title}
+                  className="rounded-[28px] border border-white/10 bg-[#111827] p-6 shadow-[0_0_18px_rgba(37,99,235,0.10)] sm:p-8"
+                >
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-sm font-bold text-[#F5B301]">
+                      {String(idx + 1).padStart(2, "0")}
+                    </div>
+                    <h2 className="text-2xl font-bold tracking-tight text-white">
+                      {section.title}
+                    </h2>
+                  </div>
+
+                  <div className="space-y-5">
+                    {section.paragraphs.map((paragraph, pIdx) => (
+                      <p key={pIdx} className="text-base leading-8 text-[#B0B7C3]">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+
+          <aside className="lg:col-span-4">
+            <div className="sticky top-24 space-y-6">
+              <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
+                <h3 className="text-lg font-bold text-white">Premium expert signals</h3>
+                <div className="mt-4 space-y-3 text-sm text-[#B0B7C3]">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    Word target: 1500–1800
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    Structure: SEO + AEO + GEO aligned
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    Family: {familyKey}
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    Slug: {params.slug}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
+                <h3 className="text-lg font-bold text-white">Related paths</h3>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {relatedTopicLinks.map((slug) => (
+                    <a
+                      key={slug}
+                      href={`/${slug}`}
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-[#B0B7C3] transition hover:border-white/20 hover:text-white"
+                    >
+                      {slug.replace(/-/g, " ")}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
+                <h3 className="text-lg font-bold text-white">Action step</h3>
+                <p className="mt-3 text-sm leading-7 text-[#B0B7C3]">
+                  Use this page as a premium expert map, then connect the topic with one real use
+                  case and one execution workflow so it becomes useful in actual work.
+                </p>
+                <a
+                  href="/gen-ai-masterclass/register-one-step"
+                  className="mt-5 inline-flex rounded-2xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
+                >
+                  Start with Sikhadenge
+                </a>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6 sm:p-8">
+          <h2 className="text-2xl font-bold text-white">Frequently asked questions</h2>
+          <div className="mt-6 space-y-4">
+            {faqItems.map((faq) => (
+              <details
+                key={faq.q}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4"
+              >
+                <summary className="cursor-pointer list-none text-base font-semibold text-white">
+                  {faq.q}
+                </summary>
+                <p className="mt-3 text-sm leading-7 text-[#B0B7C3]">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {internalLinkGroups.map((group) => (
+            <div
+              key={group.title}
+              className="rounded-[28px] border border-white/10 bg-[#111827] p-6 shadow-[0_0_18px_rgba(37,99,235,0.10)]"
+            >
+              <h3 className="text-lg font-bold text-white">{group.title}</h3>
+              <div className="mt-4 space-y-3">
+                {group.links.map((slug) => (
+                  <a
+                    key={slug}
+                    href={`/${slug}`}
+                    className="block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[#B0B7C3] transition hover:border-white/20 hover:text-white"
+                  >
+                    {slug.replace(/-/g, " ")}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 bg-[#111827]">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(135deg,rgba(37,99,235,0.18),rgba(245,179,1,0.08))] p-8 shadow-[0_0_18px_rgba(245,179,1,0.18)]">
+            <h2 className="text-3xl font-black text-white">
+              {premiumCtaTitle}
+            </h2>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
+              {premiumCtaText}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a
+                href="/gen-ai-masterclass/register-one-step"
+                className="rounded-2xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
+              >
+                Book Free Masterclass
+              </a>
+              <a
+                href={`/${rootSlug}`}
+                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+              >
+                Explore More {topic}
+              </a>
+              <a
+                href="/ai-skills"
+                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+              >
+                Explore AI Skills
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

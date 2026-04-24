@@ -1,0 +1,29 @@
+
+:root {
+    --primary-color: #2563EB; /* Blue */
+    --accent-color: #F5B301;  /* Gold */
+    --base-background-color: #0B1220; /* Dark Navy */
+    --text-color: #FFFFFF;  /* White */
+    --text-muted-color: #B0B7C3;  /* Muted Grey */
+}
+
+/* Apply the colors to various elements */
+body {
+    background-color: var(--base-background-color);
+    color: var(--text-color);
+}
+
+a {
+    color: var(--primary-color);
+}
+
+.accent {
+    color: var(--accent-color);
+}
+
+/* Removing stroke (borders) from buttons and containers */
+button, .card, .container {
+    border: none;
+    outline: none;
+}
+

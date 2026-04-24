@@ -1,0 +1,383 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { trackLead } from '@/lib/metaPixel'
+
+type FormState = {
+  name: string
+  email: string
+  phone: string
+  experience: string
+  goal: string
+  laptop: string
+}
+
+type SubmitState = 'idle' | 'loading' | 'success' | 'error'
+
+const EXPERIENCE_OPTIONS = [
+  'Select your occupation',
+  'Salaried Professional',
+  'Self-Employed',
+  'Founder',
+  'Student',
+  'Others',
+]
+
+const GOAL_OPTIONS = [
+  'Select your goal',
+  'Kickstart Career',
+  'Career Transition',
+  'Upskilling',
+  'Others',
+]
+
+const WHATSAPP_COMMUNITY_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_COMMUNITY_URL ||
+  'https://chat.whatsapp.com/FA8AdZfRsOYDXTqA3scWhv'
+
+export default function RegisterOneStepPage() {
+  const [search, setSearch] = useState('')
+  const [redirectCountdown, setRedirectCountdown] = useState(5)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSearch(window.location.search || '')
+    }
+  }, [])
+
+  const [form, setForm] = useState<FormState>({
+    name: '',
+    email: '',
+    phone: '',
+    experience: 'Select your occupation',
+    goal: 'Select your goal',
+    laptop: '',
+  })
+
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
+  const [submitError, setSubmitError] = useState('')
+
+  const tracking = useMemo(() => {
+    const params = new URLSearchParams(search)
+    const get = (key: string) => params.get(key) || ''
+
+    const landingUrl =
+      typeof window !== 'undefined' ? window.location.href : ''
+
+    const referrer =
+      typeof document !== 'undefined' ? document.referrer : ''
+
+    return {
+      utm_source: get('utm_source'),
+      utm_medium: get('utm_medium'),
+      utm_campaign: get('utm_campaign'),
+      utm_term: get('utm_term'),
+      utm_content: get('utm_content'),
+      utm_id: get('utm_id'),
+      utm_campaign_id: get('utm_campaign_id') || get('campaign_id'),
+      utm_adset_id: get('utm_adset_id') || get('adset_id'),
+      utm_ad_id: get('utm_ad_id') || get('ad_id'),
+      fbclid: get('fbclid'),
+      gclid: get('gclid'),
+      msclkid: get('msclkid'),
+      landingUrl,
+      referrer,
+      page: '/gen-ai-masterclass/register-one-step',
+      source: 'website',
+      attribution: {
+        fbclid: get('fbclid'),
+        gclid: get('gclid'),
+        msclkid: get('msclkid'),
+        referrer,
+        landingUrl,
+      },
+    }
+  }, [search])
+
+  useEffect(() => {
+    if (submitState !== 'success') return
+
+    setRedirectCountdown(5)
+
+    const interval = window.setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval)
+          window.location.href = WHATSAPP_COMMUNITY_URL
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [submitState])
+
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setErrors((prev) => ({ ...prev, [key]: '' }))
+  }
+
+  function validate() {
+    const nextErrors: Partial<Record<keyof FormState, string>> = {}
+
+    if (!form.name.trim()) nextErrors.name = 'Name is required'
+    if (!form.email.trim()) {
+      nextErrors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = 'Enter a valid email'
+    }
+
+    const phoneDigits = form.phone.replace(/\D/g, '')
+    if (!phoneDigits) {
+      nextErrors.phone = 'Phone number is required'
+    } else if (phoneDigits.length < 10) {
+      nextErrors.phone = 'Enter a valid phone number'
+    }
+
+    if (!form.experience.trim() || form.experience === 'Select your occupation') {
+      nextErrors.experience = 'Please select your occupation'
+    }
+    if (!form.goal.trim() || form.goal === 'Select your goal') {
+      nextErrors.goal = 'Please select your goal'
+    }
+    if (!form.laptop.trim()) nextErrors.laptop = 'Please select your laptop status'
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSubmitError('')
+
+    if (!validate()) return
+
+    setSubmitState('loading')
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.replace(/\D/g, ''),
+      experience: form.experience,
+      goal: form.goal,
+      laptop: form.laptop === 'true',
+      source: tracking.source,
+      page: tracking.page,
+      utm_source: tracking.utm_source || null,
+      utm_medium: tracking.utm_medium || null,
+      utm_campaign: tracking.utm_campaign || null,
+      utm_term: tracking.utm_term || null,
+      utm_content: tracking.utm_content || null,
+      utm_id: tracking.utm_id || null,
+      utm_campaign_id: tracking.utm_campaign_id || null,
+      utm_adset_id: tracking.utm_adset_id || null,
+      utm_ad_id: tracking.utm_ad_id || null,
+      fbclid: tracking.fbclid || null,
+      gclid: tracking.gclid || null,
+      msclkid: tracking.msclkid || null,
+      landingUrl: tracking.landingUrl || null,
+      referrer: tracking.referrer || null,
+      attribution: tracking.attribution,
+    }
+
+    try {
+      const res = await fetch('/api/masterclass/lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        let message = 'Submission failed'
+        try {
+          const data = await res.json()
+          if (data?.error) message = data.error
+        } catch {}
+        throw new Error(message)
+      }
+
+      trackLead({ content_name: 'Gen AI Masterclass Registration', status: 'completed' })
+      setSubmitState('success')
+    } catch (error) {
+      setSubmitState('error')
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  if (submitState === 'success') {
+    return (
+      <main className="min-h-screen bg-[#0B1220] px-4 py-10 text-white">
+        <style jsx global>{`
+          header, footer {
+            display: none !important;
+          }
+          body {
+            background: #0B1220;
+          }
+        `}</style>
+
+        <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-[720px] items-center justify-center">
+          <div className="w-full rounded-[28px] border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl">
+              ✓
+            </div>
+            <h1 className="text-3xl font-bold md:text-4xl">Registration Successful</h1>
+            <p className="mt-4 text-base text-white/75 md:text-lg">
+              Your seat request has been submitted successfully.
+            </p>
+            <p className="mt-2 text-base text-white/75 md:text-lg">
+              You will be redirected to the WhatsApp community in {redirectCountdown} second{redirectCountdown === 1 ? '' : 's'}.
+            </p>
+
+            <a
+              href={WHATSAPP_COMMUNITY_URL}
+              className="mt-6 inline-flex rounded-xl bg-[#F5B301] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+            >
+              Join WhatsApp Community Now
+            </a>
+          </div>
+        </section>
+      </main>
+    )
+  }
+
+  return (
+    <main className="-mt-20 min-h-[calc(100vh+3.5rem)] bg-[#0B1220] text-white md:-mt-24 md:min-h-[calc(100vh+4.5rem)]">
+      <style jsx global>{`
+        header, footer {
+          display: none !important;
+        }
+        body {
+          background: #0B1220;
+        }
+      `}</style>
+
+      <section className="mx-auto grid min-h-screen max-w-[1160px] gap-8 px-4 py-6 md:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-8 lg:px-8">
+        <div className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top,#1e3a8a_0%,#0B1220_55%)] p-6 shadow-2xl md:p-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#F5B301]">
+            Gen-AI Masterclass
+          </div>
+
+          <h1 className="mt-6 text-3xl font-extrabold leading-tight md:text-5xl">
+            Register for the
+            <span className="block bg-gradient-to-r from-white via-[#93C5FD] to-[#F5B301] bg-clip-text text-transparent">
+              AI Masterclass
+            </span>
+          </h1>
+
+          <p className="mt-4 max-w-xl text-sm leading-7 text-white/75 md:text-base">
+            Fill once. Submit once. Registration will complete instantly on this page, then you will be redirected to the WhatsApp community.
+          </p>
+        </div>
+
+        <div className="rounded-[32px] border border-white/10 bg-white p-6 text-slate-900 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold tracking-tight">Complete your registration</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Enter your details carefully to reserve your seat.
+            </p>
+          </div>
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Full Name</label>
+              <input
+                value={form.name}
+                onChange={(e) => setField('name', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+                placeholder="Enter your full name"
+              />
+              {errors.name ? <p className="mt-1 text-xs text-red-600">{errors.name}</p> : null}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Email Address</label>
+              <input
+                value={form.email}
+                onChange={(e) => setField('email', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+                placeholder="Enter your email"
+              />
+              {errors.email ? <p className="mt-1 text-xs text-red-600">{errors.email}</p> : null}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Phone Number</label>
+              <input
+                value={form.phone}
+                onChange={(e) => setField('phone', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+                placeholder="Enter your phone number"
+              />
+              {errors.phone ? <p className="mt-1 text-xs text-red-600">{errors.phone}</p> : null}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Occupation</label>
+              <select
+                value={form.experience}
+                onChange={(e) => setField('experience', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+              >
+                {EXPERIENCE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {errors.experience ? <p className="mt-1 text-xs text-red-600">{errors.experience}</p> : null}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Goal</label>
+              <select
+                value={form.goal}
+                onChange={(e) => setField('goal', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+              >
+                {GOAL_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {errors.goal ? <p className="mt-1 text-xs text-red-600">{errors.goal}</p> : null}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Do you have a laptop?</label>
+              <select
+                value={form.laptop}
+                onChange={(e) => setField('laptop', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#2563EB]"
+              >
+                <option value="">Select laptop status</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+              {errors.laptop ? <p className="mt-1 text-xs text-red-600">{errors.laptop}</p> : null}
+            </div>
+
+            {submitError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={submitState === 'loading'}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-[#2563EB] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {submitState === 'loading' ? 'Submitting...' : 'Submit Registration'}
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+  )
+}

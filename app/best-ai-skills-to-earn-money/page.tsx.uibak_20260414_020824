@@ -1,0 +1,176 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Best AI Skills to Earn Money in India | Sikhadenge",
+  description:
+    "Explore the best AI skills to earn money in India across content, design, video, marketing, workflows, freelancing, and modern digital work. Learn how Sikhadenge connects practical AI skills with real earning opportunities.",
+  alternates: {
+    canonical: "https://sikhadenge.in/best-ai-skills-to-earn-money",
+  },
+  openGraph: {
+    title: "Best AI Skills to Earn Money in India | Sikhadenge",
+    description:
+      "A practical guide to the best AI skills for earning money through freelancing, jobs, creator work, and digital services in India.",
+    url: "https://sikhadenge.in/best-ai-skills-to-earn-money",
+    siteName: "Sikhadenge",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Best AI Skills to Earn Money in India | Sikhadenge",
+    description:
+      "Learn which AI skills help people earn money through content, design, video, marketing, workflows, and digital execution.",
+  },
+};
+
+const skills = [
+  {
+    title: "AI content skills",
+    desc: "Useful for scripts, captions, briefs, writing support, content systems, and client-facing communication work.",
+  },
+  {
+    title: "AI design support skills",
+    desc: "Useful for thumbnails, posters, visual concepts, ad creatives, social graphics, and practical digital assets.",
+  },
+  {
+    title: "AI video workflow skills",
+    desc: "Useful for reels, short-form ideas, edit support, structure planning, and creator-side production systems.",
+  },
+  {
+    title: "AI marketing execution skills",
+    desc: "Useful for campaign support, messaging, offers, asset coordination, and digital growth execution.",
+  },
+  {
+    title: "AI workflow and productivity skills",
+    desc: "Useful for task systems, repeatable execution, better speed, organization, and delivery consistency.",
+  },
+  {
+    title: "AI client delivery skills",
+    desc: "Useful for freelancers, service providers, and project-based workers who want stronger practical output.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Which AI skills are best for earning money?",
+    a: "The best AI skills are usually the ones linked with practical output such as content, visuals, video, marketing support, workflow execution, and digital service delivery.",
+  },
+  {
+    q: "Can beginners learn these skills?",
+    a: "Yes. Beginners can start with structured skill-building and practical use cases instead of trying to learn everything at once.",
+  },
+  {
+    q: "Do AI skills help in freelancing?",
+    a: "Yes. AI skills can improve service scope, client delivery speed, communication support, and broader execution capability in freelancing.",
+  },
+  {
+    q: "Do these skills require coding?",
+    a: "Not always. Many earning-focused AI skills are tied to no-code or low-code execution in content, design, video, and workflow systems.",
+  },
+];
+
+export default function BestAISkillsToEarnMoneyPage() {
+  return (
+    <main className="bg-white text-slate-900">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="max-w-4xl">
+          <p className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700">
+            AI Skills for Earning
+          </p>
+          <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
+            Best AI skills to earn money in India
+          </h1>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            The best AI skills to earn money are not random tool tricks. They are practical skills that
+            help people create useful output, support real work, and contribute to freelancing, jobs,
+            creator systems, business execution, and digital services. Sikhadenge helps learners connect
+            AI skills with modern earning opportunities through structured, practical learning.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {skills.map((item) => (
+            <div key={item.title} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <h2 className="text-xl font-bold">{item.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <section className="mt-14 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <h2 className="text-2xl font-black">Why these skills matter</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+            AI earning does not grow from knowing tool names only. It grows when people know how to use
+            AI in workflows, services, projects, content systems, visuals, communication, and practical
+            client or business execution.
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 p-5">
+              <h3 className="font-bold">Better freelance scope</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">Broader AI skills help people offer more useful digital services.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 p-5">
+              <h3 className="font-bold">Faster digital execution</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">Practical AI skills reduce manual effort and improve speed.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 p-5">
+              <h3 className="font-bold">More career relevance</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">AI-assisted execution is increasingly valuable in modern jobs and projects.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 p-5">
+              <h3 className="font-bold">Stronger earning paths</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">Useful AI skill stacks create more opportunities in jobs, services, and creator work.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-14 rounded-3xl bg-slate-900 p-8 text-white">
+          <h2 className="text-2xl font-black">How Sikhadenge helps learners build earning-focused AI skills</h2>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
+            Sikhadenge is an India-focused AI and skill learning platform for students, freelancers,
+            creators, and working professionals. The goal is to build practical capability across content,
+            design, video, marketing, workflows, tools, and digital execution so learners can move toward
+            stronger opportunities, output, and earning potential.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-4">
+            <Link
+              href="/gen-ai-masterclass/register-one-step"
+              className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Join Free AI Masterclass
+            </Link>
+            <Link
+              href="/courses/ai-mastery"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5"
+            >
+              Explore AI Learning Path
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-14">
+          <h2 className="text-2xl font-black">Frequently asked questions</h2>
+          <div className="mt-6 space-y-4">
+            {faqs.map((item) => (
+              <div key={item.q} className="rounded-2xl border border-slate-200 p-5">
+                <h3 className="text-base font-bold">{item.q}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-14 rounded-3xl border border-slate-200 bg-slate-50 p-7">
+          <h2 className="text-2xl font-black">Continue your next step</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link href="/ai-skills" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Skills</Link>
+            <Link href="/ai-tools" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Tools</Link>
+            <Link href="/how-to-start-ai-career" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">How to Start AI Career</Link>
+            <Link href="/ai-jobs-without-coding" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Jobs Without Coding</Link>
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}

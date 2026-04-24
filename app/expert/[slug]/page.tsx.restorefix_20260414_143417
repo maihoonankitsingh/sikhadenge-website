@@ -1,0 +1,371 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import {
+  Blocks,
+  BriefcaseBusiness,
+  Building2,
+  Globe,
+  HandCoins,
+  Lightbulb,
+  MapPin,
+  Rocket,
+  Sparkles,
+  Target,
+  Users,
+  Workflow,
+} from "lucide-react";
+
+import SectionHeader from "@/app/components/brand/SectionHeader";
+import LightFeatureCard from "@/app/components/brand/LightFeatureCard";
+import DarkCapabilityCard from "@/app/components/brand/DarkCapabilityCard";
+import FaqBlock, { type FaqItem } from "@/app/components/brand/FaqBlock";
+import generatedPages from "../../../data/generated-seo-merged.json";
+
+type PageData = {
+  slug: string;
+  skill: string;
+  city: string;
+  industry: string;
+};
+
+type PageProps = {
+  params: { slug: string };
+};
+
+function toTitleCase(value: string) {
+  return String(value || "")
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function getPageData(slug: string): PageData | undefined {
+  return (generatedPages as PageData[]).find((page) => page.slug === slug);
+}
+
+function makeWhatsappUrl(pageData: PageData) {
+  const text = `Hi, mujhe ${toTitleCase(pageData.skill)} ke bare me guidance chahiye for ${toTitleCase(
+    pageData.industry
+  )} in ${toTitleCase(pageData.city)}. Please details share kijiye.`;
+
+  return `https://wa.me/918808505575?text=${encodeURIComponent(text)}`;
+}
+
+export const revalidate = 2592000;
+
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const pageData = getPageData(params.slug);
+
+  if (!pageData) {
+    return {
+      title: "Expert Page | Sikhadenge",
+    };
+  }
+
+  const skill = toTitleCase(pageData.skill);
+  const industry = toTitleCase(pageData.industry);
+  const city = toTitleCase(pageData.city);
+  const canonical = `https://sikhadenge.in/expert/${pageData.slug}`;
+
+  return {
+    title: `${skill} for ${industry} in ${city} | Sikhadenge`,
+    description: `Learn how ${skill} is used for ${industry} in ${city}. Explore practical scope, real use cases, execution value, learning direction, and growth opportunities with Sikhadenge.`,
+    alternates: {
+      canonical,
+    },
+  };
+}
+
+export default function ExpertPage({ params }: PageProps) {
+  const pageData = getPageData(params.slug);
+
+  if (!pageData) {
+    return notFound();
+  }
+
+  const skill = toTitleCase(pageData.skill);
+  const industry = toTitleCase(pageData.industry);
+  const city = toTitleCase(pageData.city);
+  const whatsappUrl = makeWhatsappUrl(pageData);
+
+  const quickAnswers = [
+    {
+      label: "Skill focus",
+      value: `${skill} ko ${industry} use-cases aur execution ke perspective se samajhna sabse important hai.`,
+    },
+    {
+      label: "Main goal",
+      value: `${city} level relevance ke saath practical direction, better understanding, aur stronger digital execution clarity build karna.`,
+    },
+    {
+      label: "Best outcome",
+      value: `${skill} ko real work, services, delivery quality, aur growth opportunities me convert karna.`,
+    },
+  ];
+
+  const whyCards = [
+    {
+      icon: <Sparkles className="h-9 w-9" />,
+      title: `${skill} ab practical digital value create karta hai`,
+      description: `${skill} sirf ek buzzword nahi hai. ${industry} workflows me iska use better output, faster execution, aur stronger decision support ke liye ho sakta hai.`,
+    },
+    {
+      icon: <Building2 className="h-9 w-9" />,
+      title: `${industry} me execution expectations change ho rahi hain`,
+      description: `Aaj ${industry} projects me speed, clarity, structured systems, aur better digital workflow ki demand badh rahi hai. Isliye ${skill} ki relevance aur strong hoti ja rahi hai.`,
+    },
+    {
+      icon: <MapPin className="h-9 w-9" />,
+      title: `${city} audience ke liye local relevance bhi important hai`,
+      description: `${city} me learners, freelancers, founders, aur working professionals practical skills ko location-aware use cases ke saath samajhna chahte hain.`,
+    },
+    {
+      icon: <Rocket className="h-9 w-9" />,
+      title: `Broader capability future advantage deti hai`,
+      description: `${skill} ko sahi tarah samajhkar log better project contribution, stronger service value, aur smarter career positioning build kar sakte hain.`,
+    },
+  ];
+
+  const skillCards = [
+    {
+      icon: <Blocks className="h-9 w-9" />,
+      title: `${skill} ka practical scope`,
+      description: `${skill} ka use ${industry} me workflows, systems, delivery, communication, productivity, aur digital output quality improve karne me ho sakta hai.`,
+    },
+    {
+      icon: <Workflow className="h-9 w-9" />,
+      title: `Real workflow understanding`,
+      description: `Sirf theory nahi, balki ${industry} context me step-by-step execution samajhna zaruri hai taki ${skill} real use me aaye.`,
+    },
+    {
+      icon: <Target className="h-9 w-9" />,
+      title: `Use-case based learning`,
+      description: `${city} ke learners ke liye best approach ye hai ki ${skill} ko examples, project direction, aur industry scenarios ke saath samjha jaye.`,
+    },
+    {
+      icon: <Users className="h-9 w-9" />,
+      title: `Career and service relevance`,
+      description: `${skill} students, freelancers, job seekers, aur working professionals sabke liye useful ho sakta hai jab focus output aur real application par ho.`,
+    },
+    {
+      icon: <BriefcaseBusiness className="h-9 w-9" />,
+      title: `${industry} execution support`,
+      description: `${skill} se ideation, planning, structure, communication, aur execution support jaisi cheezein zyada strong ho sakti hain.`,
+    },
+    {
+      icon: <Lightbulb className="h-9 w-9" />,
+      title: `Better strategic clarity`,
+      description: `Jab koi person ${skill} ko proper framework ke saath samajhta hai, to uski project thinking aur delivery confidence dono better hote hain.`,
+    },
+  ];
+
+  const outcomeCards = [
+    {
+      icon: <BriefcaseBusiness className="h-10 w-10" />,
+      title: `Stronger practical understanding`,
+      description: `${skill} ka role ${industry} me exactly kaha fit hota hai, ye clarity users ko better action lene me help karti hai.`,
+    },
+    {
+      icon: <HandCoins className="h-10 w-10" />,
+      title: `Better earning direction`,
+      description: `Jab skill practical aur market-relevant hoti hai, to freelancing, service support, aur digital opportunities improve ho sakti hain.`,
+    },
+    {
+      icon: <Users className="h-10 w-10" />,
+      title: `Higher client and market value`,
+      description: `${skill} ka structured understanding kisi person ko zyada useful, relevant, aur outcome-driven bana sakta hai.`,
+    },
+    {
+      icon: <Globe className="h-10 w-10" />,
+      title: `More future readiness`,
+      description: `Modern work digital, fast, aur AI-assisted direction me move kar raha hai. ${skill} is transition ko samajhne me help karta hai.`,
+    },
+    {
+      icon: <Lightbulb className="h-10 w-10" />,
+      title: `Clearer learning path`,
+      description: `Random tool chasing ke bajay ek strong structured path milta hai jisme skill, use-case, aur result teeno aligned hote hain.`,
+    },
+    {
+      icon: <Workflow className="h-10 w-10" />,
+      title: `Better execution systems`,
+      description: `${skill} ko systems aur workflows ke through samajhne se long-term implementation aur repeatability dono improve hoti hain.`,
+    },
+  ];
+
+  const faqItems: FaqItem[] = [
+    {
+      question: `${skill} ka ${industry} me actual use kya hota hai?`,
+      answer: `${skill} ka use ${industry} me planning, execution support, workflow improvement, output quality enhancement, faster decision support, aur better digital delivery ke liye ho sakta hai.`,
+    },
+    {
+      question: `Kya ye page beginners ke liye useful hai?`,
+      answer: `Haan. Ye page beginners ko simple aur practical tareeke se samjhata hai ki ${skill} kya hai, kaha use hota hai, aur isko real direction me kaise dekha jaye.`,
+    },
+    {
+      question: `${city} mention karne ka benefit kya hai?`,
+      answer: `${city} mention karne se page local relevance gain karta hai aur user ko ye samajhne me help milti hai ki skill ko apne city-based search intent aur opportunity context me kaise dekha jaye.`,
+    },
+    {
+      question: `Kya ${skill} sirf technical logon ke liye hai?`,
+      answer: `Nahi. ${skill} ka practical value sirf technical profiles tak limited nahi hota. Students, freelancers, creators, founders, aur working professionals bhi isko apne use-case ke hisaab se samajh sakte hain.`,
+    },
+    {
+      question: `Kya isse earning ya career growth me help mil sakti hai?`,
+      answer: `Haan, agar ${skill} ko practical output, services, workflow execution, aur market relevance ke saath build kiya jaye to ye earning direction aur career value dono improve kar sakta hai.`,
+    },
+    {
+      question: `Next step kya hona chahiye?`,
+      answer: `Best next step ye hai ki aap structured learning, use-case based understanding, aur guided direction ke saath ${skill} ko explore karein instead of random tools dekhne ke.`,
+    },
+  ];
+
+  return (
+    <main className="bg-[#F8FAFC] text-[#0B1220]">
+      <section className="border-b border-[#E2E8F0] bg-[linear-gradient(180deg,#F8FBFF_0%,#F8FAFC_100%)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
+          <div className="max-w-5xl">
+            <div className="inline-flex items-center rounded-full border border-[#BFD3F2] bg-[#EFF6FF] px-4 py-2 text-[15px] font-semibold text-[#2563EB] shadow-[0_4px_14px_rgba(37,99,235,0.08)]">
+              {skill} guide for {industry}
+            </div>
+
+            <h1 className="mt-6 text-[40px] font-bold leading-[1.04] tracking-[-0.03em] text-[#0B1220] md:text-[68px]">
+              {skill} for {industry} in {city}
+            </h1>
+
+            <p className="mt-6 max-w-4xl text-[19px] leading-[1.8] text-[#475569] md:text-[22px]">
+              Understand how {skill} can create real value in {industry} work for people searching in {city}. This
+              page is designed to explain practical scope, execution relevance, use cases, learning direction, and how
+              this skill can become more useful for students, freelancers, job seekers, and working professionals.
+            </p>
+
+            <div className="mt-10 flex flex-wrap gap-4">
+              <a
+                href="/gen-ai-masterclass"
+                className="inline-flex items-center rounded-full bg-[#2563EB] px-7 py-3.5 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:bg-[#1D4ED8]"
+              >
+                Join free masterclass
+              </a>
+
+              <a
+                href={whatsappUrl}
+                className="inline-flex items-center rounded-full border border-[#C7D7EF] bg-white px-7 py-3.5 text-[16px] font-semibold text-[#0B1220] shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+              >
+                Chat on WhatsApp
+              </a>
+            </div>
+
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {quickAnswers.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[24px] border border-[#D7E3F4] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+                >
+                  <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#2563EB]">
+                    {item.label}
+                  </div>
+                  <p className="mt-3 text-[16px] leading-[1.8] text-[#475569]">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
+        <SectionHeader
+          pill="Why this matters"
+          title={`Why ${skill} matters for ${industry} in ${city}`}
+          description={`This page is built to explain why ${skill} is becoming more relevant in ${industry} work and why people in ${city} should understand its practical value now.`}
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {whyCards.map((item) => (
+            <LightFeatureCard
+              key={item.title}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
+        <SectionHeader
+          pill="Skill coverage"
+          title={`What to understand about ${skill}`}
+          description={`${skill} ko sirf definition ke level par nahi, balki ${industry} use-cases, workflow relevance, and market value ke level par samajhna chahiye.`}
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {skillCards.map((item) => (
+            <LightFeatureCard
+              key={item.title}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
+        <SectionHeader
+          pill="Practical outcomes"
+          title={`What ${skill} can help you achieve`}
+          description={`The goal is not only to know the term ${skill}. The real goal is to understand how it can create better execution, stronger positioning, and more future-ready capability.`}
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {outcomeCards.map((item) => (
+            <DarkCapabilityCard
+              key={item.title}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
+        <div className="rounded-[36px] border border-[#D7E3F4] bg-white p-8 shadow-[0_18px_42px_rgba(15,23,42,0.06)] md:p-12">
+          <SectionHeader
+            pill="Related learning paths"
+            title="Explore connected AI skill pages"
+            description="These related pages help users understand broader AI learning paths, connected skill categories, and more practical exploration areas."
+          />
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {[
+              { href: "/ai-generalist", label: "AI Expert" },
+              { href: "/ai-skills-for-freelancers", label: "AI Skills for Freelancers" },
+              { href: "/ai-skills-for-students", label: "AI Skills for Students" },
+              { href: "/best-ai-skills-to-learn", label: "Best AI Skills to Learn" },
+              { href: "/ai-tools", label: "AI Tools Hub" },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-[22px] border border-[#D7E3F4] bg-[#F8FBFF] px-5 py-4 text-[16px] font-semibold text-[#0B1220] shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 pb-20 md:px-6 md:pb-24">
+        <FaqBlock
+          pill="FAQs"
+          title="Frequently asked questions"
+          description={`Clear answers to common questions people usually have about ${skill}, ${industry}, and practical direction in ${city}.`}
+          items={faqItems}
+        />
+      </section>
+    </main>
+  );
+}

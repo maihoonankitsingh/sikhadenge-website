@@ -130,7 +130,7 @@ export default function ContactPage() {
               </p>
 
               <div className={styles.contactTiles}>
-                <a className={styles.tile} href="tel:+918808505575">
+                <a className={styles.tile} onClick={() => { ;(window as any).fbq?.("track","Contact"); }} href="tel:+918808505575">
                   <div className={styles.tileIcon}>
                     <Phone size={18} />
                   </div>
@@ -333,7 +333,7 @@ export default function ContactPage() {
       <section className={styles.sectionBottom}>
         <div className={styles.bottomCard}>
           <div className={styles.bottomLeft}>
-            <div className={styles.bottomTitle}>Didn't find what you were looking for?</div>
+            <div className={styles.bottomTitle}>Didn&apos;t find what you were looking for?</div>
             <div className={styles.bottomSub}>
               Use the Contact Form and select the closest category.
             </div>

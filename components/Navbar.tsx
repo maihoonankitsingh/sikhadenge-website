@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 const nav = [
   { href: "/", label: "Home" },
@@ -14,9 +15,21 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // route change → close mobile menu
     setOpen(false);
   }, [router.pathname]);
+
+  function handleCounsellingClick(location: "desktop_navbar" | "mobile_navbar") {
+    trackEvent({
+      action: "counselling_click",
+      category: "cta",
+      label: location,
+      page_path: router.asPath,
+    });
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("sd:open-counselling"));
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-sd-border bg-sd-navy/90 backdrop-blur">
@@ -25,7 +38,6 @@ export default function Navbar() {
           Sikhadenge
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
           {nav.map((x) => {
             const active = router.pathname === x.href;
@@ -45,18 +57,20 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Right actions */}
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-3">
             <Link href="/contact" className="sd-btn-secondary">
               Contact
             </Link>
-            <Link href="/#counselling" className="sd-btn-primary">
+            <button
+              type="button"
+              className="sd-btn-primary"
+              onClick={() => handleCounsellingClick("desktop_navbar")}
+            >
               Counselling
-            </Link>
+            </button>
           </div>
 
-          {/* Mobile menu button */}
           <button
             type="button"
             aria-label="Open menu"
@@ -71,7 +85,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile dropdown */}
       <div className={open ? "md:hidden" : "hidden"}>
         <div className="border-t border-sd-border bg-sd-navy/95">
           <div className="mx-auto max-w-7xl px-4 py-4">
@@ -98,9 +111,13 @@ export default function Navbar() {
                 <Link href="/contact" className="sd-btn-secondary">
                   Contact
                 </Link>
-                <Link href="/#counselling" className="sd-btn-primary">
+                <button
+                  type="button"
+                  className="sd-btn-primary"
+                  onClick={() => handleCounsellingClick("mobile_navbar")}
+                >
                   Counselling
-                </Link>
+                </button>
               </div>
             </div>
           </div>

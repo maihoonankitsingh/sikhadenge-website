@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "MasterclassLead" ADD COLUMN     "fbclid" TEXT,
+ADD COLUMN     "gclid" TEXT,
+ADD COLUMN     "landing_url" TEXT,
+ADD COLUMN     "msclkid" TEXT,
+ADD COLUMN     "referrer" TEXT,
+ADD COLUMN     "utm_ad_id" TEXT,
+ADD COLUMN     "utm_adset_id" TEXT,
+ADD COLUMN     "utm_campaign" TEXT,
+ADD COLUMN     "utm_campaign_id" TEXT,
+ADD COLUMN     "utm_content" TEXT,
+ADD COLUMN     "utm_id" TEXT,
+ADD COLUMN     "utm_medium" TEXT,
+ADD COLUMN     "utm_source" TEXT,
+ADD COLUMN     "utm_term" TEXT;

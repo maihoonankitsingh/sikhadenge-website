@@ -1,809 +1,315 @@
 import React from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
 import fs from "fs";
 import path from "path";
-import type { Metadata } from "next";
-import Link from "next/link";
 import {
-  ArrowRight,
-  Briefcase,
-  CheckCircle2,
-  ChevronDown,
-  CircleHelp,
-  Clock3,
-  Compass,
-  DollarSign,
-  GraduationCap,
-  LayoutGrid,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  Wand2,
+  ArrowRight, BookOpen, CheckCircle2, ChevronDown, Clock3,
+  Info, Sparkles, Target, TrendingUp, AlertTriangle, Star,
+  Users, Zap, Award, Play, GraduationCap, Briefcase,
 } from "lucide-react";
+import type { Metadata } from "next";
 
 type BlogFaq = { q: string; a: string };
 type BlogItem = {
-  slug: string;
-  title: string;
-  excerpt?: string;
-  category?: string;
-  readTime?: string;
-  intro?: string;
-  summaryPoints?: string[];
-  practicalSteps?: string[];
-  mistakes?: string[];
-  faqs?: BlogFaq[];
-};
-
-type ParsedSlug = {
-  slug: string;
-  segments: string[];
-  year: string;
-  audience: string;
-  audienceLabel: string;
-  skill: string;
-  skillLabel: string;
-  primaryIntent: string;
-  intentLabel: string;
-  keywordCluster: string[];
-};
-
-const BASE_URL = "https://sikhadenge.in";
-
-const audienceMap: Record<string, string> = {
-  students: "Students",
-  student: "Students",
-  college: "Students",
-  beginners: "Beginners",
-  beginner: "Beginners",
-  freelancers: "Freelancers",
-  freelancer: "Freelancers",
-  professionals: "Working Professionals",
-  professional: "Working Professionals",
-  marketers: "Marketers",
-  marketer: "Marketers",
-  developers: "Developers",
-  developer: "Developers",
-  teachers: "Teachers",
-  teacher: "Teachers",
-  business: "Business Owners",
-  businesses: "Business Owners",
-  founders: "Founders",
-  founder: "Founders",
-  creators: "Creators",
-  creator: "Creators",
-  youtubers: "Creators",
-  youtuber: "Creators",
-  agencies: "Agencies",
-  agency: "Agencies",
-  designers: "Designers",
-  designer: "Designers",
-  job: "Job Seekers",
-  jobs: "Job Seekers",
-  seekers: "Job Seekers",
-};
-
-const skillMap: Record<string, string> = {
-  chatgpt: "ChatGPT",
-  gemini: "Google Gemini",
-  claude: "Claude",
-  prompt: "Prompt Engineering",
-  prompts: "Prompt Engineering",
-  seo: "SEO",
-  ai: "AI Skills",
-  automation: "Business Automation",
-  marketing: "AI Marketing",
-  content: "AI Content Creation",
-  writing: "AI Content Creation",
-  coding: "AI Coding",
-  code: "AI Coding",
-  graphic: "AI Graphic Design",
-  design: "AI Graphic Design",
-  generative: "Generative AI",
-};
-
-const intentMap: Record<string, string> = {
-  benefits: "benefits",
-  examples: "examples",
-  trends: "trends",
-  workflow: "workflow",
-  automation: "workflow",
-  case: "case-studies",
-  studies: "case-studies",
-  guide: "guide",
-  complete: "guide",
-  essential: "skills",
-  skills: "skills",
-  career: "career",
-  options: "career",
-  earn: "earning",
-  money: "earning",
-  tools: "tools",
-};
-
-const skillCategoryMap: Record<string, string> = {
-  ChatGPT: "ChatGPT",
-  "Google Gemini": "AI Tools",
-  Claude: "Prompt Engineering",
-  "Prompt Engineering": "Prompt Engineering",
-  SEO: "AI Marketing",
-  "AI Skills": "AI Skills",
-  "Business Automation": "AI Freelancing",
-  "AI Marketing": "AI Marketing",
-  "AI Content Creation": "AI Content Creation",
-  "AI Coding": "AI Coding",
-  "AI Graphic Design": "AI Graphic Design",
-  "Generative AI": "AI Skills",
-};
-
-const categoryTools: Record<
-  string,
-  { name: string; desc: string; free: boolean; badge: string }[]
-> = {
-  "AI Skills": [
-    { name: "ChatGPT", desc: "Research, answers, drafts, and learning support for daily AI work.", free: true, badge: "Free" },
-    { name: "Google Gemini", desc: "Multi-modal AI for text, image, code, and productivity workflows.", free: true, badge: "Free" },
-    { name: "Notion AI", desc: "Planning, summaries, notes, and knowledge organization.", free: true, badge: "Free" },
-    { name: "Coursera AI Courses", desc: "Structured courses for stronger fundamentals and certification value.", free: false, badge: "Paid" },
-  ],
-  "AI Tools": [
-    { name: "Google Gemini", desc: "Fast everyday assistant for writing, research, and multimodal use.", free: true, badge: "Free" },
-    { name: "Claude", desc: "Long-form reasoning, summaries, and document-heavy work.", free: true, badge: "Free" },
-    { name: "ChatGPT Plus", desc: "Advanced reasoning, GPTs, and stronger workflow flexibility.", free: false, badge: "Paid" },
-    { name: "Gamma", desc: "Quick deck creation and business presentation support.", free: true, badge: "Free" },
-  ],
-  ChatGPT: [
-    { name: "ChatGPT Free", desc: "Good starting point for prompts, summaries, research, and daily practice.", free: true, badge: "Free" },
-    { name: "ChatGPT Plus", desc: "Better reasoning and more reliable output for serious users.", free: false, badge: "Paid" },
-    { name: "Custom GPTs", desc: "Task-specific assistants for repeatable workflows and support.", free: true, badge: "Free" },
-    { name: "OpenAI API", desc: "Useful when businesses want AI inside apps or automations.", free: false, badge: "Paid" },
-  ],
-  "AI Freelancing": [
-    { name: "Upwork", desc: "High-intent freelance demand across AI writing, support, and automation.", free: true, badge: "Free" },
-    { name: "Fiverr", desc: "Fast gig marketplace for AI services and lightweight delivery offers.", free: true, badge: "Free" },
-    { name: "ChatGPT", desc: "Speeds up proposals, drafts, delivery systems, and client communication.", free: true, badge: "Free" },
-    { name: "Jasper", desc: "Helpful when content production volume matters more than low cost.", free: false, badge: "Paid" },
-  ],
-  "AI Content Creation": [
-    { name: "ChatGPT", desc: "Idea generation, outlines, captions, scripts, and editing support.", free: true, badge: "Free" },
-    { name: "Canva", desc: "Social creatives, design tasks, and presentation support.", free: true, badge: "Free" },
-    { name: "CapCut", desc: "Fast editing, repurposing, and short-form content production.", free: true, badge: "Free" },
-    { name: "Opus Clip", desc: "Long-form to short-form repurposing for creators and agencies.", free: true, badge: "Free" },
-  ],
-  "AI Graphic Design": [
-    { name: "Canva", desc: "Quick visual production for creators, students, and businesses.", free: true, badge: "Free" },
-    { name: "Adobe Firefly", desc: "Professional visual generation inside Adobe workflows.", free: true, badge: "Free" },
-    { name: "Midjourney", desc: "High-quality concept visuals and creative ideation.", free: false, badge: "Paid" },
-    { name: "Figma AI", desc: "Helpful for UI flows, UX drafts, and fast concept work.", free: true, badge: "Free" },
-  ],
-  "AI Marketing": [
-    { name: "ChatGPT", desc: "Ad copy, messaging, campaign angles, and analysis support.", free: true, badge: "Free" },
-    { name: "Gemini", desc: "Broad research and multi-format idea support for marketing teams.", free: true, badge: "Free" },
-    { name: "Canva", desc: "Ad creatives, simple landing assets, and promotional visuals.", free: true, badge: "Free" },
-    { name: "HubSpot AI", desc: "Useful for CRM-heavy teams and pipeline-assisted automation.", free: true, badge: "Free" },
-  ],
-  "Prompt Engineering": [
-    { name: "ChatGPT", desc: "Best everyday prompt testing and structured iteration environment.", free: true, badge: "Free" },
-    { name: "Claude", desc: "Strong for longer prompts, reasoning, and document-based work.", free: true, badge: "Free" },
-    { name: "FlowGPT", desc: "Prompt examples and community discovery for inspiration.", free: true, badge: "Free" },
-    { name: "PromptPerfect", desc: "Useful when prompt cleanup and optimization matter.", free: true, badge: "Free" },
-  ],
-  "AI Coding": [
-    { name: "GitHub Copilot", desc: "Inline code support and daily engineering productivity.", free: false, badge: "Paid" },
-    { name: "Cursor", desc: "AI-first coding editor for debugging, refactors, and flow.", free: true, badge: "Free" },
-    { name: "ChatGPT", desc: "Code explanation, debugging support, and learning workflows.", free: true, badge: "Free" },
-    { name: "Replit AI", desc: "Fast browser-based experimentation for prototypes.", free: true, badge: "Free" },
-  ],
+  slug: string; title: string; excerpt?: string; category?: string;
+  readTime?: string; intro?: string; summaryPoints?: string[];
+  practicalSteps?: string[]; mistakes?: string[]; faqs?: BlogFaq[];
 };
 
 function getBlogs(): BlogItem[] {
   try {
-    return JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "data", "blogs.json"), "utf8"),
-    ) as BlogItem[];
-  } catch {
-    return [];
-  }
+    return JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/blogs.json"), "utf8"));
+  } catch { return []; }
 }
 
-function titleCase(value: string) {
-  return value
-    .split("-")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+function formatTitle(slug: string) {
+  return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
-function parseSlug(slug: string, post?: BlogItem): ParsedSlug {
-  const slugLower = slug.toLowerCase();
-  const segments = slugLower.split("-").filter(Boolean);
-  const year = segments.find((segment) => /^\d{4}$/.test(segment)) ?? "2026";
+const categoryTools: Record<string, { name: string; desc: string; free: boolean; icon: string }[]> = {
+  "AI Skills": [
+    { name: "ChatGPT", desc: "Conversational AI aur learning assistant jo har question ka smart answer deta hai", free: true, icon: "🤖" },
+    { name: "Google Gemini", desc: "Multi-modal AI — text, image, code sab samajhta hai", free: true, icon: "💎" },
+    { name: "Coursera AI Courses", desc: "Top universities ke structured AI courses", free: false, icon: "🎓" },
+    { name: "Notion AI", desc: "Notes, planning aur study organization", free: true, icon: "📝" },
+  ],
+  "AI Tools": [
+    { name: "ChatGPT Plus", desc: "GPT-4 access — advanced reasoning power", free: false, icon: "⚡" },
+    { name: "Canva AI", desc: "Design banao bina designer hire kiye", free: true, icon: "🎨" },
+    { name: "Gamma AI", desc: "Presentations seconds me ready", free: true, icon: "📊" },
+    { name: "Otter.ai", desc: "Meetings ka automatic transcription", free: true, icon: "🎙️" },
+  ],
+  "ChatGPT": [
+    { name: "ChatGPT Free", desc: "GPT-3.5 — daily use ke liye perfect", free: true, icon: "💬" },
+    { name: "ChatGPT Plus", desc: "GPT-4 + plugins + DALL-E access", free: false, icon: "🚀" },
+    { name: "OpenAI API", desc: "Apne apps me AI integrate karo", free: false, icon: "🔧" },
+    { name: "Custom GPTs", desc: "Apna personalized AI assistant banao", free: true, icon: "🧠" },
+  ],
+  "AI Freelancing": [
+    { name: "Upwork", desc: "High-paying AI freelance projects", free: true, icon: "💼" },
+    { name: "Fiverr", desc: "AI gigs sell karo globally", free: true, icon: "🌐" },
+    { name: "ChatGPT", desc: "Client work 5x faster deliver karo", free: true, icon: "⚡" },
+    { name: "Jasper AI", desc: "Content at scale produce karo", free: false, icon: "✍️" },
+  ],
+  "AI Content Creation": [
+    { name: "ChatGPT", desc: "Blog, script, captions — sab likh deta hai", free: true, icon: "✍️" },
+    { name: "Canva AI", desc: "Social media posts aur stories banao", free: true, icon: "🎨" },
+    { name: "CapCut", desc: "Video editing AI-powered, free", free: true, icon: "🎬" },
+    { name: "Opus Clip", desc: "Long video se viral clips banao", free: true, icon: "✂️" },
+  ],
+  "AI Graphic Design": [
+    { name: "Canva AI", desc: "All-in-one design platform", free: true, icon: "🎨" },
+    { name: "Midjourney", desc: "Stunning AI art generate karo", free: false, icon: "🖼️" },
+    { name: "Adobe Firefly", desc: "Professional AI design tools", free: true, icon: "🔥" },
+    { name: "Figma AI", desc: "UI/UX design with AI assist", free: true, icon: "🖥️" },
+  ],
+  "AI Marketing": [
+    { name: "ChatGPT", desc: "Ad copy, strategy, aur analysis", free: true, icon: "📝" },
+    { name: "Jasper AI", desc: "Marketing content at scale", free: false, icon: "🚀" },
+    { name: "Canva AI", desc: "Ad creatives instantly banao", free: true, icon: "🎨" },
+    { name: "HubSpot AI", desc: "Complete marketing automation", free: true, icon: "📊" },
+  ],
+  "Prompt Engineering": [
+    { name: "ChatGPT", desc: "Best prompt testing playground", free: true, icon: "🧪" },
+    { name: "PromptPerfect", desc: "Prompt optimize karo automatically", free: true, icon: "🎯" },
+    { name: "FlowGPT", desc: "Community prompts explore karo", free: true, icon: "💡" },
+    { name: "Claude AI", desc: "Detailed analysis ke liye best", free: true, icon: "🧠" },
+  ],
+  "AI Coding": [
+    { name: "GitHub Copilot", desc: "AI pair programmer — code likhta hai", free: false, icon: "👨‍💻" },
+    { name: "Cursor", desc: "AI-first code editor", free: true, icon: "⌨️" },
+    { name: "ChatGPT", desc: "Debug, explain, generate code", free: true, icon: "🐛" },
+    { name: "Replit AI", desc: "Browser me code karo with AI", free: true, icon: "🌐" },
+  ],
+};
 
-  const audienceKey =
-    segments.find((segment) => audienceMap[segment]) ?? "professionals";
-  const skillKey =
-    segments.find((segment) => skillMap[segment]) ??
-    post?.category?.toLowerCase().split(" ")[0] ??
-    "ai";
-  const intentKey =
-    segments.find((segment) => intentMap[segment]) ?? "guide";
-
-  const skillLabel = skillMap[skillKey] ?? post?.category ?? "AI Skills";
-  const audienceLabel = audienceMap[audienceKey] ?? "Working Professionals";
-  const intentLabel = intentMap[intentKey] ?? "guide";
-
-  const keywordCluster = [
-    skillLabel,
-    `${skillLabel} ${intentLabel}`,
-    `${skillLabel} for ${audienceLabel}`,
-    `${skillLabel} in ${year}`,
-    `${skillLabel} SEO`,
-    `${skillLabel} AEO`,
-    `${skillLabel} GEO`,
-    `Sikhadenge ${skillLabel}`,
-  ];
-
-  return {
-    slug,
-    segments,
-    year,
-    audience: audienceKey,
-    audienceLabel,
-    skill: skillKey,
-    skillLabel,
-    primaryIntent: intentKey,
-    intentLabel,
-    keywordCluster,
-  };
-}
-
-function buildHeadline(parsed: ParsedSlug) {
-  const intentTitles: Record<string, string> = {
-    benefits: `Benefits of ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    examples: `Examples of ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    trends: `Trends in ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    workflow: `${parsed.skillLabel} Workflow Guide for ${parsed.audienceLabel} in ${parsed.year}`,
-    "case-studies": `Case Studies in ${parsed.skillLabel} for ${parsed.audienceLabel}`,
-    guide: `Complete Guide to ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    skills: `Essential Skills for ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    career: `Career Options in ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    earning: `How to Earn with ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    tools: `Top ${parsed.skillLabel} Tools for ${parsed.audienceLabel} in ${parsed.year}`,
-  };
-
-  return intentTitles[parsed.intentLabel] ??
-    `${titleCase(parsed.slug)} in ${parsed.year}`;
-}
-
-function buildDescription(parsed: ParsedSlug) {
-  return `${buildHeadline(parsed)}. Practical Sikhadenge guide with SEO, AEO, GEO-aligned answers, tools, learning path, workflow tips, mistakes to avoid, and lead-ready action steps for ${parsed.audienceLabel.toLowerCase()}.`;
-}
-
-function buildIntro(parsed: ParsedSlug) {
-  return `${parsed.skillLabel} ${parsed.audienceLabel.toLowerCase()} ke liye ${parsed.year} me aur bhi important ho raha hai, kyunki search demand, AI adoption, productivity pressure, aur digital competition sab saath me badh rahe hain. Is guide me hum practical level par dekhenge ki ${parsed.skillLabel} ko kaise seekhna, use karna, monetize karna, aur better results ke liye system me convert karna chahiye.`;
-}
-
-function buildSummaryPoints(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ka practical roadmap ${parsed.audienceLabel.toLowerCase()} ke context me samajhna`,
-    `Best tools, prompts, ya workflows choose karna without confusion`,
-    `SEO, AEO, GEO, learning, earning, aur execution ko ek page me connect karna`,
-  ];
-}
-
-function buildPracticalSteps(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ka clear use-case choose karo jo ${parsed.audienceLabel.toLowerCase()} ke liye immediately relevant ho`,
-    `Ek primary tool aur ek repeatable workflow select karo, phir daily small practice routine banao`,
-    `Real-world outputs banao jaise proposals, content drafts, automations, prompts, ya portfolio examples`,
-    `Apne work ko measure karo: speed, quality, conversions, leads, ya interview confidence me kya improvement aaya`,
-  ];
-}
-
-function buildStepDetails(parsed: ParsedSlug) {
-  return [
-    `Sabse pehle clarity lao. Aapka goal learning hai, freelancing hai, jobs hai, ya business output? Jab goal clear hota hai tab ${parsed.skillLabel} random tool nahi rehta, ek productive system ban jata hai.`,
-    `Too many tools try karne ke bajay ek focused stack banao. Daily practice se prompts, outputs, aur review quality improve hoti hai. Isi stage par aapka execution edge build hota hai.`,
-    `Small projects hi best proof hote hain. Students ke liye assignments aur interview prep, freelancers ke liye client assets, aur businesses ke liye SOPs ya sales copy jaise outputs strong proof create karte hain.`,
-    `Akhri step optimization ka hai. Jo cheez kaam kar rahi hai use document karo, templates banao, aur usi ko better conversion, better search relevance, aur better delivery ke liye scale karo.`,
-  ];
-}
-
-function buildMistakes(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ko sirf trend samajhkar bina workflow ke use karna`,
-    `Har output ko final maan lena aur human review skip karna`,
-    `Prompt quality aur context clarity ko ignore karna`,
-    `Search intent, audience need, aur conversion goal ko mix up kar dena`,
-  ];
-}
-
-function buildFaqs(parsed: ParsedSlug, title: string) {
-  return [
-    {
-      q: `${title} ke liye sabse pehla practical step kya hai?`,
-      a: `Sabse pehle ek clear use-case choose karo. ${parsed.skillLabel} tab best kaam karta hai jab task, audience, output format, aur goal clearly defined ho.`,
-    },
-    {
-      q: `${parsed.skillLabel} SEO, AEO, aur GEO me kaise help karta hai?`,
-      a: `${parsed.skillLabel} better topic coverage, answer blocks, FAQs, semantic relevance, workflow speed, aur structured drafts me help karta hai. Isse search-friendly aur AI-answer-friendly content banana easy hota hai.`,
-    },
-    {
-      q: `Kya ${parsed.audienceLabel.toLowerCase()} ${parsed.skillLabel} se real earning ya growth paa sakte hain?`,
-      a: `Haan. Ye jobs, freelancing, business systems, productivity, aur communication quality me direct impact la sakta hai jab aap isse repeatable workflow ke roop me use karte ho.`,
-    },
-    {
-      q: `Beginners ke liye ${parsed.skillLabel} seekhne ka sahi tareeka kya hai?`,
-      a: `Basics samjho, ek tool par focus karo, daily practice karo, aur small proof-of-work banao. Theory se zyada implementation par dhyan do.`,
-    },
-    {
-      q: `Kya ye page sirf keyword ke liye hai ya practical bhi hai?`,
-      a: `Ye page keyword-rich hai, lekin structure, answers, tools, mistakes, CTA, aur practical learning path sab isliye rakhe gaye hain taaki page genuinely useful lage aur fake doorway na lage.`,
-    },
-  ];
-}
-
-function getDeepContent(parsed: ParsedSlug) {
-  return {
-    whyMatters: `${parsed.year} me ${parsed.skillLabel} ka importance isliye badh raha hai kyunki companies, freelancers, creators, aur students sab faster output aur smarter execution chahte hain. Jo log ${parsed.skillLabel} ko practical level par use kar pa rahe hain unhe search visibility, content speed, problem solving, aur delivery quality me edge mil raha hai. Isi wajah se is topic par search volume aur commercial intent dono strong bane hue hain.`,
-    marketStats: `${parsed.skillLabel} se related demand India me rapidly increase ho rahi hai. Businesses ko AI-assisted communication, marketing, workflow support, automation, and research help chahiye. Ye category sirf trend nahi, ek durable capability ban rahi hai jahan early movers better positioning le rahe hain.`,
-    futureScope: `Aane wale 2-4 saal me ${parsed.skillLabel} literacy waise hi important hogi jaise aaj spreadsheet, content, ya digital tools ki basic understanding hai. Jo log abhi se systems, prompts, review habits, aur practical execution seekhenge unke paas future-ready advantage hoga.`,
-    earnings: `${parsed.skillLabel} directly side-income, freelancing, team productivity, aur role expansion me help kar sakta hai. Students interviews me stronger answers de sakte hain, freelancers faster delivery kar sakte hain, aur business owners internal processes ko lean bana sakte hain.`,
-  };
-}
-
-function buildKeywordList(parsed: ParsedSlug, title: string) {
-  return [
-    title,
-    parsed.skillLabel,
-    `${parsed.skillLabel} ${parsed.year}`,
-    `${parsed.skillLabel} for ${parsed.audienceLabel}`,
-    `${parsed.skillLabel} prompts`,
-    `${parsed.skillLabel} tools`,
-    `${parsed.skillLabel} workflow`,
-    `${parsed.skillLabel} SEO`,
-    `${parsed.skillLabel} AEO`,
-    `${parsed.skillLabel} GEO`,
-    `Sikhadenge ${parsed.skillLabel}`,
-    `${parsed.skillLabel} guide`,
-    `${parsed.skillLabel} tutorial`,
-    `${parsed.skillLabel} examples`,
-    `${parsed.skillLabel} use cases`,
-  ];
-}
+const defaultDeepContent = {
+  whyMatters: "2026 me AI adoption har industry me rapidly badh raha hai. Jo professionals aaj AI skills seekh rahe hain, unhe job market me clear competitive advantage mil raha hai. LinkedIn ki recent report ke mutabiq, AI-skilled candidates ko 3x zyada interview calls milte hain compared to non-AI candidates. Companies across India actively AI-competent professionals ko prefer kar rahi hain — chahe wo tech role ho ya non-tech.",
+  marketStats: "Indian AI industry ka market size 7,800 Crore+ hai aur ye 35-40% annual growth rate se badh raha hai. Healthcare, finance, education, marketing, eCommerce — har sector me AI professionals ki demand surge ho rahi hai. 2028 tak ye market 17,000 Crore cross karega.",
+  futureScope: "Next 3-5 years me AI literacy almost har profession me required hogi — jaise aaj computer skills zaruri hain. Abhi seekhne wale log future-proof career build kar rahe hain. Late adopters ko catch up karna mushkil hoga kyunki early movers already experience aur portfolio build kar chuke honge.",
+  earnings: "AI skills se freshers 6-15 LPA packages receive kar rahe hain. Freelancers 30K-2L/month earn kar sakte hain depending on specialization. Experienced AI professionals 20-50 LPA tak reach karte hain. Side income through AI services bhi significant hai — 10K-50K/month extra.",
+};
 
 export async function generateStaticParams() {
-  return getBlogs()
-    .slice(0, 500)
-    .map((post) => ({ slug: post.slug }));
+  const __all = await (async () => {
+return [];
+  })();
+  return Array.isArray(__all) ? __all.slice(0, 300) : [];
 }
 
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = 2592000;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const post = getBlogs().find((item) => item.slug === params.slug);
-  const parsed = parseSlug(params.slug, post);
-  const title = post?.title || buildHeadline(parsed);
-  const description = post?.excerpt || buildDescription(parsed);
-  const keywords = buildKeywordList(parsed, title);
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
-
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = getBlogs().find((p) => p.slug === params.slug);
+  const title = post?.title || formatTitle(params.slug);
+  const description = post?.excerpt || title + " - Complete practical guide with tools, tips aur real use-cases. Sikhadenge se seekho.";
   return {
-    title: `${title} | Sikhadenge`,
+    title: title + " | Sikhadenge",
     description,
-    keywords,
-    alternates: { canonical },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-snippet": -1,
-        "max-image-preview": "large",
-        "max-video-preview": -1,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      type: "article",
-      url: canonical,
-      siteName: "Sikhadenge",
-      images: [
-        {
-          url: `${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`,
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [`${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`],
-    },
+    openGraph: { title, description, type: "article", url: "https://sikhadenge.in/blog/" + params.slug },
+    twitter: { card: "summary_large_image", title, description },
+    alternates: { canonical: "https://sikhadenge.in/blog/" + params.slug },
   };
 }
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
   const allBlogs = getBlogs();
-  const post = allBlogs.find((item) => item.slug === params.slug);
-  const parsed = parseSlug(params.slug, post);
-  const title = post?.title || buildHeadline(parsed);
-  const category = post?.category || skillCategoryMap[parsed.skillLabel] || "AI Skills";
+  const post = allBlogs.find((p) => p.slug === params.slug);
+  if (!post && !params.slug) return notFound();
+
+  const title = post?.title || formatTitle(params.slug);
+  const category = post?.category || "AI Skills";
   const readTime = post?.readTime || "8 min read";
-  const intro = post?.intro || buildIntro(parsed);
-  const summaryPoints = post?.summaryPoints || buildSummaryPoints(parsed);
-  const practicalSteps = post?.practicalSteps || buildPracticalSteps(parsed);
-  const mistakes = post?.mistakes || buildMistakes(parsed);
-  const faqs = post?.faqs || buildFaqs(parsed, title);
-  const deepContent = getDeepContent(parsed);
-  const tools = categoryTools[category] || categoryTools["AI Skills"];
-  const stepDetails = buildStepDetails(parsed);
-  const stepTimelines = [
-    "2-3 din clarity",
-    "1 week repetition",
-    "2-3 weeks practical proof",
-    "Ongoing optimization",
+  const intro = post?.intro || title + " ko simple aur practical tareeke se samajhna bahut zaruri hai. Is comprehensive guide me hum step-by-step dekhenge ki kaise aap " + category.toLowerCase() + " me apni journey start kar sakte hain, kaunse tools use karne chahiye, aur kaise real results achieve kar sakte hain.";
+
+  const summaryPoints = post?.summaryPoints || [
+    "Step-by-step learning path samajhna",
+    "Best resources aur tools identify karna",
+    "Practical projects se hands-on experience lena",
+  ];
+  const practicalSteps = post?.practicalSteps || [
+    "Pehle basics clearly samjho bina rush kiye",
+    "Ek tool choose karo aur daily 30 min practice karo",
+    "Small real projects banao ke portfolio build karo",
+    "Community join karo aur mentors se seekho",
+  ];
+  const mistakes = post?.mistakes || [
+    "Bahut saare tools ek saath try karna",
+    "Sirf theory padhna, practice na karna",
+    "AI output ko bina samjhe blindly use karna",
+    "Patience na rakhna aur jaldi give up karna",
+  ];
+  const faqs = post?.faqs || [
+    { q: title + " ke liye coding zaruri hai kya?", a: "Nahi, bahut se AI use-cases bina coding ke practically implement kiye ja sakte hain. Ye guide non-technical approach follow karti hai." },
+    { q: "Is topic ko seekhne me kitna time lagega?", a: "Basic understanding 1-2 weeks me aa jayegi. Practical implementation ke liye 1-2 months ka consistent daily practice recommended hai." },
+    { q: "Kya isse earning ya career me help milegi?", a: "Bilkul! AI skills ki market demand rapidly badh rahi hai. Ye practical skills career growth, freelancing aur side income teeno me valuable hain." },
+    { q: "Kya beginners bhi ye seekh sakte hain?", a: "Haan, ye guide specifically beginners ke liye designed hai. Koi prior technical knowledge ki zarurat nahi hai." },
   ];
 
-  const relatedPosts = allBlogs
-    .filter((item) => item.slug !== params.slug)
-    .filter(
-      (item) =>
-        item.category === category ||
-        item.slug.includes(parsed.skill) ||
-        item.slug.includes(parsed.audience),
-    )
-    .slice(0, 6);
+  const tools = categoryTools[category] || categoryTools["AI Skills"] || [];
+  const deepContent = defaultDeepContent;
 
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
-  const description = post?.excerpt || buildDescription(parsed);
-  const keywordList = buildKeywordList(parsed, title);
+  const slugLower = params.slug.toLowerCase();
+  let audienceLabel = "Professionals";
+  if (slugLower.includes("student") || slugLower.includes("college")) audienceLabel = "Students";
+  else if (slugLower.includes("freelanc")) audienceLabel = "Freelancers";
+  else if (slugLower.includes("beginner")) audienceLabel = "Beginners";
+  else if (slugLower.includes("business") || slugLower.includes("entrepreneur")) audienceLabel = "Business Owners";
+  else if (slugLower.includes("creator") || slugLower.includes("youtuber")) audienceLabel = "Creators";
+  else if (slugLower.includes("marketer")) audienceLabel = "Marketers";
+  else if (slugLower.includes("designer")) audienceLabel = "Designers";
+  else if (slugLower.includes("women")) audienceLabel = "Women";
 
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: title,
-    description,
-    mainEntityOfPage: canonical,
-    datePublished: "2026-01-01",
-    dateModified: "2026-04-23",
-    author: {
-      "@type": "Organization",
-      name: "Sikhadenge",
-      url: BASE_URL,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Sikhadenge",
-      url: BASE_URL,
-    },
-    about: [
-      parsed.skillLabel,
-      parsed.audienceLabel,
-      "SEO",
-      "AEO",
-      "GEO",
-      "AI workflows",
-    ],
-    keywords: keywordList.join(", "),
+  const relatedPosts = allBlogs.filter((b) => b.category === category && b.slug !== params.slug).slice(0, 3);
+  const stepTimelines = ["2-3 din lagenge", "1 week consistent practice", "2-3 weeks hands-on work", "Ongoing daily habit"];
+  const stepDetails = [
+    "Pehle apne goal clear karo. Kya seekhna chahte ho aur kyun? Ye clarity aapko focused rakhegi. YouTube tutorials aur free resources se start karo.",
+    "Ek primary tool select karo aur usse daily kaam me use karo. Jitna zyada real scenarios me use karoge, utna better samjhoge. Theory se zyada practice karo.",
+    "Chhote projects banao — blog post likhna, social media content create karna, ya ek small automation build karna. Portfolio me add karo aur showcase karo.",
+    "AI communities join karo, mentors se connect karo, aur apne learnings share karo. Teaching others se aapki understanding aur deep hoti hai.",
+  ];
+
+  const jsonLd = {
+    "@context": "https://schema.org", "@type": "Article",
+    headline: title, description: post?.excerpt || "Complete guide on " + title,
+    author: { "@type": "Organization", name: "Sikhadenge", url: "https://sikhadenge.in" },
+    publisher: { "@type": "Organization", name: "Sikhadenge", url: "https://sikhadenge.in" },
+    datePublished: "2026-01-01", mainEntityOfPage: "https://sikhadenge.in/blog/" + params.slug,
   };
-
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
-      { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
-      { "@type": "ListItem", position: 3, name: title, item: canonical },
-    ],
-  };
-
   const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.a,
-      },
-    })),
+    "@context": "https://schema.org", "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({ "@type": "Question", name: faq.q, acceptedAnswer: { "@type": "Answer", text: faq.a } })),
   };
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+    <React.Fragment>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-      <article className="min-h-screen bg-[#eff4fb] text-slate-900">
-        <header className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(87,120,255,0.22),transparent_34%),linear-gradient(135deg,#142457_0%,#1d3180_50%,#142457_100%)] pt-28 pb-20">
-          <div className="absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle,_white_1px,_transparent_1px)] [background-size:18px_18px]" />
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white/85">
-                {category}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
-                <Clock3 className="h-4 w-4" />
-                {readTime}
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
-                For {parsed.audienceLabel}
-              </span>
+      <article className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+
+        {/* ====== HERO ====== */}
+        <header className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 pt-32 pb-24">
+          <div className="absolute inset-0 opacity-15" style={{backgroundImage: "radial-gradient(circle at 20% 50%, rgba(59,130,246,0.5), transparent 50%), radial-gradient(circle at 80% 20%, rgba(147,51,234,0.3), transparent 50%)"}} />
+          <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}} />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+              <span className="px-5 py-2 bg-blue-500/20 border border-blue-400/30 text-blue-300 rounded-full text-sm font-bold tracking-wider uppercase backdrop-blur-sm">{category}</span>
+              <span className="flex items-center text-slate-400 text-sm"><Clock3 className="w-4 h-4 mr-1.5" /> {readTime}</span>
+              <span className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-slate-300 text-sm">For {audienceLabel}</span>
             </div>
-
-            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
-              {title}
-            </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-blue-50/85 sm:text-lg">
-              {intro}
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              {keywordList.slice(0, 6).map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs font-semibold text-white/85"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-sm font-black text-[#17306d] shadow-xl transition hover:bg-slate-100"
-              >
-                Join Free Masterclass
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-7 py-4 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
-              >
-                Talk to Team
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08] mb-8 max-w-4xl">{title}</h1>
+            <p className="text-lg sm:text-xl text-blue-100/80 leading-relaxed max-w-3xl mb-12">{intro}</p>
+            <div className="flex flex-wrap gap-4">
               {[
-                {
-                  label: "Search-ready structure",
-                  detail: "SEO, AEO, GEO aligned layout with clear answers and strong intent mapping.",
-                  icon: Search,
-                },
-                {
-                  label: "Practical learning focus",
-                  detail: "Outputs, prompts, workflows, and mistakes to avoid instead of only theory.",
-                  icon: Sparkles,
-                },
-                {
-                  label: "Lead-generation angle",
-                  detail: "Sales-ready CTA blocks and decision support for high-intent users.",
-                  icon: ShieldCheck,
-                },
-              ].map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-[24px] border border-white/10 bg-white/8 p-5 backdrop-blur"
-                >
-                  <card.icon className="h-5 w-5 text-blue-200" />
-                  <h2 className="mt-3 text-lg font-extrabold text-white">
-                    {card.label}
-                  </h2>
-                  <p className="mt-2 text-sm leading-7 text-blue-50/75">
-                    {card.detail}
-                  </p>
+                { icon: "🎓", text: "Practical AI Learning", color: "text-blue-300" },
+                { icon: "⭐", text: "Real Workflow Focus", color: "text-yellow-300" },
+                { icon: "🏆", text: "Project-Based Learning", color: "text-emerald-300" },
+              ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-3 px-5 py-3 bg-white/[0.07] border border-white/[0.12] rounded-2xl backdrop-blur-md hover:bg-white/[0.12] transition-all duration-300">
+                  <span className="text-2xl">{stat.icon}</span>
+                  <span className={"text-sm font-semibold " + stat.color}>{stat.text}</span>
                 </div>
               ))}
             </div>
           </div>
         </header>
 
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          <nav className="mb-12 rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_2px_24px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3">
-              <LayoutGrid className="h-5 w-5 text-blue-700" />
-              <h2 className="text-xl font-black text-slate-900">Is guide me kya hai</h2>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+          {/* ====== TABLE OF CONTENTS ====== */}
+          <nav className="mb-16 p-8 bg-white rounded-3xl shadow-[0_4px_40px_rgba(0,0,0,0.06)] border border-slate-100">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+              <span className="text-3xl">📑</span> Is Guide Me Kya Hai
+            </h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { href: "#why", label: "Ye kyu zaruri hai", icon: TrendingUp },
-                { href: "#summary", label: "Kya seekhoge", icon: CheckCircle2 },
-                { href: "#steps", label: "Step-by-step guide", icon: Compass },
-                { href: "#tools", label: "Recommended tools", icon: Wand2 },
-                { href: "#mistakes", label: "Common mistakes", icon: ShieldCheck },
-                { href: "#market", label: "Market and earning", icon: DollarSign },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-blue-200 hover:bg-blue-50"
-                >
-                  <item.icon className="h-4 w-4 text-blue-700" />
-                  <span className="text-sm font-semibold text-slate-700">
-                    {item.label}
-                  </span>
-                </a>
+                { num: "01", label: "Ye Kyun Zaruri Hai", emoji: "🎯" },
+                { num: "02", label: "Kya Seekhoge", emoji: "✅" },
+                { num: "03", label: "Step-by-Step Guide", emoji: "📚" },
+                { num: "04", label: "AI Tools & Resources", emoji: "🛠️" },
+                { num: "05", label: "Common Mistakes", emoji: "⚠️" },
+                { num: "06", label: "Market & Earning", emoji: "💰" },
+                { num: "07", label: "FAQs", emoji: "❓" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer group">
+                  <span className="text-xl">{item.emoji}</span>
+                  <div>
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Section {item.num}</span>
+                    <p className="text-slate-700 text-sm font-semibold group-hover:text-blue-600 transition-colors">{item.label}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </nav>
 
-          <section id="why" className="mb-12 rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_2px_24px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-blue-700" />
+          {/* ====== SECTION 01: WHY IT MATTERS ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">🎯</span>
+              </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
-                  Section 01
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Ye kyu zaruri hai
-                </h2>
+                <span className="text-xs font-black text-blue-500 uppercase tracking-widest">Section 01</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Ye Kyun Zaruri Hai?</h2>
               </div>
             </div>
-            <p className="mt-5 text-[15px] leading-8 text-slate-600">
-              {deepContent.whyMatters}
-            </p>
-            <p className="mt-4 text-[15px] leading-8 text-slate-600">
-              Is page ka goal sirf search traffic nahi hai. Iska goal hai
-              intent ko samajhna, trust build karna, aur users ko practical
-              next step tak le jaana. Isi wajah se content structure answer-first
-              aur sales-aware rakha gaya hai.
-            </p>
+            <div className="bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 rounded-3xl p-8 border border-blue-100/80 shadow-[0_4px_30px_rgba(59,130,246,0.08)]">
+              <p className="text-slate-700 text-lg leading-[1.8] mb-5">{deepContent.whyMatters}</p>
+              <p className="text-slate-600 leading-[1.8]">Is guide me hum specifically <strong className="text-blue-700 font-extrabold">{audienceLabel.toLowerCase()}</strong> ke liye practical roadmap cover karenge. Koi unnecessary theory nahi — sirf actionable steps jo aap <strong>aaj se</strong> implement kar sakte hain.</p>
+            </div>
           </section>
 
-          <section id="summary" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          {/* ====== SECTION 02: WHAT YOU LEARN ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">✅</span>
+              </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
-                  Section 02
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Kya seekhoge
-                </h2>
+                <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Section 02</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Kya Seekhoge (Quick Summary)</h2>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {summaryPoints.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  <p className="mt-4 text-sm font-semibold leading-7 text-slate-700">
-                    {point}
-                  </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {summaryPoints.map((point, i) => (
+                <div key={i} className="p-6 bg-white rounded-2xl border border-slate-200 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:border-emerald-300 hover:-translate-y-1 transition-all duration-300">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+                    <CheckCircle2 className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-slate-800 font-bold leading-relaxed">{point}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section id="steps" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <Compass className="h-5 w-5 text-indigo-600" />
+          {/* ====== SECTION 03: STEP BY STEP ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">📚</span>
+              </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600">
-                  Section 03
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Step-by-step guide
-                </h2>
+                <span className="text-xs font-black text-purple-500 uppercase tracking-widest">Section 03</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Step-by-Step Guide</h2>
               </div>
             </div>
-            <div className="space-y-4">
-              {practicalSteps.map((step, index) => (
-                <div
-                  key={step}
-                  className="flex gap-5 rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-                    {index + 1}
+            <div className="space-y-5">
+              {practicalSteps.map((step, i) => (
+                <div key={i} className="relative flex gap-6 p-7 bg-white rounded-3xl border border-slate-200 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:border-purple-200 transition-all duration-300 group">
+                  <div className="flex-shrink-0">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-purple-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                      {i + 1}
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-extrabold text-slate-900">
-                      {step}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      {stepDetails[index]}
-                    </p>
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {stepTimelines[index]}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12 rounded-[30px] bg-[linear-gradient(135deg,#2753d7_0%,#2444ac_100%)] p-8 text-white shadow-[0_24px_60px_rgba(39,83,215,0.2)] sm:p-10">
-            <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-white/85">
-              Conversion Block
-            </div>
-            <h2 className="mt-5 text-3xl font-black tracking-tight">
-              Free AI Masterclass join karo
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-8 text-blue-50/85 sm:text-base">
-              Agar aap {parsed.skillLabel} ko sirf samajhna nahi, balki real
-              work me use karna chahte ho, to guided practice sabse fast path
-              hota hai. Sikhadenge ka masterclass action-oriented learners ke
-              liye bana hai.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#1f41a0] transition hover:bg-slate-100"
-              >
-                Register Free Now
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/15"
-              >
-                Talk to Team
-              </Link>
-            </div>
-          </section>
-
-          <section id="tools" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <Wand2 className="h-5 w-5 text-orange-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">
-                  Section 04
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Recommended tools
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {tools.map((tool) => (
-                <div
-                  key={tool.name}
-                  className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        {tool.name}
-                      </h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        {tool.desc}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${
-                        tool.free
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {tool.badge}
+                    <h3 className="text-lg font-extrabold text-slate-900 mb-2">{step}</h3>
+                    <p className="text-slate-500 leading-relaxed mb-3">{stepDetails[i] || "Is step ko dhyan se follow karo aur daily practice karo."}</p>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-bold">
+                      <Clock3 className="w-3 h-3" /> {stepTimelines[i] || "Ongoing"}
                     </span>
                   </div>
                 </div>
@@ -811,172 +317,174 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
             </div>
           </section>
 
-          <section id="mistakes" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-rose-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
-                  Section 05
+          {/* ====== MID CTA ====== */}
+          <section className="mb-16">
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-[2rem] p-10 sm:p-14 text-center shadow-2xl shadow-blue-600/20">
+              <div className="absolute inset-0 opacity-10" style={{backgroundImage: "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4), transparent 60%)"}} />
+              <div className="absolute top-6 right-6 text-6xl opacity-10">🚀</div>
+              <div className="relative">
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 rounded-full text-blue-200 text-sm font-bold mb-5 backdrop-blur-sm border border-white/10">
+                  <span className="text-lg">⚡</span> Live Practical Session
                 </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Ye galtiyan mat karna
-                </h2>
+                <h3 className="text-3xl sm:text-4xl font-black text-white mb-4">🎯 AI Masterclass Join Karo</h3>
+                <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+                  Live session me AI tools ka practical use seekho. Certificate milega. <strong>students</strong> already join kar chuke hain.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href="/gen-ai-masterclass/register-one-step" className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-white text-blue-700 font-black text-lg rounded-2xl hover:bg-blue-50 hover:scale-105 transition-all duration-300 shadow-2xl">
+                    Register Now <ArrowRight className="w-5 h-5" />
+                  </Link>
+                  <Link href="/gen-ai-masterclass/register-one-step" className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-white/10 text-white font-bold text-lg rounded-2xl hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm">
+                    📞 Talk to Team
+                  </Link>
+                </div>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {mistakes.map((mistake) => (
-                <div
-                  key={mistake}
-                  className="rounded-[24px] border border-rose-100 bg-rose-50 p-5"
-                >
-                  <p className="text-sm font-semibold leading-7 text-slate-700">
-                    {mistake}
-                  </p>
+          </section>
+
+          {/* ====== SECTION 04: TOOLS ====== */}
+          {tools.length > 0 && (
+            <section className="mb-16">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/25 transform hover:scale-110 transition-transform">
+                  <span className="text-3xl">🛠️</span>
+                </div>
+                <div>
+                  <span className="text-xs font-black text-orange-500 uppercase tracking-widest">Section 04</span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Recommended AI Tools</h2>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-5">
+                {tools.map((tool, i) => (
+                  <div key={i} className="flex items-start gap-5 p-6 bg-white rounded-2xl border border-slate-200 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:border-orange-200 hover:-translate-y-1 transition-all duration-300 group">
+                    <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                      {tool.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-extrabold text-slate-900">{tool.name}</h3>
+                        <span className={"px-3 py-1 rounded-full text-xs font-black " + (tool.free ? "bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-200" : "bg-amber-100 text-amber-700 shadow-sm shadow-amber-200")}>
+                          {tool.free ? "✅ FREE" : "💳 PAID"}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 text-sm leading-relaxed">{tool.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ====== SECTION 05: MISTAKES ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-xl shadow-red-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <div>
+                <span className="text-xs font-black text-red-500 uppercase tracking-widest">Section 05</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Ye Galtiyan Mat Karna</h2>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {mistakes.map((mistake, i) => (
+                <div key={i} className="flex items-start gap-4 p-5 bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl border border-red-100 hover:border-red-200 hover:shadow-lg transition-all duration-300">
+                  <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/20">
+                    <span className="text-white text-lg font-black">✗</span>
+                  </div>
+                  <p className="text-slate-700 font-semibold leading-relaxed">{mistake}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section id="market" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-emerald-600" />
+          {/* ====== SECTION 06: MARKET ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">💰</span>
+              </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
-                  Section 06
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Market and earning potential
-                </h2>
+                <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Section 06</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Market & Earning Potential</h2>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-6">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Market demand
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.marketStats}
-                </p>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="p-7 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border border-emerald-200 shadow-[0_4px_30px_rgba(16,185,129,0.08)] hover:shadow-xl transition-all">
+                <span className="text-3xl mb-3 block">📈</span>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-3">Market Size</h3>
+                <p className="text-slate-600 leading-[1.8]">{deepContent.marketStats}</p>
               </div>
-              <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-6">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Earning angle
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.earnings}
-                </p>
+              <div className="p-7 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl border border-blue-200 shadow-[0_4px_30px_rgba(59,130,246,0.08)] hover:shadow-xl transition-all">
+                <span className="text-3xl mb-3 block">💵</span>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-3">Earning Potential</h3>
+                <p className="text-slate-600 leading-[1.8]">{deepContent.earnings}</p>
               </div>
-              <div className="rounded-[24px] border border-violet-200 bg-violet-50 p-6 sm:col-span-2">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Future scope
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.futureScope}
-                </p>
+              <div className="sm:col-span-2 p-7 bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl border border-purple-200 shadow-[0_4px_30px_rgba(147,51,234,0.08)] hover:shadow-xl transition-all">
+                <span className="text-3xl mb-3 block">🚀</span>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-3">Future Scope</h3>
+                <p className="text-slate-600 leading-[1.8]">{deepContent.futureScope}</p>
               </div>
             </div>
           </section>
 
-          <section className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <CircleHelp className="h-5 w-5 text-slate-700" />
+          {/* ====== SECTION 07: FAQs ====== */}
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center shadow-xl shadow-slate-500/25 transform hover:scale-110 transition-transform">
+                <span className="text-3xl">❓</span>
+              </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                  Section 07
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Frequently asked questions
-                </h2>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Section 07</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Frequently Asked Questions</h2>
               </div>
             </div>
             <div className="space-y-4">
-              {faqs.map((faq) => (
-                <details
-                  key={faq.q}
-                  className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
-                    <span className="text-left text-base font-bold text-slate-900">
-                      {faq.q}
+              {faqs.map((faq, i) => (
+                <details key={i} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-lg transition-all">
+                  <summary className="flex items-center justify-between p-6 cursor-pointer select-none">
+                    <span className="text-slate-900 font-bold text-lg pr-4 flex items-center gap-3">
+                      <span className="text-xl">💡</span> {faq.q}
                     </span>
-                    <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180 group-open:text-blue-700" />
+                    <ChevronDown className="w-5 h-5 text-slate-400 group-open:text-blue-600 group-open:rotate-180 transition-transform duration-300 flex-shrink-0" />
                   </summary>
-                  <div className="border-t border-slate-100 px-6 py-5 text-sm leading-8 text-slate-600">
-                    {faq.a}
-                  </div>
+                  <div className="px-6 pb-6 text-slate-600 leading-[1.8] border-t border-slate-100 pt-4 ml-10">{faq.a}</div>
                 </details>
               ))}
             </div>
           </section>
 
-          <section className="mb-12 rounded-[30px] bg-[linear-gradient(135deg,#111c3d_0%,#172856_100%)] p-8 text-white shadow-[0_24px_60px_rgba(17,28,61,0.24)] sm:p-10">
-            <h2 className="max-w-3xl text-3xl font-black tracking-tight">
-              Sikhadenge ke saath practical AI journey shuru karo
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-200 sm:text-base">
-              Agar aapka goal jobs, freelancing, business growth, ya better
-              digital execution hai, to practical systems hi long-term value dete
-              hain. Sikhadenge isi gap ko solve karta hai.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-500 px-6 py-4 text-sm font-black text-white transition hover:bg-blue-600"
-              >
-                Join Practical AI Masterclass
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/courses"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/15"
-              >
-                Explore Courses
-              </Link>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              {[
-                { label: "Students", icon: GraduationCap },
-                { label: "Freelancers", icon: Briefcase },
-                { label: "Professionals", icon: TrendingUp },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[20px] border border-white/10 bg-white/8 p-5 backdrop-blur"
-                >
-                  <item.icon className="h-5 w-5 text-blue-200" />
-                  <div className="mt-3 text-sm font-bold text-white">
-                    {item.label}
-                  </div>
+          {/* ====== BOTTOM CTA ====== */}
+          <section className="mb-16">
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] p-10 sm:p-14 shadow-2xl">
+              <div className="absolute inset-0 opacity-10" style={{backgroundImage: "radial-gradient(circle at 30% 50%, rgba(59,130,246,0.5), transparent 50%), radial-gradient(circle at 80% 20%, rgba(147,51,234,0.4), transparent 50%)"}} />
+              <div className="absolute top-8 right-8 text-7xl opacity-10">🌟</div>
+              <div className="relative text-center">
+                <h3 className="text-3xl sm:text-4xl font-black text-white mb-4">🚀 AI Seekhna Shuru Karo — Aaj Se</h3>
+                <p className="text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed mb-10">Sikhadenge ka practical AI program join karo. Real projects, industry mentors, aur students ka community. Apni dream career build karo.</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href="/gen-ai-masterclass/register-one-step" className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-black text-lg rounded-2xl hover:from-blue-600 hover:to-blue-700 hover:scale-105 transition-all duration-300 shadow-2xl shadow-blue-500/30">
+                    Join Practical AI Masterclass <ArrowRight className="w-5 h-5" />
+                  </Link>
+                  <Link href="/courses" className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-white/10 text-white font-bold text-lg rounded-2xl hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm">
+                    📚 Explore Courses
+                  </Link>
                 </div>
-              ))}
+              </div>
             </div>
           </section>
 
           {relatedPosts.length > 0 && (
-            <section className="mb-6">
-              <div className="mb-5 flex items-center gap-3">
-                <LayoutGrid className="h-5 w-5 text-blue-700" />
-                <h2 className="text-2xl font-black text-slate-900">
-                  Related articles
-                </h2>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <section className="mb-8">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <span className="text-3xl">📚</span> Related Articles
+              </h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {relatedPosts.map((item) => (
-                  <Link
-                    key={item.slug}
-                    href={`/blog/${item.slug}`}
-                    className="group rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
-                  >
-                    <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
-                      {item.category || "AI Skills"}
-                    </span>
-                    <h3 className="mt-3 text-lg font-bold leading-snug text-slate-900 transition group-hover:text-blue-700">
-                      {item.title}
-                    </h3>
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-700">
-                      Read more
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
+                  <Link key={item.slug} href={"/blog/" + item.slug} className="group p-6 bg-white rounded-2xl border border-slate-200 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                    <span className="text-xs font-black text-blue-600 uppercase tracking-wider">{item.category}</span>
+                    <h3 className="text-lg font-bold text-slate-900 leading-snug mt-3 mb-4 group-hover:text-blue-600 transition-colors line-clamp-2">{item.title}</h3>
+                    <span className="text-blue-600 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">Read More <ArrowRight className="w-4 h-4" /></span>
                   </Link>
                 ))}
               </div>
@@ -984,6 +492,6 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
           )}
         </div>
       </article>
-    </>
+    </React.Fragment>
   );
 }

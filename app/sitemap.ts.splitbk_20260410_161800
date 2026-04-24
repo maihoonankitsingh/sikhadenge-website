@@ -1,0 +1,63 @@
+import { MetadataRoute } from 'next';
+import fs from 'fs';
+import path from 'path';
+
+function getSlugs(fileName: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'data', fileName);
+    return JSON.parse(fs.readFileSync(filePath, 'utf8')).map((r: any) => r.slug);
+  } catch (e) { return []; }
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://sikhadenge.in';
+  
+  const staticRoutes = [
+    '', '/about-us', '/contact-us', '/ai-expert', '/ai-skills',
+    '/courses', '/experts', '/gen-ai-masterclass', '/gen-ai-masterclass/register-one-step'
+  ].map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: route === '' ? 1.0 : 0.9,
+  }));
+
+  // Skill Pages
+  const skillUrls = getSlugs('generated-pages.json').map((slug: string) => ({
+    url: `${baseUrl}/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.8,
+  }));
+
+  // Prompts
+  const promptUrls = getSlugs('generated-prompts.json').map((slug: string) => ({
+    url: `${baseUrl}/prompts/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.8,
+  }));
+
+  // Free Tools
+  const toolsUrls = getSlugs('generated-mini-tools.json').map((slug: string) => ({
+    url: `${baseUrl}/free-tools/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.9,
+  }));
+
+  // VS Compare
+  const vsUrls = getSlugs('generated-vs.json').map((slug: string) => ({
+    url: `${baseUrl}/compare/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.8,
+  }));
+
+  // Expert Pages
+  const expertUrls = getSlugs('generated-seo.json').map((slug: string) => ({
+    url: `${baseUrl}/expert/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.7,
+  }));
+
+  // 🔥 MEGA BLOG ENGINE (50,000 pages) - Top 40K to stay under sitemap limit
+  const blogSlugs = getSlugs('blogs.json');
+  const blogUrls = blogSlugs.slice(0, 40000).map((slug: string) => ({
+    url: `${baseUrl}/blog/${slug}`, lastModified: new Date(),
+    changeFrequency: 'weekly' as const, priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...skillUrls, ...promptUrls, ...toolsUrls, ...vsUrls, ...expertUrls, ...blogUrls];
+}

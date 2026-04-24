@@ -20,9 +20,9 @@ export default function Hero() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3" id="counselling">
-            <Link href="/#counselling" className="sd-btn-primary">
+            <button type="button" className="sd-btn-primary" onClick={() => { if (typeof window !== "undefined") { window.dispatchEvent(new Event("sd:open-counselling")); } }}>
               Open Counselling Form
-            </Link>
+            </button>
             <Link href="/contact" className="sd-btn-secondary">
               Talk to Support
             </Link>

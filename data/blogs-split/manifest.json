@@ -1,0 +1,67 @@
+{
+  "total_blogs": 25010,
+  "parts": 10,
+  "chunk_size": 2501,
+  "files": [
+    {
+      "file": "blogs-1.json",
+      "count": 2501,
+      "start_index": 0,
+      "end_index": 2500
+    },
+    {
+      "file": "blogs-2.json",
+      "count": 2501,
+      "start_index": 2501,
+      "end_index": 5001
+    },
+    {
+      "file": "blogs-3.json",
+      "count": 2501,
+      "start_index": 5002,
+      "end_index": 7502
+    },
+    {
+      "file": "blogs-4.json",
+      "count": 2501,
+      "start_index": 7503,
+      "end_index": 10003
+    },
+    {
+      "file": "blogs-5.json",
+      "count": 2501,
+      "start_index": 10004,
+      "end_index": 12504
+    },
+    {
+      "file": "blogs-6.json",
+      "count": 2501,
+      "start_index": 12505,
+      "end_index": 15005
+    },
+    {
+      "file": "blogs-7.json",
+      "count": 2501,
+      "start_index": 15006,
+      "end_index": 17506
+    },
+    {
+      "file": "blogs-8.json",
+      "count": 2501,
+      "start_index": 17507,
+      "end_index": 20007
+    },
+    {
+      "file": "blogs-9.json",
+      "count": 2501,
+      "start_index": 20008,
+      "end_index": 22508
+    },
+    {
+      "file": "blogs-10.json",
+      "count": 2501,
+      "start_index": 22509,
+      "end_index": 25009
+    }
+  ]
+}

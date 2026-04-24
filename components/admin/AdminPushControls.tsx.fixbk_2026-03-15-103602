@@ -1,0 +1,69 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+type Props = {
+  token: string;
+  model?: string;
+  where?: any;
+  take?: number;
+};
+
+export default function AdminPushControls({ token, model = "MasterclassLead", where = {}, take = 200 }: Props) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string>("");
+
+  const payload = useMemo(() => {
+    return {
+      model,
+      where: where && typeof where === "object" ? where : {},
+      take: Math.max(1, Math.min(Number(take || 200), 2000)),
+    };
+  }, [model, where, take]);
+
+  async function runPush() {
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch(`/api/admin/push?token=${encodeURIComponent(token || "", { cache: "no-store" })}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg(`ERROR: ${j?.error || res.status}`);
+      } else {
+        setMsg(`OK: pushed=${j?.pushed ?? 0}`);
+      }
+    } catch (e: any) {
+      setMsg(`ERROR: ${e?.message || "network"}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={runPush}
+        disabled={busy || !token}
+        className="rounded-xl border border-white/10 bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-60"
+        title={!token ? "token missing" : "Push current filtered rows to webhook"}
+      >
+        {busy ? "Pushing..." : "Push to webhook"}
+      </button>
+
+      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-[#B0B7C3]">
+        model=<span className="text-white">{model || "-"}</span> • take=<span className="text-white">{payload.take}</span>
+      </div>
+
+      {msg ? (
+        <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-[#B0B7C3]">
+          {msg}
+        </div>
+      ) : null}
+    </div>
+  );
+}

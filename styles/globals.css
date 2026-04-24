@@ -47,3 +47,186 @@ body{
   .sd-glow-blue{ box-shadow: 0 0 18px rgba(37,99,235,0.55); }
   .sd-glow-gold{ box-shadow: 0 0 18px rgba(245,179,1,0.55); }
 }
+
+/* --- Learner proof: hide controls + hide scrollbars (scoped) --- */
+[data-sd-learner-proof] .sd-proof-controls{
+  display: none !important;
+}
+
+/* --- Learner proof: force-hide scrollbars (scoped) --- */
+/* Hide scrollbar UI but keep scrolling working (covers Tailwind overflow-x-auto containers too) */
+[data-sd-learner-proof] .overflow-x-auto{
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge legacy */
+}
+[data-sd-learner-proof] .overflow-x-auto::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* If a dedicated scroller class exists, keep it covered too */
+[data-sd-learner-proof] .sd-proof-scroller{
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-sd-learner-proof] .sd-proof-scroller::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Optional: hide the mobile dots scroller row if present */
+[data-sd-learner-proof] .sd-dots-scroll{
+  display: none !important;
+}
+
+
+
+/* hide scrollbar but keep scroll working */
+[data-sd-learner-proof] .sd-proof-scroller{
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge legacy */
+}
+[data-sd-learner-proof] .sd-proof-scroller::-webkit-scrollbar{
+  width: 0;
+  height: 0;
+}
+
+/* === Learner Proof: hard hide scrollbar (FINAL) === */
+[data-sd-learner-proof]{
+  overflow: hidden;
+}
+
+/* real scroller: keep scroll, hide bars */
+[data-sd-learner-proof] > div,
+[data-sd-learner-proof] .overflow-x-auto{
+  overflow-x: scroll !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;     /* Firefox */
+  -ms-overflow-style: none !important;  /* IE/Edge legacy */
+}
+
+[data-sd-learner-proof] .overflow-x-auto::-webkit-scrollbar{
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* hide any dot/pager rows + controls */
+[data-sd-learner-proof] .sd-dots-scroll,
+[data-sd-learner-proof] .sd-proof-controls{
+  display: none !important;
+}
+
+/* sd-hide-scrollbar (production-safe) */
+.sd-hide-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+.sd-hide-scrollbar::-webkit-scrollbar{ display:none; width:0; height:0; }
+
+/* SD_HOME_SCROLLBAR_HIDE_UTILITY_V1 */
+/* hide scrollbar but keep scroll working */
+.sd-home-scrollbar-hide{
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge legacy */
+}
+.sd-home-scrollbar-hide::-webkit-scrollbar{
+  display: none;               /* Chrome/Safari */
+}
+
+/* SD_LEARNER_PROOF_HIDE_SCROLLBAR_V1 */
+/* Hide horizontal scrollbar but keep scrolling (scoped to learner-proof sections only) */
+[data-sd-learner-proof] .overflow-x-auto,
+[data-sd-learner-proof] .overflow-x-scroll{
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/old Edge */
+}
+[data-sd-learner-proof] .overflow-x-auto::-webkit-scrollbar,
+[data-sd-learner-proof] .overflow-x-scroll::-webkit-scrollbar{
+  display: none;                /* Chrome/Safari */
+}
+
+
+/* SD_HIDE_CUSTOM_SCROLLBAR_OVERLAY_V1 */
+/* If any custom scrollbar overlay remains anywhere, hard-hide it */
+.sd-home-scrollbar,
+.sd-scrollbar,
+.sd-scrollbar-ui,
+.sd-scrollbar-track,
+.sd-scrollbar-thumb,
+.sd-scrollbar-arrows,
+.sd-scrollbar-left,
+.sd-scrollbar-right,
+.sd-scrollbar-wrap,
+.sd-scrollbar-container{
+  display: none !important;
+}
+
+/* Hide native scrollbar but keep scroll working (generic utility) */
+.sd-home-scrollbar-hide{
+  scrollbar-width: none; /* Firefox */
+}
+.sd-home-scrollbar-hide::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* SD_PROOF_UI_HIDE_RULES_V1 */
+.sd-proof-controls{ display:none !important; }
+.sd-proof-tip{ display:none !important; }
+
+/* hide native scrollbar but keep scroll working */
+.sd-home-scrollbar-hide{ scrollbar-width:none; }
+.sd-home-scrollbar-hide::-webkit-scrollbar{ width:0 !important; height:0 !important; }
+
+/* SD_SCROLLBAR_HIDE_STRONG_V1 */
+/* Hide scrollbars but keep scroll working */
+.sd-hide-scrollbar,
+.sd-no-scrollbar{
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge legacy */
+}
+.sd-hide-scrollbar::-webkit-scrollbar,
+.sd-no-scrollbar::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* SD_FORCE_HIDE_NATIVE_X_SCROLLBAR_V1 */
+/* Hide horizontal native scrollbars used in Home proof containers (keep scroll working) */
+.sd-course-scroll,
+.sd-hide-scrollbar,
+.sd-no-scrollbar,
+.sd-home-scrollbar-hide,
+[data-sd-course-viewport="1"],
+[data-sd-video-viewport="1"]{
+  scrollbar-width: none !important;           /* Firefox */
+  -ms-overflow-style: none !important;        /* IE/Edge legacy */
+}
+
+/* WebKit */
+.sd-course-scroll::-webkit-scrollbar,
+.sd-hide-scrollbar::-webkit-scrollbar,
+.sd-no-scrollbar::-webkit-scrollbar,
+.sd-home-scrollbar-hide::-webkit-scrollbar,
+[data-sd-course-viewport="1"]::-webkit-scrollbar,
+[data-sd-video-viewport="1"]::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.sd-course-scroll::-webkit-scrollbar-thumb,
+.sd-hide-scrollbar::-webkit-scrollbar-thumb,
+.sd-no-scrollbar::-webkit-scrollbar-thumb,
+.sd-home-scrollbar-hide::-webkit-scrollbar-thumb,
+[data-sd-course-viewport="1"]::-webkit-scrollbar-thumb,
+[data-sd-video-viewport="1"]::-webkit-scrollbar-thumb{
+  background: transparent !important;
+}
+
+.sd-course-scroll::-webkit-scrollbar-track,
+.sd-hide-scrollbar::-webkit-scrollbar-track,
+.sd-no-scrollbar::-webkit-scrollbar-track,
+.sd-home-scrollbar-hide::-webkit-scrollbar-track,
+[data-sd-course-viewport="1"]::-webkit-scrollbar-track,
+[data-sd-video-viewport="1"]::-webkit-scrollbar-track{
+  background: transparent !important;
+}

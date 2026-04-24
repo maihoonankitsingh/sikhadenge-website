@@ -1,464 +1,917 @@
-.counselling_overlay__dummy {}
-
-/* Variables are scoped to .modal (safe for Next.js CSS Modules). */
+/* SD_COUNSELLING_MODAL_CLEAN_V22
+   Goals:
+   - smaller modal (desktop+mobile)
+   - overlay transparent so website visible (no solid black)
+   - subtle neon only (blue/gold), reduced glow
+   - inputs/select smaller
+   - dropdown list readable on desktop (option colors)
+*/
 
 .overlay{
   position: fixed;
   inset: 0;
-  z-index: 9999;
   display: grid;
   place-items: center;
-  padding: 12px;
+  padding: 16px;
+  background: rgba(11,18,32,0.32);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
 }
 
-.backdrop{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.60);
-  border: none;
-  cursor: pointer;
-  z-index: 0;
-}
-
-/* Desktop modal: wider + premium spacing */
 .modal{
-  --bg1:#140032;
-  --bg2:#2b0b6a;
-  --text:#0f172a;
-  --muted:#64748b;
-  --border:rgba(15,23,42,.14);
-  --accent:#ff6b5a;
-
   position: relative;
-  z-index: 1;
-
-  width: min(980px, 100%);
-  border-radius: 22px;
+  width: min(920px, 94vw);
+  max-height: 82vh;
   overflow: hidden;
-
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(1200px 600px at 30% 20%, rgba(37,99,235,0.18), transparent 55%),
+    radial-gradient(900px 520px at 75% 55%, rgba(245,179,1,0.12), transparent 60%),
+    rgba(17,24,39,0.92);
+  box-shadow:
+    0 0 14px rgba(37,99,235,0.22),
+    0 0 10px rgba(245,179,1,0.10);
   display: grid;
   grid-template-columns: 1fr 1fr;
-
-  background: linear-gradient(135deg, rgba(20,0,50,.98), rgba(43,11,106,.98));
-  box-shadow: 0 22px 70px rgba(0,0,0,.46);
 }
 
-/* Close button should look good on BOTH dark/white sides */
-.closeBtn{
+.close{
   position: absolute;
-  top: 14px;
-  right: 14px;
-  height: 38px;
+  top: 10px;
+  right: 10px;
   width: 38px;
+  height: 38px;
   border-radius: 999px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: rgba(255,255,255,.86);
-  color: rgba(15,23,42,.85);
-  font-size: 22px;
-  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(11,18,32,0.35);
+  color: #fff;
   cursor: pointer;
-  z-index: 3;
-  display: grid;
-  place-items: center;
 }
-.closeBtn:hover{ background: rgba(255,255,255,.94); }
 
 .left{
-  padding: 26px 26px;
-  color: #fff;
-  background:
-    radial-gradient(900px 520px at 18% 10%, rgba(255,107,90,.22), transparent 55%),
-    radial-gradient(860px 520px at 82% 30%, rgba(124,58,237,.26), transparent 52%),
-    linear-gradient(135deg, var(--bg1), var(--bg2));
+  padding: 22px 22px 18px 22px;
 }
 
-.badge{
+.pill{
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  opacity: .92;
-  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: #B0B7C3;
+  font-size: 12px;
+  letter-spacing: 0.08em;
 }
 
 .dot{
-  height: 10px;
-  width: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+  background: #F5B301;
+  box-shadow: 0 0 10px rgba(245,179,1,0.35);
 }
 
 .title{
-  margin: 0;
-  font-size: 40px;
+  margin-top: 14px;
+  color: #fff;
+  font-size: 36px;
   line-height: 1.08;
-  letter-spacing: -0.03em;
-  font-weight: 900;
+  font-weight: 800;
 }
 
-.points{
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 12px;
-  max-width: 420px;
-}
-
-.points li{
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 14px;
-  padding: 12px 13px;
+.sub{
+  margin-top: 10px;
+  color: #B0B7C3;
   font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-width: 520px;
 }
 
-.points li:before{
-  content: "✓";
-  font-weight: 900;
-  opacity: .95;
-  flex: 0 0 auto;
+.bullets{
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.bullet{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.tick{
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(245,179,1,0.45);
+  color: #F5B301;
+  background: rgba(245,179,1,0.08);
+}
+
+.bulletText{
+  color: #E5E7EB;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .right{
-  background: rgba(255,255,255,.97);
-  padding: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-left: 1px solid rgba(15,23,42,.08);
+  padding: 18px;
+  display: grid;
 }
 
-/* Make desktop form look aligned (not stretched) */
-.form{
-  width: 100%;
-  max-width: 440px;
+.card{
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(11,18,32,0.30);
+  overflow: hidden;
   display: grid;
-  gap: 12px;
+}
+
+.form{
+  padding: 12px;
+  overflow: auto;
+  max-height: 78vh;
 }
 
 .field{
-  display: grid;
-  gap: 7px;
+  margin-bottom: 8px;
 }
 
 .label{
-  font-size: 12.5px;
-  font-weight: 700;
-  color: rgba(15,23,42,.78);
+  color: #B0B7C3;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
-/* Controls */
-.control,
-.controlNoPad{
-  position: relative;
+.input, .select{
   width: 100%;
-}
-
-.icon,
-.iconPhone{
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: rgba(15,23,42,.52);
-  pointer-events: none;
-  display: grid;
-  place-items: center;
-}
-
-.icon svg,
-.iconPhone svg{
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-/* Base field */
-.input,
-.select{
-  width: 100%;
-  height: 50px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: #fff;
-  font-size: 14px;
-  color: var(--text);
-  padding: 0 14px 0 42px;
+  height: 38px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
   outline: none;
-  line-height: 1.2;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  font-size: 14px;
 }
 
-/* Dropdown arrow aligned */
+.input::placeholder{
+  color: rgba(176,183,195,0.55);
+}
+
 .select{
   appearance: none;
-  padding-right: 44px;
-  background-image:
-    linear-gradient(45deg, transparent 50%, rgba(15,23,42,.55) 0),
-    linear-gradient(135deg, rgba(15,23,42,.55) 50%, transparent 0);
-  background-position:
-    calc(100% - 18px) 50%,
-    calc(100% - 12px) 50%;
-  background-size: 7px 7px, 7px 7px;
-  background-repeat: no-repeat;
+  -webkit-appearance: none;
 }
 
-.input:focus,
-.select:focus{
-  border-color: rgba(255,107,90,.62);
-  box-shadow: 0 0 0 4px rgba(255,107,90,.14);
+.select:focus, .input:focus{
+  border-color: rgba(37,99,235,0.45);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.16);
 }
 
-/* Phone group */
-.phoneWrap{
+/* Critical: make native dropdown list readable (browser uses these for option list) */
+.select option{
+  color: #0B1220;
+  background: #ffffff;
+}
+
+.rowPhone{
   display: grid;
-  grid-template-columns: 78px 1fr;
-  height: 50px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-  background: #fff;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: center;
 }
 
-.country{
+.cc{
+  height: 38px;
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: 12px;
-  color: rgba(15,23,42,.72);
-  background: rgba(15,23,42,.04);
-  border-right: 1px solid var(--border);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #E5E7EB;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.inputPhone{
+.btn{
+  margin-top: 10px;
   width: 100%;
-  height: 50px;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  padding: 0 14px 0 42px;
-  color: var(--text);
-  background: transparent;
-  line-height: 1.2;
-}
-
-.grid2{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-/* Button */
-.cta{
-  height: 54px;
+  height: 42px;
   border-radius: 14px;
-  border: none;
-  color: #fff;
-  font-weight: 900;
-  font-size: 15px;
+  border: 0;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: filter .15s ease, transform .08s ease, opacity .15s ease, box-shadow .15s ease;
-  box-shadow: 0 10px 22px rgba(255,107,90,.24);
+  font-weight: 800;
+  font-size: 14px;
+  background: #F5B301;
+  color: #0B1220;
 }
 
-.ctaReady{
-  background: linear-gradient(180deg, #ff7a6d 0%, #ff6b5a 100%);
-  opacity: 1;
-  box-shadow:
-    0 14px 30px rgba(255,107,90,.42),
-    inset 0 1px 0 rgba(255,255,255,.35);
-}
-
-.ctaMuted{
-  background: linear-gradient(180deg, rgba(255,122,109,.55) 0%, rgba(255,107,90,.50) 100%);
-  opacity: .78;
-  box-shadow:
-    0 10px 20px rgba(15,23,42,.10),
-    inset 0 1px 0 rgba(255,255,255,.22);
-}
-
-.cta:hover{ filter: brightness(0.98); }
-.cta:active{ transform: translateY(1px); }
-
-.cta:disabled{
-  opacity: .60;
+.btn:disabled{
+  opacity: 0.65;
   cursor: not-allowed;
-  filter: none;
-  transform: none;
-  box-shadow:
-    0 10px 20px rgba(15,23,42,.10),
-    inset 0 1px 0 rgba(255,255,255,.18);
 }
 
-.arrow{
-  font-size: 18px;
-  line-height: 1;
+.note{
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(176,183,195,0.70);
 }
 
-.meta{
-  font-size: 12px;
-  color: rgba(15,23,42,.62);
-  line-height: 1.5;
-}
-
-.link{
-  color: rgba(15,23,42,.80);
-  text-decoration: underline;
-}
-
-.error{
-  font-size: 12px;
-  color: #b91c1c;
-  background: rgba(185,28,28,.08);
-  border: 1px solid rgba(185,28,28,.18);
+.err{
+  margin-top: 10px;
   padding: 10px 12px;
   border-radius: 12px;
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.10);
+  color: #FEE2E2;
+  font-size: 12px;
 }
 
-/* Success / Welcome Screen (web + mobile) */
-.successPane{
-  width: 100%;
-  max-width: 440px;
-  display: grid;
-  gap: 10px;
-  padding: 8px 0;
-}
-
-.successIcon{
-  height: 52px;
-  width: 52px;
-  border-radius: 999px;
-  background: rgba(34,197,94,.14);
-  color: #16a34a;
-  display: grid;
-  place-items: center;
-}
-.successIcon svg{
-  width: 26px;
-  height: 26px;
-}
-
-.successTitle{
-  font-size: 22px;
-  font-weight: 900;
-  color: rgba(15,23,42,.92);
-  letter-spacing: -0.01em;
-}
-
-.successMsg{
-  font-size: 14px;
-  color: rgba(15,23,42,.70);
-  line-height: 1.6;
-}
-
-.successMeta{
-  margin-top: 6px;
-  font-size: 13px;
-  color: rgba(15,23,42,.72);
-  display: grid;
-  gap: 6px;
-}
-.successMeta b{ color: rgba(15,23,42,.88); }
-
-.successClose{
+.ok{
   margin-top: 10px;
-  height: 48px;
-  border-radius: 14px;
-  border: 1px solid rgba(15,23,42,.18);
-  background: #fff;
-  font-weight: 900;
-  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,197,94,0.30);
+  background: rgba(34,197,94,0.10);
+  color: #DCFCE7;
+  font-size: 12px;
 }
-.successClose:hover{ background: rgba(15,23,42,.04); }
 
-/* Mobile = card + scroll safe */
-@media (max-width: 860px){
-  .overlay{ padding: 10px; }
-
+/* Mobile */
+@media (max-width: 768px){
   .modal{
     grid-template-columns: 1fr;
-    width: min(360px, 100%);
-    max-height: calc(100vh - 20px);
-    overflow: hidden;
+    width: min(520px, 94vw);
+  }
+  .left{ display: none; }
+.form{ max-height: none; overflow: visible; }
+}
+
+/* Small mobile: title single line requirement handled by JS text swap */
+@media (max-width: 480px){
+  .overlay{ padding: 12px; }
+.modal{ width: 94vw; max-height: calc(100dvh - 24px); overflow: hidden; }
+  .form{ padding: 12px; }
+.input, .select, .cc { height: 36px; }
+.btn { height: 40px; }
+}
+
+/* ===== V32: Mobile header (pill + title/subtitle) spacing ===== */
+@media (max-width: 480px) {
+  /* tighten header block so it looks centered/standard */
+  .mobileHero{
+    margin: 0 0 12px !important;
+    padding: 0 0 12px !important;
+    gap: 8px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.10) !important;
   }
 
-  .left{
-    padding: 14px 14px 12px;
+  /* "FIRST CALL IS ON US" pill */
+  .kicker, .pill, .badge{
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.10em !important;
+    line-height: 1 !important;
+    border-radius: 999px !important;
+    max-width: fit-content !important;
   }
 
-  .badge{
-    margin-bottom: 8px;
-    font-size: 10.5px;
-  }
-
+  /* heading + subheading spacing (NO global h1 selectors) */
   .title{
+    margin: 0 !important;
+    font-size: 30px !important;
+    line-height: 1.08 !important;
+  }
+  .sub{
+    margin-top: 6px !important;
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* keep close button consistent */
+  .close{
+    top: 10px !important;
+    right: 10px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 999px !important;
+  }
+}
+
+/* ===== V33: Mobile header rectangle (pill + heading, no subheading) ===== */
+@media (max-width: 480px) {
+  .mobileHero{
+    display: block;
+    background: rgba(17,24,39,0.35);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 12px 12px;
+    margin: 0 0 12px 0;
+  }
+
+  .kicker{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .mobileTitle{
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 800;
+  }
+}
+
+/* ===== V33: Mobile header rectangle (pill + heading, no subheading) ===== */
+@media (max-width: 480px) {
+  .mobileHero{
+    display: block;
+    background: rgba(17,24,39,0.35);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 12px 12px;
+    margin: 0 0 12px 0;
+  }
+
+  .kicker{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .mobileTitle{
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 800;
+  }
+}
+
+/* ===== V33: Mobile header rectangle (pill + heading, no subheading) ===== */
+@media (max-width: 480px) {
+  .mobileHero{
+    display: block;
+    background: rgba(17,24,39,0.35);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 12px 12px;
+    margin: 0 0 12px 0;
+  }
+
+  .kicker{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .mobileTitle{
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 800;
+  }
+}
+/* ===== V34: Mobile header alignment polish (NO other UI changes) ===== */
+@media (max-width: 480px) {
+
+  .mobileHero{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+
+  .mobileHero .kicker{
+    padding: 6px 12px;
+    font-size: 11px;
+    line-height: 1;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    align-self: flex-start;
+  }
+
+  .mobileTitle{
     font-size: 24px;
-    line-height: 1.12;
+    line-height: 1.15;
+    margin: 0;
   }
 
-  .points{ display: none; }
+  .close{
+    top: 12px;
+    right: 12px;
+  }
+}
 
-  .right{
-    background: transparent;
-    padding: 12px;
-    align-items: start;
-    justify-content: stretch;
-    border-left: none;
+
+/* ===== V35: Mobile TOP header alignment fix (pill + title perfect) ===== */
+@media (max-width: 480px) {
+
+  /* Header container: full width, clean spacing */
+  .mobileHero{
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    margin: 0 0 14px 0 !important;
+    padding: 6px 0 14px 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.10) !important;
   }
 
-  .form{
-    max-width: none;
-    background: rgba(255,255,255,.98);
-    border-radius: 14px;
-    padding: 12px;
+  /* Pill: consistent size + no weird centering */
+  .kicker{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.10em !important;
+    border-radius: 999px !important;
+    margin: 0 !important;
+  }
+
+  /* Heading: alignment + spacing (no overlap / no extra rectangle feel) */
+  .mobileTitle{
+    width: 100% !important;
+    text-align: left !important;
+    font-size: 26px !important;
+    line-height: 1.10 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Close button: keep away from header line */
+  .close{
+    top: 12px !important;
+    right: 12px !important;
+  }
+}
+
+/* ===== V36: Fix TOP section (remove extra rectangle, align pill+heading) ===== */
+@media (max-width: 480px) {
+
+  /* remove the unwanted header rectangle look */
+  .mobileHero{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+
+    margin: 0 0 12px 0 !important;
+    padding: 0 0 12px 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.10) !important;
+  }
+
+  /* pill standard */
+  .kicker{
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.10em !important;
+    border-radius: 999px !important;
+    margin: 0 !important;
+  }
+
+  /* heading clean alignment */
+  .mobileTitle{
+    width: 100% !important;
+    text-align: left !important;
+    font-size: 26px !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* keep close button away */
+  .close{ top: 12px !important; right: 12px !important; }
+}
+
+/* ===== V34: Mobile modal top header band (like ref 2) ===== */
+.mobileHero { display: none; }
+
+@media (max-width: 480px) {
+  .mobileHero{
+    display:block;
+    margin: 0 0 14px;
+    padding: 14px 14px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(180deg, rgba(37,99,235,0.22) 0%, rgba(11,18,32,0.0) 100%);
+    box-shadow: 0 0 18px rgba(37,99,235,0.18);
+  }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
     gap: 10px;
-    box-shadow: 0 14px 40px rgba(0,0,0,.18);
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #B0B7C3;
+  }
+  .kicker::before{
+    content:"";
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#F5B301;
+    box-shadow: 0 0 18px rgba(245,179,1,0.55);
   }
 
-  .label{ display: none; }
+  .mobileTitle{
+    margin-top: 10px;
+    font-size: 30px;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #FFFFFF;
+  }
+}
 
-  /* iPhone Safari zoom/dropdown feel fix */
-  .input,
-  .select,
-  .inputPhone{
-    font-size: 16px;
+/* ===== V34: Mobile modal top header band (like ref 2) ===== */
+.mobileHero { display: none; }
+
+@media (max-width: 480px) {
+  .mobileHero{
+    display:block;
+    margin: 0 0 14px;
+    padding: 14px 14px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(180deg, rgba(37,99,235,0.22) 0%, rgba(11,18,32,0.0) 100%);
+    box-shadow: 0 0 18px rgba(37,99,235,0.18);
   }
 
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #B0B7C3;
+  }
+  .kicker::before{
+    content:"";
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#F5B301;
+    box-shadow: 0 0 18px rgba(245,179,1,0.55);
+  }
+
+  .mobileTitle{
+    margin-top: 10px;
+    font-size: 30px;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #FFFFFF;
+  }
+}
+
+/* ===== V34: Mobile modal top header band (like ref 2) ===== */
+.mobileHero { display: none; }
+
+@media (max-width: 480px) {
+  .mobileHero{
+    display:block;
+    margin: 0 0 14px;
+    padding: 14px 14px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(180deg, rgba(37,99,235,0.22) 0%, rgba(11,18,32,0.0) 100%);
+    box-shadow: 0 0 18px rgba(37,99,235,0.18);
+  }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,18,32,0.35);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #B0B7C3;
+  }
+  .kicker::before{
+    content:"";
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#F5B301;
+    box-shadow: 0 0 18px rgba(245,179,1,0.55);
+  }
+
+  .mobileTitle{
+    margin-top: 10px;
+    font-size: 30px;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #FFFFFF;
+  }
+}
+
+
+/* ===== V35: Fix mobile header alignment (kicker + title) ===== */
+@media (max-width: 480px) {
+  .mobileHero{
+    position: relative !important;
+    margin: 0 0 14px !important;
+    padding: 14px 54px 14px 14px !important; /* right padding to avoid X overlap */
+    border-radius: 14px !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    background: linear-gradient(180deg, rgba(37,99,235,0.18) 0%, rgba(17,24,39,0.25) 55%, rgba(11,18,32,0.0) 100%) !important;
+  }
+
+  /* "FIRST CALL IS ON US" pill */
+  .kicker{
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 10px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    letter-spacing: 0.14em !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+    margin: 0 0 10px !important;
+    max-width: calc(100% - 8px) !important;
+    white-space: nowrap !important;
+  }
+
+  /* Title */
+  .mobileTitle{
+    margin: 0 !important;
+    font-size: 28px !important;
+    line-height: 1.12 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ===== V36: Reduce form field heights to remove modal scrollbar (desktop/tablet) ===== */
+@media (min-width: 481px) {
+  /* tighten vertical spacing between fields */
+  .field { margin-bottom: 07px !important; }
+
+  /* labels slightly tighter */
+  .label { margin-bottom: 5px !important; font-size: 12px !important; }
+
+  /* inputs/selects smaller height */
   .input,
-  .select{ height: 46px; }
+  .select {
+    height: 30px !important;
+    padding: 05px 10px !important;
+    font-size: 12px !important;
+  }
 
-  .phoneWrap{ height: 46px; }
-  .inputPhone{ height: 46px; }
+  /* phone row tighter (if exists) */
+  .phoneRow { gap: 08px !important; }
 
-  .grid2{ grid-template-columns: 1fr; }
+  /* submit button a bit shorter */
+  .submitBtn {
+    height: 36px !important;
+    padding: 09px 14px !important;
+    font-size: 12px !important;
+  }
 
-  .cta{ height: 52px; }
+  /* terms text spacing */
+  .terms { margin-top: 6px !important; }
+}
 
-  /* keep form short: hide Level only */
-  .grid2 .field:nth-child(2){ display: none; }
+/* SD_COUNSELLING_MOBILE_COMPACT_V1 */
+@media (max-width: 480px){
+  /* overall card smaller */
+  .modal{
+    width: calc(100vw - 24px) !important;
+    max-width: 420px !important;
+    max-height: 78dvh !important;
+  }
 
-  /* success on mobile should look like a card */
-  .successPane{
-    max-width: none;
-    background: rgba(255,255,255,.98);
-    border-radius: 14px;
-    padding: 14px;
-    box-shadow: 0 14px 40px rgba(0,0,0,.18);
+  .right{ padding: 10px !important; }
+
+  .card{
+    border-radius: 14px !important;
+  }
+
+  .mobileHero{ padding: 10px 12px 6px 12px !important; }
+
+  .kicker{
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+    letter-spacing: .10em !important;
+  }
+
+  .mobileTitle{
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* form density */
+  .form{
+    padding: 10px 12px 12px 12px !important;
+    max-height: calc(78dvh - 86px) !important; /* header approx */
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .field{ margin-bottom: 8px !important; }
+
+  .label{
+    font-size: 11px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .input, .select{
+    height: 36px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+  }
+
+  .cc{
+    height: 36px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .rowPhone{
+    grid-template-columns: 54px 1fr !important;
+    gap: 8px !important;
+  }
+
+  .btn{
+    height: 40px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    margin-top: 8px !important;
+  }
+
+  /* native dropdown list readable */
+  .select option{
+    color: #0B1220 !important;
+    background: #ffffff !important;
+  }
+}
+
+/* SD_COUNSELLING_MOBILE_COMPACT_V2 */
+@media (max-width: 480px){
+  /* overall card smaller + single scroll container (not inside form) */
+  .modal{
+    width: calc(100vw - 24px) !important;
+    max-width: 420px !important;
+    max-height: 76dvh !important;
+    overflow: auto !important;              /* if needed, only ONE scroll */
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .right{ padding: 8px !important; }
+
+  .card{
+    border-radius: 14px !important;
+    overflow: visible !important;           /* avoid inner clipping/scroll */
+  }
+
+  .mobileHero{ padding: 8px 10px 4px 10px !important; }
+
+  .kicker{
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+    letter-spacing: .10em !important;
+  }
+
+  .mobileTitle{
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* form density (NO inner scroll) */
+  .form{
+    padding: 8px 10px 10px 10px !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .field{ margin-bottom: 6px !important; }
+
+  .label{
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .input, .select{
+    height: 34px !important;
+    padding: 7px 9px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .cc{
+    height: 34px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .rowPhone{
+    grid-template-columns: 52px 1fr !important;
+    gap: 6px !important;
+  }
+
+  .btn{
+    height: 38px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    margin-top: 6px !important;
+  }
+
+  /* native dropdown list readable */
+  .select option{
+    color: #0B1220 !important;
+    background: #ffffff !important;
+  }
+}
+
+
+/* SD_SAFEAREA_BOTTOM_FIX_V1 */
+@media (max-width: 480px){
+  /* iOS bottom bar space */
+  .overlay{
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* keep modal fully visible above bottom bar */
+  .modal{
+    max-height: calc(100dvh - 28px - env(safe-area-inset-bottom)) !important;
+  }
+
+  /* keep form visible without being hidden behind bottom bar */
+  .form{
+    max-height: calc(100dvh - 28px - 120px - env(safe-area-inset-bottom)) !important;
+  }
+
+  /* ensure close button is clickable */
+  .close{
+    z-index: 50 !important;
   }
 }

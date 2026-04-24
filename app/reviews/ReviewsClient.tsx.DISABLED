@@ -1,0 +1,211 @@
+"use client";
+
+import React, { useMemo, useRef, useEffect, useState } from "react";
+
+type Reel = { id: string; title: string; src?: string; poster?: string };
+type TextReview = { id: string; name: string; role: string; tags: string[]; quote: string; footer: string };
+
+function useAutoMarquee(ref: React.RefObject<HTMLDivElement>, speed = 0.45, enabled = true) {
+  const rafRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !enabled) return;
+
+    const onEnter = () => { pausedRef.current = true; };
+    const onLeave = () => { pausedRef.current = false; };
+    el.addEventListener("mouseenter", onEnter);
+    el.addEventListener("mouseleave", onLeave);
+    el.addEventListener("touchstart", onEnter, { passive: true });
+    el.addEventListener("touchend", onLeave, { passive: true });
+
+    const tick = () => {
+      const node = ref.current;
+      if (node && !pausedRef.current) {
+        const half = node.scrollWidth / 2;
+        node.scrollLeft += speed;
+        if (half > 0 && node.scrollLeft >= half) node.scrollLeft -= half;
+      }
+      rafRef.current = window.requestAnimationFrame(tick);
+    };
+
+    rafRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+      el.removeEventListener("mouseenter", onEnter);
+      el.removeEventListener("mouseleave", onLeave);
+      el.removeEventListener("touchstart", onEnter as any);
+      el.removeEventListener("touchend", onLeave as any);
+    };
+  }, [ref, speed, enabled]);
+}
+
+export default function ReviewsClient() {
+  // NOTE: Replace with your real reels later (src/poster). Keeping build-safe for now.
+  const reels: Reel[] = useMemo(
+    () => [
+      { id: "r1", title: "Learner Reel 1" },
+      { id: "r2", title: "Learner Reel 2" },
+      { id: "r3", title: "Learner Reel 3" },
+      { id: "r4", title: "Learner Reel 4" },
+    ],
+    []
+  );
+
+  const textReviews: TextReview[] = useMemo(
+    () => [
+      {
+        id: "t1",
+        name: "Learner",
+        role: "Student",
+        tags: ["Live classes", "Portfolio", "Support"],
+        quote:
+          "Course structure clear tha. Daily practice aur feedback se output improve hua. Projects se portfolio ready hua.",
+        footer: "Graphic Design",
+      },
+      {
+        id: "t2",
+        name: "Learner",
+        role: "Student",
+        tags: ["Editing", "Workflow", "Consistency"],
+        quote:
+          "Video editing workflow step-by-step mila. Short deadlines me bhi output stable raha.",
+        footer: "Video Editing",
+      },
+      {
+        id: "t3",
+        name: "Learner",
+        role: "Student",
+        tags: ["Motion", "Basics", "Hands-on"],
+        quote:
+          "Motion graphics basics practically samajh aaya. Weekly assignments helped a lot.",
+        footer: "Motion Graphics",
+      },
+    ],
+    []
+  );
+
+  const reelsLoop = useMemo(() => [...reels, ...reels], [reels]);
+  const textLoop = useMemo(() => [...textReviews, ...textReviews], [textReviews]);
+
+  const reelsRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+
+  // Autoscroll marquees (duplicated content)
+  useAutoMarquee(reelsRef, 0.45, true);
+  useAutoMarquee(textRef, 0.55, true);
+
+  const [activeReel, setActiveReel] = useState<string | null>(null);
+
+  return (
+    <main className="min-h-screen bg-[#0B1220] text-white">
+      <style jsx global>{`
+        .sd-no-scrollbar::-webkit-scrollbar { height: 0px; width: 0px; }
+        .sd-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-24 pb-14">
+        <div className="mx-auto max-w-4xl text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-[1.15]">
+            Reviews & Success Stories
+          </h1>
+          <div className="mx-auto mt-4 h-[3px] w-28 sm:w-32 rounded-full bg-white/70" />
+          <p className="mt-3 text-sm text-white/70">
+            Learner feedback (video + text). This page is live now; reels sources can be plugged in anytime.
+          </p>
+        </div>
+
+        {/* VIDEO (placeholder cards) */}
+        <section className="mt-10">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-semibold">Video Reviews</h2>
+            <div className="text-xs text-[#9CA3AF]">Auto-scroll • hover/touch to pause</div>
+          </div>
+
+          <div
+            ref={reelsRef}
+            className="sd-no-scrollbar mt-4 overflow-x-auto"
+          >
+            <div className="flex gap-4 w-max pr-4">
+              {reelsLoop.map((r, idx) => (
+                <div key={`${r.id}-${idx}`} className="w-[240px] sm:w-[260px]">
+                  <div className="rounded-3xl border border-white/10 bg-[#111827] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.55)]">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold">{r.title}</div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveReel(activeReel === r.id ? null : r.id)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1 text-xs hover:bg-white/10"
+                      >
+                        {activeReel === r.id ? "Hide" : "Open"}
+                      </button>
+                    </div>
+
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-[#0B1220] p-3">
+                      <div className="aspect-[9/16] w-full rounded-xl border border-white/10 bg-black/60 grid place-items-center text-xs text-white/70">
+                        {r.src ? "Video embedded" : "Reel source not set"}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-[11px] text-[#9CA3AF]">
+                      {r.src ? "Tap to play" : "Add src/poster in code later"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* TEXT REVIEWS */}
+        <section className="mt-14">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-semibold">Text Reviews</h2>
+            <div className="text-xs text-[#9CA3AF]">Auto-scroll • hover/touch to pause</div>
+          </div>
+
+          <div ref={textRef} className="sd-no-scrollbar mt-4 overflow-x-auto">
+            <div className="flex gap-4 w-max pr-4">
+              {textLoop.map((rv, idx) => (
+                <article
+                  key={`${rv.id}-${idx}`}
+                  className="w-[320px] sm:w-[360px] rounded-3xl border border-white/10 bg-[#111827] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.55)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold truncate">{rv.name}</div>
+                      <div className="text-xs text-[#9CA3AF]">{rv.role}</div>
+                    </div>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/80">
+                      {rv.footer}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex gap-2 flex-nowrap overflow-hidden">
+                    {rv.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="max-w-[140px] truncate text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/80"
+                        title={t}
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 text-[14px] leading-7 text-white/85">
+                    <span className="text-white/40 text-xl leading-none">“</span>
+                    {rv.quote}
+                    <span className="text-white/40 text-xl leading-none">”</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

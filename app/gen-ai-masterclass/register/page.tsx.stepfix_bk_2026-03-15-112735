@@ -1,0 +1,476 @@
+'use client';
+async function waitForFbq(timeoutMs: number = 1500) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const fbq = (window as any).fbq;
+      if (typeof fbq === "function") return fbq;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return null;
+}
+
+import React, { useEffect, useMemo, useState } from "react";
+import AttributionCapture from "../../../components/AttributionCapture";
+
+const WHATSAPP_INVITE_URL = "https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q"; // update if group changes
+
+type Errs = Partial<{
+  name: string;
+  email: string;
+  phone: string;
+  occupation: string;
+  laptop: string;
+  goal: string;
+  submit: string;
+}>;
+
+const OCCUPATIONS = [
+  "Salaried Professional",
+  "Self-Employed",
+  "Founder",
+  "Student",
+  "Others",
+] as const;
+
+const GOALS = [
+  "Kickstart Career",
+  "Career Transition",
+  "Upskilling",
+  "Others",
+] as const;
+
+const LAPTOP_OPTIONS = [
+  { v: "", t: "Select" },
+  { v: "Yes", t: "Yes" },
+  { v: "Will arrange", t: "Will arrange" },
+  { v: "No", t: "No" },
+];
+
+export default function GenAIMasterclassRegisterPage() {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const [occupation, setOccupation] = useState<string>("");
+  const [laptop, setLaptop] = useState<string>("");
+  const [goal, setGoal] = useState<string>("");
+
+  const [errors, setErrors] = useState<Errs>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const pagePath = useMemo(() => {
+    if (typeof window === "undefined") return "/gen-ai-masterclass/register";
+    return window.location.pathname || "/gen-ai-masterclass/register";
+  }, []);
+
+  const source = useMemo(() => {
+  if (typeof window === "undefined") return "website";
+  const sp = new URLSearchParams(window.location.search);
+  return sp.get("utm_source") || sp.get("source") || "website";
+}, []);
+
+    const attribution = useMemo(() => {
+      if (typeof window === "undefined") return {} as any;
+      const sp = new URLSearchParams(window.location.search);
+      const keys = [
+        "utm_source","utm_medium","utm_campaign","utm_content","utm_term",
+        "utm_id","utm_campaign_id","utm_adset_id","utm_ad_id",
+        "fbclid","gclid","msclkid"
+      ];
+      const out: any = {};
+      for (const k of keys) {
+        const v = sp.get(k);
+        if (v) out[k] = v;
+      }
+      out.referrer = document.referrer || null;
+      out.landing_url = window.location.href;
+      out.page_path = window.location.pathname;
+      return out;
+    }, []);
+
+    useEffect(() => {
+      try {
+        if (typeof window === "undefined") return;
+        const existing = JSON.parse(localStorage.getItem("sd_attribution") || "{}") || {};
+        const merged = { ...existing, ...attribution };
+        localStorage.setItem("sd_attribution", JSON.stringify(merged));
+      } catch {}
+    }, [attribution]);
+
+
+  const validateStep1 = () => {
+    const e: Errs = {};
+    if (!name.trim()) e.name = "Required";
+    if (!email.trim()) e.email = "Required";
+    if (!phone.trim()) e.phone = "Required";
+    // basic phone cleanup check (not strict)
+    const digits = phone.replace(/\D/g, "");
+    if (digits && digits.length < 10) e.phone = "Enter valid number";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const e: Errs = {};
+    if (!occupation) e.occupation = "Required";
+    if (!laptop) e.laptop = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep3 = () => {
+    const e: Errs = {};
+    if (!goal) e.goal = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const postLead = async () => {
+    setSubmitting(true);
+    setErrors({});
+
+    try {
+      const res = await fetch("/api/masterclass/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+  name: name.trim(),
+  email: email.trim(),
+  phone: phone.trim(),
+  occupation,
+  laptop,
+  goal,
+  source,
+  page: pagePath,
+  attribution: (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("sd_attribution") || "{}") || {};
+      return { ...saved, ...attribution };
+    } catch {
+      return attribution;
+    }
+  })(),
+}),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        setErrors({ submit: `Submit failed (${res.status}). ${txt}`.slice(0, 200) });
+        setSubmitting(false);
+        return;
+      }
+
+      // success -> open WhatsApp invite
+
+      // Meta Pixel: count lead on successful submit
+
+      // Add eventID + small delay so the request is not dropped on fast redirects
+
+      try {
+        const fbq = await waitForFbq(1500);
+        if (fbq) {
+          const eventID = `sd_lead_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          fbq("track", "Lead", {}, { eventID });
+          await new Promise((r) => setTimeout(r, 150));
+        }
+
+      } catch {}
+
+      const qs = window.location.search || "";
+      window.location.assign("/gen-ai-masterclass/welcome" + qs);
+    } catch (err: any) {
+      setErrors({ submit: `Submit failed. ${String(err?.message || err)}`.slice(0, 200) });
+      setSubmitting(false);
+    }
+  };
+
+  return (
+  <main className="min-h-screen bg-[#0F1E44] px-4 py-6 md:px-6 md:py-10">
+    <div className="mx-auto max-w-7xl">
+      <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#122552] shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
+        <div className="grid min-h-[760px] lg:grid-cols-[1.02fr_0.98fr]">
+          {/* LEFT PANEL */}
+          <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.20),transparent_28%),linear-gradient(180deg,#122552_0%,#0A1635_100%)] px-8 py-10 md:px-12 md:py-12">
+            <div className="pointer-events-none absolute inset-0 opacity-20">
+              <div className="absolute left-[-140px] top-[-40px] h-[900px] w-[900px] rounded-full border border-white/10" />
+              <div className="absolute left-[-100px] top-[20px] h-[820px] w-[820px] rounded-full border border-white/10" />
+              <div className="absolute left-[-60px] top-[80px] h-[740px] w-[740px] rounded-full border border-white/10" />
+              <div className="absolute left-[-20px] top-[140px] h-[660px] w-[660px] rounded-full border border-white/10" />
+            </div>
+
+            <div className="relative z-10 flex h-full flex-col">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-[#0F1E44] shadow-sm">
+                  <span className="text-lg font-bold">S</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white/90">Sikhadenge</p>
+                  <p className="text-xs text-white/60">AI Generalist Master Program</p>
+                </div>
+              </div>
+
+              <div className="mt-16 max-w-[520px]">
+                <h1 className="text-[34px] font-extrabold leading-[1.08] tracking-[-0.03em] text-white md:text-[52px]">
+                  Register for the
+                  <span className="block text-[#F5B301]">FREE Masterclass</span>
+                </h1>
+
+                <p className="mt-5 max-w-[470px] text-[15px] leading-7 text-white/72 md:text-[17px]">
+                  Learn how AI Generalists build practical digital capability across design,
+                  content, video, marketing assets, websites and execution workflows.
+                </p>
+              </div>
+
+              <div className="mt-10 grid gap-4">
+                <div className="rounded-2xl border border-white/12 bg-white/6 p-5 backdrop-blur-sm">
+                  <p className="text-base font-semibold text-white">What you get after registration</p>
+                  <ul className="mt-4 space-y-3 text-sm leading-6 text-white/72">
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#F5B301]" />
+                      <span>Masterclass access details on WhatsApp</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#F5B301]" />
+                      <span>Structured 3-step registration flow</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#F5B301]" />
+                      <span>Relevant for students, freelancers, creators and working professionals</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-2xl border border-white/12 bg-white/6 p-5 backdrop-blur-sm">
+                  <p className="text-sm font-semibold text-white">Why this matters</p>
+                  <p className="mt-2 text-sm leading-6 text-white/72">
+                    Today, one-skill learning is no longer enough. This session helps serious learners
+                    understand how to build AI-first capability that can be used in real work.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-auto pt-8">
+                <div className="rounded-2xl border border-white/12 bg-white/6 px-4 py-4 text-sm leading-6 text-white/70 backdrop-blur-sm">
+                  By continuing, you agree to our terms and privacy policy.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* RIGHT PANEL */}
+          <section className="bg-[#F8FAFC] px-6 py-8 md:px-10 md:py-10">
+            <div className="mx-auto flex h-full w-full max-w-[440px] items-center">
+              <div className="w-full rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.10)] md:p-8">
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center rounded-full border border-[#DBE6FF] bg-[#EFF5FF] px-3 py-1 text-[12px] font-semibold text-[#315CA8]">
+                    Step {step} / 3
+                  </div>
+
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3) : prev))}
+                      className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+                    >
+                      Back
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+
+                <div className="mt-6">
+                  <h2 className="text-[30px] font-extrabold tracking-[-0.02em] text-[#0F172A]">
+                    {step === 1 && "Create your account"}
+                    {step === 2 && "Complete your profile"}
+                    {step === 3 && "Confirm your details"}
+                  </h2>
+
+                  <p className="mt-2 text-[14px] leading-6 text-slate-500">
+                    {step === 1 && "Enter your basic details to continue."}
+                    {step === 2 && "Help us understand your current profile."}
+                    {step === 3 && "Review and finish your registration."}
+                  </p>
+                </div>
+
+                <div className="mt-8 space-y-5">
+                  {step === 1 && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Enter your full name"
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        />
+                        {errors.name ? <p className="text-sm text-red-500">{errors.name}</p> : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Email <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="Enter your email"
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        />
+                        {errors.email ? <p className="text-sm text-red-500">{errors.email}</p> : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Phone (WhatsApp) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="Enter 10 digit number"
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        />
+                        {errors.phone ? <p className="text-sm text-red-500">{errors.phone}</p> : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={goStep2}
+                        className="mt-2 h-12 w-full rounded-xl bg-[#5B9BE6] text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(91,155,230,0.28)] transition hover:bg-[#4F8FE8]"
+                      >
+                        Continue
+                      </button>
+                    </>
+                  )}
+
+                  {step === 2 && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Occupation <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={occupation}
+                          onChange={(e) => setOccupation(e.target.value)}
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        >
+                          <option value="">Select occupation</option>
+                          {OCCUPATIONS.map((item) => (
+                            <option key={item} value={item}>
+                              {item}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.occupation ? <p className="text-sm text-red-500">{errors.occupation}</p> : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Do you have a laptop? <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={laptop}
+                          onChange={(e) => setLaptop(e.target.value)}
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        >
+                          {LAPTOP_OPTIONS.map((item) => (
+                            <option key={item.v} value={item.v}>
+                              {item.t}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.laptop ? <p className="text-sm text-red-500">{errors.laptop}</p> : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-[14px] font-semibold text-[#0F172A]">
+                          Main goal <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={goal}
+                          onChange={(e) => setGoal(e.target.value)}
+                          className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-900 outline-none transition focus:border-[#4F8FE8] focus:ring-4 focus:ring-[#4F8FE8]/10"
+                        >
+                          <option value="">Select your goal</option>
+                          {GOALS.map((item) => (
+                            <option key={item} value={item}>
+                              {item}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.goal ? <p className="text-sm text-red-500">{errors.goal}</p> : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={goStep3}
+                        className="mt-2 h-12 w-full rounded-xl bg-[#5B9BE6] text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(91,155,230,0.28)] transition hover:bg-[#4F8FE8]"
+                      >
+                        Continue
+                      </button>
+                    </>
+                  )}
+
+                  {step === 3 && (
+                    <>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Name</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{name || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Email</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{email || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Phone</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{phone || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Occupation</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{occupation || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Laptop</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{laptop || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Goal</div>
+                            <div className="mt-1 text-[15px] font-medium text-slate-900">{goal || "-"}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {errors.submit ? <p className="text-sm text-red-500">{errors.submit}</p> : null}
+
+                      <button
+                        type="button"
+                        onClick={postLead}
+                        disabled={submitting}
+                        className="mt-2 h-12 w-full rounded-xl bg-[#5B9BE6] text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(91,155,230,0.28)] transition hover:bg-[#4F8FE8] disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {submitting ? "Please wait..." : "Continue"}
+                      </button>
+
+                      <p className="text-center text-sm text-slate-500">
+                        Access details will be shared on your WhatsApp after registration.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+)
+}

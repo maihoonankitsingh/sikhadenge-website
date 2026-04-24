@@ -1,0 +1,1167 @@
+'use client';
+
+
+import React, {useState, useEffect, useRef, useMemo} from "react";
+import PlyrPlayer from "../components/PlyrPlayer";
+import {
+  Play, ChevronDown, ArrowRight, Clock, Calendar, Users, Star, Quote, User,
+  Sparkles, Zap, BookOpen, Layers, Briefcase,
+  ListChecks, BarChart3, PenTool, FileText, Presentation, TrendingUp, Lock, Cpu,
+  Mail as MailIcon, Lightbulb, FileVideo, Rocket, Table, Globe, X
+} from "lucide-react";
+
+// ==================== CONFIG DATA (EASY TO EDIT) ====================
+const CONFIG = {
+  hero: {
+    headline: "Become an AI Expert",
+    subheadline:
+      "Join 150,000+ learners who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
+    duration: "8 WEEKS",
+    batchDate: "NEXT BATCH SOON",
+    timing: "3 HRS/DAY",
+    learnerCount: "5000+",
+  },
+  contact: {
+    phone: "+91 8808505575",
+    email: "support@sikhadenge.in",
+    instagram: "@sikhadenge.ai",
+    whatsapp:
+      "https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD",
+  },
+  company: {
+    name: "Sikhadenge",
+    parent: "ThinkGrow Pvt. Ltd.",
+    tagline: "AI-First Digital Capability Program",
+  },
+}
+
+// Company logos - Text based for better visibility
+const companyLogos = [
+  { name: 'Rapido' }, { name: 'Quora' }, { name: 'PocketFM' }, { name: 'Oracle' },
+  { name: 'PhonePe' }, { name: 'Juspay' }, { name: 'Zomato' }, { name: 'Blinkit' },
+  { name: 'Flipkart' }, { name: 'BookMyShow' }, { name: 'Swiggy' }, { name: 'Razorpay' }
+]
+
+// Video testimonials - Reel format with video URLs
+const videoTestimonials = [
+  { name: "Radhika", location: "Mumbai", poster: "/images/testimonials/t1.jpg", videoUrl: "/images/testimonials/t1.mp4" },
+  { name: "Vishal", location: "Jharkhand", poster: "/images/testimonials/t2.jpg", videoUrl: "/images/testimonials/t2.mp4" },
+  { name: "Avinash", location: "Delhi", poster: "/images/testimonials/t3.jpg", videoUrl: "/images/testimonials/t3.mp4" },
+  { name: "Vadika", location: "Bangalore", poster: "/images/testimonials/t4.jpg", videoUrl: "/images/testimonials/t4.mp4" },
+  { name: "Priya", location: "Pune", poster: "/images/testimonials/t5.jpg", videoUrl: "/images/testimonials/t5.mp4" },
+  { name: "Aman", location: "Noida", poster: "/images/testimonials/t6.jpg", videoUrl: "/images/testimonials/t6.mp4" },
+  { name: "Anjali", location: "Indore", poster: "/images/testimonials/t7.jpg", videoUrl: "/images/testimonials/t7.mp4" },
+  { name: "Shubham", location: "Lucknow", poster: "/images/testimonials/t8.jpg", videoUrl: "/images/testimonials/t8.mp4" },
+  { name: "Neelam", location: "Jaipur", poster: "/images/testimonials/t9.jpg", videoUrl: "/images/testimonials/t9.mp4" },
+  { name: "Rohit", location: "Kolkata", poster: "/images/testimonials/t10.jpg", videoUrl: "/images/testimonials/t10.mp4" },
+]
+// Text reviews
+const textReviews = [
+  { name: 'Sneha Yadav', role: 'Learner', text: 'Program ka best part ye tha ki learning random tools tak limited nahi thi. Design, video, content aur AI workflows ko ek structured system me samjhaya gaya, jisse real output banana easy ho gaya.' },
+  { name: 'Amit Verma', role: 'Alumni', text: 'Sirf theory nahi mili. Har cheez practical thi — content ideas, visuals, short videos, marketing creatives aur execution workflow sab step-by-step clear hua.' },
+  { name: 'Pooja Sharma', role: 'Learner', text: 'Pehle alag-alag AI tools dekh kar confusion hota tha. Ab samajh aa gaya ki AI ko real digital work me kaise use karna hai, better structure aur visible output ke saath.' },
+  { name: 'Rahul Singh', role: 'Learner', text: 'Assignments aur review system strong tha. Har module me practical work mila, jisse design, video, content aur landing section thinking ek saath improve hui.' },
+  { name: 'Neha Gupta', role: 'Learner', text: 'Is program ne mujhe scattered learning se nikal kar structured execution sikhaya. Ab creatives, content flow aur AI-assisted workflow pe zyada confidence hai.' },
+  { name: 'Mohit Kumar', role: 'Alumni', text: 'Portfolio-ready output, workflow clarity aur practical execution tino mile. Ab client-style work ko better planning aur faster delivery ke saath handle kar pa raha hu.' }
+]
+
+// AI Tools
+const aiTools = [
+  { name: 'ChatGPT', category: 'Assistant', icon: '🤖' },
+  { name: 'Claude', category: 'Writing', icon: '🧠' },
+  { name: 'Gemini', category: 'Research', icon: '💎' },
+  { name: 'DeepSeek', category: 'Logic', icon: '🔎' },
+  { name: 'Perplexity', category: 'Search', icon: '🔍' },
+  { name: 'Midjourney', category: 'Image', icon: '🎨' },
+  { name: 'Ideogram', category: 'Image', icon: '💡' },
+  { name: 'Runway', category: 'Video', icon: '🎬' },
+  { name: 'Pika', category: 'Video', icon: '🦩' },
+  { name: 'Veo', category: 'Video', icon: '🌊' },
+  { name: 'Luma AI', category: 'Video', icon: '🌙' },
+  { name: 'ElevenLabs', category: 'Voice', icon: '🔊' },
+  { name: 'HeyGen', category: 'Avatar', icon: '🧑‍💻' },
+  { name: 'Descript', category: 'Audio', icon: '🎞️' },
+  { name: 'Notion AI', category: 'Productivity', icon: '📝' },
+  { name: 'Zapier', category: 'Automation', icon: '⚡' },
+  { name: 'Make', category: 'Automation', icon: '🔗' },
+  { name: 'n8n', category: 'Automation', icon: '🔁' },
+  { name: 'Webflow AI', category: 'Website', icon: '🌐' },
+  { name: 'Gamma AI', category: 'Presentation', icon: '📊' },
+]
+
+// ==================== SECTION 1: NAVBAR ====================
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'
+      }`}
+ >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 md:h-20">
+          <a href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-[#2563EB] rounded-xl flex items-center justify-center">
+              <span className="text-text font-bold text-xl">S</span>
+            </div>
+            <span className="font-bold text-xl text-[#0F172A]">Sikhadenge</span>
+          </a>
+
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#courses" className="text-[#475569] hover:text-[#2563EB] transition font-medium">Courses</a>
+            <a href="#reviews" className="text-[#475569] hover:text-[#2563EB] transition font-medium">Reviews</a>
+            <a href="#faq" className="text-[#475569] hover:text-[#2563EB] transition font-medium">FAQ</a>
+            <a
+              href="/gen-ai-masterclass/register"
+              className="bg-[#F5B301] hover:bg-[#d69e01] text-text font-semibold px-6 py-2.5 rounded-full transition-all hover:scale-105"
+ >
+              Register Free →
+            </a>
+          </div>
+
+          <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="menu">
+            <div className="w-6 h-5 flex flex-col justify-between">
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+            </div>
+          </button>
+        </div>
+
+        {mobileOpen && (
+          <div className="md:hidden py-4 border-t border-[#0F172A]/10">
+            <div className="flex flex-col gap-4">
+              <a href="#courses" className="text-[#475569] hover:text-[#2563EB]">Courses</a>
+              <a href="#reviews" className="text-[#475569] hover:text-[#2563EB]">Reviews</a>
+              <a href="#faq" className="text-[#475569] hover:text-[#2563EB]">FAQ</a>
+              <a href="/gen-ai-masterclass/register" className="bg-[#F5B301] text-text font-semibold px-6 py-2.5 rounded-full text-center">
+                Register Free →
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}
+
+// ==================== SECTION 2: HERO ====================
+const HeroSection = () => {
+  const [showVideo, setShowVideo] = useState(false)
+
+  return (
+    <section className="pt-3 md:pt-8 pb-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] border border-white/10 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.22]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
+              backgroundSize: "56px 56px",
+            }}
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(1200px_600px_at_20%_20%,rgba(37,99,235,0.22),transparent_60%),radial-gradient(900px_500px_at_85%_45%,rgba(245,179,1,0.18),transparent_55%)]" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+
+          <div className="relative px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8 items-center">
+              <div className="space-y-3 md:space-y-6">
+                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full">
+                  <Sparkles className="w-4 h-4 text-[#2563EB]" />
+                  <span className="text-white/85 text-sm font-medium">{CONFIG.company.tagline}</span>
+                </div>
+
+                <h1 className="text-[34px] sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-[1.08] tracking-[-0.03em]">
+                  {CONFIG.hero.headline}
+                </h1>
+
+                <p className="max-w-xl text-[15px] md:text-base text-white/75 leading-7 md:leading-relaxed">
+                  {CONFIG.hero.subheadline}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Clock className="w-5 h-5 text-[#2563EB]" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.duration}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Calendar className="w-5 h-5 text-[#F5B301]" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.batchDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Users className="w-5 h-5 text-emerald-400" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.timing}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
+                  <a
+                    href="/gen-ai-masterclass/register"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#d69e01] text-black font-bold text-base px-6 py-3.5 rounded-full transition-all hover:scale-[1.02] shadow-lg"
+                    style={{ boxShadow: "0 0 18px rgba(245,179,1,0.55)" }}
+ >
+                    Join Free Masterclass
+                    <ArrowRight className="w-5 h-5" />
+                  </a>
+
+                </div>
+              </div>
+
+              <div
+                className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group bg-[#111827] mt-1"
+                onClick={() => setShowVideo(true)}
+ >
+                <img
+                  src="/demo/thumbs/hero-demo.jpg?v=20260326231041"
+                  alt="Live Class Demo"
+                  className="w-full aspect-video object-cover"
+                />
+                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/25 transition-all flex items-center justify-center">
+                  <div className="w-20 h-20 bg-[#F5B301] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                    <Play className="w-8 h-8 text-black ml-1" fill="black" />
+                  </div>
+                </div>
+                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <p className="text-[#0F172A] text-sm font-medium">🎬 Watch Live Class Demo</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showVideo && (
+        <div className="fixed inset-0 z-50 bg-[#0F172A]/80 flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
+          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[#F5B301]" aria-label="close">
+              <X className="w-8 h-8" />
+            </button>
+            <div className="aspect-video bg-black rounded-xl overflow-hidden">
+              <div className="w-full h-full"><PlyrPlayer src="/demo/ai-expert-program-live.mp4?v=20260405-final-1" poster="/demo/thumbs/hero-demo.jpg?v=20260326231041" /></div></div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+  };
+
+  // ==================== SECTION 3: LEARNERS + COMPANIES ====================
+const LearnersSection = () => (
+  <section className="py-14 md:py-16 bg-transparent">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-10">
+        <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-[#0F172A]">
+          <span className="text-[#2563EB]">150,000+</span> Students
+        </h2>
+        <p className="mx-auto mt-3 max-w-3xl text-[#475569] text-base md:text-xl">
+          are building practical digital skills through live sessions, structured assignments and real outputs.
+        </p>
+      </div>
+
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#F8FAFC] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#F8FAFC] to-transparent" />
+
+        <div className="flex w-max gap-4 whitespace-nowrap will-change-transform [animation:sdMarquee_26s_linear_infinite] [@keyframes_sdMarquee:{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}]">
+          {[...companyLogos, ...companyLogos].map((company, i) => (
+            <div
+              key={i}
+              className="flex h-14 min-w-[170px] flex-shrink-0 items-center justify-center rounded-full border border-[#0F172A]/10 bg-white px-8 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition-all hover:border-[#2563EB]/30 hover:bg-[#EFF6FF]"
+              aria-hidden={i >= companyLogos.length}
+            >
+              <span className="whitespace-nowrap text-lg font-semibold text-[#0F172A]">{company.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-[#F5B301]/35 bg-[#FEF9E7] px-6 py-3 shadow-[0_8px_24px_rgba(245,179,1,0.10)]">
+          <div className="flex items-center gap-1 text-[#F5B301]">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-5 w-5 fill-current" />
+            ))}
+          </div>
+          <span className="font-semibold text-[#0F172A]">4.8/5 rating</span>
+          <span className="text-[#0F172A]/50">•</span>
+          <span className="inline-flex items-center gap-2 font-medium text-[#334155]">
+            <Users className="h-4 w-4 text-[#2563EB]" />
+            Trusted by learners across India
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+  );
+
+  // ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
+  const RealPractitionersBanner = () => null;
+
+
+// ==================== SECTION 5: 3-STEP PROCESS ====================
+const ProcessSection = () => {
+  const steps = [
+    { step: 1, title: 'AI is changing how students build careers', desc: 'Freelancing, internships aur jobs me ab practical digital skills ki demand fast grow ho rahi hai.' },
+    { step: 2, title: 'One-skill learning is no longer enough for students', desc: 'Aaj students ko AI ke saath design, content, video aur execution ka practical combo chahiye.' },
+    { step: 3, title: 'Practical capability creates real opportunities', desc: 'Jab student khud output bana pata hai, tabhi portfolio, confidence aur earning chances strong hote hain.' },
+  ]
+
+  return (
+    <section className="py-20 bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
+            Digital Work Is Changing Faster Than <span className="text-[#F5B301]">Traditional Learning</span>
+          </h2>
+          <p className="text-[#475569] mt-2">Sirf theory nahi — real tools, practical projects aur job-ready capability matter karti hai.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((s) => (
+            <div key={s.step} className="bg-[#FFF7E6] rounded-2xl p-8 border border-[rgba(15,23,42,0.10)] shadow-sm hover:shadow-lg hover:border-[#2563EB]/30 hover:-translate-y-0.5 transition-all text-center">
+              <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-8 text-white text-3xl font-black border border-white/20 bg-gradient-to-br from-[#60A5FA] via-[#2563EB] to-[#1D4ED8] shadow-[0_18px_40px_rgba(37,99,235,0.28)] ring-1 ring-white/10 before:absolute before:inset-x-2 before:top-2 before:h-4 before:rounded-full before:bg-white/25 before:blur-[1px]">{s.step}</div>
+              <h3 className="text-xl font-bold text-[#0F172A] mb-2">{s.title}</h3>
+              <p className="text-[#475569]">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 6: QUOTE TESTIMONIAL ====================
+const QuoteTestimonial = () => {
+  const [currentQuote, setCurrentQuote] = useState(0)
+  const quotes = [
+    {
+      text: "Sikhadenge me sirf tools nahi sikhaye gaye. Design, video, content aur AI workflows ko itne practical way me samjhaya gaya ki real output banana easy ho gaya.",
+      author: "Rahul Singh"
+    },
+    {
+      text: "Is program ka best part ye tha ki har cheez practical thi. Content ideas se lekar visuals, short videos aur landing sections tak sab kuch step-by-step clear hua.",
+      author: "Sneha Yadav"
+    },
+    {
+      text: "Pehle AI tools dekh raha tha, but clarity nahi thi. Sikhadenge ke baad samajh aaya ki AI ko real digital work me kaise use karna hai — faster execution, better structure aur visible output ke saath.",
+      author: "Mohit Kumar"
+    }
+  ]
+
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[28px] border border-[#E8D9A8] bg-[#FEF9E7] px-8 py-10 md:px-14 md:py-12">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-5 text-[110px] leading-none font-serif text-[#EFCF79] opacity-90 md:text-[150px]"
+          >
+            “
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-1 bottom-[-18px] text-[110px] leading-none font-serif text-[#EFCF79] opacity-90 md:text-[150px]"
+          >
+            ”
+          </div>
+
+          <div className="relative mx-auto max-w-4xl text-center">
+            <p className="text-lg leading-[1.9] text-[#0F172A] md:text-[20px] md:leading-[1.95]">
+              {quotes[currentQuote].text}
+            </p>
+
+            <p className="mt-8 text-[22px] font-semibold tracking-[-0.01em] text-[#0F172A] md:text-[24px]">
+              {quotes[currentQuote].author}
+            </p>
+
+            <div className="mt-5 flex items-center justify-center gap-3">
+              {quotes.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentQuote(i)}
+                  aria-label={`Show testimonial ${i + 1}`}
+                  className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                    currentQuote === i
+                      ? 'bg-[#0F3D2E]'
+                      : 'bg-[#B9C0AE] hover:bg-[#8E9883]'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 7: 4 BENEFIT CARDS ====================
+const BenefitsSection = () => {
+  const benefits = [
+    { icon: PenTool, title: 'Design with AI', desc: 'Create posters, thumbnails, ad creatives, and social media designs faster with AI support.' },
+    { icon: FileVideo, title: 'Edit Videos with AI', desc: 'Build reels, short-form edits, explainers, and video assets with smarter AI workflows.' },
+    { icon: FileText, title: 'Create Content with AI', desc: 'Generate hooks, captions, scripts, posts, and structured content ideas in less time.' },
+    { icon: Briefcase, title: 'Market with AI', desc: 'Create campaign angles, ad copy, offers, and growth-focused marketing assets with AI.' },
+    { icon: Globe, title: 'Build Pages with AI', desc: 'Create landing page sections, website content, and conversion-focused page structure faster.' },
+    { icon: Cpu, title: 'Automate Work with AI', desc: 'Set up prompts, repeatable workflows, and smart task systems for faster execution.' },
+  ]
+
+  return (
+    <section className="py-8 md:py-12 bg-[#F4F0E6]" id="courses">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 md:gap-5">
+          {benefits.map((b) => (
+            <div
+              key={b.title}
+              className="rounded-[32px] border border-[#12305A] bg-[linear-gradient(180deg,#03245A_0%,#001B49_100%)] px-4 py-5 md:px-5 md:py-5 min-h-[195px] md:min-h-[228px] flex flex-col items-center text-center shadow-[0_18px_34px_rgba(0,27,73,0.12)]"
+            >
+              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[24px] border border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                <b.icon className="h-8 w-8 text-white" strokeWidth={2} />
+              </div>
+
+              <h3 className="mt-7 text-white text-[18px] md:text-[20px] font-semibold leading-[1.15] tracking-[-0.02em]">
+                {b.title}
+              </h3>
+
+              <p className="mt-3 max-w-[190px] text-[14px] md:text-[15px] leading-6 text-[#D7E2F7]">
+                {b.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 8: FRAMEWORKS GRID ====================
+const FrameworksSection = () => {
+  const frameworks = [
+    { icon: ListChecks, text: 'Design with AI Systems' },
+    { icon: BarChart3, text: 'Edit Videos with AI Production Workflow' },
+    { icon: PenTool, text: 'Create Content with AI Creation Workflow' },
+    { icon: FileText, text: 'Market with AI Creative Execution' },
+    { icon: Presentation, text: 'AI Landing Page Thinking' },
+    { icon: TrendingUp, text: 'AI Workflow & Productivity Systems' },
+    { icon: Lock, text: 'Prompt Structuring for Real Work' },
+    { icon: User, text: 'Portfolio Packaging & Output Presentation' },
+    { icon: Cpu, text: 'Multi-Skill Digital Execution' },
+  ]
+
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12">
+          <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">FRAMEWORKS</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
+            Learn Frameworks & Strategies For 10X Productivity
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {frameworks.map((f) => (
+            <div key={f.text} className="flex items-center gap-4 bg-[#F8FAFC] rounded-xl p-4 border border-[#0F172A]/10 hover:border-[#2563EB]/30 transition-all">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-[#0F172A]/10">
+                <f.icon className="w-6 h-6 text-[#2563EB]" />
+              </div>
+              <span className="text-[#0F172A] font-medium">{f.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 9: TOOLS USE-CASE CARDS ====================
+const ToolsUseCaseSection = () => {
+  const useCases = [
+    { icon: MailIcon, title: 'Social Media Creatives', desc: 'Platform-ready visual content' },
+    { icon: ListChecks, title: 'Short-Form Video Assets', desc: 'Reels, edits and promo-style outputs' },
+    { icon: Lightbulb, title: 'AI-Generated Visual Concepts', desc: 'Creative visuals for modern digital work' },
+    { icon: FileText, title: 'Landing Page Sections', desc: 'Conversion-focused section building' },
+    { icon: FileVideo, title: 'Marketing Creatives', desc: 'Offers, ads and campaign assets' },
+    { icon: Rocket, title: 'Content Workflows', desc: 'Hooks, scripts, captions and content systems' },
+    { icon: Presentation, title: 'Brand-Style Execution', desc: 'Consistent design and communication output' },
+    { icon: Table, title: 'Portfolio-Ready Projects', desc: 'Practical work you can present confidently' },
+    { icon: Globe, title: 'Freelance-Ready Delivery', desc: 'Structured output for real client-style work' },
+  ]
+
+  return (
+    <section className="py-20 bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12">
+          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">SKILLS</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">What You'll Be Able To Build</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {useCases.map((u) => (
+            <div key={u.title} className="bg-white rounded-xl p-5 border border-[#0F172A]/10 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-[#F5B301]/10 rounded-lg flex items-center justify-center mb-3">
+                <u.icon className="w-6 h-6 text-[#F5B301]" />
+              </div>
+              <h3 className="text-[#0F172A] font-bold mb-1">{u.title}</h3>
+              <p className="text-[#475569] text-sm">{u.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 10: TOOLS LOGOS GRID ====================
+const ToolsLogosSection = () => (
+  <section className="py-16 md:py-20 bg-white">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-10 md:mb-12">
+        <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">
+          TOOLS ECOSYSTEM
+        </p>
+        <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
+          25+ AI Tools You Will Master
+        </h2>
+        <p className="mt-4 max-w-3xl text-base md:text-lg leading-8 text-[#475569]">
+          Modern creators combine these tools into practical workflows. You’ll learn how to use them together for design, video, content, automation and digital execution.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+        {aiTools.map((tool) => (
+          <div
+            key={tool.name}
+            className="flex h-[68px] items-center gap-3 rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] px-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all hover:border-[#2563EB]/25 hover:bg-white"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[19px] leading-none shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
+              {tool.icon}
+            </span>
+            <div className="min-w-0">
+              <div className="truncate text-[#0F172A] font-semibold text-[16px] md:text-[17px] leading-none">
+                {tool.name}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  );
+
+// ==================== SECTION 11: VIDEO TESTIMONIALS ====================
+  const VideoTestimonialsSection = () => {
+    const scrollerRef = useRef<HTMLDivElement | null>(null)
+    const rafRef = useRef<number | null>(null)
+
+    const draggingRef = useRef(false)
+    const movedRef = useRef(false)
+    const startXRef = useRef(0)
+    const startScrollLeftRef = useRef(0)
+
+    const [paused, setPaused] = useState(false)
+    const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+    // duplicate for seamless loop
+    const items = useMemo(() => [...videoTestimonials, ...videoTestimonials], [])
+
+    const stopDrag = () => {
+      draggingRef.current = false
+      // reset "moved" shortly after release (prevents accidental click)
+      window.setTimeout(() => (movedRef.current = false), 0)
+    }
+
+    const onMouseDown = (e: React.MouseEvent) => {
+      const el = scrollerRef.current
+      if (!el) return
+      draggingRef.current = true
+      movedRef.current = false
+      startXRef.current = e.pageX
+      startScrollLeftRef.current = el.scrollLeft
+    }
+
+    const onMouseMove = (e: React.MouseEvent) => {
+      const el = scrollerRef.current
+      if (!el || !draggingRef.current) return
+      e.preventDefault()
+      const dx = e.pageX - startXRef.current
+      if (Math.abs(dx) > 3) movedRef.current = true
+      el.scrollLeft = startScrollLeftRef.current - dx
+    }
+
+    const onTouchStart = (e: React.TouchEvent) => {
+      const el = scrollerRef.current
+      if (!el) return
+      draggingRef.current = true
+      movedRef.current = false
+      startXRef.current = e.touches[0].pageX
+      startScrollLeftRef.current = el.scrollLeft
+    }
+
+    const onTouchMove = (e: React.TouchEvent) => {
+      const el = scrollerRef.current
+      if (!el || !draggingRef.current) return
+      const dx = e.touches[0].pageX - startXRef.current
+      if (Math.abs(dx) > 3) movedRef.current = true
+      el.scrollLeft = startScrollLeftRef.current - dx
+    }
+
+    const onCardClick = (i: number) => {
+      // if user dragged, ignore click
+      if (movedRef.current) return
+      setOpenIndex(i)
+      setPaused(true)
+    }
+
+    // autoscroll (seamless because items are duplicated)
+    useEffect(() => {
+      const el = scrollerRef.current
+      if (!el) return
+
+      let last = performance.now()
+      const pxPerMs = 0.035 // ~35px/sec
+
+      const tick = (t: number) => {
+        const node = scrollerRef.current
+        if (!node) return
+
+        const dt = t - last
+        last = t
+
+        if (!paused && !draggingRef.current) {
+          node.scrollLeft += dt * pxPerMs
+          const half = node.scrollWidth / 2
+          if (half > 0 && node.scrollLeft >= half) node.scrollLeft = node.scrollLeft - half
+        }
+
+        rafRef.current = requestAnimationFrame(tick)
+      }
+
+      rafRef.current = requestAnimationFrame(tick)
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      }
+    }, [paused])
+
+    return (
+      <section className="py-20 bg-[#F8FAFC]" id="reviews">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">VIDEO TESTIMONIALS</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Success Stories From Real Learners</h2>
+          </div>
+
+          {/* Horizontal reel slider (shows ~3 on desktop, swipe/drag supported) */}
+          <div
+            ref={scrollerRef}
+            className="relative overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar cursor-grab active:cursor-grabbing touch-pan-x"
+            style={{ WebkitOverflowScrolling: "touch" }}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => { stopDrag(); if (openIndex === null) setPaused(false) }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={stopDrag}
+            
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={stopDrag}
+ >
+            <div className="flex gap-4 pr-6">
+              {items.map((v, i) => (
+                <button
+                  key={`${v.name}-${i}`}
+                  type="button"
+                  onClick={() => onCardClick(i)}
+                  className="relative group flex-shrink-0 rounded-2xl overflow-hidden bg-[#0F172A] border border-white/10 shadow-lg
+                             w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px]
+                             aspect-[9/16]"
+                  aria-label={`Play ${v.name} testimonial`}
+ >
+                  <video className="absolute inset-0 w-full h-full object-cover" src={v.videoUrl} muted playsInline onContextMenu={(e)=>e.preventDefault()} preload="metadata" poster={v.poster} />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-transparent" />
+
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-[#F5B301] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                      <Play className="w-6 h-6 text-text ml-1" fill="black" />
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4 text-left">
+                    <p className="text-text font-semibold text-base">{v.name}</p>
+                    <p className="text-text/70 text-sm">{v.location}</p>
+                  </div>
+
+                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                    <p className="text-text text-xs font-medium">▶ Reel</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Modal player (same page) */}
+          {openIndex !== null && (
+            <div
+              className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => { setOpenIndex(null); setPaused(false) }}
+              role="dialog"
+              aria-modal="true"
+ >
+              <div
+                className="relative w-full max-w-[420px] aspect-[9/16] bg-black rounded-2xl overflow-hidden border border-white/10"
+                onClick={(e) => e.stopPropagation()}
+ >
+                <button
+                  type="button"
+                  className="absolute top-3 right-3 z-10 bg-white/15 hover:bg-white/25 backdrop-blur px-2 py-2 rounded-full"
+                  onClick={() => { setOpenIndex(null); setPaused(false) }}
+                  aria-label="Close"
+ >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+
+                <video
+                  className="absolute inset-0 w-full h-full object-cover"
+                  src={items[openIndex].videoUrl}
+                  controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture
+                  autoPlay
+                  playsInline onContextMenu={(e)=>e.preventDefault()}
+                  preload="metadata"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  // ==================== SECTION 12: TEXT REVIEWS ====================
+
+const TextReviewsSection = () => {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const reviewsPerView = 3
+  const totalSlides = Math.ceil(textReviews.length / reviewsPerView)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [totalSlides])
+
+  return (
+    <section className="py-20 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">LEARNER FEEDBACK</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">What Our Learners Say</h2>
+        </div>
+
+        <div className="relative">
+          <div
+            className="flex transition-transform duration-700 ease-in-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+ >
+            {[...Array(totalSlides)].map((_, slideIndex) => (
+              <div key={slideIndex} className="w-full flex-shrink-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+                  {textReviews
+                    .slice(slideIndex * reviewsPerView, (slideIndex + 1) * reviewsPerView)
+                    .map((r) => (
+                      <div key={r.name} className="bg-[#F8FAFC] rounded-2xl p-6 border border-[#0F172A]/10 hover:shadow-lg hover:border-[#2563EB]/20 transition-all">
+                        <div className="flex items-center gap-1 mb-4">
+                          {[...Array(5)].map((_, j) => (
+                            <Star key={j} className="w-4 h-4 text-[#F5B301] fill-[#F5B301]" />
+                          ))}
+                        </div>
+                        <Quote className="w-8 h-8 text-[#2563EB]/20 mb-2" />
+                        <p className="text-[#475569] mb-4 leading-relaxed">"{r.text}"</p>
+                        <div className="flex items-center gap-3 mt-auto">
+                          <div className="w-12 h-12 bg-bg from-[#2563EB] to-[#1d4ed8] rounded-full flex items-center justify-center">
+                            <span className="text-text font-bold text-lg">{r.name[0]}</span>
+                          </div>
+                          <div>
+                            <p className="text-[#0F172A] font-semibold">{r.name}</p>
+                            <p className="text-[#2563EB] text-sm font-medium">{r.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center gap-2 mt-8">
+            {[...Array(totalSlides)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentSlide === i ? 'w-8 bg-[#2563EB]' : 'w-2 bg-[#0F172A]/20 hover:bg-[#0F172A]/40'
+                }`}
+                aria-label={`slide-${i}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 13: WHO IS THIS FOR ====================
+const WhoIsThisForSection = () => {
+  const audiences = [
+    'Students',
+    'Freshers',
+    'Freelancers',
+    'Digital Operators',
+    'Content Creators',
+    'Personal Brand Builders',
+    'Small Business Support Learners',
+    'Serious Beginners',
+    'Career Switchers',
+  ]
+
+  return (
+    <section className="py-20 bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Who Is This Program For?</h2>
+          <p className="text-[#475569] mt-2 max-w-2xl mx-auto">
+            This program is designed for serious learners who want practical digital capability, not casual tool exploration.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3">
+          {audiences.map((a) => (
+            <div key={a} className="flex items-center gap-2 bg-white border border-[#0F172A]/10 px-5 py-3 rounded-full hover:border-[#2563EB]/30 hover:shadow-sm transition-all">
+              <div className="w-2 h-2 bg-[#2563EB] rotate-45" />
+              <span className="text-[#0F172A] font-medium">{a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ========14: MENTOR SECTION ====================
+const MentorSection = () => (
+  <section className="py-20 bg-white">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Meet Your Mentor</h2>
+      </div>
+
+      <div className="bg-[#F8FAFC] rounded-3xl p-6 md:p-10 border border-[#0F172A]/10">
+        <div className="grid md:grid-cols-5 gap-10 items-center">
+          {/* LEFT: PHOTO CARD */}
+          <div className="md:col-span-2 flex justify-center">
+            <div className="w-full max-w-sm rounded-3xl border border-[#0F172A]/10 bg-white p-4">
+              <div className="overflow-hidden rounded-2xl border border-[#0F172A]/10 bg-[#FFF7E6]">
+                <img
+                  src="/images/Ankit.webp"
+                  alt="Ankit Singh"
+                  className="aspect-[4/4.2] w-full object-cover object-top"
+                />
+              </div>
+
+              <div className="mt-4">
+                <p className="text-[#0F172A] font-bold text-xl">Ankit Singh</p>
+                <p className="text-[#475569] text-sm">Founder & Lead Mentor</p>
+                <div className="mt-2 inline-flex items-center rounded-full border border-[#0F172A]/10 bg-[#F8FAFC] px-3 py-1 text-xs text-[#475569]">
+                  Sikhadenge Teaching Team
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: AUTHORITY + PROOF */}
+          <div className="md:col-span-3">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#0F172A] leading-tight">
+              Hi, I’m Ankit Singh. I’ll be your mentor for this program.
+            </h3>
+
+            <div className="mt-4 space-y-3 text-[#475569] leading-relaxed">
+              <p>
+                This program is built for learners who want to move from
+                <span className="font-semibold text-[#0F172A]"> scattered AI learning </span>
+                to
+                <span className="font-semibold text-[#0F172A]"> structured digital capability</span>.
+              </p>
+              <p>
+                You will learn practical execution across
+                <span className="font-semibold text-[#0F172A]"> design, video, content, marketing assets, landing pages and workflows</span>
+                — so you can build visible output with better clarity.
+              </p>
+              <p>
+                Focus is on
+                <span className="font-semibold text-[#0F172A]"> live guidance, assignments, reviews and real execution thinking</span>
+                instead of random tutorials.
+              </p>
+            </div>
+
+            {/* STATS STRIP */}
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
+                <p className="text-2xl font-bold text-[#2563EB]">8K+</p>
+                <p className="text-[#475569] text-xs">LinkedIn</p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
+                <p className="text-2xl font-bold text-[#2563EB]">30K+</p>
+                <p className="text-[#475569] text-xs">Instagram</p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
+                <p className="text-2xl font-bold text-[#2563EB]">35000+</p>
+                <p className="text-[#475569] text-xs">Students</p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
+                <p className="text-2xl font-bold text-[#F5B301]">4.8★</p>
+                <p className="text-[#475569] text-xs">Rating</p>
+              </div>
+            </div>
+
+            {/* OPTIONAL CTA */}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a
+                href="/gen-ai-masterclass/register"
+                className="inline-flex items-center justify-center rounded-full bg-[#F5B301] hover:bg-[#d69e01] text-text font-semibold px-6 py-3 transition-all"
+              >
+                Register Free →
+              </a>
+
+              <a
+                href="https://www.instagram.com/sikhadenge.ai/"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-full border border-[#0F172A]/10 bg-white hover:shadow-sm text-[#0F172A] font-semibold px-6 py-3 transition-all"
+              >
+                View Instagram
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)
+
+// ==================== SECTION 15: FAQ ====================
+const FAQSection = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0)
+
+  const faqs = [
+    {
+      q: 'What is the AI Expert Professional Program?',
+      a: 'The AI Expert Professional Program is an 8-week live guided training program by Sikhadenge. It helps learners build practical digital skills across AI design, AI video, AI content, AI marketing assets, AI websites and AI workflows.'
+    },
+    {
+      q: 'Who is this AI program for?',
+      a: 'This program is for students, freshers, freelancers, content creators, career switchers and serious beginners who want practical digital capability with AI. It is designed for learners who want structured skill building, not random tool exploration.'
+    },
+    {
+      q: 'Is the AI Expert Professional Program beginner-friendly?',
+      a: 'Yes, the program is beginner-friendly. It is structured for learners who are new to AI tools as well as those who have seen tools before but still lack workflow clarity and practical execution skills.'
+    },
+    {
+      q: 'How long is the AI Expert Professional Program?',
+      a: 'The program duration is 8 weeks. It is delivered in a guided live format with practical assignments, structured learning and output-based execution.'
+    },
+    {
+      q: 'How many hours per day are classes?',
+      a: 'Classes are planned for around 3 hours per day depending on the batch schedule. The exact timing is shared during the admission and onboarding process.'
+    },
+    {
+      q: 'Is this program live or recorded?',
+      a: 'The main format of the AI Expert Professional Program is live guided learning. Recording availability depends on the batch policy and internal access rules.'
+    },
+    {
+      q: 'What will I learn in this AI course?',
+      a: 'In this program, you will learn AI design, AI video, AI content creation, AI marketing assets, AI websites and AI workflow systems. The focus is on practical execution and real digital output.'
+    },
+    {
+      q: 'Is this only a graphic design course or video editing course?',
+      a: 'No, this is not only a graphic design course or a video editing course. It is an AI-first digital capability program that combines multiple skill areas into one structured learning system.'
+    },
+    {
+      q: 'Will I get practical assignments in this program?',
+      a: 'Yes, the program includes practical assignments, guided execution and review-based learning. The goal is to help learners build visible output, not just watch theory.'
+    },
+    {
+      q: 'Will I build real projects and portfolio work?',
+      a: 'Yes, learners work on practical output such as social media creatives, short-form video assets, content workflows, landing page sections and portfolio-ready projects. Portfolio building is an important part of the learning process.'
+    },
+    {
+      q: 'Do I need prior experience with AI tools?',
+      a: 'No, deep prior experience with AI tools is not required. The program is designed to help learners build understanding step by step through live guidance and structured practice.'
+    },
+    {
+      q: 'Do I need a laptop for this program?',
+      a: 'Yes, a laptop is strongly recommended for the AI Expert Professional Program. Since the program is practical and workflow-oriented, a laptop helps learners follow classes and complete assignments properly.'
+    },
+    {
+      q: 'Will I receive a certificate after completion?',
+      a: 'Yes, a completion certificate can be provided based on participation and the required completion criteria. Certificate eligibility depends on attendance, submission and program guidelines.'
+    },
+    {
+      q: 'Is this program useful for freelancers and content creators?',
+      a: 'Yes, this program is highly useful for freelancers and content creators. It helps learners build multi-skill execution capability across design, content, video and digital workflows.'
+    },
+    {
+      q: 'Will this AI program help me build a portfolio?',
+      a: 'Yes, one of the core goals of the program is to help learners create practical, presentable and portfolio-ready output. The learning model focuses on visible work and execution quality.'
+    },
+    {
+      q: 'Is EMI or payment flexibility available?',
+      a: 'Payment flexibility or EMI availability depends on the active batch and admission options available at that time. The team shares current payment options during the registration process.'
+    },
+    {
+      q: 'Will I get support during the program?',
+      a: 'Yes, learners get support through live guidance, practical assignments, review systems and structured learning flow. The program is designed to provide direction and execution clarity.'
+    },
+    {
+      q: 'What makes this program different from YouTube learning?',
+      a: 'YouTube usually gives scattered information, while this program gives structure, practical workflow clarity, guided execution and output-focused learning. The difference is in system, support and real implementation.'
+    },
+    {
+      q: 'How can I join the AI Expert Professional Program?',
+      a: 'You can join by attending the masterclass or following the registration process shared by Sikhadenge. After that, eligible learners can proceed with admission and onboarding.'
+    }
+  ]
+
+  return (
+    <section className="py-10 md:py-12 bg-[#F8FAFC]" id="faq">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 md:mb-12">
+          <div className="inline-flex items-center rounded-full border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2 text-sm font-medium text-[#2563EB]">
+            FAQs
+          </div>
+
+          <h2 className="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-[#0F172A]">
+            Frequently asked questions
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-base md:text-[17px] leading-7 text-[#475569]">
+            Find answers about the AI Expert Professional Program, including duration, live classes, eligibility, assignments, certificate, portfolio building and admission process.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index
+
+            return (
+              <div
+                key={faq.q}
+                className="overflow-hidden rounded-[24px] border border-[#0F172A]/10 bg-white"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between gap-4 px-5 md:px-6 py-4 md:py-5 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-[#0F172A] text-[17px] md:text-[18px] font-semibold leading-snug">
+                    {faq.q}
+                  </span>
+
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#0F172A]/10 bg-[#F8FAFC]">
+                    <ChevronDown
+                      className={`h-5 w-5 text-[#2563EB] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </span>
+                </button>
+
+                <div
+                  className={`grid transition-all duration-300 ease-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-5 md:px-6 pb-5 md:pb-6 max-w-4xl text-[#475569] text-[15px] leading-7">
+                      {faq.a}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 16: FINAL CTA ====================
+const FinalCTASection = () => (
+  <section className="py-20 bg-[#2563EB]" id="register">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
+        <span className="text-text font-medium">Limited Seats Available</span>
+      </div>
+
+      <h2 className="text-3xl md:text-5xl font-bold text-text mb-4">
+        Free Counselling + Roadmap
+      </h2>
+      <p className="text-text/80 text-lg mb-8">
+        WhatsApp पर details भेजो — team आपको batch, fee, timing और roadmap share करेगी.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href={CONFIG.contact.whatsapp}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#d69e01] text-text font-bold text-lg px-8 py-4 rounded-full transition-all"
+ >
+          Get course details
+          <ArrowRight className="w-5 h-5" />
+        </a>
+        <a
+          href="tel:+918808505575"
+          className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/20 text-text font-semibold px-8 py-4 rounded-full border border-white/20 transition-all"
+ >
+          Call Now
+        </a>
+      </div>
+
+      <p className="text-text/60 text-sm mt-6">
+        {CONFIG.company.name} • {CONFIG.company.parent}
+      </p>
+    </div>
+  </section>
+)
+
+export default function LandingPage() {
+  return (
+    <div className="bg-[#F8FAFC]">
+        <HeroSection />
+      <LearnersSection />
+      <RealPractitionersBanner />
+      <ProcessSection />
+      <QuoteTestimonial />
+      <BenefitsSection />
+      <FrameworksSection />
+      <ToolsUseCaseSection />
+      <ToolsLogosSection />
+      <VideoTestimonialsSection />
+      <TextReviewsSection />
+      <WhoIsThisForSection />
+      <MentorSection />
+      <FAQSection />
+      <FinalCTASection />
+    </div>
+  )
+}

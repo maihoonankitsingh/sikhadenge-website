@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 // src/sections/Courses.tsx
 const courses = [
   {
@@ -49,6 +50,64 @@ function Card({
   tags: string[];
   badge: string;
 }) {
+
+    // Sikhadenge: Courses mobile auto-scroll (manual swipe + vertical page scroll safe)
+    useEffect(() => {
+      const el = document.querySelector('[data-sd-autoscroll="courses"]');
+      if (!el) return;
+
+      const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+      let raf = 0;
+      let paused = false;
+      let resumeT = 0;
+
+      const resumeSoon = (ms = 1200) => {
+        window.clearTimeout(resumeT);
+        resumeT = window.setTimeout(() => { paused = false; }, ms);
+      };
+
+      const onEnter = () => { paused = true; };
+      const onLeave = () => { paused = false; };
+      const onDown  = () => { paused = true; };
+      const onUp    = () => { resumeSoon(800); };
+      const onScroll= () => { paused = true; resumeSoon(1400); };
+
+      el.addEventListener("pointerenter", onEnter);
+      el.addEventListener("pointerleave", onLeave);
+      el.addEventListener("pointerdown", onDown);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("touchstart", onDown, { passive: true });
+      el.addEventListener("touchend", onUp, { passive: true });
+      el.addEventListener("scroll", onScroll, { passive: true });
+
+      const speed = 0.45; // px per frame
+      const tick = () => {
+        if (isMobile() && !paused) {
+          // loop
+          const max = el.scrollWidth - el.clientWidth;
+          if (max > 2) {
+            el.scrollLeft += speed;
+            if (el.scrollLeft >= max - 1) el.scrollLeft = 0;
+          }
+        }
+        raf = window.requestAnimationFrame(tick);
+      };
+
+      raf = window.requestAnimationFrame(tick);
+
+      return () => {
+        window.cancelAnimationFrame(raf);
+        window.clearTimeout(resumeT);
+        el.removeEventListener("pointerenter", onEnter);
+        el.removeEventListener("pointerleave", onLeave);
+        el.removeEventListener("pointerdown", onDown);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("touchstart", onDown);
+        el.removeEventListener("touchend", onUp);
+        el.removeEventListener("scroll", onScroll);
+      };
+    }, []);
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
       <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">

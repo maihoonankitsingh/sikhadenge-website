@@ -1,0 +1,169 @@
+import PageOverrides from "./_pageOverrides";
+import React from 'react';
+
+export default function GenAiMasterclassPage() {
+  return (
+    <main className="min-h-screen bg-white text-gray-900">
+        <PageOverrides />
+          </div>
+
+          <div className="hidden md:flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "var(--sd-card)", border: "1px solid var(--sd-border)", color: "var(--sd-text-2)" }}>15,000+ Learners</span>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "var(--sd-card)", border: "1px solid var(--sd-border)", color: "var(--sd-text-2)" }}>4.8/5 Rating</span>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "var(--sd-gold)", color: "var(--sd-brand)", boxShadow: "var(--sd-glow-gold)" }}>FREE</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a className="h-10 px-4 rounded-xl font-semibold grid place-items-center" style={{ background: "var(--sd-card)", border: "1px solid var(--sd-border)", color: "var(--sd-text)" }} href="https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q">WhatsApp</a>
+            <a className="h-10 px-4 rounded-xl font-semibold grid place-items-center" style={{ background: "var(--sd-primary)", color: "#fff", boxShadow: "var(--sd-glow-blue)" }} href="/masterclass/register">Register Free</a>
+          </div>
+        </div>
+      </div>
+
+
+      {/* =======================================================================
+          SECTION 01: HERO / TOP LAYOUT (SAMPLE STYLE)
+          - Edit heading, subheading, chips, video, form blocks below
+      ======================================================================= */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 pt-10 pb-10">
+          {/* ---------- TOP BADGES ROW (CENTER) ---------- */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 shadow-sm bg-white">
+              <div className="h-7 w-7 rounded-full bg-gray-900 text-white grid place-items-center text-sm font-semibold">
+                S
+              </div>
+              <div className="text-sm font-semibold">Sikhadenge</div>
+            </div>
+
+            <div className="h-8 w-px bg-gray-200" />
+
+            <div className="rounded-xl border border-gray-200 px-4 py-2 shadow-sm bg-white text-sm font-semibold">
+              Top Startup India
+            </div>
+          </div>
+
+          {/* ---------- HEADLINE ---------- */}
+          <h1 className="mt-8 text-center text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900">
+            Unlock Gen-AI Skills to Become a Pro in{' '}
+            <br className="hidden md:block" />
+            Graphic Design &amp; Video Editing
+          </h1>
+
+          {/* ---------- SUBHEADLINE ---------- */}
+          <p className="mt-4 text-center text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            Master practical Gen-AI workflows you can use right away — even if you’re starting from zero.
+          </p>
+
+          {/* ---------- TRUST CHIPS ---------- */}
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-white">
+              500+ Batches
+            </span>
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-white">
+              15,000+ Learners
+            </span>
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-white">
+              ₹1,999 Free MasterClass For You
+            </span>
+          </div>
+
+          {/* ===================================================================
+              SECTION 02: MAIN GRID (VIDEO LEFT + FORM RIGHT)
+              - Replace iframe src + replace form fields/submit endpoint
+          =================================================================== */}
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            {/* ---------- LEFT: VIDEO ---------- */}
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+              <div className="aspect-video w-full">
+                <iframe
+                  className="h-full w-full"
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
+                  title="MasterClass Preview"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+
+              <div className="p-4 border-t border-gray-200">
+                <div className="text-sm font-semibold text-gray-900">
+                  Free masterclass access + WhatsApp confirmation
+                </div>
+                <div className="mt-1 text-sm text-gray-600">
+                  After registration, confirmation WhatsApp message will be sent.
+                </div>
+              </div>
+            </div>
+
+            {/* ---------- RIGHT: FORM CARD ---------- */}
+            <div className="rounded-2xl border border-gray-200 shadow-sm bg-white p-6">
+              <div className="text-sm font-semibold text-gray-900">Register for Free Masterclass</div>
+              <p className="mt-1 text-sm text-gray-600">Fill details to get access.</p>
+
+              <form className="mt-5 grid gap-3">
+                <input
+                  className="h-11 rounded-xl border border-gray-200 px-4 outline-none focus:ring-2 focus:ring-gray-200"
+                  placeholder="Your Name"
+                  name="name"
+                />
+                <input
+                  className="h-11 rounded-xl border border-gray-200 px-4 outline-none focus:ring-2 focus:ring-gray-200"
+                  placeholder="WhatsApp Number"
+                  name="phone"
+                />
+                <input
+                  className="h-11 rounded-xl border border-gray-200 px-4 outline-none focus:ring-2 focus:ring-gray-200"
+                  placeholder="Email (optional)"
+                  name="email"
+                />
+
+                <button
+                  type="button"
+                  className="mt-2 h-12 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition"
+                >
+                  Join Free Masterclass
+                </button>
+
+                <a
+                  className="mt-2 h-12 rounded-xl border border-gray-200 text-gray-900 font-semibold grid place-items-center hover:bg-gray-50 transition"
+                  href="https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q"
+                >
+                  WhatsApp for Details
+                </a>
+
+                <div className="mt-2 text-xs text-gray-500">
+                  No spam. Only confirmation + access details.
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =======================================================================
+          SECTION 03: BOTTOM CTA BAR (OPTIONAL)
+          - If you already have a bottom fixed bar in this page, remove this block
+      ======================================================================= */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-gray-200 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-lg font-extrabold text-gray-900">
+              Free <span className="text-xs font-semibold text-gray-500 line-through ml-2">₹1,999</span>
+            </div>
+            <div className="text-xs text-gray-600">Limited seats • Join now</div>
+          </div>
+
+          <a
+            className="h-12 px-6 rounded-full bg-gray-900 text-white font-semibold grid place-items-center hover:bg-gray-800 transition"
+            href="/masterclass/register"
+          >
+            Join Free Masterclass
+          </a>
+        </div>
+      </div>
+
+      {/* spacer for fixed bar */}
+      <div className="h-20" />
+    </main>
+  );
+}

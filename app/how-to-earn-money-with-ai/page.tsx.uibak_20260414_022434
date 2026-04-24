@@ -1,0 +1,169 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "How to Earn Money With AI in India | Sikhadenge",
+  description:
+    "Learn how to earn money with AI in India through practical skills, tools, services, workflows, and career paths. Understand how Sikhadenge connects AI learning with freelancing, jobs, and digital earning opportunities.",
+  alternates: {
+    canonical: "https://sikhadenge.in/how-to-earn-money-with-ai",
+  },
+  openGraph: {
+    title: "How to Earn Money With AI in India | Sikhadenge",
+    description:
+      "A practical guide to earning money with AI through content, design, video, marketing, workflows, and digital services in India.",
+    url: "https://sikhadenge.in/how-to-earn-money-with-ai",
+    siteName: "Sikhadenge",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "How to Earn Money With AI in India | Sikhadenge",
+    description:
+      "Learn practical ways to earn money with AI through skills, tools, workflows, freelancing, and modern digital work.",
+  },
+};
+
+const ways = [
+  {
+    title: "Freelancing services",
+    desc: "AI can help people offer content, design support, video edits, social media assets, scripts, research support, and client delivery services faster.",
+  },
+  {
+    title: "Digital execution work",
+    desc: "Learners can earn through practical execution in content creation, design assistance, marketing support, thumbnails, reels, landing pages, and workflow tasks.",
+  },
+  {
+    title: "AI-assisted jobs",
+    desc: "Many modern job roles now reward people who can use AI inside content, operations, communication, research, and creative workflows.",
+  },
+  {
+    title: "Personal brand and creator work",
+    desc: "AI can support creators, educators, and small operators in producing faster output, stronger content systems, and better digital consistency.",
+  },
+];
+
+const skillAreas = [
+  "AI content and writing support",
+  "AI design and visual support",
+  "AI video and reels workflows",
+  "AI marketing execution",
+  "AI tools understanding",
+  "AI workflow systems",
+  "AI freelancing support",
+  "AI career-building direction",
+];
+
+const faqs = [
+  {
+    q: "Can beginners earn money with AI?",
+    a: "Yes. Beginners can start earning with AI if they focus on practical output, structured learning, and real service use cases instead of only learning random tools.",
+  },
+  {
+    q: "What is the best way to earn money with AI?",
+    a: "The best path usually depends on the person. For many people, freelancing, creator-side work, digital execution, and AI-assisted service delivery are the most practical starting points.",
+  },
+  {
+    q: "Do I need coding to earn with AI?",
+    a: "No. Many useful AI earning paths are based on content, design support, video workflows, marketing execution, pages, communication, and digital systems rather than coding.",
+  },
+  {
+    q: "Which skills help most with AI earning?",
+    a: "The strongest skills are usually content, visuals, video, workflow understanding, tools knowledge, and the ability to turn AI support into useful client or business outcomes.",
+  },
+];
+
+export default function HowToEarnMoneyWithAIPage() {
+  return (
+    <main className="bg-white text-slate-900">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="max-w-4xl">
+          <p className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700">
+            AI Earning Guide
+          </p>
+          <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
+            How to earn money with AI in India
+          </h1>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            Earning money with AI is no longer only about advanced coding or technical roles. In India,
+            many practical earning opportunities now come from AI-assisted content, design, video,
+            marketing, client work, workflow execution, and digital service delivery. Sikhadenge helps
+            learners understand how practical AI skills connect with freelancing, modern jobs, and
+            scalable digital earning paths.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {ways.map((item) => (
+            <div key={item.title} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <h2 className="text-xl font-bold">{item.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <section className="mt-14 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <h2 className="text-2xl font-black">Which skills usually help people earn with AI?</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+            AI earning usually becomes practical when people build real execution capability. The goal is
+            not to know tool names only. The goal is to use tools inside services, workflows, and useful
+            digital output systems.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {skillAreas.map((item) => (
+              <div key={item} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
+                {item}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-14 rounded-3xl bg-slate-900 p-8 text-white">
+          <h2 className="text-2xl font-black">How Sikhadenge connects AI learning with earning</h2>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
+            Sikhadenge is an India-focused AI and skill learning platform for students, freelancers,
+            creators, and working professionals who want practical digital capability. The focus is on
+            real output, useful workflows, structured learning, and execution skills that can support
+            freelancing, jobs, projects, and digital growth.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-4">
+            <Link
+              href="/gen-ai-masterclass/register-one-step"
+              className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Join Free AI Masterclass
+            </Link>
+            <Link
+              href="/courses/ai-mastery"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5"
+            >
+              Explore AI Learning Path
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-14">
+          <h2 className="text-2xl font-black">Frequently asked questions</h2>
+          <div className="mt-6 space-y-4">
+            {faqs.map((item) => (
+              <div key={item.q} className="rounded-2xl border border-slate-200 p-5">
+                <h3 className="text-base font-bold">{item.q}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-14 rounded-3xl border border-slate-200 bg-slate-50 p-7">
+          <h2 className="text-2xl font-black">Continue your next step</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link href="/ai-skills" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Skills</Link>
+            <Link href="/ai-tools" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Tools</Link>
+            <Link href="/how-to-start-ai-career" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">How to Start AI Career</Link>
+            <Link href="/ai-jobs-without-coding" className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-800">AI Jobs Without Coding</Link>
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}

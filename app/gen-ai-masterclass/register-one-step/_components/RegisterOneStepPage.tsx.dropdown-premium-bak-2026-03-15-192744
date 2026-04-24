@@ -1,0 +1,446 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+type FormState = {
+  name: string
+  email: string
+  phone: string
+  experience: string
+  goal: string
+  laptop: string
+}
+
+type SubmitState = 'idle' | 'loading' | 'success' | 'error'
+
+const EXPERIENCE_OPTIONS = [
+  'Select your occupation',
+  'Salaried Professional',
+  'Self-Employed',
+  'Founder',
+  'Student',
+  'Others',
+]
+
+const GOAL_OPTIONS = [
+  'Select your goal',
+  'Kickstart Career',
+  'Career Transition',
+  'Upskilling',
+  'Others',
+]
+
+export default function RegisterOneStepPage() {
+  const router = useRouter()
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSearch(window.location.search || '')
+    }
+  }, [])
+
+  const [form, setForm] = useState<FormState>({
+    name: '',
+    email: '',
+    phone: '',
+    experience: 'Select your occupation',
+    goal: 'Select your goal',
+    laptop: '',
+  })
+
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
+  const [submitError, setSubmitError] = useState('')
+
+  const tracking = useMemo(() => {
+    const params = new URLSearchParams(search)
+    const get = (key: string) => params.get(key) || ''
+
+    const landingUrl =
+      typeof window !== 'undefined' ? window.location.href : ''
+
+    const referrer =
+      typeof document !== 'undefined' ? document.referrer : ''
+
+    return {
+      utm_source: get('utm_source'),
+      utm_medium: get('utm_medium'),
+      utm_campaign: get('utm_campaign'),
+      utm_term: get('utm_term'),
+      utm_content: get('utm_content'),
+      utm_id: get('utm_id'),
+      utm_campaign_id: get('utm_campaign_id') || get('campaign_id'),
+      utm_adset_id: get('utm_adset_id') || get('adset_id'),
+      utm_ad_id: get('utm_ad_id') || get('ad_id'),
+      fbclid: get('fbclid'),
+      gclid: get('gclid'),
+      msclkid: get('msclkid'),
+      landingUrl,
+      referrer,
+      page: '/gen-ai-masterclass/register-one-step',
+      source: 'website',
+      attribution: {
+        fbclid: get('fbclid'),
+        gclid: get('gclid'),
+        msclkid: get('msclkid'),
+        referrer,
+        landingUrl,
+      },
+    }
+  }, [search])
+
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setErrors((prev) => ({ ...prev, [key]: '' }))
+  }
+
+  function validate() {
+    const nextErrors: Partial<Record<keyof FormState, string>> = {}
+
+    if (!form.name.trim()) nextErrors.name = 'Name is required'
+    if (!form.email.trim()) {
+      nextErrors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = 'Enter a valid email'
+    }
+
+    const phoneDigits = form.phone.replace(/\D/g, '')
+    if (!phoneDigits) {
+      nextErrors.phone = 'Phone number is required'
+    } else if (phoneDigits.length < 10) {
+      nextErrors.phone = 'Enter a valid phone number'
+    }
+
+    if (!form.experience.trim() || form.experience === 'Select your occupation') nextErrors.experience = 'Please select your occupation'
+    if (!form.goal.trim() || form.goal === 'Select your goal') nextErrors.goal = 'Please select your goal'
+    if (!form.laptop.trim()) nextErrors.laptop = 'Please select an option'
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSubmitError('')
+
+    if (!validate()) return
+
+    setSubmitState('loading')
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.replace(/\D/g, ''),
+      experience: form.experience,
+      goal: form.goal,
+      laptop: form.laptop === 'true',
+      source: tracking.source,
+      page: tracking.page,
+      utm_source: tracking.utm_source || null,
+      utm_medium: tracking.utm_medium || null,
+      utm_campaign: tracking.utm_campaign || null,
+      utm_term: tracking.utm_term || null,
+      utm_content: tracking.utm_content || null,
+      utm_id: tracking.utm_id || null,
+      utm_campaign_id: tracking.utm_campaign_id || null,
+      utm_adset_id: tracking.utm_adset_id || null,
+      utm_ad_id: tracking.utm_ad_id || null,
+      fbclid: tracking.fbclid || null,
+      gclid: tracking.gclid || null,
+      msclkid: tracking.msclkid || null,
+      landingUrl: tracking.landingUrl || null,
+      referrer: tracking.referrer || null,
+      attribution: tracking.attribution,
+    }
+
+    try {
+      const res = await fetch('/api/masterclass-lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        let message = 'Submission failed'
+        try {
+          const data = await res.json()
+          if (data?.error) message = data.error
+        } catch {}
+        throw new Error(message)
+      }
+
+      setSubmitState('success')
+
+      const qs = new URLSearchParams()
+      if (tracking.utm_source) qs.set('utm_source', tracking.utm_source)
+      if (tracking.utm_medium) qs.set('utm_medium', tracking.utm_medium)
+      if (tracking.utm_campaign) qs.set('utm_campaign', tracking.utm_campaign)
+      if (tracking.utm_term) qs.set('utm_term', tracking.utm_term)
+      if (tracking.utm_content) qs.set('utm_content', tracking.utm_content)
+      if (tracking.utm_campaign_id) qs.set('utm_campaign_id', tracking.utm_campaign_id)
+      if (tracking.utm_adset_id) qs.set('utm_adset_id', tracking.utm_adset_id)
+      if (tracking.utm_ad_id) qs.set('utm_ad_id', tracking.utm_ad_id)
+      if (tracking.fbclid) qs.set('fbclid', tracking.fbclid)
+
+      const query = qs.toString()
+      router.push(query ? `/gen-ai-masterclass/welcome?${query}` : '/gen-ai-masterclass/welcome')
+    } catch (error) {
+      setSubmitState('error')
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  return (
+    <main className="-mt-20 min-h-[calc(100vh+3.5rem)] bg-[#0B1220] text-white md:-mt-24 md:min-h-[calc(100vh+4.5rem)]">
+      <style jsx global>{`
+        header, footer {
+          display: none !important;
+        }
+        body {
+          background: #0B1220;
+        }
+      `}</style>
+
+      <section className="mx-auto grid min-h-screen max-w-[1160px] gap-8 px-4 py-6 md:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-8 lg:px-8">
+        <div className="order-2 flex items-center lg:order-1">
+          <div className="relative w-full max-w-[860px]">
+            <div className="pointer-events-none absolute -left-28 top-[-56px] h-[380px] w-[380px] rounded-full bg-[#2563EB]/28 blur-3xl" />
+            <div className="pointer-events-none absolute left-[240px] top-[170px] h-[320px] w-[320px] rounded-full bg-[#1D4ED8]/20 blur-3xl" />
+            <div className="pointer-events-none absolute left-[40px] top-[280px] h-[260px] w-[260px] rounded-full bg-[#2563EB]/10 blur-3xl" />
+
+            <div className="relative z-10 inline-flex items-center rounded-full border border-[rgba(245,179,1,0.26)] bg-[rgba(255,255,255,0.05)] px-4 py-2 text-[12px] font-medium text-[#F5B301] shadow-[0_0_16px_rgba(245,179,1,0.16)]">
+              ✦ Free Live Masterclass
+            </div>
+
+            <div className="relative z-10 mt-5 text-[11px] font-medium uppercase tracking-[0.22em] text-[#B0B7C3]">
+              For students • freelancers • creators
+            </div>
+
+            <h1
+              style={{ maxWidth: "19ch", letterSpacing: "-0.042em", lineHeight: "1.04" }}
+              className="relative z-10 mt-4 text-[30px] font-semibold text-white md:text-[42px] lg:text-[52px]"
+            >
+              Become an <span className="text-[#2563EB]">AI Generalist</span> with practical,
+              job-relevant digital execution skills
+            </h1>
+
+            <p className="relative z-10 mt-5 max-w-[700px] text-[15px] leading-[1.9] text-[#B0B7C3] md:text-[17px]">
+              Get practical clarity on AI-powered workflows across design, content, video,
+              marketing, landing pages, and execution systems.
+            </p>
+
+            <div className="relative z-10 mt-7 flex max-w-[760px] flex-wrap gap-3.5">
+              {[
+                "⚡ Live learning",
+                "🧠 AI-first curriculum",
+                "🛠 Real project workflow",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.07)] px-5 py-2.5 text-[12px] font-medium text-white/95 shadow-[0_10px_22px_rgba(0,0,0,0.18)]"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            <div className="relative z-10 mt-7 max-w-[800px] rounded-[24px] border border-[rgba(255,255,255,0.10)] bg-[linear-gradient(180deg,rgba(37,99,235,0.20),rgba(255,255,255,0.05))] px-6 py-5 shadow-[0_20px_42px_rgba(0,0,0,0.22)]">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-0">
+                {[
+                  { value: "100%", label: "Live classes" },
+                  { value: "1200+", label: "Companies hiring" },
+                  { value: "95%", label: "Execution focus" },
+                  { value: "1.5L+", label: "Learners" },
+                ].map((item, index) => (
+                  <div
+                    key={item.label}
+                    className={index !== 0 ? "md:border-l md:border-white/12 md:pl-7" : ""}
+                  >
+                    <div className="text-[28px] font-semibold leading-none text-white md:text-[34px]">
+                      {item.value}
+                    </div>
+                    <div className="mt-2 text-[11px] text-[#D6DEEA]">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative z-10 mt-6 flex max-w-[800px] flex-wrap gap-x-8 gap-y-2.5 text-[11px] text-white/84">
+              <div>• Practical breakdown</div>
+              <div>• Real use-cases</div>
+              <div>• Live Q&amp;A support</div>
+            </div>
+          </div>
+        </div>
+        <div className="order-1 flex items-center justify-center lg:order-2">
+          <div className="mx-auto w-full max-w-[460px] rounded-[24px] border border-white/70 bg-white p-5 text-[#0F172A] shadow-[0_18px_44px_rgba(0,0,0,0.24)] md:p-6">
+            <div className="text-[22px] font-semibold leading-[1.28] md:text-[26px]">
+              Register for the <span className="text-[#2563EB]">free live</span> masterclass
+            </div>
+
+            <p className="mt-1.5 text-[11px] leading-4 text-slate-600">
+              Fill once. Submit once. Direct registration on the same page.
+            </p>
+
+            <form className="mt-5 space-y-3" onSubmit={handleSubmit} noValidate>
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setField('name', e.target.value)}
+                  placeholder="Enter name"
+                  className={`w-full appearance-none rounded-lg border px-3 py-2.5 pr-11 text-[13px] outline-none transition ${
+                    errors.name
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100'
+                  }`}
+                />
+                {errors.name ? <p className="mt-1 text-[11px] text-red-500">{errors.name}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setField('email', e.target.value)}
+                  placeholder="Email"
+                  className={`w-full appearance-none rounded-lg border px-3 py-2.5 pr-11 text-[13px] outline-none transition ${
+                    errors.email
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100'
+                  }`}
+                />
+                {errors.email ? <p className="mt-1 text-[11px] text-red-500">{errors.email}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div
+                  className={`flex items-center overflow-hidden rounded-lg border ${
+                    errors.phone
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-blue-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-center border-r border-slate-200 px-3.5 py-2.5">
+                    <span className="inline-block h-[16px] w-[26px] overflow-hidden rounded-[2px] border border-slate-300 shadow-sm">
+                      <span className="block h-[5px] bg-[#FF9933]"></span>
+                      <span className="flex h-[5px] items-center justify-center bg-white">
+                        <span className="h-[4px] w-[4px] rounded-full border border-[#1A237E]"></span>
+                      </span>
+                      <span className="block h-[5px] bg-[#138808]"></span>
+                    </span>
+                  </div>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setField('phone', e.target.value)}
+                    placeholder="Phone number"
+                    className="w-full px-3 py-2.5 text-[13px] outline-none"
+                  />
+                </div>
+                {errors.phone ? <p className="mt-1 text-[11px] text-red-500">{errors.phone}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  Your occupation <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.experience}
+                  onChange={(e) => setField('experience', e.target.value)}
+                  className={`w-full appearance-none rounded-lg border px-3 py-2.5 pr-11 text-[13px] outline-none transition ${
+                    errors.experience
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100'
+                  }`}
+                >
+                  {EXPERIENCE_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+                {errors.experience ? <p className="mt-1 text-[11px] text-red-500">{errors.experience}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  What is your goal for taking this program? <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.goal}
+                  onChange={(e) => setField('goal', e.target.value)}
+                  className={`w-full appearance-none rounded-lg border px-3 py-2.5 pr-11 text-[13px] outline-none transition ${
+                    errors.goal
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100'
+                  }`}
+                >
+                  {GOAL_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+                {errors.goal ? <p className="mt-1 text-[11px] text-red-500">{errors.goal}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-medium text-slate-700">
+                  Do you have a laptop? <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.laptop}
+                  onChange={(e) => setField('laptop', e.target.value)}
+                  className={`w-full appearance-none rounded-lg border px-3 py-2.5 pr-11 text-[13px] outline-none transition ${
+                    errors.laptop
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100'
+                  }`}
+                >
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+                {errors.laptop ? <p className="mt-1 text-[11px] text-red-500">{errors.laptop}</p> : null}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitState === 'loading'}
+                className="w-full rounded-lg bg-[#2563EB] px-4 py-2.5 text-[14px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-70 shadow-[0_0_14px_rgba(37,99,235,0.22)]"
+              >
+                {submitState === 'loading' ? 'Registering...' : 'Register Now'}
+              </button>
+
+              {submitState === 'error' && submitError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] text-red-600">
+                  {submitError}
+                </div>
+              ) : null}
+
+              <p className="text-[7px] leading-4 text-slate-500">
+                By continuing, you agree to receive communication related to
+                masterclass updates and registration details.
+              </p>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}

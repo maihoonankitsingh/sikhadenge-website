@@ -1,0 +1,863 @@
+"use client";
+
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+import Link from "next/link";
+
+const learnItems = [
+  {
+    title: "Design with AI",
+    desc: "Create social posts, creatives, thumbnails, brand visuals, and presentation assets using AI-assisted design workflows.",
+  },
+  {
+    title: "Edit Videos with AI",
+    desc: "Build short-form video outputs, edits, hooks, sequences, and visual storytelling workflows with AI support.",
+  },
+  {
+    title: "Create Content with AI Creation",
+    desc: "Generate scripts, captions, content angles, content plans, and execution systems for digital platforms.",
+  },
+  {
+    title: "Market with AI Assets",
+    desc: "Create ad creatives, landing page copy blocks, campaign assets, and launch materials with structure.",
+  },
+  {
+    title: "Build Pages with AI & Landing Pages",
+    desc: "Understand page structure, conversion sections, and AI-assisted website building for modern digital offers.",
+  },
+  {
+    title: "AI Automation & Workflows",
+    desc: "Learn practical workflow thinking to connect tools, reduce repetitive work, and execute faster.",
+  },
+];
+
+const buildItems = [
+  "Social media creative sets",
+  "Short-form video assets",
+  "Content systems and posting workflows",
+  "Offer pages and landing page structures",
+  "Ad and marketing asset kits",
+  "Portfolio-ready digital projects",
+];
+
+const audienceItems = [
+  "Students",
+  "Freshers",
+  "Freelancers",
+  "Content Creators",
+  "Career Switchers",
+  "Serious Beginners",
+];
+
+const faqItems = [
+  {
+    q: "Do I need prior experience to join?",
+    a: "No. The program is beginner-friendly and designed for people who want a structured starting point.",
+  },
+  {
+    q: "Is this a normal graphic design course?",
+    a: "No. This is positioned as an AI-first digital capability program, not a traditional software-only course.",
+  },
+  {
+    q: "Is this only about AI tools?",
+    a: "No. The focus is on structured capability, workflows, outputs, and practical digital execution.",
+  },
+  {
+    q: "How long is the paid program?",
+    a: "The AI Generalist Professional Program is an 8-week guided cohort.",
+  },
+  {
+    q: "What is the role of the free masterclass?",
+    a: "The masterclass helps you understand the model, the opportunity, what you will learn, and whether the program fits you.",
+  },
+  {
+    q: "Will I build real outputs?",
+    a: "Yes. The learning is oriented around practical outputs, digital assets, and guided execution.",
+  },
+  {
+    q: "Who is this best suited for?",
+    a: "It is ideal for students, freshers, creators, freelancers, career switchers, and serious beginners.",
+  },
+  {
+    q: "Do I need coding knowledge?",
+    a: "No. Prior coding knowledge is not required.",
+  },
+];
+
+function PrimaryButton({
+  href = "#register",
+  children,
+}: {
+  href?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-2xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 hover:bg-[#1D4ED8]"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SecondaryButton({
+  href = "#program",
+  children,
+}: {
+  href?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  desc,
+}: {
+  eyebrow?: string;
+  title: string;
+  desc?: string;
+}) {
+  return (
+    <div className="mx-auto max-w-3xl text-center">
+      {eyebrow ? (
+        <div className="mb-3 inline-flex rounded-full border border-[#2563EB]/20 bg-[#2563EB]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+          {eyebrow}
+        </div>
+      ) : null}
+      <h2 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+        {title}
+      </h2>
+      {desc ? (
+        <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">
+          {desc}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export default function AiMasterclassPage() {
+  return (
+    <main className="min-h-screen bg-[#F8FAFC] text-slate-900">
+      {/* Announcement Bar */}
+      <div className="border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-3 text-center sm:flex-row sm:px-6 lg:px-8">
+          <p className="text-sm font-medium text-slate-700">
+            Free Live Masterclass for the next cohort of{" "}
+            <span className="font-semibold text-slate-900">
+              AI Generalist Professional Program
+            </span>
+          </p>
+          <PrimaryButton href="#register">Join Free Masterclass</PrimaryButton>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.10),transparent_32%),radial-gradient(circle_at_top_right,rgba(245,179,1,0.12),transparent_28%)]" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-24">
+          <div>
+            <div className="mb-5 inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 shadow-sm">
+              Premium AI-First Digital Capability Program
+            </div>
+
+            <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-slate-900 md:text-6xl md:leading-[1.05]">
+              From scattered learning to{" "}
+              <span className="text-[#2563EB]">structured AI-powered</span>{" "}
+              digital capability.
+            </h1>
+
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+              Sikhadenge helps learners understand how to use AI across design,
+              video, content, marketing assets, websites, and workflows through
+              a structured free masterclass that leads into an 8-week guided
+              cohort.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <PrimaryButton href="#register">Join Free Masterclass</PrimaryButton>
+              <SecondaryButton href="#program">Explore Program</SecondaryButton>
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {[
+                "Beginner friendly",
+                "Live guided learning",
+                "Real output based structure",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 shadow-sm"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+              <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_45%,#fff7e6_100%)] p-6">
+                <div className="grid gap-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+                      AI Generalist Model
+                    </div>
+                    <div className="mt-3 text-2xl font-bold text-slate-900">
+                      One structured capability across multiple digital outputs
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      "Design with AI",
+                      "Edit Videos with AI",
+                      "Create Content with AI",
+                      "Market with AI Assets",
+                      "Build Pages with AI",
+                      "Automate Work with AI",
+                    ].map((item) => (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700 shadow-sm"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-[#2563EB]/15 bg-[#2563EB]/5 p-5">
+                    <div className="text-sm font-semibold text-slate-900">
+                      Free Masterclass → 8-Week Cohort
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Start with clarity, understand the market shift, then
+                      enter a structured program built for practical execution.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 rounded-full bg-[#2563EB]/10 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-4 left-0 h-24 w-24 rounded-full bg-[#F5B301]/20 blur-2xl" />
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Strip */}
+      <section className="border-y border-slate-200 bg-white">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 text-center sm:grid-cols-3 sm:px-6 lg:px-8">
+          <div>
+            <div className="text-2xl font-bold text-slate-900">1000+</div>
+            <div className="mt-1 text-sm text-slate-600">Learners trained</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">Live Cohort</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Guided structure, not random tutorials
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">
+              Practical Outputs
+            </div>
+            <div className="mt-1 text-sm text-slate-600">
+              Capability built through execution
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Market Shift */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Market Shift"
+          title="The market is moving from tool learning to AI-enabled digital execution."
+          desc="The new advantage is not simply knowing one software or one AI tool. The real edge comes from understanding how to combine AI with digital skills to produce useful outputs faster and more effectively."
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {[
+            {
+              title: "AI is changing execution speed",
+              desc: "People who understand workflows can now create faster across multiple digital categories.",
+            },
+            {
+              title: "Single-skill learning is no longer enough",
+              desc: "Modern roles increasingly reward people who can think, create, structure, and ship digital work.",
+            },
+            {
+              title: "Structured capability matters more now",
+              desc: "The opportunity belongs to learners who can turn AI into real project outcomes, not just experimentation.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-[24px] border border-slate-200 bg-white p-7 shadow-[0_12px_34px_rgba(15,23,42,0.05)]"
+            >
+              <h3 className="text-lg font-semibold text-slate-900">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {item.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Why old learning fails */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Why Old Learning Fails"
+            title="Most beginners do not fail because they lack effort. They fail because the learning path is broken."
+            desc="Traditional learning usually creates confusion because it is disconnected, tool-heavy, and not oriented around real execution."
+          />
+
+          <div className="mt-12 grid gap-6 md:grid-cols-4">
+            {[
+              {
+                title: "Too many random tutorials",
+                desc: "Learners keep consuming content without a clear sequence or system.",
+              },
+              {
+                title: "Too much tool overload",
+                desc: "The internet shows endless apps, but not enough structured decision-making.",
+              },
+              {
+                title: "Too little project application",
+                desc: "People learn concepts but rarely turn them into complete digital outputs.",
+              },
+              {
+                title: "No guided progression",
+                desc: "Without structure and direction, most people lose momentum quickly.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-6"
+              >
+                <h3 className="text-base font-semibold text-slate-900">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI Generalist Model */}
+      <section id="program" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="The Model"
+          title="The AI Generalist model is built for the new digital reality."
+          desc="This is not a narrow single-tool course. It is a structured capability program that helps learners understand how digital work is created using AI-assisted workflows."
+        />
+
+        <div className="mt-12 rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] md:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_45%,#fff7e6_100%)] p-6 md:p-8">
+              <h3 className="text-2xl font-bold text-slate-900">
+                AI-first digital capability
+              </h3>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                Learners are trained to think across outputs and workflows,
+                instead of treating each tool as a separate isolated topic.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  "Design",
+                  "Video",
+                  "Content",
+                  "Marketing Assets",
+                  "Web & Landing Pages",
+                  "Automation",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-700 shadow-sm"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-[#F8FAFC] p-6 md:p-8">
+              <h3 className="text-xl font-bold text-slate-900">
+                What makes this model different
+              </h3>
+              <div className="mt-6 space-y-4">
+                {[
+                  "Structured instead of scattered",
+                  "Execution-focused instead of passive consumption",
+                  "Cross-functional instead of single-skill only",
+                  "Built around outputs instead of random information",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What you will learn */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Curriculum Direction"
+            title="What learners build capability in"
+            desc="The program is designed around practical capability areas that are highly relevant in AI-assisted digital work."
+          />
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {learnItems.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-7"
+              >
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* What students build */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Outputs"
+          title="Learners do not just consume lessons. They build real digital outputs."
+          desc="The structure is designed to move people from information overload to output-based execution."
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+            <h3 className="text-xl font-bold text-slate-900">
+              Examples of what students build
+            </h3>
+            <div className="mt-6 grid gap-4">
+              {buildItems.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-slate-200 bg-[#F8FAFC] px-4 py-4 text-sm font-medium text-slate-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_60%,#eff6ff_100%)] p-8">
+            <h3 className="text-xl font-bold text-slate-900">
+              Why this matters
+            </h3>
+            <div className="mt-6 space-y-4 text-sm leading-7 text-slate-600">
+              <p>
+                Digital confidence grows when learners produce visible outcomes.
+              </p>
+              <p>
+                Portfolio-ready work gives structure to learning and makes
+                progress measurable.
+              </p>
+              <p>
+                This approach helps serious beginners move from passive
+                watching to active creation.
+              </p>
+            </div>
+            <div className="mt-8">
+              <PrimaryButton href="#register">Reserve Your Seat</PrimaryButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Who this is for */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Audience Fit"
+            title="Who this program is designed for"
+            desc="This program is built for people who want a serious and structured entry into AI-enabled digital work."
+          />
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {audienceItems.map((item) => (
+              <div
+                key={item}
+                className="rounded-[22px] border border-slate-200 bg-[#F8FAFC] px-6 py-6 text-base font-semibold text-slate-800"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How program works */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Process"
+          title="How the journey works"
+          desc="The landing page is designed to bring users into a low-friction first step through the free masterclass."
+        />
+
+        <div className="mt-12 grid gap-6 md:grid-cols-4">
+          {[
+            {
+              step: "01",
+              title: "Join the free masterclass",
+              desc: "Understand the opportunity, the model, and what structured AI capability actually means.",
+            },
+            {
+              step: "02",
+              title: "Get clarity on the cohort",
+              desc: "See how the 8-week program is structured and what kind of outputs learners work on.",
+            },
+            {
+              step: "03",
+              title: "Enroll with intent",
+              desc: "Move into the paid cohort only after understanding the value and the fit.",
+            },
+            {
+              step: "04",
+              title: "Build capability through execution",
+              desc: "Learn in a guided structure with practical application and digital outputs.",
+            },
+          ].map((item) => (
+            <div
+              key={item.step}
+              className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+            >
+              <div className="text-sm font-bold text-[#2563EB]">{item.step}</div>
+              <h3 className="mt-3 text-lg font-semibold text-slate-900">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {item.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Why start with masterclass */}
+      <section id="register" className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#fff7e6_100%)] p-8 md:p-10">
+            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+              <div>
+                <div className="mb-3 inline-flex rounded-full border border-[#2563EB]/20 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#2563EB]">
+                  Start With Clarity
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+                  The free masterclass is the best first step.
+                </h2>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                  The masterclass helps learners understand the market shift,
+                  the AI Generalist model, how the cohort works, and why this
+                  approach is different from random tool-based learning.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4">
+                <PrimaryButton href="#register">Join Free Masterclass</PrimaryButton>
+                <SecondaryButton href="#pricing">Explore Program</SecondaryButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Outcomes */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Transformation"
+          title="What changes for the learner"
+          desc="The goal is not just awareness. The goal is capability."
+        />
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Before
+            </div>
+            <div className="mt-6 space-y-4">
+              {[
+                "Scattered learning from random videos",
+                "Confusion about what to learn first",
+                "Too many tools, not enough direction",
+                "Low confidence in practical execution",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-slate-200 bg-[#F8FAFC] px-4 py-4 text-sm text-slate-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_65%,#fff7e6_100%)] p-8">
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+              After
+            </div>
+            <div className="mt-6 space-y-4">
+              {[
+                "Clear understanding of AI-enabled digital work",
+                "A structured path instead of random exploration",
+                "Ability to build real digital assets and outputs",
+                "Practical confidence to continue growing with direction",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social proof */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Social Proof"
+            title="Built for trust, not hype"
+            desc="Use real learner outcomes, genuine testimonials, workshop screenshots, or result-focused proof blocks here."
+          />
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                text: "This helped me understand how AI can be used practically instead of just trying random tools without direction.",
+                name: "Learner Feedback",
+              },
+              {
+                text: "The structure was the main difference. I got clarity on what to do and how to think about digital work.",
+                name: "Cohort Participant",
+              },
+              {
+                text: "It felt more like capability building than a normal software class.",
+                name: "Program Attendee",
+              },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-7"
+              >
+                <p className="text-sm leading-7 text-slate-600">“{item.text}”</p>
+                <div className="mt-5 text-sm font-semibold text-slate-900">
+                  {item.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Offer"
+          title="Free masterclass first. Paid cohort after clarity."
+          desc="The landing page should convert visitors into masterclass registrations first, then move qualified users toward the paid program."
+        />
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+              Free Entry Point
+            </div>
+            <h3 className="mt-3 text-2xl font-bold text-slate-900">
+              Free Masterclass
+            </h3>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Learn the AI Generalist model, understand the opportunity, and
+              decide whether the cohort fits your goals.
+            </p>
+            <div className="mt-8">
+              <PrimaryButton href="#register">Reserve Your Seat</PrimaryButton>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#eff6ff_100%)] p-8">
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              8-Week Paid Cohort
+            </div>
+            <h3 className="mt-3 text-3xl font-bold text-slate-900">
+              AI Generalist Professional Program
+            </h3>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Duration
+                </div>
+                <div className="mt-2 text-base font-semibold text-slate-900">
+                  8 Weeks
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Format
+                </div>
+                <div className="mt-2 text-base font-semibold text-slate-900">
+                  Guided Cohort
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Focus
+                </div>
+                <div className="mt-2 text-base font-semibold text-slate-900">
+                  Practical Capability
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-end gap-4">
+              <div className="text-lg text-slate-400 line-through">₹25,000</div>
+              <div className="text-4xl font-bold text-[#2563EB]">₹4,999</div>
+            </div>
+
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Use this pricing block as the post-masterclass cohort entry offer.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <PrimaryButton href="#register">Join Free Masterclass</PrimaryButton>
+              <SecondaryButton href="#program">Explore Program</SecondaryButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mentor / Brand */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#fff7e6_100%)] p-8">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+                About The Brand
+              </div>
+              <h2 className="mt-3 text-3xl font-bold text-slate-900">
+                Sikhadenge
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Sikhadenge is focused on helping Indian learners build practical
+                digital capability for the AI era through structured,
+                execution-oriented learning.
+              </p>
+            </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+              <h3 className="text-2xl font-bold text-slate-900">
+                Positioning note
+              </h3>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                This page is intentionally positioned away from “normal design
+                course”, “normal editing course”, or “AI tools only” language.
+              is an AI-first digital capability program.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {[
+                  "High-trust cohort positioning",
+                  "Premium modern EdTech tone",
+                  "Clear masterclass-first funnel",
+                  "Short conversion-oriented copy blocks",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-slate-200 bg-[#F8FAFC] px-4 py-4 text-sm font-medium text-slate-700"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="FAQ"
+          title="Frequently asked questions"
+          desc="Keep the answers clear, simple, and trust-oriented."
+        />
+
+        <div className="mt-12 space-y-4">
+          {faqItems.map((item) => (
+            <details
+              key={item.q}
+              className="group rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <summary className="cursor-pointer list-none text-base font-semibold text-slate-900">
+                {item.q}
+              </summary>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#fff7e6_100%)] p-8 text-center md:p-12">
+            <div className="mx-auto max-w-3xl">
+              <div className="mb-3 inline-flex rounded-full border border-[#2563EB]/20 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#2563EB]">
+                Final CTA
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+                Start with the free masterclass.
+              </h2>
+              <p className="mt-5 text-base leading-7 text-slate-600 md:text-lg">
+                Understand the model, see the opportunity clearly, and take the
+                first structured step toward AI-powered digital capability.
+              </p>
+              <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <PrimaryButton href="#register">Join Free Masterclass</PrimaryButton>
+                <SecondaryButton href="#program">Explore Program</SecondaryButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

@@ -1,0 +1,774 @@
+"use client";
+
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+const SD_BOX_WHITE = "group relative overflow-hidden rounded-3xl border border-[rgba(15,23,42,0.10)] bg-[#FFF7E6] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-[#F7EEDB] before:content-[''] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-20 before:bg-gradient-to-b before:from-[#2563EB]/8 before:to-transparent after:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:bg-gradient-to-r after:from-[#2563EB]/0 after:via-[#2563EB]/35 after:to-[#2563EB]/0 after:opacity-0 after:transition group-hover:after:opacity-100";
+const SD_BOX = "relative rounded-3xl border border-white/10 bg-[rgba(17,24,39,0.70)] p-6 sm:p-7 shadow-[0_18px_55px_rgba(0,0,0,0.35)]";
+const SD_GLOW_LINE = "pointer-events-none absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-[rgba(37,99,235,0.55)] via-[rgba(245,179,1,0.55)] to-transparent";
+
+
+
+// pages/contact.tsx
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  category: string;
+  message: string;
+};
+
+const SPECIALIZATIONS = [
+  "Student",
+  "Working Professional",
+  "Freelancer",
+  "Business Owner",
+  "Other",
+];
+
+const CATEGORIES = [
+  "Admissions",
+  "Course Details",
+  "Support",
+  "Hiring / Careers",
+  "Collaboration",
+  "Billing / Payments",
+  "Other",
+];
+
+function cx(...v: Array<string | false | null | undefined>) {
+  return v.filter(Boolean).join(" ");
+}
+
+function Icon({
+  name,
+  className,
+}: {
+  name:
+    | "phone"
+    | "mail"
+    | "briefcase"
+    | "cap"
+    | "users"
+    | "chat"
+    | "spark"
+    | "arrow";
+  className?: string;
+}) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (name) {
+    case "phone":
+        // Reusable box/card styles (Contact page)
+          "group relative rounded-3xl border-[rgba(15,23,42,0.10)] bg-[#FFF7E8] shadow-[0_10px_30px_rgba(2,6,23,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(2,6,23,0.14)] hover:border-[rgba(37,99,235,0.35)]";
+          "group relative rounded-3xl border-[rgba(15,23,42,0.10)] bg-white shadow-[0_10px_30px_rgba(2,6,23,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(2,6,23,0.14)] hover:border-[rgba(37,99,235,0.35)]";
+          "pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-[#2563EB]/0 via-[#2563EB]/35 to-[#2563EB]/0 opacity-0 transition group-hover:opacity-100";
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M22 16.9v3a2 2 0 0 1-2.2 2c-2.7-.3-5.3-1.2-7.6-2.6a18.6 18.6 0 0 1-5.7-5.7A18.3 18.3 0 0 1 3.1 6.2 2 2 0 0 1 5.1 4h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L9.9 11a16 16 0 0 0 3.1 3.1l.6-.3a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+          <path {...common} d="m22 8-10 7L2 8" />
+        </svg>
+      );
+    case "briefcase":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M10 6V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1" />
+          <path {...common} d="M4 7h16a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2z" />
+          <path {...common} d="M8 12h8" />
+        </svg>
+      );
+    case "cap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M22 10 12 5 2 10l10 5 10-5z" />
+          <path {...common} d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5" />
+        </svg>
+      );
+    case "users":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <path {...common} d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+          <path {...common} d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path {...common} d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+          <path {...common} d="M8 10h8M8 14h6" />
+        </svg>
+      );
+    case "spark":
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M12 2l1.4 5.2L18 9l-4.6 1.8L12 16l-1.4-5.2L6 9l4.6-1.8L12 2z" />
+          <path {...common} d="M19 13l.9 3.2L23 17l-3.1.8L19 21l-.9-3.2L15 17l3.1-.8L19 13z" />
+        </svg>
+      );
+    case "arrow":
+    default:
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path {...common} d="M5 12h12" />
+          <path {...common} d="m13 6 6 6-6 6" />
+        </svg>
+      );
+  }
+}
+
+function useOutsideClick(
+  refs: React.RefObject<HTMLElement>[],
+  onOutside: () => void,
+  enabled: boolean
+) {
+  useEffect(() => {
+    if (!enabled) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      const inside = refs.some((r) => r.current && r.current.contains(t));
+      if (!inside) onOutside();
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [enabled, refs, onOutside]);
+}
+
+function DarkSelect({
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useOutsideClick([wrapRef], () => setOpen(false), open);
+
+  return (
+    <div className="relative" ref={wrapRef}>
+      <div className="text-xs tracking-[0.18em] uppercase text-[#6B7280]">
+        {label} <span className="text-[#6B7280]">*</span>
+      </div>
+
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className={cx(
+          "mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-left text-sm text-[#0B1220]",
+          "outline-none focus:border-black/20 focus:ring-2 focus:ring-[#2563EB]/25"
+        )}
+      >
+        <span className={cx(!value && "text-[#6B7280]")}>
+          {value || placeholder}
+        </span>
+        <span className="pointer-events-none absolute right-3 top-[42px] grid h-9 w-9 place-items-center text-[#6B7280]">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+            <path
+              d="M6 9l6 6 6-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className={cx(
+            "absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-black/10",
+            "bg-white shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
+          )}
+        >
+          <div className="max-h-60 overflow-auto p-1">
+            {options.map((opt) => (
+              <button
+                type="button"
+                key={opt}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={cx(
+                  "w-full rounded-xl px-3 py-2 text-left text-sm",
+                  opt === value
+                    ? "bg-black/5 text-[#0B1220]"
+                    : "text-[#6B7280] hover:bg-black/5 hover:text-[#0B1220]"
+                )}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ContactPage() {
+  // contact details (avoid repeating numbers elsewhere)
+  const supportEmail = "support@sikhadenge.in";
+  const primaryPhone = "+91 8808505575";
+
+  const [form, setForm] = useState<FormState>({
+    name: "",
+    email: "",
+    phone: "",
+    specialization: "",
+    category: "",
+    message: "",
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<null | { ok: boolean; msg: string }>(
+    null
+  );
+
+  const canSubmit = useMemo(() => {
+    const nameOk = form.name.trim().length > 1;
+    const emailOk =
+      form.email.trim().includes("@") && form.email.trim().includes(".");
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    const phoneOk = phoneDigits.length >= 10;
+    const specOk = !!form.specialization;
+    const catOk = !!form.category;
+    const msgOk = form.message.trim().length >= 5;
+    return nameOk && emailOk && phoneOk && specOk && catOk && msgOk;
+  }, [form]);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!canSubmit || submitting) return;
+
+    setSubmitting(true);
+    setStatus(null);
+
+    try {
+      // Uses existing route in your app: /api/leads
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "contact",
+          ...form,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Request failed");
+      }
+
+      setStatus({ ok: true, msg: "Submitted. Our team will respond within 24 hours." });
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        specialization: "",
+        category: "",
+        message: "",
+      });
+    } catch {
+      setStatus({ ok: false, msg: "Submit failed. Please try again." });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <main className="min-h-screen bg-[#F8FAFC] text-[#0B1220] pt-0">
+        <div className="mx-auto max-w-6xl px-4 pb-16">
+          <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+            {/* LEFT COLUMN */}
+            <div className="space-y-6">
+              {/* HERO (fixed text visibility) */}
+              <section className="relative overflow-hidden rounded-3xl border border-black/10 bg-white backdrop-blur">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage:
+                      "url(/images/contact/contact-hero-student.webp)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
+                {/* stronger readability overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
+                <div className="absolute inset-0 bg-black/25" />
+
+                <div className="relative p-8 sm:p-10">
+                  {/* glass panel behind text */}
+                  <div className="max-w-[640px] rounded-3xl border border-black/10 bg-white backdrop-blur-md p-6 sm:p-8 shadow-[0_18px_70px_rgba(0,0,0,0.55)]">
+                    <div className="text-[11px] tracking-[0.22em] text-[#374151] uppercase">
+                      NEED HELP?
+                    </div>
+
+                    <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold leading-tight">
+                      <span className="text-[#0B1220]">Write to </span>
+                      <span className="text-[#F5B301]">
+                        Sikhadenge
+                      </span>
+                    </h1>
+
+                    <p className="mt-3 max-w-xl text-[#111827]">
+                      Share your query. Our team will review and respond via
+                      call/WhatsApp.
+                    </p>
+
+                    <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <a
+                        onClick={() => { ;(window as any).fbq?.("track","Contact"); }} href={`tel:${primaryPhone.replace(/\s/g, "")}`}
+                        className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white px-5 py-4 transition hover:bg-black/5"
+                      >
+                        <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                          <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(37,99,235,0.55)] motion-safe:animate-pulse" />
+                          <span className="relative text-[#2563EB]">
+                            <Icon name="phone" className="h-5 w-5" />
+                          </span>
+                        </span>
+                        <span>
+                          <div className="text-sm font-semibold text-[#0B1220]">
+                            Call
+                          </div>
+                          <div className="text-sm text-[#6B7280]">
+                            {primaryPhone}
+                          </div>
+                        </span>
+                      </a>
+
+                      <a
+                        href={`mailto:${supportEmail}`}
+                        className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white px-5 py-4 transition hover:bg-black/5"
+                      >
+                        <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                          <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(245,179,1,0.55)] motion-safe:animate-pulse" />
+                          <span className="relative text-[#F5B301]">
+                            <Icon name="mail" className="h-5 w-5" />
+                          </span>
+                        </span>
+                        <span>
+                          <div className="text-sm font-semibold text-[#0B1220]">
+                            Email
+                          </div>
+                          <div className="text-sm text-[#6B7280]">
+                            {supportEmail}
+                          </div>
+                        </span>
+                      </a>
+                    </div>
+
+                    <div className="mt-5 text-xs text-[#6B7280]">
+                      Parent company: ThinkGrow Pvt. Ltd.
+                    </div>
+                  </div>
+                </div>
+              </section>
+ 
+            {/* Corporate / workshop card */}
+              <section className="relative overflow-hidden rounded-3xl border border-black/10 bg-white backdrop-blur">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage:
+                      "url(/images/contact/workshop-classroom.webp)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
+                {/* stronger overlay for visibility */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
+                <div className="absolute inset-0 bg-black/25" />
+
+                <div className="relative p-6 sm:p-7">
+                  {/* glass panel behind text */}
+                  <div className="max-w-[520px] rounded-2xl border border-black/10 bg-white backdrop-blur-md p-5 shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
+                    <div className="flex items-start gap-4">
+                      <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                        <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(37,99,235,0.55)] motion-safe:animate-pulse" />
+                        <span className="relative text-[#2563EB]">
+                          <Icon name="briefcase" className="h-5 w-5" />
+                        </span>
+                      </span>
+
+                      <div className="flex-1">
+                        <div className="text-[11px] tracking-[0.22em] uppercase text-[#111827]">
+                          CORPORATE / WORKSHOP
+                        </div>
+                        <div className="mt-1 text-[#111827]">
+                          For training / collaboration queries, use the form
+                          category.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document
+                              .getElementById("contact-form")
+                              ?.scrollIntoView({ behavior: "smooth" })
+                          }
+                          className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-2 text-sm text-[#111827] hover:bg-black/5"
+                        >
+                          Go to form
+                          <Icon name="arrow" className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              
+              {/* Collaboration / Tie-up (dark brand, no white strip) */}
+              <section className={cx(SD_BOX_WHITE, "backdrop-blur p-6 sm:p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                  <div className={SD_GLOW_LINE} />
+                <div className="flex items-start gap-4">
+                  <span className="relative mt-1 h-10 w-[6px] rounded-full bg-[#2563EB] shadow-[0_0_18px_rgba(37,99,235,0.55)]" />
+                  <div className="flex-1">
+                    <div className="text-2xl font-bold text-[#0B1220]">
+                      Collaboration/Tie-up
+                    </div>
+                    <div className="mt-2 max-w-xl text-sm text-[#6B7280]">
+                      For partnership, campus tie-ups, workshops or corporate
+                      training — select <span className="text-[#0B1220]">“Collaboration”</span> in the form.
+                    </div>
+                  </div>
+                  <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                    <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(245,179,1,0.55)] motion-safe:animate-pulse" />
+                    <span className="relative text-[#F5B301]">
+                      <Icon name="spark" className="h-5 w-5" />
+                    </span>
+                  </span>
+                </div>
+              </section>
+            </div>
+
+            {/* RIGHT COLUMN (FORM) */}
+            <section
+              id="contact-form"
+              className={cx(SD_BOX_WHITE, "backdrop-blur p-6 sm:p-7")}
+            >
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-[#0B1220]">
+                    Contact Form
+                  </div>
+                  <div className="mt-1 text-sm text-[#6B7280]">
+                    Fill this form and our team will review and respond.
+                  </div>
+                </div>
+                <span className="h-9 w-9 rounded-full border border-black/10 bg-white" />
+              </div>
+
+              <div className="sd-form-card p-5 md:p-6">
+<form onSubmit={onSubmit} className="mt-6 space-y-4">
+                <div>
+                  <div className="text-xs tracking-[0.18em] uppercase text-[#6B7280]">
+                    NAME <span className="text-[#6B7280]">*</span>
+                  </div>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    className="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B1220] placeholder-[#6B7280] outline-none focus:border-black/20 focus:ring-2 focus:ring-[#2563EB]/25"
+                    placeholder="Your name"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-xs tracking-[0.18em] uppercase text-[#6B7280]">
+                    EMAIL <span className="text-[#6B7280]">*</span>
+                  </div>
+                  <input
+                    value={form.email}
+                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                    className="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B1220] placeholder-[#6B7280] outline-none focus:border-black/20 focus:ring-2 focus:ring-[#2563EB]/25"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-xs tracking-[0.18em] uppercase text-[#6B7280]">
+                    PHONE <span className="text-[#6B7280]">*</span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-[92px_1fr] gap-3">
+                    <div className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-[#111827]">
+                      IN +91
+                    </div>
+                    <input
+                      value={form.phone}
+                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                      className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B1220] placeholder-[#6B7280] outline-none focus:border-black/20 focus:ring-2 focus:ring-[#2563EB]/25"
+                      placeholder="10-digit number"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom dark dropdowns (fixes white dropdown issue) */}
+                <DarkSelect
+                  label="SELECT SPECIALIZATION"
+                  placeholder="Select specialization"
+                  value={form.specialization}
+                  options={SPECIALIZATIONS}
+                  onChange={(v) => setForm((p) => ({ ...p, specialization: v }))}
+                />
+
+                <DarkSelect
+                  label="SELECT CATEGORY"
+                  placeholder="Select category"
+                  value={form.category}
+                  options={CATEGORIES}
+                  onChange={(v) => setForm((p) => ({ ...p, category: v }))}
+                />
+
+                <div>
+                  <div className="text-xs tracking-[0.18em] uppercase text-[#6B7280]">
+                    YOUR MESSAGE <span className="text-[#6B7280]">*</span>
+                  </div>
+                  <textarea
+                    value={form.message}
+                    onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                    className="mt-2 h-32 w-full resize-none rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-[#0B1220] placeholder-[#6B7280] outline-none focus:border-black/20 focus:ring-2 focus:ring-[#2563EB]/25"
+                    placeholder="Type your message"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!canSubmit || submitting}
+                  className={cx(
+                    "mt-2 w-full rounded-2xl px-5 py-3 text-sm font-semibold",
+                    "bg-[#8A6A10] text-[#0B1220] shadow-[0_0_18px_rgba(245,179,1,0.35)]",
+                    "hover:bg-[#F5B301] hover:shadow-[0_0_18px_rgba(245,179,1,0.55)]",
+                    (!canSubmit || submitting) &&
+                      "opacity-60 cursor-not-allowed hover:bg-[#8A6A10]"
+                  )}
+                >
+                  {submitting ? "Submitting..." : "Submit →"}
+                </button>
+
+                <div className="text-[11px] text-[#6B7280]">
+                  By submitting, you agree to Sikhadenge’s{" "}
+                  <a className="text-[#111827] underline" href="/terms">
+                    Terms
+                  </a>{" "}
+                  and{" "}
+                  <a className="text-[#111827] underline" href="/privacy-policy">
+                    Privacy Policy
+                  </a>
+                  .
+                </div>
+
+                {status && (
+                  <div
+                    className={cx(
+                      "rounded-2xl border px-4 py-3 text-sm",
+                      status.ok
+                        ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+                        : "border-red-400/25 bg-red-400/10 text-red-200"
+                    )}
+                  >
+                    {status.msg}
+                  </div>
+                )}
+              </form>
+</div>
+            </section>
+          </div>
+
+          {/* 3 CARDS (full, not mini) */}
+          <section className="mt-6 grid gap-6 lg:grid-cols-3">
+            <div className={cx(SD_BOX_WHITE, "backdrop-blur p-6 sm:p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="flex items-start justify-between">
+                <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                  <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(245,179,1,0.55)] motion-safe:animate-pulse" />
+                  <span className="relative text-[#F5B301]">
+                    <Icon name="cap" className="h-5 w-5" />
+                  </span>
+                </span>
+                <span className="text-[#6B7280]">
+                  <Icon name="arrow" className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="hidden md:block mt-5 text-lg font-semibold">Become an instructor</div>
+              <div className="mt-1 text-sm text-[#6B7280]">
+                Teaching / mentoring queries
+              </div>
+            </div>
+
+            <div className={cx(SD_BOX_WHITE, "backdrop-blur p-6 sm:p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="flex items-start justify-between">
+                <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                  <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(37,99,235,0.55)] motion-safe:animate-pulse" />
+                  <span className="relative text-[#2563EB]">
+                    <Icon name="users" className="h-5 w-5" />
+                  </span>
+                </span>
+                <span className="text-[#6B7280]">
+                  <Icon name="arrow" className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="mt-5 text-lg font-semibold">Join our team</div>
+              <div className="mt-1 text-sm text-[#6B7280]">
+                Hiring / openings
+              </div>
+            </div>
+
+            <div className={cx(SD_BOX_WHITE, "backdrop-blur p-6 sm:p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="flex items-start justify-between">
+                <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">
+                  <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(245,179,1,0.55)] motion-safe:animate-pulse" />
+                  <span className="relative text-[#F5B301]">
+                    <Icon name="chat" className="h-5 w-5" />
+                  </span>
+                </span>
+                <span className="text-[#6B7280]">
+                  <Icon name="arrow" className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="mt-5 text-lg font-semibold">
+                Influencer collaboration
+              </div>
+              <div className="mt-1 text-sm text-[#6B7280]">
+                Partnership requests
+              </div>
+            </div>
+          </section>
+
+          {/* "Didn't find..." + Response card */}
+          <section className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+            <div className={cx(SD_BOX_WHITE, "backdrop-blur p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="text-3xl sm:text-4xl font-extrabold leading-tight">
+                Didn&apos;t find what you were looking for?
+              </div>
+              <div className="mt-3 text-sm text-[#6B7280]">
+                Use the Contact Form and select the closest category.
+              </div>
+            </div>
+
+            <div className={cx(SD_BOX_WHITE, "backdrop-blur p-7")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+                <div className={SD_GLOW_LINE} />
+              <div className="flex items-center gap-3">
+                <span className="relative grid h-11 w-11 place-items-center rounded-2xl border border-black/10 bg-white">
+                  <span className="absolute inset-0 rounded-2xl shadow-[0_0_18px_rgba(37,99,235,0.55)] motion-safe:animate-pulse" />
+                  <span className="relative text-[#2563EB]">
+                    <Icon name="spark" className="h-5 w-5" />
+                  </span>
+                </span>
+                <div>
+                  <div className="font-semibold">Response</div>
+                  <div className="text-sm text-[#6B7280]">
+                    We usually reply within 24 hours.
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 text-xs text-[#6B7280]">
+                Parent company: ThinkGrow Pvt. Ltd.
+              </div>
+            </div>
+          </section>
+
+          {/* Blue banner + Zoom mosaic image */}
+          <section className={cx(SD_BOX_WHITE, "mt-6 overflow-hidden backdrop-blur")}>
+  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+
+              <div className={SD_GLOW_LINE} />
+            <div className="grid lg:grid-cols-2">
+              <div className="bg-[#1D4ED8] p-8 sm:p-10">
+                <div className="text-3xl sm:text-4xl font-extrabold leading-tight">
+                  If you want to know about{" "}
+                  <span className="text-[#F5B301]">online courses</span> or{" "}
+                  <span className="text-[#F5B301]">cohorts</span> then you can
+                  contact us from here.
+                </div>
+
+                <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document
+                        .getElementById("contact-form")
+                        ?.scrollIntoView({ behavior: "smooth" })
+                    }
+                    className={cx(SD_BOX, "rounded-2xl px-5 py-4 text-left")}
+                  >
+                      <div className={SD_GLOW_LINE} />
+                    <div className="text-xs text-[#374151]">Use Contact Form</div>
+                    <div className="mt-1 text-sm font-semibold text-[#0B1220]">
+                      Select correct category
+                    </div>
+                  </button>
+
+                  <a
+                    href={`mailto:${supportEmail}`}
+                    className={cx(SD_BOX, "rounded-2xl px-5 py-4 text-left")}
+                  >
+                      <div className={SD_GLOW_LINE} />
+                    <div className="text-xs text-[#374151]">Email</div>
+                    <div className="mt-1 text-sm font-semibold text-[#0B1220]">
+                      {supportEmail}
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <div className="relative min-h-[260px]">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage:
+                      "url(/images/contact/zoom-mosaic-03.webp)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-transparent" />
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
+  );
+}

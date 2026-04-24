@@ -1,0 +1,814 @@
+'use client';
+// ISR
+
+import React, { useState, useEffect } from 'react'
+import {
+  Play, ChevronDown, ArrowRight, Clock, Calendar, Users, Star, MessageCircle, Quote, User,
+  Sparkles, Zap, BookOpen, Layers, Briefcase,
+  ListChecks, BarChart3, PenTool, FileText, Presentation, TrendingUp, Lock, Cpu,
+  Mail as MailIcon, Lightbulb, FileVideo, Rocket, Table, Globe, X
+} from 'lucide-react'
+
+// ==================== CONFIG DATA (EASY TO EDIT) ====================
+const CONFIG = {
+  hero: {
+    headline: "Master Gen-AI, Graphic Design & Video Editing",
+    subheadline:
+      "Join 15k creative professionals who transformed their careers with live online training, real projects, and industry-ready portfolio.",
+    duration: "4 MONTHS",
+    batchDate: "NEXT BATCH SOON",
+    timing: "2 HRS/DAY",
+    learnerCount: "5000+",
+  },
+  contact: {
+    phone: "+91 8808505575",
+    email: "support@sikhadenge.in",
+    instagram: "@sikhadenge.ai",
+    whatsapp:
+      "https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q",
+  },
+  company: {
+    name: "Sikhadenge",
+    parent: "ThinkGrow Pvt. Ltd.",
+    tagline: "Gen-AI Powered Creative Skills",
+  },
+}
+
+// Company logos - Text based for better visibility
+const companyLogos = [
+  { name: 'Rapido' }, { name: 'Quora' }, { name: 'PocketFM' }, { name: 'Oracle' },
+  { name: 'PhonePe' }, { name: 'Juspay' }, { name: 'Zomato' }, { name: 'Blinkit' },
+  { name: 'Flipkart' }, { name: 'BookMyShow' }, { name: 'Swiggy' }, { name: 'Razorpay' }
+]
+
+// Video testimonials - Reel format with video URLs
+const videoTestimonials = [
+  { name: 'Radhika', location: 'Mumbai', thumbnail: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=533&fit=crop', videoUrl: '' },
+  { name: 'Vishal', location: 'Jharkhand', thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=533&fit=crop', videoUrl: '' },
+  { name: 'Avinash', location: 'Delhi', thumbnail: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=533&fit=crop', videoUrl: '' },
+  { name: 'Vadika', location: 'Bangalore', thumbnail: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=533&fit=crop', videoUrl: '' },
+  { name: 'Priya', location: 'Pune', thumbnail: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=533&fit=crop', videoUrl: '' }
+]
+
+// Text reviews
+const textReviews = [
+  { name: 'Sneha Yadav', role: 'Learner', text: 'Ek hi course me graphic design + video editing dono cover ho gaya. Daily practice aur doubt support se consistency bani. Projects ke saath client-style briefs bhi mile, confidence build hua.' },
+  { name: 'Amit Verma', role: 'Alumni', text: 'Reels editing workflow clear hua: hooks, pacing, captions, sound selection, color match. Saath me branding basics (logo, poster, social post) practical projects pe karaya.' },
+  { name: 'Pooja Sharma', role: 'Learner', text: 'Layout grid, hierarchy aur typography rules clear hue. Pehle random design banati thi, ab process follow karke clean output aa raha hai. Portfolio structure bhi samajh aaya.' },
+  { name: 'Rahul Singh', role: 'Learner', text: 'Photoshop me selection, masking, retouching aur compositing ka flow easy ho gaya. Illustrator me logo + vector icons banane ka confidence aaya. Assignments daily mile, speed badhi.' },
+  { name: 'Neha Gupta', role: 'Learner', text: 'Color theory aur brand consistency pe focus acha tha. Fundamentals + feedback se social media creatives ab professional lagte hain.' },
+  { name: 'Mohit Kumar', role: 'Alumni', text: 'Portfolio presentation, file naming, export formats aur client delivery checklist cover hua. Ab workflow set hai, isliye freelance work handle kar pa raha hu.' }
+]
+
+// AI Tools
+const aiTools = [
+  { name: 'ChatGPT', category: 'Research' },
+  { name: 'Gemini', category: 'Research' },
+  { name: 'Midjourney', category: 'Image' },
+  { name: 'DALL·E', category: 'Image' },
+  { name: 'Adobe Firefly', category: 'Image' },
+  { name: 'Runway', category: 'Video' },
+  { name: 'HeyGen', category: 'Avatar' },
+  { name: 'ElevenLabs', category: 'Voice' },
+  { name: 'Notion', category: 'Productivity' },
+  { name: 'Copilot', category: 'Productivity' },
+  { name: 'Ideogram', category: 'Image' },
+  { name: 'Synthesia', category: 'Avatar' },
+  { name: 'Loom', category: 'Video' },
+  { name: 'NotebookLM', category: 'Research' },
+  { name: 'Canva', category: 'Design' },
+  { name: 'Figma', category: 'Design' },
+]
+
+// ==================== SECTION 1: NAVBAR ====================
+const Navbar = () => {
+  return null;
+};
+
+// ==================== SECTION 2: HERO ====================
+const HeroSection = () => {
+  const [showVideo, setShowVideo] = useState(false)
+
+  return (
+    <section className="pt-16 md:pt-20 pb-16 bg-[var(--sd-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 bg-[var(--sd-primary)]/10 border border-[var(--sd-primary)]/20 px-4 py-2 rounded-full">
+              <Sparkles className="w-4 h-4 text-[var(--sd-primary)]" />
+              <span className="text-[var(--sd-primary)] text-sm font-medium">{CONFIG.company.tagline}</span>
+            </div>
+
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--sd-text)] leading-tight">
+              {CONFIG.hero.headline}
+            </h1>
+
+            <p className="text-base text-[var(--sd-text-2)] leading-relaxed md:text-lg">
+              {CONFIG.hero.subheadline}
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 bg-white border border-[var(--sd-border)] px-4 py-2 rounded-full shadow-sm">
+                <Clock className="w-5 h-5 text-[var(--sd-primary)]" />
+                <span className="text-[var(--sd-text)] font-semibold text-sm">{CONFIG.hero.duration}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white border border-[var(--sd-border)] px-4 py-2 rounded-full shadow-sm">
+                <Calendar className="w-5 h-5 text-[#F5B301]" />
+                <span className="text-[var(--sd-text)] font-semibold text-sm">{CONFIG.hero.batchDate}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white border border-[var(--sd-border)] px-4 py-2 rounded-full shadow-sm">
+                <Users className="w-5 h-5 text-green-600" />
+                <span className="text-[var(--sd-text)] font-semibold text-sm">{CONFIG.hero.timing}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <a
+                href="#register"
+                className="inline-flex items-center gap-2 bg-[var(--sd-gold)] hover:bg-[#d69e01] text-[var(--sd-text)] font-bold text-lg px-8 py-4 rounded-full transition-all hover:scale-105 shadow-lg shadow-[rgba(245,179,1,0.30)]"
+              >
+                Get course details
+                <ArrowRight className="w-5 h-5" />
+              </a>
+              <a
+                href={CONFIG.contact.whatsapp}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-[var(--sd-primary)] font-semibold hover:underline"
+              >
+                <MessageCircle className="w-5 h-5" />
+                WhatsApp करो
+              </a>
+            </div>
+          </div>
+
+          <div
+            className="relative rounded-2xl overflow-hidden border border-[var(--sd-border)] shadow-2xl cursor-pointer group"
+            onClick={() => setShowVideo(true)}
+          >
+            <img
+              src="/demo/thumbs/hero-demo.jpg"
+              alt="Live Class Demo"
+              className="w-full aspect-video object-cover"
+            />
+            <div className="absolute inset-0 bg-[#0F172A]/30 group-hover:bg-[#0F172A]/20 transition-all flex items-center justify-center">
+              <div className="w-20 h-20 bg-[var(--sd-gold)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                <Play className="w-8 h-8 text-[var(--sd-text)] ml-1" fill="black" />
+              </div>
+            </div>
+            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg">
+              <p className="text-[var(--sd-text)] text-sm font-medium">🎬 Watch Live Class Demo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showVideo && (
+        <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.65)] flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
+          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[var(--sd-gold)]" aria-label="close">
+              <X className="w-8 h-8" />
+            </button>
+              <div className="aspect-video bg-black rounded-xl overflow-hidden">
+                <video
+                  className="w-full h-full"
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                  poster="/demo/thumbs/hero-demo.jpg"
+                  src="/demo/hero-demo.mp4"
+                />
+              </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+// ==================== SECTION 3: LEARNERS + COMPANIES ====================
+const LearnersSection = () => (
+  <section className="py-16 bg-white border-y border-[var(--sd-border)]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-10">
+        <h2 className="text-4xl md:text-5xl font-bold text-[var(--sd-text)]">
+          <span className="text-[var(--sd-primary)]">15,000+</span> Learners
+        </h2>
+        <p className="text-[var(--sd-text-2)] mt-2">have transformed their creative careers through live training + real projects through live training + real projects</p>
+      </div>
+
+      <div className="overflow-hidden relative">
+  <div className="absolute left-0 top-0 bottom-0 w-20 bg-bg from-white to-transparent z-10 pointer-events-none" />
+  <div className="absolute right-0 top-0 bottom-0 w-20 bg-bg from-white to-transparent z-10 pointer-events-none" />
+
+  <div className="flex gap-6 whitespace-nowrap will-change-transform animate-[sdMarquee_28s_linear_infinite]">
+    {[...companyLogos, ...companyLogos].map((company, i) => (
+      <div
+        key={i}
+        className="flex-shrink-0 h-14 px-8 bg-[var(--sd-bg)] rounded-full border border-[var(--sd-border)] flex items-center justify-center hover:border-[#2563EB]/30 hover:bg-[#EFF6FF] transition-all"
+        aria-hidden={i >= companyLogos.length}
+      >
+        <span className="text-[var(--sd-text)] font-semibold text-lg whitespace-nowrap">{company.name}</span>
+      </div>
+    ))}
+  </div>
+
+  <style jsx>{`
+    @keyframes sdMarquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+  `}</style>
+</div>
+
+        <div className="flex justify-center mt-10">
+        <div className="inline-flex items-center gap-3 bg-[#FEF9E7] border border-[#F5B301]/30 px-6 py-3 rounded-full">
+          <div className="flex -space-x-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-5 h-5 text-[#F5B301] fill-[#F5B301]" />
+            ))}
+          </div>
+          <span className="text-[var(--sd-text)] font-semibold">4.8/5 rating</span><span className="text-[var(--sd-text)]/60"> • </span><span className="text-[var(--sd-text)]/80 font-medium">Trusted by learners</span>
+        </div>
+      </div>
+    </div>
+  </section>
+)
+
+// ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
+const PractitionersBanner = () => (
+  <section className="py-12 bg-[#2563EB]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <p className="text-[var(--sd-text)]/80 text-lg">Learn Creative Skills from</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">Real Practitioners</h2>
+          <p className="text-[var(--sd-text)]/60 mt-1">not just theory — practical, industry workflows</p>
+        </div>
+        <div className="flex -space-x-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="w-14 h-14 rounded-full bg-white/20 border-2 border-white flex items-center justify-center">
+              <User className="w-6 h-6 text-[var(--sd-text)]" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+)
+
+// ==================== SECTION 5: 3-STEP PROCESS ====================
+const ProcessSection = () => {
+  const steps = [
+    { step: 1, title: 'Register for Free Counselling', desc: 'Book a call with our team to discuss your goals' },
+    { step: 2, title: 'Attend Live Classes Daily', desc: 'Learn with hands-on projects & mentor guidance' },
+    { step: 3, title: 'Build Your Portfolio', desc: 'Get job-ready with industry-standard output' },
+  ]
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">
+            A Program Worth Your Time. <span className="text-[#F5B301]">Guaranteed.</span>
+          </h2>
+          <p className="text-[var(--sd-text-2)] mt-2">No strings attached — just pure skill building</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((s) => (
+            <div key={s.step} className="bg-white rounded-2xl p-8 border border-[var(--sd-border)] shadow-sm hover:shadow-lg transition-all text-center">
+              <div className="w-16 h-16 bg-[#2563EB] rounded-2xl flex items-center justify-center mx-auto mb-4 text-[var(--sd-text)] font-bold text-2xl">
+                {s.step}
+              </div>
+              <h3 className="text-xl font-bold text-[var(--sd-text)] mb-2">{s.title}</h3>
+              <p className="text-[var(--sd-text-2)]">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 6: QUOTE TESTIMONIAL ====================
+const QuoteTestimonial = () => {
+  const [currentQuote, setCurrentQuote] = useState(0)
+  const quotes = [
+    { text: "Sikhadenge me daily assignments + review system strong hai. Design side pe typography, spacing, color balance properly practice karaya.", author: "Rahul Singh" },
+    { text: "Ek hi course me graphic design + video editing dono cover ho gaya. Projects ke saath client-style briefs bhi mile.", author: "Sneha Yadav" },
+    { text: "Portfolio presentation, file naming, export formats aur client delivery checklist cover hua. Ab freelance work handle kar pa raha hu.", author: "Mohit Kumar" },
+  ]
+
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative bg-[#FEF9E7] rounded-3xl p-8 md:p-12">
+          <Quote className="absolute top-6 left-6 w-12 h-12 text-[#F5B301]/30" />
+          <Quote className="absolute bottom-6 right-6 w-12 h-12 text-[#F5B301]/30 rotate-180" />
+          <div className="text-center">
+            <p className="text-xl md:text-2xl text-[var(--sd-text)] leading-relaxed italic mb-6">
+              "{quotes[currentQuote].text}"
+            </p>
+            <p className="text-[var(--sd-primary)] font-semibold">{quotes[currentQuote].author}</p>
+          </div>
+          <div className="flex justify-center gap-2 mt-6">
+            {quotes.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentQuote(i)}
+                className={`w-3 h-3 rounded-full transition-all ${currentQuote === i ? 'bg-[#2563EB]' : 'bg-[#0F172A]/20'}`}
+                aria-label={`quote-${i}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 7: 4 BENEFIT CARDS ====================
+const BenefitsSection = () => {
+  const benefits = [
+    { icon: Zap, title: 'Boost Creative Productivity', desc: 'Learn AI-assisted workflows for 10X faster output' },
+    { icon: BookOpen, title: 'Hands-On Training', desc: 'Daily assignments with mentor feedback & review' },
+    { icon: Layers, title: 'Master 25+ Tools', desc: 'Industry tools + AI tools combined in one program' },
+    { icon: Briefcase, title: 'Build Real Portfolio', desc: 'Job-ready projects you can show to clients/employers' },
+  ]
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]" id="courses">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">
+            The Training <span className="text-[var(--sd-primary)]">{CONFIG.hero.learnerCount}</span> Professionals Recommend
+          </h2>
+          <p className="text-[var(--sd-text-2)] mt-2">Here's what you'll get when you register...</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {benefits.map((b) => (
+            <div key={b.title} className="bg-white rounded-2xl p-6 border border-[var(--sd-border)] shadow-sm hover:shadow-lg hover:border-[#2563EB]/30 transition-all">
+              <div className="w-14 h-14 bg-[var(--sd-primary)]/10 rounded-xl flex items-center justify-center mb-4">
+                <b.icon className="w-7 h-7 text-[var(--sd-primary)]" />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--sd-text)] mb-2">{b.title}</h3>
+              <p className="text-[var(--sd-text-2)] text-sm">{b.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 8: FRAMEWORKS GRID ====================
+const FrameworksSection = () => {
+  const frameworks = [
+    { icon: ListChecks, text: 'The 4-step Design Process' },
+    { icon: BarChart3, text: 'Mastering Color Theory' },
+    { icon: PenTool, text: 'Typography & Layout Rules' },
+    { icon: FileText, text: 'Brand Identity Systems' },
+    { icon: Presentation, text: 'Portfolio Presentation' },
+    { icon: TrendingUp, text: 'AI-Assisted Workflows' },
+    { icon: Lock, text: 'Client Delivery Checklist' },
+    { icon: User, text: 'Personal Branding' },
+    { icon: Cpu, text: 'Automation & Productivity' },
+  ]
+
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12">
+          <p className="text-[var(--sd-primary)] font-medium uppercase tracking-wider text-sm mb-2">FRAMEWORKS</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">
+            Learn Frameworks & Strategies For 10X Productivity
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {frameworks.map((f) => (
+            <div key={f.text} className="flex items-center gap-4 bg-[var(--sd-bg)] rounded-xl p-4 border border-[var(--sd-border)] hover:border-[#2563EB]/30 transition-all">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-[var(--sd-border)]">
+                <f.icon className="w-6 h-6 text-[var(--sd-primary)]" />
+              </div>
+              <span className="text-[var(--sd-text)] font-medium">{f.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 9: TOOLS USE-CASE CARDS ====================
+const ToolsUseCaseSection = () => {
+  const useCases = [
+    { icon: MailIcon, title: 'Create Social Media Posts', desc: 'Design scroll-stopping content' },
+    { icon: ListChecks, title: 'Edit Reels & Videos', desc: 'Professional editing workflow' },
+    { icon: Lightbulb, title: 'Generate AI Visuals', desc: 'Midjourney, DALL·E, Firefly' },
+    { icon: FileText, title: 'Build Brand Kits', desc: 'Logo, colors, typography' },
+    { icon: FileVideo, title: 'Create Motion Graphics', desc: 'Animated content & intros' },
+    { icon: Rocket, title: 'Speed Up Workflow', desc: 'AI automation tools' },
+    { icon: Presentation, title: 'Design Presentations', desc: 'Professional pitch decks' },
+    { icon: Table, title: 'Portfolio Packaging', desc: 'Showcase-ready projects' },
+    { icon: Globe, title: 'Freelance Ready', desc: 'Client delivery systems' },
+  ]
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12">
+          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">SKILLS</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">What You'll Be Able To Do</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {useCases.map((u) => (
+            <div key={u.title} className="bg-white rounded-xl p-5 border border-[var(--sd-border)] hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-[var(--sd-gold)]/10 rounded-lg flex items-center justify-center mb-3">
+                <u.icon className="w-6 h-6 text-[#F5B301]" />
+              </div>
+              <h3 className="text-[var(--sd-text)] font-bold mb-1">{u.title}</h3>
+              <p className="text-[var(--sd-text-2)] text-sm">{u.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 10: TOOLS LOGOS GRID ====================
+const ToolsLogosSection = () => (
+  <section className="py-20 bg-white">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <p className="text-[var(--sd-primary)] font-medium uppercase tracking-wider text-sm mb-2">SKILL STACK</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">25+ AI Tools You Will Master</h2>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+        {aiTools.map((tool) => (
+          <div key={tool.name} className="bg-[var(--sd-bg)] border border-[var(--sd-border)] rounded-xl p-4 text-center hover:border-[#2563EB]/30 hover:shadow-md transition-all group">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-gradient-to-br from-[#2563EB]/10 to-[#F5B301]/10 flex items-center justify-center group-hover:from-[#2563EB]/20 group-hover:to-[#F5B301]/20 transition-all">
+              <Sparkles className="w-7 h-7 text-[var(--sd-primary)]" />
+            </div>
+            <p className="text-[var(--sd-text)] text-sm font-semibold">{tool.name}</p>
+            <p className="text-[var(--sd-primary)] text-xs font-medium">{tool.category}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)
+
+// ==================== SECTION 11: VIDEO TESTIMONIALS ====================
+const VideoTestimonialsSection = () => {
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]" id="reviews">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">VIDEO TESTIMONIALS</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">Success Stories From Real Learners</h2>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          {videoTestimonials.map((v, i) => (
+            <div
+              key={v.name}
+              className="relative rounded-2xl overflow-hidden bg-[#0F172A] aspect-[9/16] cursor-pointer group"
+              onClick={() => setPlayingIndex(playingIndex === i ? null : i)}
+            >
+              {playingIndex === i ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#0F172A]">
+                  <div className="text-center p-4">
+                    <div className="w-16 h-16 bg-[var(--sd-gold)] rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                      <Play className="w-8 h-8 text-[var(--sd-text)] ml-1" fill="black" />
+                    </div>
+                    <p className="text-[var(--sd-text)] font-semibold">{v.name}</p>
+                    <p className="text-[var(--sd-text)]/60 text-sm">Video Playing...</p>
+                    <p className="text-[var(--sd-text)]/40 text-xs mt-2">Add video URL to play actual reel</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <img src={v.thumbnail} alt={v.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-bg from-black/45 via-black/10 to-transparent" />
+
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-[var(--sd-gold)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                      <Play className="w-6 h-6 text-[var(--sd-text)] ml-1" fill="black" />
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <p className="text-[var(--sd-text)] font-semibold text-lg">{v.name}</p>
+                    <p className="text-[var(--sd-text)]/70 text-sm">{v.location}</p>
+                  </div>
+
+                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                    <p className="text-[var(--sd-text)] text-xs font-medium">▶ Reel</p>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 12: TEXT REVIEWS ====================
+const TextReviewsSection = () => {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const reviewsPerView = 3
+  const totalSlides = Math.ceil(textReviews.length / reviewsPerView)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [totalSlides])
+
+  return (
+    <section className="py-20 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <p className="text-[var(--sd-primary)] font-medium uppercase tracking-wider text-sm mb-2">LEARNER FEEDBACK</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">What Our Learners Say</h2>
+        </div>
+
+        <div className="relative">
+          <div
+            className="flex transition-transform duration-700 ease-in-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {[...Array(totalSlides)].map((_, slideIndex) => (
+              <div key={slideIndex} className="w-full flex-shrink-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+                  {textReviews
+                    .slice(slideIndex * reviewsPerView, (slideIndex + 1) * reviewsPerView)
+                    .map((r) => (
+                      <div key={r.name} className="bg-[var(--sd-bg)] rounded-2xl p-6 border border-[var(--sd-border)] hover:shadow-lg hover:border-[var(--sd-primary)]/20 transition-all">
+                        <div className="flex items-center gap-1 mb-4">
+                          {[...Array(5)].map((_, j) => (
+                            <Star key={j} className="w-4 h-4 text-[#F5B301] fill-[#F5B301]" />
+                          ))}
+                        </div>
+                        <Quote className="w-8 h-8 text-[var(--sd-primary)]/20 mb-2" />
+                        <p className="text-[var(--sd-text-2)] mb-4 leading-relaxed">"{r.text}"</p>
+                        <div className="flex items-center gap-3 mt-auto">
+                          <div className="w-12 h-12 bg-bg from-[#2563EB] to-[#1d4ed8] rounded-full flex items-center justify-center">
+                            <span className="text-[var(--sd-text)] font-bold text-lg">{r.name[0]}</span>
+                          </div>
+                          <div>
+                            <p className="text-[var(--sd-text)] font-semibold">{r.name}</p>
+                            <p className="text-[var(--sd-primary)] text-sm font-medium">{r.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center gap-2 mt-8">
+            {[...Array(totalSlides)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentSlide === i ? 'w-8 bg-[#2563EB]' : 'w-2 bg-[#0F172A]/20 hover:bg-[#0F172A]/40'
+                }`}
+                aria-label={`slide-${i}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 13: WHO IS THIS FOR ====================
+const WhoIsThisForSection = () => {
+  const audiences = [
+    'Designers & Creatives',
+    'Students & Freshers',
+    'Freelancers',
+    'Working Professionals',
+    'Content Creators',
+    'Small Business Owners',
+    'Marketing Teams',
+    'Founders & Entrepreneurs',
+    'Career Switchers',
+  ]
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">Who Is This Program For?</h2>
+          <p className="text-[var(--sd-text-2)] mt-2 max-w-2xl mx-auto">
+            Thousands of creative professionals use these skills to boost their careers and income.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3">
+          {audiences.map((a) => (
+            <div key={a} className="flex items-center gap-2 bg-white border border-[var(--sd-border)] px-5 py-3 rounded-full hover:border-[#2563EB]/30 hover:shadow-sm transition-all">
+              <div className="w-2 h-2 bg-[#2563EB] rotate-45" />
+              <span className="text-[var(--sd-text)] font-medium">{a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ========14: MENTOR SECTION ====================
+const MentorSection = () => (
+  <section className="py-20 bg-white">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">Meet Your Mentors</h2>
+      </div>
+
+      <div className="bg-[var(--sd-bg)] rounded-3xl p-8 md:p-12 border border-[var(--sd-border)]">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="flex justify-center">
+            <div className="w-64 h-80 bg-gradient-to-br from-[#2563EB]/10 to-[#F5B301]/10 rounded-2xl flex items-center justify-center border border-[var(--sd-border)]">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-[#2563EB] rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <User className="w-12 h-12 text-[var(--sd-text)]" />
+                </div>
+                <p className="text-[var(--sd-text)] font-bold">Industry Experts</p>
+                <p className="text-[var(--sd-text-2)] text-sm">Sikhadenge Team</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-bold text-[var(--sd-text)] mb-2">Industry Expert Mentors</h3>
+            <p className="text-[var(--sd-primary)] font-medium mb-6">Sikhadenge Teaching Team</p>
+
+            <p className="text-[var(--sd-text-2)] leading-relaxed mb-4">
+              Humare mentors 10+ years ka industry experience leke aate hain. Unhone top companies me design aur video teams lead ki hain.
+            </p>
+
+            <p className="text-[var(--sd-text-2)] leading-relaxed mb-6">
+              Practical, hands-on teaching approach. Theory kam, execution zyada. Daily assignments, weekly reviews, aur personalized feedback.
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center p-4 bg-white rounded-xl border border-[var(--sd-border)]">
+                <p className="text-2xl font-bold text-[var(--sd-primary)]">10+</p>
+                <p className="text-[var(--sd-text-2)] text-xs">Years Exp</p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-xl border border-[var(--sd-border)]">
+                <p className="text-2xl font-bold text-[var(--sd-primary)]">5000+</p>
+                <p className="text-[var(--sd-text-2)] text-xs">Students</p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-xl border border-[var(--sd-border)]">
+                <p className="text-2xl font-bold text-[#F5B301]">4.8★</p>
+                <p className="text-[var(--sd-text-2)] text-xs">Rating</p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-xl border border-[var(--sd-border)]">
+                <p className="text-2xl font-bold text-[var(--sd-primary)]">Live</p>
+                <p className="text-[var(--sd-text-2)] text-xs">Classes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)
+
+// ==================== SECTION 15: FAQ ====================
+const FAQSection = () => {
+  const [openIndex, setOpenIndex] = useState<number>(0)
+
+  const faqs = [
+    { q: 'Course ki fees kitni hai?', a: 'Fees batch aur course ke according vary karti hai. Free counselling book karo, humari team detail share karegi. EMI options bhi available hain.' },
+    { q: 'Kya prior experience chahiye?', a: 'Nahi, beginners ke liye designed hai. Basics se start karke advanced tak le jaate hain. Bas laptop aur internet chahiye.' },
+    { q: 'Classes ka timing kya hai?', a: 'Evening batches (7-9 PM) aur weekend batches available hain working professionals ke liye. Recordings bhi milti hain.' },
+    { q: 'Certificate milega?', a: 'Haan, course completion pe certificate milta hai. Plus portfolio ready hoga jo jobs/freelance ke liye use kar sakte ho.' },
+    { q: 'Recordings milti hain?', a: 'Live classes ki recordings available hain. Miss karne pe catch-up kar sakte ho.' },
+    { q: 'EMI available hai?', a: 'Haan, easy EMI options available hain. Counselling call pe discuss kar sakte ho.' },
+    { q: 'Placement support milega?', a: 'Job assistance provide karte hain - resume building, interview prep, aur job referrals.' },
+  ]
+
+  return (
+    <section className="py-20 bg-[var(--sd-bg)]" id="faq">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <p className="text-[var(--sd-primary)] font-medium uppercase tracking-wider text-sm mb-2">MORE QUESTIONS?</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--sd-text)]">Frequently Asked Questions</h2>
+        </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, i) => (
+            <div
+              key={faq.q}
+              className={`bg-white rounded-xl border overflow-hidden transition-all ${
+                openIndex === i ? 'border-[#2563EB]/30 shadow-md' : 'border-[var(--sd-border)]'
+              }`}
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === i ? -1 : i)}
+                className="w-full flex items-center justify-between p-5 text-left"
+                aria-expanded={openIndex === i}
+              >
+                <span className="text-[var(--sd-text)] font-semibold pr-4">{faq.q}</span>
+                <ChevronDown
+                  className={`w-5 h-5 text-[var(--sd-text-2)] transition-transform flex-shrink-0 ${
+                    openIndex === i ? 'rotate-180 text-[var(--sd-primary)]' : ''
+                  }`}
+                />
+              </button>
+
+              {openIndex === i && (
+                <div className="px-5 pb-5">
+                  <p className="text-[var(--sd-text-2)] leading-relaxed">{faq.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ==================== SECTION 16: FINAL CTA ====================
+const FinalCTASection = () => (
+  <section className="py-20 bg-[#2563EB]" id="register">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
+        <span className="text-[var(--sd-text)] font-medium">Limited Seats Available</span>
+      </div>
+
+      <h2 className="text-3xl md:text-5xl font-bold text-[var(--sd-text)] mb-4">
+        Free Counselling + Roadmap
+      </h2>
+      <p className="text-[var(--sd-text)]/80 text-lg mb-8">
+        WhatsApp पर details भेजो — team आपको batch, fee, timing और roadmap share करेगी.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href={CONFIG.contact.whatsapp}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2 bg-[var(--sd-gold)] hover:bg-[#d69e01] text-[var(--sd-text)] font-bold text-lg px-8 py-4 rounded-full transition-all"
+        >
+          Get course details
+          <ArrowRight className="w-5 h-5" />
+        </a>
+        <a
+          href="tel:+918808505575"
+          className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/20 text-[var(--sd-text)] font-semibold px-8 py-4 rounded-full border border-white/20 transition-all"
+        >
+          Call Now
+        </a>
+      </div>
+
+      <p className="text-[var(--sd-text)]/60 text-sm mt-6">
+        {CONFIG.company.name} • {CONFIG.company.parent}
+      </p>
+    </div>
+  </section>
+)
+
+export default function LandingPage() {
+  return (
+    <main>
+      
+      <HeroSection />
+      <LearnersSection />
+      <PractitionersBanner />
+      <ProcessSection />
+      <QuoteTestimonial />
+      <BenefitsSection />
+      <FrameworksSection />
+      <ToolsUseCaseSection />
+      <ToolsLogosSection />
+      <VideoTestimonialsSection />
+      <TextReviewsSection />
+      <WhoIsThisForSection />
+      <MentorSection />
+      <FAQSection />
+      <FinalCTASection />
+    </main>
+  )
+}

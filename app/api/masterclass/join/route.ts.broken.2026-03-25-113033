@@ -1,0 +1,199 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { createHmac } from "crypto";
+
+const prisma = new PrismaClient();
+
+function verifyToken(token: string) {
+  const secret = (process.env.MASTERCLASS_JOIN_SECRET || "").trim();
+  if (!secret || !token || !token.includes(".")) return null;
+
+  const [body, sig] = token.split(".");
+  const expected = createHmac("sha256", secret).update(body).digest("base64url");
+  if (sig !== expected) return null;
+
+  try {
+    const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!parsed?.leadId || !parsed?.phone || !parsed?.exp) return null;
+    if (Date.now() > Number(parsed.exp)) return null;
+    return parsed as { leadId: string; phone: string; exp: number };
+  } catch {
+    return null;
+  }
+}
+
+async function pushZoomJoinToNeodove(payload: any) {
+  const endpoint =
+    process.env.NEODOVE_MASTERCLASS_ZOOMJOIN_ENDPOINT ||
+    process.env.NEODOVE_MASTERCLASS_ENDPOINT ||
+    process.env.NEODOVE_ENDPOINT ||
+    "";
+
+  if (!endpoint) {
+    console.error("NEODOVE_ZOOMJOIN_ENDPOINT_MISSING");
+    return;
+  }
+
+  try {
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+
+    console.log("NEODOVE_ZOOMJOIN_PAYLOAD", JSON.stringify(payload));
+    console.log("NEODOVE_ZOOMJOIN_PUSH_OK", r.status);
+  } catch (e) {
+    console.error("NEODOVE_ZOOMJOIN_PUSH_FAIL", e);
+  }
+}
+
+function getZoomUrl() {
+  return (
+    process.env.MASTERCLASS_ZOOM_URL ||
+    process.env.NEW_ZOOM_URL ||
+    ""
+  ).trim();
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const token = req.nextUrl.searchParams.get("token") || "";
+    const parsed = verifyToken(token);
+
+    if (!parsed) {
+      return NextResponse.redirect(new URL("/masterclass?error=invalid_token", req.url), 303);
+    }
+
+    const zoomUrl = getZoomUrl();
+    if (!zoomUrl) {
+      console.error("MASTERCLASS_ZOOM_URL_MISSING");
+      return NextResponse.redirect(new URL("/masterclass?error=zoom_link_missing", req.url), 303);
+    }
+
+    const lead = await prisma.masterclassLead.findUnique({
+      where: { phone: parsed.phone },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        source: true,
+        page: true,
+      },
+    });
+
+    if (!lead) {
+      return NextResponse.redirect(new URL("/masterclass?error=lead_not_found", req.url), 303);
+    }
+
+    console.log("MASTERCLASS_JOIN_START", {
+      leadId: lead.id,
+      phone: lead.phone,
+      zoomUrl,
+    });
+
+    const now = new Date();
+    const joinedAtIST = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(now);
+
+    const existingJoin = await prisma.masterclassZoomJoin.findFirst({
+      where: {
+        leadId: lead.id,
+        redirectTo: zoomUrl,
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+
+    let zoomJoinRow;
+
+    if (!existingJoin) {
+      zoomJoinRow = await prisma.masterclassZoomJoin.create({
+        data: {
+          leadId: lead.id,
+          leadName: lead.name || null,
+          leadEmail: lead.email || null,
+          leadPhone: lead.phone || null,
+          participantName: lead.name || null,
+          participantEmail: lead.email || null,
+          zoomJoinUrl: zoomUrl,
+          redirectTo: zoomUrl,
+          meetingId: null,
+          joinClickedAt: now,
+          joinedAtIST,
+          status: "clicked",
+          createdAt: now,
+        },
+      });
+
+      const neodoveMobile = String(lead.phone ?? qPhone ?? qPhoneRaw ?? "").replace(/\D/g, "").slice(-10);
+      if (neodoveMobile) {
+        await pushToNeodoveSafe({
+          name: lead.name || "Unknown",
+          mobile: neodoveMobile,
+          email: lead.email || "",
+          detail1: "source=masterclass_zoomjoin",
+          detail2: "page=/masterclass",
+        });
+        console.log("ZOOMJOIN_NEODOVE_AUTOPUSH_OK", { mobile: neodoveMobile });
+      } else {
+        console.log("ZOOMJOIN_NEODOVE_AUTOPUSH_SKIPPED_NO_MOBILE");
+      }
+
+      console.log("MASTERCLASS_ZOOMJOIN_CREATE_OK", {
+        zoomJoinId: zoomJoinRow.id,
+        leadId: lead.id,
+        phone: lead.phone,
+      });
+
+      await pushZoomJoinToNeodove({
+        name: lead.name || "Unknown",
+        mobile: String(lead.phone || "").replace(/\D/g, "").slice(-10),
+        email: lead.email || "",
+        detail1: `source=${lead.source ?? "website"}`,
+        detail2: `page=zoom_join_click`,
+      });
+    } else {
+      zoomJoinRow = await prisma.masterclassZoomJoin.update({
+        where: { id: existingJoin.id },
+        data: {
+          joinClickedAt: now,
+          joinedAtIST,
+          status: "clicked",
+          zoomJoinUrl: zoomUrl,
+          redirectTo: zoomUrl,
+        },
+      });
+
+      console.log("MASTERCLASS_ZOOMJOIN_UPDATE_OK", {
+        zoomJoinId: zoomJoinRow.id,
+        leadId: lead.id,
+        phone: lead.phone,
+      });
+
+      console.log("MASTERCLASS_ZOOMJOIN_NEODOVE_SKIPPED_DUPLICATE", {
+        zoomJoinId: zoomJoinRow.id,
+        leadId: lead.id,
+        phone: lead.phone,
+      });
+    }
+
+    return NextResponse.redirect(zoomUrl, 303);
+  } catch (e) {
+    console.error("masterclass join api error:", e);
+    return NextResponse.redirect(new URL("/masterclass?error=server_error", req.url), 303);
+  }
+}
