@@ -12,10 +12,11 @@
     "blog:audit-titles": "node scripts/audit-blog-titles.mjs",
     "blog:backfill-high-intent": "node scripts/backfill-high-intent-blogs.mjs",
     "blog:clusters": "node scripts/generate-blog-cluster-manifest.mjs",
-    "blog:optimize-titles": "node scripts/optimize-blog-titles.mjs",
     "seo:generate": "node scripts/generate-seo-pages.mjs",
     "seo:refresh": "node scripts/refresh-seo-engine.mjs",
-    "seo:expand": "node scripts/expand-seed-slugs.mjs"
+    "seo:expand": "node scripts/expand-seed-slugs.mjs",
+    "blog:prepare-10k": "node scripts/prepare-blog-rollout-10k.cjs",
+    "blog:optimize-titles": "node scripts/optimize-blog-titles.mjs"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
