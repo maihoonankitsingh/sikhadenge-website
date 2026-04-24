@@ -16,7 +16,8 @@
     "seo:refresh": "node scripts/refresh-seo-engine.mjs",
     "seo:expand": "node scripts/expand-seed-slugs.mjs",
     "blog:prepare-10k": "node scripts/prepare-blog-rollout-10k.cjs",
-    "blog:optimize-titles": "node scripts/optimize-blog-titles.mjs"
+    "blog:optimize-titles": "node scripts/optimize-blog-titles.mjs",
+    "blog:apply-phase-1": "node scripts/apply-blog-rollout-phase.cjs phase-1-top-2000.json"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",

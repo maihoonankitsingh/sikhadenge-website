@@ -100,6 +100,39 @@ function buildBetterTitleFromSlug(slug) {
     return shortHighIntentMap[slug];
   }
 
+  const rolloutIntentAudienceOutcome = slug.match(/^(best|top|guide|how-to)-(.+)-for-(.+)-(seo|aeo|geo|productivity|content-creation|lead-generation|client-work|career-growth|portfolio-building|earning|automation)$/);
+  if (rolloutIntentAudienceOutcome) {
+    const intent = rolloutIntentAudienceOutcome[1];
+    const family = compactFamilyLabel(rolloutIntentAudienceOutcome[2]);
+    const audience = normalizeAudienceLabel(rolloutIntentAudienceOutcome[3]);
+    const outcome = compactFamilyLabel(rolloutIntentAudienceOutcome[4]);
+
+    if (intent === "best") return `Best ${family} for ${audience}: ${outcome} Guide (2026)`;
+    if (intent === "top") return `Top ${family} for ${audience}: ${outcome} Guide (2026)`;
+    if (intent === "guide") return `${family} for ${audience}: ${outcome} Guide (2026)`;
+    return `How to Use ${family} for ${audience} ${outcome} (2026)`;
+  }
+
+  const rolloutNestedAudienceStage = slug.match(/^(.*)-for-(students|freelancers|creators)-([a-z-]+)-(for-freshers|without-experience)$/);
+  if (rolloutNestedAudienceStage) {
+    const family = compactFamilyLabel(rolloutNestedAudienceStage[1]);
+    const audience = normalizeAudienceLabel(rolloutNestedAudienceStage[2]);
+    const problem = compactFamilyLabel(rolloutNestedAudienceStage[3]);
+    const rawStage = rolloutNestedAudienceStage[4];
+    const stage = rawStage === "without-experience" ? "No Experience" : "Freshers";
+    const duplicateAudience = family.toLowerCase().includes(audience.toLowerCase());
+    if (duplicateAudience) return `${family}: ${problem} (${stage})`;
+    return `${family}: ${problem} for ${audience} (${stage})`;
+  }
+
+  const rolloutProblemCityYear = slug.match(/^(.+)-([a-z-]+)-in-([a-z-]+)-(20\d{2})$/);  if (rolloutProblemCityYear) {
+    const family = compactFamilyLabel(rolloutProblemCityYear[1]);
+    const problem = compactFamilyLabel(rolloutProblemCityYear[2]);
+    const city = normalizeAudienceLabel(rolloutProblemCityYear[3]);
+    const matchedYear = rolloutProblemCityYear[4];
+    return `${family} ${problem} in ${city}: Guide (${matchedYear})`;
+  }
+
   if (slug.includes("-vs-")) {
     return slug.split("-vs-").map(toTitleCase).join(" vs ");
   }
