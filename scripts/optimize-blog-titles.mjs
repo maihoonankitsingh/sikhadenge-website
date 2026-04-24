@@ -59,41 +59,41 @@ function buildBetterTitleFromSlug(slug) {
     "chatgpt-se-resume-kaise-banaye": "ChatGPT Se Resume Kaise Banaye: Practical Guide",
     "ai-se-freelancing-kaise-start-kare": "AI Se Freelancing Kaise Start Kare in 2026",
     "ai-se-paise-kaise-kamaye": "AI Se Paise Kaise Kamaye in 2026",
-    "students-ke-liye-best-ai-tools": "Students Ke Liye Best AI Tools in 2026",
-    "beginners-ke-liye-ai-prompts": "Beginners Ke Liye AI Prompts Guide",
+    "students-ke-liye-best-ai-tools": "Students Ke Liye Best AI Tools Guide",
+    "beginners-ke-liye-ai-prompts": "Beginners Ke Liye Best AI Prompts Guide",
     "ai-se-padhai-kaise-kare": "AI Se Padhai Kaise Kare in 2026",
     "chatgpt-ka-use-kaise-kare": "ChatGPT Ka Use Kaise Kare: Beginner Guide",
     "freelancers-ke-liye-ai-workflow": "Freelancers Ke Liye AI Workflow Guide",
-    "business-owners-ke-liye-ai-tools": "Business Owners Ke Liye AI Tools in 2026",
-    "ai-tools-for-students": "AI Tools for Students in 2026",
-    "best-ai-tools-for-students": "Best AI Tools for Students in 2026",
-    "chatgpt-for-students": "ChatGPT for Students in 2026",
-    "google-gemini-for-students": "Google Gemini for Students in 2026",
-    "claude-for-students": "Claude for Students in 2026",
-    "best-chatgpt-prompts-for-students": "Best ChatGPT Prompts for Students",
-    "ai-tools-for-freelancers": "AI Tools for Freelancers in 2026",
-    "chatgpt-for-freelancers": "ChatGPT for Freelancers in 2026",
-    "ai-tools-for-creators": "AI Tools for Creators in 2026",
-    "best-ai-tools-for-creators": "Best AI Tools for Creators in 2026",
-    "chatgpt-for-content-creation": "ChatGPT for Content Creation Guide",
-    "gemini-vs-chatgpt": "Gemini vs ChatGPT Comparison",
-    "claude-vs-chatgpt": "Claude vs ChatGPT Comparison",
-    "perplexity-vs-chatgpt": "Perplexity vs ChatGPT Comparison",
-    "copilot-vs-chatgpt": "Copilot vs ChatGPT Comparison",
-    "google-ai-overviews-guide": "Google AI Overviews Guide for 2026",
-    "google-ai-mode-guide": "Google AI Mode Guide for 2026",
-    "ai-agents-for-beginners": "AI Agents for Beginners in 2026",
-    "best-ai-agents-for-business": "Best AI Agents for Business in 2026",
+    "business-owners-ke-liye-ai-tools": "Business Owners Ke Liye AI Tools Guide",
+    "ai-tools-for-students": "AI Tools for Students Guide 2026",
+    "best-ai-tools-for-students": "Best AI Tools for Students Guide 2026",
+    "chatgpt-for-students": "ChatGPT for Students Guide 2026",
+    "google-gemini-for-students": "Google Gemini for Students Guide 2026",
+    "claude-for-students": "Claude for Students Guide 2026",
+    "best-chatgpt-prompts-for-students": "Best ChatGPT Prompts for Students Guide",
+    "ai-tools-for-freelancers": "AI Tools for Freelancers Guide 2026",
+    "chatgpt-for-freelancers": "ChatGPT for Freelancers Guide 2026",
+    "ai-tools-for-creators": "AI Tools for Creators Guide 2026",
+    "best-ai-tools-for-creators": "Best AI Tools for Creators Guide 2026",
+    "chatgpt-for-content-creation": "ChatGPT for Content Creation Guide 2026",
+    "gemini-vs-chatgpt": "Gemini vs ChatGPT Full Comparison",
+    "claude-vs-chatgpt": "Claude vs ChatGPT Full Comparison",
+    "perplexity-vs-chatgpt": "Perplexity vs ChatGPT Full Comparison",
+    "copilot-vs-chatgpt": "Copilot vs ChatGPT Full Comparison",
+    "google-ai-overviews-guide": "Google AI Overviews Guide and Tips",
+    "google-ai-mode-guide": "Google AI Mode Guide and Tips",
+    "ai-agents-for-beginners": "AI Agents for Beginners Guide 2026",
+    "best-ai-agents-for-business": "Best AI Agents for Business Guide 2026",
     "chatgpt-prompts-for-marketing": "ChatGPT Prompts for Marketing Teams",
     "chatgpt-prompts-for-sales": "ChatGPT Prompts for Sales Teams",
-    "best-ai-tools-for-lead-generation": "Best AI Tools for Lead Generation",
-    "best-ai-tools-for-seo": "Best AI Tools for SEO in 2026",
-    "best-ai-tools-for-aeo": "Best AI Tools for AEO in 2026",
-    "best-ai-tools-for-geo": "Best AI Tools for GEO in 2026",
-    "how-to-rank-in-chatgpt": "How to Rank in ChatGPT Results",
+    "best-ai-tools-for-lead-generation": "Best AI Tools for Lead Generation Guide",
+    "best-ai-tools-for-seo": "Best AI Tools for SEO Guide 2026",
+    "best-ai-tools-for-aeo": "Best AI Tools for AEO Guide 2026",
+    "best-ai-tools-for-geo": "Best AI Tools for GEO Guide 2026",
+    "how-to-rank-in-chatgpt": "How to Rank in ChatGPT Results Guide",
     "how-to-rank-in-google-ai-overviews": "How to Rank in Google AI Overviews",
-    "how-to-rank-in-google-ai-mode": "How to Rank in Google AI Mode",
-    "how-to-get-cited-by-ai-tools": "How to Get Cited by AI Tools",
+    "how-to-rank-in-google-ai-mode": "How to Rank in Google AI Mode Guide",
+    "how-to-get-cited-by-ai-tools": "How to Get Cited by AI Tools Guide",
   };
 
   if (shortHighIntentMap[slug]) {
@@ -151,17 +151,17 @@ function buildBetterTitleFromSlug(slug) {
 
   const beginnerMistakes = captureFamilyAudience("beginner-mistakes-in");
   if (beginnerMistakes) {
-    return `Beginner ${beginnerMistakes.family} Mistakes (${beginnerMistakes.year})`;
+    return `Beginner ${beginnerMistakes.family} Mistakes to Avoid (${beginnerMistakes.year})`;
   }
 
   const advancedTechniques = captureFamilyAudience("advanced-techniques-in");
   if (advancedTechniques) {
-    return `Advanced ${advancedTechniques.family} Techniques (${advancedTechniques.year})`;
+    return `Advanced ${advancedTechniques.family} Techniques Guide (${advancedTechniques.year})`;
   }
 
   const getClients = captureFamilyAudience("how-to-get-clients-with");
   if (getClients) {
-    return `Get Clients with ${getClients.family} (${getClients.year})`;
+    return `How to Get Clients with ${getClients.family} (${getClients.year})`;
   }
 
   const earnWith = captureFamilyAudience("how-to-earn-with");
@@ -171,7 +171,7 @@ function buildBetterTitleFromSlug(slug) {
 
   const growUsing = captureFamilyAudience("how-to-grow-using");
   if (growUsing) {
-    return `Grow with ${growUsing.family} (${growUsing.year})`;
+    return `How to Grow with ${growUsing.family} (${growUsing.year})`;
   }
 
   const bestCourses = captureFamilyAudience("best-courses-for");
@@ -181,7 +181,7 @@ function buildBetterTitleFromSlug(slug) {
 
   const freeResources = captureFamilyAudience("free-resources-for");
   if (freeResources) {
-    return `Free ${freeResources.family} Resources (${freeResources.year})`;
+    return `Free ${freeResources.family} Resources Guide (${freeResources.year})`;
   }
 
   const bestPractices = captureFamilyAudience("best-practices-in");
@@ -196,7 +196,7 @@ function buildBetterTitleFromSlug(slug) {
 
   const paidVsFree = captureFamilyAudience("paid-vs-free-in");
   if (paidVsFree) {
-    return `${paidVsFree.family}: Paid vs Free (${paidVsFree.year})`;
+    return `${paidVsFree.family}: Paid vs Free Guide (${paidVsFree.year})`;
   }
 
   const prosCons = captureFamilyAudience("pros-and-cons-of");
@@ -222,6 +222,16 @@ function buildBetterTitleFromSlug(slug) {
   const moneyMaking = captureFamilyAudience("money-making-with");
   if (moneyMaking) {
     return `Make Money with ${moneyMaking.family} (${moneyMaking.year})`;
+  }
+
+  const resumeTips = captureFamilyAudience("resume-tips-for");
+  if (resumeTips) {
+    return `${resumeTips.family} Resume Tips (${resumeTips.year})`;
+  }
+
+  const jobsIn = captureFamilyAudience("jobs-in");
+  if (jobsIn) {
+    return `${jobsIn.family} Jobs for ${jobsIn.audience} (${jobsIn.year}) Guide`;
   }
 
   const freelancingWith = captureFamilyAudience("freelancing-with");
