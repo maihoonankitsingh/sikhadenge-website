@@ -158,6 +158,14 @@ const categoryTools: Record<
   ],
 };
 
+const comparisonFaqMap: Record<string, string[]> = {
+  ChatGPT: ["Gemini", "Claude", "Perplexity", "Copilot"],
+  "Google Gemini": ["ChatGPT", "Claude", "Perplexity"],
+  Claude: ["ChatGPT", "Google Gemini"],
+  "AI Tools": ["ChatGPT", "Gemini", "Claude", "Canva"],
+  "AI Search": ["ChatGPT", "Gemini", "Perplexity", "Google AI Overviews"],
+};
+
 function parseSlug(slug: string, post?: BlogItem): ParsedSlug {
   const segments = slug.toLowerCase().split("-").filter(Boolean);
   const year = segments.find((segment) => /^\d{4}$/.test(segment)) ?? "2026";
@@ -200,6 +208,76 @@ function normalizeCategory(category?: string) {
 
 function getArticleTools(category?: string) {
   return categoryTools[normalizeCategory(category)] ?? categoryTools["AI Skills"];
+}
+
+function uniqueFaqs(faqs: BlogFaq[]) {
+  const seen = new Set<string>();
+  return faqs.filter((faq) => {
+    const key = faq.q.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildSmartFaqs({
+  title,
+  category,
+  parsed,
+  tools,
+}: {
+  title: string;
+  category: string;
+  parsed: ParsedSlug;
+  tools: { name: string; desc: string; free: boolean; badge: string }[];
+}): BlogFaq[] {
+  const lowerAudience = parsed.audienceLabel.toLowerCase();
+  const lowerSkill = parsed.skillLabel.toLowerCase();
+  const toolNames = tools.slice(0, 3).map((tool) => tool.name);
+  const comparisons = comparisonFaqMap[category] ?? comparisonFaqMap[parsed.skillLabel] ?? ["ChatGPT", "Gemini"];
+
+  return uniqueFaqs([
+    {
+      q: `${title} kya ${parsed.audienceLabel.toLowerCase()} ke liye worth it hai?`,
+      a: `Haan, agar ${lowerAudience} ko faster output, clearer workflow, aur practical execution chahiye to ${lowerSkill} ka strong use-case banta hai. Worth tab zyada hota hai jab isse sirf theory nahi, balki real tasks aur measurable outcomes ke saath use kiya jaye.`,
+    },
+    {
+      q: `${title} start karne ke liye best pehla step kya hai?`,
+      a: `Sabse pehle ek single use-case choose karo, phir uske liye ek primary tool stack aur repeatable workflow banao. Sikhadenge style approach me first step hamesha output clarity hota hai, tool collection nahi.`,
+    },
+    {
+      q: `${parsed.skillLabel} me free tools enough hain ya paid tools zaruri hote hain?`,
+      a: `Starting stage me free tools kaafi hote hain, especially ${toolNames.join(", ")} jaise options ke saath. Paid tools tab useful hote hain jab aapko better quality, speed, team workflow, ya client-grade consistency chahiye hoti hai.`,
+    },
+    {
+      q: `${parsed.skillLabel} aur ${comparisons[0]} me difference kya hota hai?`,
+      a: `${parsed.skillLabel} ko evaluate karte waqt reasoning quality, workflow fit, speed, output style, aur use-case match sab dekha jata hai. ${comparisons[0]} comparison ka best answer audience aur task par depend karta hai, isliye tool ko role-specific use-case se judge karna better hota hai.`,
+    },
+    {
+      q: `${title} se SEO, AEO, ya GEO me real help milti hai kya?`,
+      a: `Haan, agar page answer-first structure, canonical URL, internal links, FAQs, schema, aur intent-focused headings ke saath publish ho. Sirf keyword stuffing se nahi, balki useful and well-structured page se SEO, AEO, aur GEO signals strong bante hain.`,
+    },
+    {
+      q: `${parsed.skillLabel} seekhne me kitna time lag sakta hai?`,
+      a: `Basic comfort 1 se 2 weeks me aa sakta hai, lekin confident practical use ke liye 30 se 60 din ki consistent output-based practice useful hoti hai. Speed audience background aur daily implementation par depend karti hai.`,
+    },
+    {
+      q: `${title} se earning ya client work kaise connect hota hai?`,
+      a: `Is topic ko earning se tab connect kiya jata hai jab aap isse service, workflow support, prompt systems, research outputs, ya client delivery ke format me package karte ho. Skill ko outcome me convert karna hi monetization ka real path hota hai.`,
+    },
+    {
+      q: `${parsed.skillLabel} me common mistake kya hoti hai?`,
+      a: `Sabse common mistake hoti hai tool ko use-case se pehle choose kar lena. Doosri mistake hai AI output ko bina review ke use karna. Teesri mistake hai practice ko portfolio, workflow, ya conversion system me convert na karna.`,
+    },
+    {
+      q: `${title} ke liye kaunse tools sabse useful hote hain?`,
+      a: `${toolNames.join(", ")} jaise tools kaafi practical hote hain kyunki ye research, ideation, execution, aur polish ke alag-alag parts ko cover karte hain. Best stack audience, workflow, aur output type par depend karta hai.`,
+    },
+    {
+      q: `${parsed.skillLabel} ko ${parsed.year} me top level par use karne ke liye kya focus hona chahiye?`,
+      a: `${parsed.year} me top focus answer quality, reliable workflows, strong internal linking, clear brand mentions, aur multi-platform discoverability par hona chahiye. Jo pages useful, fresh, and structured hote hain unko search aur AI tools dono better surface karte hain.`,
+    },
+  ]).slice(0, 8);
 }
 
 export async function generateStaticParams() {
@@ -303,26 +381,10 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     "Search intent aur audience need ko ignore karna.",
   ];
 
-  const faqs = post.faqs || [
-    {
-      q: `${title} beginners ke liye useful hai kya?`,
-      a: "Haan. Agar aap basics ke saath practical implementation chahte ho to ye guide beginner-friendly bhi hai aur growth-focused bhi.",
-    },
-    {
-      q: "Kya is topic me coding zaruri hai?",
-      a: "Har case me nahi. Bahut se workflows, prompts, tools, aur execution systems bina coding ke bhi use kiye ja sakte hain.",
-    },
-    {
-      q: "Isse earning ya career growth me help mil sakti hai?",
-      a: "Haan. Agar aap is skill ko projects, delivery systems, ya role-specific output ke saath connect karte ho to strong growth potential banta hai.",
-    },
-    {
-      q: "Best next step kya hona chahiye?",
-      a: "Ek clear use-case choose karo, daily practice routine banao, aur real output examples ke saath implementation start karo.",
-    },
-  ];
-
   const tools = getArticleTools(category);
+  const faqs = post.faqs?.length
+    ? uniqueFaqs(post.faqs).slice(0, 8)
+    : buildSmartFaqs({ title, category, parsed, tools });
   const relatedPosts = allBlogs
     .filter((item) => item.slug !== params.slug && normalizeCategory(item.category) === category)
     .slice(0, 6);
