@@ -81,10 +81,10 @@ function improveTitle(slug, currentTitle) {
     const sameAudience = audienceA === audienceB;
     const audience = sameAudience ? audienceA : `${audienceA} and ${audienceB}`;
     const outcome = topicLabel(dualIntent[5]);
-    if (intent === "best") return finalizeTitle(`Best ${family} for ${audience}: ${outcome} Guide (2026)`);
-    if (intent === "top") return finalizeTitle(`Top ${family} for ${audience}: ${outcome} Guide (2026)`);
-    if (intent === "guide") return finalizeTitle(`${family} for ${audience}: ${outcome} Guide (2026)`);
-    return finalizeTitle(`How to Use ${family} for ${audience}: ${outcome} (2026)`);
+    if (intent === "best") return finalizeTitle(sameAudience ? `Best ${family} for ${audience}: ${outcome} Strategy (2026)` : `Best ${family} for ${audience}: ${outcome} Guide (2026)`);
+    if (intent === "top") return finalizeTitle(sameAudience ? `Top ${family} for ${audience}: ${outcome} Picks (2026)` : `Top ${family} for ${audience}: ${outcome} Guide (2026)`);
+    if (intent === "guide") return finalizeTitle(sameAudience ? `${family} for ${audience}: ${outcome} Strategy Guide (2026)` : `${family} for ${audience}: ${outcome} Guide (2026)`);
+    return finalizeTitle(sameAudience ? `How to Use ${family} for ${audience}: ${outcome} Strategy` : `How to Use ${family} for ${audience}: ${outcome} (2026)`);
   }
   const dualAudience = slug.match(/^(.+)-for-(students|freelancers|creators)-for-(students|freelancers|creators)-(.+)-(beginners|advanced|without-coding|without-experience|for-freshers)$/);
   if (dualAudience) {
@@ -93,7 +93,7 @@ function improveTitle(slug, currentTitle) {
     const audienceB = audienceLabel(dualAudience[3]);
     const problem = topicLabel(dualAudience[4]);
     const stage = stageLabel(dualAudience[5]);
-    if (audienceA === audienceB) return finalizeTitle(`${family} for ${audienceA}: ${problem} ${stage}`);
+    if (audienceA === audienceB) return finalizeTitle(`${family} for ${audienceA}: ${problem} Playbook ${stage}`);
     return finalizeTitle(`${family}: ${problem} ${stage} for ${audienceA} and ${audienceB}`);
   }
   const singleAudience = slug.match(/^(.+)-for-(students|freelancers|creators)-(.+)-(beginners|advanced|without-coding|without-experience|for-freshers)$/);
@@ -119,4 +119,5 @@ function main() {
   console.log(`Blog count unchanged: ${nextBlogs.length}`);
 }
 main();
+
 
