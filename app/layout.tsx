@@ -1,83 +1,18 @@
 import "./globals.css";
-import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import dynamic from "next/dynamic";
-
-import MetaPixel from "./_components/MetaPixel";
-import JsonLd from "./_components/JsonLd";
-
-const inter = Inter({ subsets: ["latin"], display: "swap" });
-
-const SITE_URL = "https://sikhadenge.in";
-const OG_IMAGE = "/images/og/og-home.jpg"; // ensure this file exists in /public/images/og/
+import type { Metadata } from "next";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import HeaderGate from "@/app/_components/HeaderGate";
+import FooterGate from "@/app/_components/FooterGate";
+import MainGate from "@/app/_components/MainGate";
+import Script from "next/script";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-
-  title: {
-    default: "Sikhadenge",
-    template: "%s | Sikhadenge",
-  },
-
-  description:
-    "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
-
-  alternates: {
-    canonical: "/",
-  },
-
-  keywords: [
-    "Graphic Design course",
-    "Video Editing course",
-    "Motion Graphics course",
-    "Adobe Photoshop training",
-    "Adobe Illustrator training",
-    "Premiere Pro course",
-    "After Effects course",
-    "Live online course",
-    "Sikhadenge",
-  ],
-
-  openGraph: {
-    type: "website",
-    url: SITE_URL,
-    siteName: "Sikhadenge",
-    title: "Sikhadenge",
-    description:
-      "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
-    images: [
-      {
-        url: OG_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: "Sikhadenge",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Sikhadenge",
-    description:
-      "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
-    images: [OG_IMAGE],
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-  },
+  metadataBase: new URL("https://sikhadenge.in"),
+  title: "Sikhadenge",
+  description: "Sikhadenge",
 };
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#0B1220",
-  colorScheme: "dark",
-};
-
-const Header = dynamic(() => import("../components/Header"), { ssr: false });
-const Footer = dynamic(() => import("../components/Footer"), { ssr: false });
 
 export default function RootLayout({
   children,
@@ -85,16 +20,59 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <MetaPixel />
-        <JsonLd />
-        <Header />
-        {children}
-        <Footer />
+    <html lang="en-IN">
+      <body>
+        <HeaderGate>
+          <Header />
+        </HeaderGate>
+
+        <MainGate>{children}</MainGate>
+
+        <FooterGate>
+          <Footer />
+        </FooterGate>
+
+        <Script id="meta-pixel-base" strategy="afterInteractive">
+          {`
+            !(function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)})(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID || ""}');
+            fbq('track', 'PageView');
+          `}
+        </Script>
+
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src={`https://www.facebook.com/tr?id=${process.env.NEXT_PUBLIC_META_PIXEL_ID || ""}&ev=PageView&noscript=1`}
+            alt=""
+          />
+        </noscript>
+
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        ) : null}
+
+        {process.env.NEXT_PUBLIC_CLARITY_ID ? (
+          <Script id="microsoft-clarity" strategy="afterInteractive">
+            {`
+              (function(c,l,a,r,i,t,y){
+                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");
+            `}
+          </Script>
+        ) : null}
       </body>
     </html>
   );
 }
-
-

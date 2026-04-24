@@ -1,0 +1,604 @@
+'use client';
+import PageOverrides from "./_pageOverrides";
+import React from 'react';
+import VideoTestimonialsSlider from "../components/VideoTestimonialsSlider";
+
+import StudentReviewsSlider from "../components/StudentReviewsSlider";
+
+import StudentReviewsCarousel from "../../components/StudentReviewsCarousel";
+
+export default function GenAiMasterclassPage() {
+  return (
+    <main className="min-h-screen bg-white text-gray-900">
+{/* __GENAI_MARKER__ 2026-02-17__ */}
+<p className="hidden">__GENAI_MARKER__ 2026-02-17__</p>
+        <PageOverrides />
+          
+
+
+
+      {/* =======================================================================
+          SECTION 01: HERO / TOP LAYOUT (SAMPLE STYLE)
+          - Edit heading, subheading, chips, video, form blocks below
+      ======================================================================= */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 pt-10 pb-10">
+          {/* ---------- TOP BADGES ROW (CENTER) ---------- */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 shadow-sm bg-white">
+              <div className="h-7 w-7 rounded-full bg-gray-900 text-white grid place-items-center text-sm font-semibold">
+                S
+              </div>
+              <div className="text-sm font-semibold">Sikhadenge</div>
+            </div>
+
+            <div className="h-8 w-px bg-gray-200" />
+
+            <div className="rounded-xl border border-gray-200 px-4 py-2 shadow-sm bg-white text-sm font-semibold">
+              Top Startup India
+            </div>
+          </div>
+
+          {/* ---------- HEADLINE ---------- */}
+          <h1 className="mt-8 text-center text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900">
+            Unlock Gen-AI Skills to Become a Pro in{' '}
+            <br className="hidden md:block" />
+            Graphic Design &amp; Video Editing
+          </h1>
+
+          {/* ---------- SUBHEADLINE ---------- */}
+          <p className="mt-4 text-center text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            Master practical Gen-AI workflows you can use right away — even if you’re starting from zero.
+          </p>
+
+          
+            {/* ---------- TRUST CHIPS ---------- */}
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-[#FFF7E6]">
+              500+ Batches
+            </span>
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-[#FFF7E6]">
+              15,000+ Learners
+            </span>
+            <span className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold bg-[#FFF7E6]">
+              ₹1,999 Free MasterClass For You
+            </span>
+          </div>
+
+          {/* ===================================================================
+              SECTION 02: MAIN GRID (VIDEO LEFT + FORM RIGHT)
+              - Replace iframe src + replace form fields/submit endpoint
+          =================================================================== */}
+          <div className="mt-10">
+  <div className="mx-auto max-w-4xl">
+    <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+      <div className="aspect-video w-full">
+        <video
+                    className="h-full w-full"
+                    src="/demo/hero-demo.mp4"
+                    poster="/demo/thumbs/hero-demo.jpg"
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+      </div>
+      <div className="p-4 border-t border-gray-200">
+        <div className="text-sm font-semibold text-gray-900">
+          Free masterclass access + WhatsApp confirmation
+        </div>
+        <div className="mt-1 text-sm text-gray-600">
+          After registration, confirmation WhatsApp message will be sent.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        </div>
+      </section>
+
+      {/* =========================
+                SECTION: WHO THIS IS FOR
+            ========================== */}
+            <section className="mt-10 mx-auto max-w-6xl px-4">
+              <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-10 shadow-sm">
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white">🎯</span>
+                    Audience Fit
+                  </div>
+
+                  <h2 className="mt-5 text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+                    Who is this masterclass for?
+                  </h2>
+                  
+<p className="mt-3 text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+                    If you want practical, job-ready creative skills with a clear workflow, this is for you.
+                  </p>
+                </div>
+
+                <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { title: "Students", desc: "Learn creative skills and become job-ready with a clear roadmap.", icon: "🎓" },
+                    { title: "Working Professionals", desc: "Upgrade skills for better opportunities and faster career growth.", icon: "💼" },
+                    { title: "Freelancers", desc: "Deliver premium work faster using repeatable workflows.", icon: "💻" },
+                    { title: "Content Creators", desc: "Improve content quality and editing speed for short-form growth.", icon: "🎬" },
+                    { title: "Business Owners", desc: "Handle basic design + marketing creatives in-house with confidence.", icon: "📈" },
+                    { title: "Career Changers", desc: "Switch to the creative industry with practical steps and projects.", icon: "🚀" },
+                  ].map((c) => (
+                    <div
+                      key={c.title}
+                      className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-[#FFF7E6] p-6 shadow-sm transition
+                                 hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+                      <div className="relative flex items-start gap-4">
+                        <div className="shrink-0">
+                          <div className="grid h-12 w-12 place-items-center rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-[rgba(15,23,42,0.06)]">
+                            <span className="text-xl">{c.icon}</span>
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900">{c.title}</h3>
+                          <p className="mt-2 text-sm leading-relaxed text-gray-600">{c.desc}</p>
+                        </div>
+                      </div>
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-[#2563EB]/0 via-[#2563EB]/35 to-[#2563EB]/0 opacity-0 transition group-hover:opacity-100" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 text-center">
+                  <div className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs md:text-sm text-gray-700">
+                    <span className="font-semibold text-gray-900">Tip:</span>
+                    Laptop recommended for practice. Mobile is fine for watching.
+                  </div>
+                </div>
+              </div>
+            </section>
+
+      {/* =========================
+          __TOOLS_SECTION__ (INSERTED BELOW AUDIENCE FIT)
+      ========================== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white">🎯</span>
+              Tools Covered
+            </div>
+
+            <h2 className="mt-5 text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+              Discover 25+ AI Tools to:
+            </h2>
+            <p className="mt-3 text-sm md:text-base text-gray-600 max-w-3xl mx-auto">
+              You’ll see a practical workflow using industry tools + AI tools (so you can repeat it after the session).
+            </p>
+          </div>
+
+          {/* checklist */}
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {[
+              "Generate design ideas + variations fast",
+              "Write captions, scripts & hooks quickly",
+              "Summarize any topic / tutorial from the web",
+              "Extract insights from long documents",
+              "Convert long videos into reels/shorts",
+              "Remove background / cleanup faster",
+              "Create thumbnails, posters & creatives",
+              "Improve productivity + repeatable workflow",
+              "Build portfolio-ready outputs quickly",
+            ].map((t) => (
+              <div key={t} className="flex items-start gap-3">
+                <div className="mt-0.5 grid h-7 w-7 place-items-center rounded-lg bg-lime-100 text-lime-700 border border-lime-200">
+                  ✓
+                </div>
+                <div className="text-sm md:text-base text-gray-800 leading-relaxed">{t}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* software box (single) */}
+          <div className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-lg font-bold text-gray-900">Software (Industry)</div>
+                <div className="mt-1 text-xs text-gray-500">Core workflow tools used in the session.</div>
+              </div>
+              <div className="text-xs text-gray-500 font-semibold">Core workflow</div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                "Photoshop (Ps)",
+                "Illustrator (Ai)",
+                "InDesign (Id)",
+                "Premiere Pro (Pr)",
+                "After Effects (Ae)",
+                "Media Encoder",
+              ].map((x) => (
+                <div
+                  key={x}
+                  className="rounded-2xl border border-gray-200 bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-gray-900"
+                >
+                  {x}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-700">
+              <span className="font-semibold text-gray-900">Note:</span> We focus on workflow + output quality (practice-friendly).
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      {/* =========================
+            SECTION: TOOLS COVERED
+      ========================== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white">🧰</span>
+              Tools Covered
+            </div>
+
+            <h2 className="mt-5 text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+              Software + AI tools we’ll use in the masterclass
+            </h2>
+            <p className="mt-3 text-sm md:text-base text-gray-600 max-w-3xl mx-auto">
+              You’ll see a practical workflow using industry tools + AI tools (so you can repeat it after the session).
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            {/* LEFT: Software */}
+                <div className="text-xs font-semibold text-gray-500">Core workflow</div>
+              </div>
+
+              <div className="mt-6 grid gap-x-10 gap-y-3 md:grid-cols-2 lg:grid-cols-4">
+{[
+                  "Photoshop (Ps)",
+                  "Illustrator (Ai)",
+                  "InDesign (Id)",
+                  "Premiere Pro (Pr)",
+                  "After Effects (Ae)",
+                  "Media Encoder",
+                ].map((t) => (
+                  <div
+                    key={t}
+                    className="rounded-2xl border border-gray-200 bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-gray-900"
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                <span className="font-semibold text-gray-900">Note:</span> We focus on workflow + output quality (practice-friendly).
+              </div>
+            </div>
+
+            {/* RIGHT: AI Tools */}
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-extrabold text-gray-900">AI tools (Workflow)</div>
+                  <div className="mt-1 text-sm text-gray-600">Prompt → output → polish tools we’ll use.</div>
+                </div>
+                <div className="text-xs font-semibold text-gray-500">Prompt + output + polish</div>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  "ChatGPT (Prompting)",
+                  "Midjourney / Image AI",
+                  "Adobe Firefly",
+                  "Canva AI",
+                  "CapCut AI",
+                  "Runway (Video AI)",
+                  "ElevenLabs (Voice)",
+                  "Remove BG / Cleanup tools",
+                ].map((t) => (
+                  <div
+                    key={t}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900"
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                <span className="font-semibold text-gray-900">Outcome:</span> You’ll know which tool to use at which step + prompt format basics.
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+{/* =======================================================================
+          SECTION 03: BOTTOM CTA BAR (OPTIONAL)
+          - If you already have a bottom fixed bar in this page, remove this block
+      ======================================================================= */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 border-t border-gray-200 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-lg font-extrabold text-gray-900">
+              Free <span className="text-xs font-semibold text-gray-500 line-through ml-2">₹1,999</span>
+            </div>
+            <div className="text-xs text-gray-600">Limited seats • Join now</div>
+          </div>
+
+          <a
+            className="h-12 px-6 rounded-full bg-gray-900 text-white font-semibold grid place-items-center hover:bg-gray-800 transition"
+            href="/masterclass/register"
+          >
+            Join Free Masterclass
+          </a>
+        </div>
+      </div>
+
+      {/* spacer for fixed bar */}
+      <div className="h-20" />        {/* =========================
+        {/* =========================
+            SECTION 04: WHAT YOU'LL LEARN
+        ========================== */}
+        <section className="bg-white">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-10 shadow-sm">
+              <div className="text-center">
+                <h2 className="text-2xl md:text-4xl font-extrabold">What you’ll learn</h2>
+                <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
+                  A practical, repeatable workflow you can use for real client work, internships, and portfolio projects.
+                </p>
+              </div>
+
+              <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {[
+                  {
+                    title: "Gen-Design with AI Workflow",
+                    desc: "Prompt → variations → selection → polish. Get consistent results without randomness.",
+                    tag: "Prompting + Output Control",
+                    icon: "🧠",
+                  },
+                  {
+                    title: "Branding & Layout System",
+                    desc: "Typography + grids + spacing rules. Build clean, professional layouts fast.",
+                    tag: "Design System Basics",
+                    icon: "🧩",
+                  },
+                  {
+                    title: "Reels / Shorts Editing Workflow",
+                    desc: "Hook → pacing → captions → transitions. Improve speed without losing quality.",
+                    tag: "Editing Framework",
+                    icon: "🎬",
+                  },
+                  {
+                    title: "Thumbs, Posters & Creatives",
+                    desc: "AI base + Photoshop polish. Make creatives that look premium, not generic.",
+                    tag: "AI + Ps Polish",
+                    icon: "🖼️",
+                  },
+                  {
+                    title: "Consistency Prompts",
+                    desc: "Reusable prompt patterns for style, colors, and branding consistency across assets.",
+                    tag: "Repeatable Templates",
+                    icon: "📌",
+                  },
+                  {
+                    title: "Portfolio-Ready Project Flow",
+                    desc: "What to build after the session: project selection, structure, and presentation format.",
+                    tag: "Portfolio Structure",
+                    icon: "📁",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sd-audience-card"
+                  >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#2563EB]/8 to-transparent" />
+                    <div className="relative flex items-start gap-4">
+                      <div className="shrink-0">
+                        <div className="grid h-12 w-12 place-items-center rounded-2xl border border-gray-200 bg-[#FFF7E6] shadow-sm">
+                          <span className="text-xl">{item.icon}</span>
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700">
+                          {item.tag}
+                        </div>
+                        <h3 className="mt-3 text-base md:text-lg font-semibold text-gray-900">{item.title}</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-600">{item.desc}</p>
+                      </div>
+                    </div>
+
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-[#2563EB]/0 via-[#2563EB]/35 to-[#2563EB]/0 opacity-0 transition group-hover:opacity-100" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 text-center">
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs md:text-sm text-gray-700">
+                  <span className="font-semibold text-gray-900">Outcome:</span>
+                  You’ll leave with a clear workflow + next steps to practice.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+{/* =========================
+          SECTION 05: WHAT YOU GET
+      ========================== */}
+      
+        {/* =========================
+             SECTION: EXCLUSIVE BONUSES
+         ========================== */}
+        <section className="bg-gradient-to-b from-[#2563EB] to-[#1D4ED8]">
+          <div className="mx-auto max-w-6xl px-4 py-16 md:py-20 text-white">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold tracking-widest uppercase">
+                <span>🎁</span>
+                <span>Exclusive Bonuses</span>
+              </div>
+
+              <h2 className="mt-6 text-3xl md:text-5xl font-extrabold tracking-tight">
+                Get These Bonuses FREE <span aria-hidden="true">🎁</span>
+              </h2>
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  icon: "🧠",
+                  title: "AI Prompts Library",
+                  desc: "100+ ready-to-use prompts",
+                  worth: "₹999",
+                },
+                {
+                  icon: "🎨",
+                  title: "Design Templates Pack",
+                  desc: "50+ professional templates",
+                  worth: "₹1,499",
+                },
+                {
+                  icon: "🎬",
+                  title: "Video Editing Presets",
+                  desc: "Premium effects & transitions",
+                  worth: "₹799",
+                },
+                {
+                  icon: "📚",
+                  title: "Resource Guide PDF",
+                  desc: "Complete learning roadmap",
+                  worth: "₹499",
+                },
+              ].map((b) => (
+                <div
+                  key={b.title}
+                  className="rounded-2xl bg-white/14 border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.18)] p-8"
+                >
+                  <div className="flex justify-center">
+                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/18 border border-white/15">
+                      <span className="text-2xl">{b.icon}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 text-center">
+                    <div className="text-lg font-extrabold">{b.title}</div>
+                    <div className="mt-3 text-sm text-white/90">{b.desc}</div>
+                    <div className="mt-4 text-sm font-extrabold text-[#F5B301]">
+                      Worth {b.worth}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 text-center">
+              <div className="text-lg md:text-xl font-extrabold">
+                Total Bonus Value: <span className="text-[#F5B301]">₹3,796</span>
+              </div>
+              <div className="mt-2 text-base md:text-lg font-extrabold">
+                You Get It All: <span className="text-[#F5B301]">FREE!</span> <span aria-hidden="true">🔥</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+      {/* =========================
+          SECTION 07: AGENDA
+      ========================== */}
+      
+
+      {/* =========================
+          SECTION 08: INSTRUCTOR / PROOF
+      ========================== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-center">Why Sikhadenge</h2>
+          <p className="mt-3 text-center text-gray-600 max-w-2xl mx-auto">
+            Job-ready training with real projects, reviews, and industry workflows.
+          </p>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "👥 15,000+ learners trained",
+                desc: "Trusted by 15,000+ learners across India. Outcomes-focused learning with reviews + projects.",
+              },
+              {
+                title: "🗓️ Live classes + practice",
+                desc: "Daily sessions + tasks so progress stays consistent.",
+              },
+              {
+                title: "🧰 Industry tools only",
+                desc: "Adobe tools + Gen-AI workflow the same way pros work.",
+              },
+            ].map((c, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sd-audience-card"
+              >
+                <div className="text-base font-semibold text-gray-900">{c.title}</div>
+                <div className="mt-2 text-sm text-gray-600">{c.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =========================
+           SECTION 09: STUDENT REVIEWS
+       ========================== */}
+        <section className="bg-[#FFF7E6]">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <div className="text-center">
+              <h2 className="text-2xl md:text-4xl font-extrabold text-center">What learners say about this masterclass</h2>
+              <p className="mt-3 text-gray-600 max-w-2xl mx-auto">Real feedback on clarity, practical workflow, and confidence after attending.</p>
+            </div>
+
+            <div className="mt-10">
+              <StudentReviewsCarousel />
+            </div>
+          </div>
+        </section>
+
+
+        {/* =========================
+            SECTION 09: VIDEO TESTIMONIALS (REELS)
+        ========================== */}
+        <VideoTestimonialsSlider
+          title="Real results from learners"
+          subtitle="Short reel testimonials from students who attended this Gen-AI masterclass."
+        />
+
+{/* =========================
+          SECTION 10: FAQ
+      ========================== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-center">FAQ</h2>
+          <div className="mt-10 grid gap-4">
+            {[
+              ["Is it really free?", "Yes. The page shows ₹1,999 value, but access is free for this masterclass."],
+              ["Do I need a laptop?", "Recommended. You can watch on mobile, but practice needs laptop."],
+              ["Will I get details on WhatsApp?", "Yes, confirmation is sent on WhatsApp after registration."]
+            ].map(([q,a])=>(
+              <div key={q} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sd-audience-card">
+                <div className="text-sm font-semibold text-gray-900">{q}</div>
+                <div className="mt-2 text-sm text-gray-600">{a}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+</main>
+  );
+}

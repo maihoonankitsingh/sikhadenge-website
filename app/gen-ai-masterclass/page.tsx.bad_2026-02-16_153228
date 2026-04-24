@@ -1,0 +1,164 @@
+import Link from "next/link";
+import PageOverrides from "./_pageOverrides";
+
+const CTA = {
+  primaryText: "Join Now",
+  primaryHref: "/masterclass/register", // change
+  secondaryText: "WhatsApp",
+  secondaryHref: "https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q", // change
+};
+
+const CONTENT = {
+  topStripText: "₹1,999 FREE for next 3 Minutes ONLY",
+  brandLeft: "Sikhadenge",
+  brandBadge: "Top Startup India", // optional label
+  headline: "Unlock Gen-AI Skills to Become a Pro in Graphic Design & Video Editing",
+  subheadline:
+    "Master practical Gen-AI workflows you can use right away — even if you’re starting from zero.",
+  chips: ["5000+ Batches", "15,000+ Learners", "₹1,999 Free For You"],
+  badge: "No Coding Needed",
+  videoEmbed:
+    "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1", // change
+  offerLeftTitle: "Free",
+  offerOldPrice: "₹1,999",
+  offerTimerText: "Offer ends in 00:00",
+};
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center justify-start rounded-xl px-4 py-2 text-sm font-semibold"
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid var(--sd-border)",
+        color: "var(--sd-text)",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function PrimaryButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-full px-8 py-4 text-base font-semibold"
+      style={{
+        background: "var(--sd-primary)",
+        color: "#fff",
+        boxShadow: "var(--sd-glow-blue)",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function GhostButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+      style={{
+        background: "rgba(15,23,42,0.04)",
+        border: "1px solid var(--sd-border)",
+        color: "var(--sd-text)",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default function Page() {
+  return (
+    <main className="min-h-screen  pt-[64px]" style={{ background: "var(--sd-bg)", color: "var(--sd-text)" }}>
+      <PageOverrides />
+
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        {/* Right watermark circle */}
+        <div className="pointer-events-none absolute right-[-220px] top-[40px] h-[520px] w-[520px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at 35% 35%, rgba(37,99,235,0.18) 0%, rgba(245,179,1,0.10) 35%, rgba(37,99,235,0.06) 60%, rgba(248,250,252,0) 72%)",
+            border: "1px solid rgba(15,23,42,0.06)",
+          }}
+        />
+        <div className="pointer-events-none absolute right-[-170px] top-[90px] h-[420px] w-[420px] rounded-full"
+          style={{
+            background: "rgba(37,99,235,0.03)",
+            border: "1px solid rgba(15,23,42,0.06)",
+          }}
+        />
+
+        <div className="mx-auto max-w-6xl px-4 pt-4 pb-28">
+          {/* Brand row centered like screenshot */}
+          <div className="flex items-center justify-center gap-4">
+              {/* Left box: Sikhadenge */}
+              <div
+                className="w-[240px] min-h-[56px] rounded-2xl px-6 py-4 shadow-md flex items-center justify-center gap-3"
+                style={{ background: "#fff", border: "1px solid var(--sd-border)" }}
+              >
+                <div
+                  className="h-10 w-10 rounded-xl grid place-items-center font-bold"
+                  style={{ background: "var(--sd-brand)", color: "#fff" }}
+                >
+                  S
+                </div>
+                <div className="text-base font-semibold">{CONTENT.brandLeft}</div>
+              </div>
+
+              <div style={{ width: 1, height: 28, background: "rgba(15,23,42,0.18)" }} />
+
+              {/* Right box: Top Startup India */}
+              <div
+                className="w-[240px] min-h-[56px] rounded-2xl px-6 py-4 text-base font-semibold shadow-md flex items-center justify-center text-center"
+                style={{ background: "#fff", border: "1px solid var(--sd-border)", color: "var(--sd-text)" }}
+              >
+                {CONTENT.brandBadge}
+              </div>
+            </div>
+
+        {/* Bottom offer bar like screenshot */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50"
+          style={{
+            background: "#EEF2F6",
+            borderTop: "1px solid var(--sd-border)",
+          }}
+        >
+          <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="text-2xl font-semibold" style={{ color: "var(--sd-text)" }}>
+                  {CONTENT.offerLeftTitle}{" "}
+                  <span className="text-sm font-medium" style={{ color: "var(--sd-text-3)" }}>
+                    <span style={{ textDecoration: "line-through" }}>{CONTENT.offerOldPrice}</span>
+                  </span>
+                </div>
+                <div className="text-sm" style={{ color: "var(--sd-text-3)" }}>
+                  {CONTENT.offerTimerText}
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href={CTA.primaryHref}
+              className="inline-flex items-center justify-center rounded-full px-10 py-4 text-base font-semibold"
+              style={{
+                background: "var(--sd-gold)",
+                color: "var(--sd-brand)",
+                boxShadow: "var(--sd-glow-gold)",
+                minWidth: 220,
+              }}
+            >
+              {CTA.primaryText}
+            </Link>
+          </div>
+        </div>      </section>
+    </main>
+  );
+}

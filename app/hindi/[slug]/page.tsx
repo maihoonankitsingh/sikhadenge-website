@@ -1,0 +1,425 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import fs from "fs";
+import path from "path";
+import {
+  ArrowRight,
+  Lock,
+  Sparkles,
+  CheckCircle2,
+  Rocket,
+  ChevronDown,
+  Info,
+  Clock3,
+  BookOpen,
+  Lightbulb,
+} from "lucide-react";
+
+type HindiItem = {
+  slug: string;
+  title: string;
+  description: string;
+  tool: string;
+  audience: string;
+  topic: string;
+  intro?: string;
+  useCases?: string[];
+  updatedAt?: string;
+};
+
+function getHindiData(): HindiItem[] {
+  try {
+    const filePath = path.join(process.cwd(), "data/generated-hindi.json");
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+export async function generateStaticParams() {
+  const __all = await (async () => {
+return [];
+  })();
+  return Array.isArray(__all) ? __all.slice(0, 100) : [];
+}
+
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+export const revalidate = 2592000;
+
+export function generateMetadata({ params }: { params: { slug: string } }) {
+  const page = getHindiData().find((p) => p.slug === params.slug);
+
+  if (!page) {
+    return { title: "AI Tools Hindi Mein | Sikhadenge" };
+  }
+
+  return {
+    title: page.title,
+    description: page.description,
+    alternates: {
+      canonical: `https://sikhadenge.in/hindi/${page.slug}`,
+    },
+    openGraph: {
+      title: page.title,
+      description: page.description,
+      url: `https://sikhadenge.in/hindi/${page.slug}`,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.title,
+      description: page.description,
+    },
+  };
+}
+
+function normalizeText(value?: string) {
+  return (value || "").toLowerCase().trim();
+}
+
+function tokenize(value?: string) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function toHindiTopic(topic: string) {
+  const t = normalizeText(topic);
+
+  if (t.includes("resume")) return "resume prompts";
+  if (t.includes("study")) return "study prompts";
+  if (t.includes("content")) return "content creation prompts";
+  if (t.includes("youtube")) return "YouTube prompts";
+  if (t.includes("instagram")) return "Instagram prompts";
+  if (t.includes("business")) return "business prompts";
+  if (t.includes("email")) return "email writing prompts";
+  if (t.includes("research")) return "research prompts";
+  if (t.includes("productivity")) return "productivity prompts";
+  if (t.includes("prompt")) return "AI prompts";
+
+  return topic;
+}
+
+function inferIntro(page: HindiItem) {
+  return `${page.tool} ka better use tab hota hai jab aap clear goal, context, aur output format ke saath prompt dete ho. Ye page ${page.audience} ke liye ${toHindiTopic(page.topic)} ko simple Hindi-Hinglish style me practical tareeke se samjhata hai.`;
+}
+
+function inferUseCases(page: HindiItem) {
+  return [
+    `${page.audience} ke daily workflow me faster output`,
+    `Better prompting ke saath time save karna`,
+    `${page.tool} ka practical use real tasks me karna`,
+  ];
+}
+
+function getRelatedLinks(data: HindiItem[], page: HindiItem) {
+  const currentTopicTokens = new Set(tokenize(page.topic));
+  const currentAudienceTokens = new Set(tokenize(page.audience));
+  const currentToolTokens = new Set(tokenize(page.tool));
+
+  return data
+    .filter((item) => item.slug !== page.slug)
+    .map((item) => {
+      let score = 0;
+
+      tokenize(item.topic).forEach((token) => {
+        if (currentTopicTokens.has(token)) score += 3;
+      });
+
+      tokenize(item.audience).forEach((token) => {
+        if (currentAudienceTokens.has(token)) score += 3;
+      });
+
+      tokenize(item.tool).forEach((token) => {
+        if (currentToolTokens.has(token)) score += 4;
+      });
+
+      if (normalizeText(item.tool) === normalizeText(page.tool)) score += 5;
+      if (normalizeText(item.audience) === normalizeText(page.audience)) score += 5;
+
+      return { item, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((entry) => entry.item);
+}
+
+export default function HindiAiPage({ params }: { params: { slug: string } }) {
+  const data = getHindiData();
+  const page = data.find((p) => p.slug === params.slug);
+
+  if (!page) notFound();
+
+  const relatedLinks = getRelatedLinks(data, page);
+  const intro = page.intro || inferIntro(page);
+  const useCases = page.useCases?.length ? page.useCases : inferUseCases(page);
+  const updatedAt = page.updatedAt || "April 2026";
+  const topicLabel = toHindiTopic(page.topic);
+
+  const FAQs = [
+    {
+      q: `Kya ye ${topicLabel} bilkul free hai?`,
+      a: `Is page par aapko ${topicLabel} ke practical ideas aur structure milenge. Advanced workflow aur guided learning ke liye Masterclass join kar sakte hain.`,
+    },
+    {
+      q: `Main English strong nahi hoon, kya main ye seekh sakta hoon?`,
+      a: "Haan. Ye content Hindi-Hinglish style me rakha gaya hai taki beginners bhi AI tools ko practical tareeke se samajh saken.",
+    },
+    {
+      q: `Kya iske liye high-end laptop zaruri hai?`,
+      a: "Har case me nahi. Bahut se AI tools cloud based hote hain, isliye normal laptop ya internet-enabled device se bhi kaam shuru kiya ja sakta hai.",
+    },
+    {
+      q: `Ye page kin logon ke liye useful hai?`,
+      a: `Ye page mainly ${page.audience} ke liye useful hai jo ${page.tool} ka use karke better output, time saving, aur practical workflow improve karna chahte hain.`,
+    },
+  ];
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://sikhadenge.in",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Hindi",
+        item: "https://sikhadenge.in/hindi",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: page.title,
+        item: `https://sikhadenge.in/hindi/${page.slug}`,
+      },
+    ],
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-orange-200">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
+      <section className="pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200 relative overflow-hidden">
+        <div className="absolute inset-x-0 bottom-0 top-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-50/50 via-white to-white pointer-events-none"></div>
+        <div className="max-w-5xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center rounded-full bg-orange-100 border border-orange-200 px-4 py-1.5 text-sm font-bold text-orange-700 mb-6 uppercase tracking-widest">
+            <Sparkles className="w-4 h-4 mr-2" /> Hindi AI Guide
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-[1.12] mb-6">
+            {page.tool} {topicLabel}
+            <br />
+            <span className="text-orange-600">{page.audience} ke liye</span>
+          </h1>
+
+          <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed mb-8">
+            {intro}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-bold text-slate-500">
+            <div className="inline-flex items-center rounded-full bg-slate-100 px-4 py-2">
+              <Clock3 className="w-4 h-4 mr-2" />
+              Updated: {updatedAt}
+            </div>
+            <div className="inline-flex items-center rounded-full bg-slate-100 px-4 py-2">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Audience: {page.audience}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+              <Info className="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3">Ye page aapko kis cheez me help karega</h2>
+              <div className="space-y-3">
+                {useCases.map((item, index) => (
+                  <div key={index} className="flex items-start">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-3 mt-0.5 shrink-0" />
+                    <span className="font-bold text-slate-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-4 py-8">
+        <div className="bg-white border text-center border-slate-200 shadow-xl rounded-[2rem] p-10 relative overflow-hidden ring-1 ring-slate-900/5">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <Rocket className="w-48 h-48 rotate-12" />
+          </div>
+
+          <h2 className="text-3xl font-black text-slate-900 mb-4">Step-by-step framework</h2>
+          <p className="text-slate-600 font-bold mb-8">
+            Neeche diya gaya structure aapko better AI prompting aur practical workflow samajhne me help karega.
+          </p>
+
+          <div className="bg-slate-50 text-left border border-slate-200 rounded-2xl p-8 mb-10 blur-[2px] opacity-90 select-none">
+            <h3 className="text-2xl font-black mb-4">{page.tool} prompt structure</h3>
+            <p className="font-bold text-slate-700 mb-4">
+              Act as an expert assistant for {page.audience}. Help me with {topicLabel} using clear context, step-by-step guidance, and usable output.
+            </p>
+            <ul className="space-y-2">
+              <li className="flex items-center">
+                <CheckCircle2 className="w-4 h-4 mr-2 text-blue-500" />
+                Step 1: Goal aur context clearly do
+              </li>
+              <li className="flex items-center">
+                <CheckCircle2 className="w-4 h-4 mr-2 text-blue-500" />
+                Step 2: Output format define karo
+              </li>
+              <li className="flex items-center">
+                <CheckCircle2 className="w-4 h-4 mr-2 text-blue-500" />
+                Step 3: Better version ke liye refine karo
+              </li>
+            </ul>
+          </div>
+
+          <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center z-20">
+            <div className="bg-orange-100 text-orange-800 font-bold px-6 py-2 rounded-full text-sm mb-4 border border-orange-200 shadow-sm">
+              Advanced framework Masterclass ke andar available hai
+            </div>
+            <Link
+              href="https://sikhadenge.in/gen-ai-masterclass/register-one-step"
+              className="relative group flex items-center justify-center transform hover:scale-105 transition-all"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur opacity-40 group-hover:opacity-70 transition duration-300"></div>
+              <div className="relative bg-slate-900 hover:bg-slate-800 text-white px-10 py-5 rounded-full font-black text-xl flex items-center shadow-2xl border border-slate-700">
+                <Lock className="w-5 h-5 mr-3 text-orange-400" /> Unlock on WhatsApp
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+            <div className="flex items-center mb-6">
+              <Lightbulb className="w-6 h-6 text-orange-600 mr-3" />
+              <h2 className="text-2xl font-black text-slate-900">Practical direction</h2>
+            </div>
+            <div className="space-y-4">
+              {[
+                `${page.tool} ko generic tareeke se use mat karo`,
+                `Audience aur goal clearly define karo`,
+                `Ek hi prompt me clear output format maango`,
+                `First output ke baad refine karke better result lo`,
+              ].map((item, index) => (
+                <div key={index} className="flex items-start">
+                  <CheckCircle2 className="w-5 h-5 text-orange-600 mr-3 mt-0.5 shrink-0" />
+                  <span className="font-bold text-slate-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+            <div className="flex items-center mb-6">
+              <BookOpen className="w-6 h-6 text-blue-600 mr-3" />
+              <h2 className="text-2xl font-black text-slate-900">Ye kin logon ke liye useful hai</h2>
+            </div>
+            <div className="space-y-4">
+              {[
+                `${page.audience} jo AI ko practical kaam me use karna chahte hain`,
+                `Beginners jo better prompting seekhna chahte hain`,
+                `Users jo time save aur output quality improve karna chahte hain`,
+                `People jo Hindi-Hinglish me samajhna prefer karte hain`,
+              ].map((item, index) => (
+                <div key={index} className="flex items-start">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600 mr-3 mt-0.5 shrink-0" />
+                  <span className="font-bold text-slate-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-4 bg-slate-50 border-t border-slate-200 mt-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black text-slate-900">Aur bhi related Hindi pages dekhiye</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedLinks.map((linkData: HindiItem, i: number) => (
+              <Link
+                key={i}
+                href={`/hindi/${linkData.slug}`}
+                className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition-all text-center"
+              >
+                <h3 className="text-lg font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors mb-2">
+                  {linkData.tool} {toHindiTopic(linkData.topic)}
+                </h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  {linkData.audience}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-black text-slate-900 mb-14 text-center">FAQs (Aapke Sawal)</h2>
+          <div className="space-y-4">
+            {FAQs.map((faq, i) => (
+              <details key={i} className="group bg-slate-50 border border-slate-200 rounded-2xl open:bg-white open:ring-2 open:ring-orange-100 transition-all duration-200">
+                <summary className="flex items-center justify-between cursor-pointer p-6 font-bold text-slate-900 text-lg list-none [&::-webkit-details-marker]:hidden">
+                  {faq.q}
+                  <ChevronDown className="w-6 h-6 text-slate-400 group-open:text-orange-600 group-open:rotate-180 transition-transform duration-300" />
+                </summary>
+                <div className="px-6 pb-6 text-slate-600 leading-relaxed font-medium pt-2 border-t border-slate-100 group-open:border-orange-50">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-4 bg-slate-900 text-center relative overflow-hidden">
+        <h2 className="text-4xl font-black text-white mb-6">Hindi me AI seekho, practical tareeke se</h2>
+        <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+          Structured prompting, practical workflows, aur real use-cases ke saath better AI usage samjho.
+        </p>
+        <Link
+          href="https://sikhadenge.in/gen-ai-masterclass/register-one-step"
+          className="inline-flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white px-10 py-5 rounded-full font-black text-xl shadow-[0_0_50px_rgba(249,115,22,0.4)] transition-transform hover:-translate-y-1"
+        >
+          Join AI Masterclass Free <ArrowRight className="ml-3 w-6 h-6" />
+        </Link>
+      </section>
+    </main>
+  );
+}

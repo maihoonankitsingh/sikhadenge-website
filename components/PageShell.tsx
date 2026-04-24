@@ -8,7 +8,7 @@ export default function PageShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[#0B1220] text-white pt-[88px]">
+    <main className="min-h-screen bg-[#0B1220] text-white pt-[56px]">
       <section className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10 2xl:px-12 py-10">
         {/* background glow (brand) */}
         <div className="pointer-events-none absolute inset-0 -z-10">

@@ -1,0 +1,112 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+import Link from "next/link";
+import type {
+  const masterclassSettings = await getMasterclassSettings(); ReactNode } from "react";
+
+export const metadata = {
+  title: "Disclaimer — Sikhadenge",
+  description: "General information and limitations of liability for Sikhadenge.",
+  alternates: { canonical: "https://sikhadenge.in/disclaimer" },
+};
+
+function PageShell({
+  title,
+  subtitle,
+  updated,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  updated?: string;
+  children: ReactNode;
+}) {
+  return (
+    <main className="min-h-screen bg-white text-slate-900">
+      <section className="mx-auto max-w-6xl px-4 pt-10 sm:pt-12 pb-16">
+        <div className="text-sm text-slate-500">
+          <Link
+            href="/"
+            aria-label="Home"
+            className="mr-2 inline-flex items-center hover:text-slate-900"
+          >
+            🏠
+          </Link>
+          <span className="mx-1">›</span>
+          <span>{title}</span>
+        </div>
+
+        <h1 className="mt-6 text-4xl sm:text-6xl font-normal tracking-tight">
+          {title}
+        </h1>
+
+        {subtitle ? (
+          <p className="mt-3 text-slate-600 text-[15px] sm:text-[16px] max-w-3xl">
+            {subtitle}
+          </p>
+        ) : null}
+
+        {updated ? (
+          <div className="mt-4 text-[13px] sm:text-[14px] text-slate-600">
+            {updated}
+          </div>
+        ) : null}
+
+        <div className="mt-10 max-w-5xl leading-relaxed text-[16px] sm:text-[17px] text-slate-900">
+          {children}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+import { getMasterclassSettings } from "@/lib/masterclass-settings";
+
+export default async function DisclaimerPage() {
+  return (
+    <PageShell
+      title="Disclaimer"
+      subtitle="General information and limitations of liability for Sikhadenge."
+      updated="Last Updated on 25th Feb 2026"
+    >
+      <h2 className="mt-2 font-semibold">1) Educational purpose</h2>
+      <p className="mt-3">
+        Content and training provided on Sikhadenge is for educational purposes.
+        Outcomes depend on individual effort, consistency, and market conditions.
+      </p>
+
+      <h2 className="mt-10 font-semibold">2) No guaranteed earnings or placements</h2>
+      <p className="mt-3">
+        We do not guarantee income, freelancing projects, or job placements unless
+        explicitly stated in a written agreement for a specific program.
+      </p>
+
+      <h2 className="mt-10 font-semibold">3) External links</h2>
+      <p className="mt-3">
+        Our website may contain links to third-party sites. We are not responsible
+        for third-party content or policies.
+      </p>
+
+      <h2 className="mt-10 font-semibold">4) Updates</h2>
+      <p className="mt-3">
+        We may update content, pricing, and program structures. Policy pages may
+        also be updated periodically.
+      </p>
+
+      <h2 className="mt-10 font-semibold">5) Contact</h2>
+      <p className="mt-3">
+        For questions:{" "}
+        <a className="underline" href="mailto:support@sikhadenge.in">
+          support@sikhadenge.in
+        </a>
+      </p>
+      <p className="mt-2">
+        WhatsApp:{" "}
+        <a className="underline" href={masterclassSettings.communityLink}>
+          +91 88085 05575
+        </a>
+      </p>
+      <p className="mt-2">Parent Company: ThinkGrow Pvt. Ltd.</p>
+    </PageShell>
+  );
+}

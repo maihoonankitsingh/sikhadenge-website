@@ -1,0 +1,72 @@
+[
+  {
+    "file": "ai-career-1000.json",
+    "family": "ai-career",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-content-creation-1000.json",
+    "family": "ai-content-creation",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-course-1000.json",
+    "family": "ai-course",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-freelancing-1000.json",
+    "family": "ai-freelancing",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-jobs-1000.json",
+    "family": "ai-jobs",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-marketing-1000.json",
+    "family": "ai-marketing",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-skills-1000.json",
+    "family": "ai-skills",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-tools-1000.json",
+    "family": "ai-tools",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "ai-video-editing-1000.json",
+    "family": "ai-video-editing",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  },
+  {
+    "file": "prompt-engineering-1000.json",
+    "family": "prompt-engineering",
+    "tier1": 400,
+    "tier2": 600,
+    "tier3": 0
+  }
+]

@@ -1,0 +1,4 @@
+ALTER TABLE "StoreOrder"
+  ADD COLUMN IF NOT EXISTS "aiSensyQueuedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "aiSensyQueueStatus" TEXT,
+  ADD COLUMN IF NOT EXISTS "aiSensyQueueError" TEXT;

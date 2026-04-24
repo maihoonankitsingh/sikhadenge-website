@@ -1,0 +1,429 @@
+'use client';
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+async function waitForFbq(timeoutMs: number = 1500) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const fbq = (window as any).fbq;
+      if (typeof fbq === "function") return fbq;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return null;
+}
+
+import React, { useEffect, useMemo, useState } from "react";
+import AttributionCapture from "../../../components/AttributionCapture";
+
+const WHATSAPP_INVITE_URL = "https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q"; // update if group changes
+
+type Errs = Partial<{
+  name: string;
+  email: string;
+  phone: string;
+  occupation: string;
+  laptop: string;
+  goal: string;
+  submit: string;
+}>;
+
+const OCCUPATIONS = [
+  "Salaried Professional",
+  "Self-Employed",
+  "Founder",
+  "Student",
+  "Others",
+] as const;
+
+const GOALS = [
+  "Kickstart Career",
+  "Career Transition",
+  "Upskilling",
+  "Others",
+] as const;
+
+const LAPTOP_OPTIONS = [
+  { v: "", t: "Select" },
+  { v: "Yes", t: "Yes" },
+  { v: "Will arrange", t: "Will arrange" },
+  { v: "No", t: "No" },
+];
+
+export default function GenAIMasterclassRegisterPage() {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const [occupation, setOccupation] = useState<string>("");
+  const [laptop, setLaptop] = useState<string>("");
+  const [goal, setGoal] = useState<string>("");
+
+  const [errors, setErrors] = useState<Errs>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const pagePath = useMemo(() => {
+    if (typeof window === "undefined") return "/gen-ai-masterclass/register";
+    return window.location.pathname || "/gen-ai-masterclass/register";
+  }, []);
+
+  const source = useMemo(() => {
+  if (typeof window === "undefined") return "website";
+  const sp = new URLSearchParams(window.location.search);
+  return sp.get("utm_source") || sp.get("source") || "website";
+}, []);
+
+    const attribution = useMemo(() => {
+      if (typeof window === "undefined") return {} as any;
+      const sp = new URLSearchParams(window.location.search);
+      const keys = [
+        "utm_source","utm_medium","utm_campaign","utm_content","utm_term",
+        "utm_id","utm_campaign_id","utm_adset_id","utm_ad_id",
+        "fbclid","gclid","msclkid"
+      ];
+      const out: any = {};
+      for (const k of keys) {
+        const v = sp.get(k);
+        if (v) out[k] = v;
+      }
+      out.referrer = document.referrer || null;
+      out.landing_url = window.location.href;
+      out.page_path = window.location.pathname;
+      return out;
+    }, []);
+
+    useEffect(() => {
+      try {
+        if (typeof window === "undefined") return;
+        const existing = JSON.parse(localStorage.getItem("sd_attribution") || "{}") || {};
+        const merged = { ...existing, ...attribution };
+        localStorage.setItem("sd_attribution", JSON.stringify(merged));
+      } catch {}
+    }, [attribution]);
+
+
+  const validateStep1 = () => {
+    const e: Errs = {};
+    if (!name.trim()) e.name = "Required";
+    if (!email.trim()) e.email = "Required";
+    if (!phone.trim()) e.phone = "Required";
+    // basic phone cleanup check (not strict)
+    const digits = phone.replace(/\D/g, "");
+    if (digits && digits.length < 10) e.phone = "Enter valid number";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const e: Errs = {};
+    if (!occupation) e.occupation = "Required";
+    if (!laptop) e.laptop = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep3 = () => {
+    const e: Errs = {};
+    if (!goal) e.goal = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const postLead = async () => {
+    setSubmitting(true);
+    setErrors({});
+
+    try {
+      const res = await fetch("/api/masterclass/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+  name: name.trim(),
+  email: email.trim(),
+  phone: phone.trim(),
+  occupation,
+  laptop,
+  goal,
+  source,
+  page: pagePath,
+  attribution: (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("sd_attribution") || "{}") || {};
+      return { ...saved, ...attribution };
+    } catch {
+      return attribution;
+    }
+  })(),
+}),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        setErrors({ submit: `Submit failed (${res.status}). ${txt}`.slice(0, 200) });
+        setSubmitting(false);
+        return;
+      }
+
+      // success -> open WhatsApp invite
+
+      // Meta Pixel: count lead on successful submit
+
+      // Add eventID + small delay so the request is not dropped on fast redirects
+
+      try {
+        const fbq = await waitForFbq(1500);
+        if (fbq) {
+          const eventID = `sd_lead_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          fbq("track", "Lead", {}, { eventID });
+          await new Promise((r) => setTimeout(r, 150));
+        }
+
+      } catch {}
+
+      const qs = window.location.search || "";
+      window.location.assign("/gen-ai-masterclass/welcome" + qs);
+    } catch (err: any) {
+      setErrors({ submit: `Submit failed. ${String(err?.message || err)}`.slice(0, 200) });
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="bg-white">
+      <AttributionCapture />
+
+      <div className="mx-auto max-w-6xl px-4 py-4">
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Left info panel */}
+          <div className="rounded-3xl border border-gray-200 bg-[#0B1220] p-8 text-white shadow-sm">
+            <div className="text-sm opacity-80">Sikhadenge</div>
+            <h1 className="mt-2 text-3xl font-extrabold leading-tight">
+              Register for the FREE Masterclass
+            </h1>
+
+            <ul className="mt-6 space-y-3 text-sm text-white/90">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#F5B301]" />
+                <span>Access link on WhatsApp</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#F5B301]" />
+                <span>Fill details to continue</span>
+              </li>
+            </ul>
+
+            <div className="mt-8 text-xs text-white/70">
+              By continuing, you agree to our terms &amp; privacy policy.
+            </div>
+          </div>
+
+          {/* Right form panel */}
+          <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+            {/* Step indicator */}
+            <div className="mb-6 flex items-center justify-between text-xs text-gray-500">
+              <span>Step {step} / 3</span>
+              <a className="hover:underline" href="/gen-ai-masterclass">Back</a>
+            </div>
+
+            {step === 1 && (
+              <div>
+                <h2 className="text-2xl font-bold">Your basic details</h2>
+
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Name *</label>
+                    <input
+                      className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Full name"
+                    />
+                    {errors.name && <div className="mt-1 text-xs text-red-600">{errors.name}</div>}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Email *</label>
+                    <input
+                      className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email"
+                    />
+                    {errors.email && <div className="mt-1 text-xs text-red-600">{errors.email}</div>}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Phone (WhatsApp) *</label>
+                    <input
+                      className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="10 digit number"
+                    />
+                    {errors.phone && <div className="mt-1 text-xs text-red-600">{errors.phone}</div>}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mt-8 h-12 w-full rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 font-semibold text-white"
+                  onClick={() => {
+                    if (!validateStep1()) return;
+                    setErrors({});
+                    setStep(2);
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div>
+                <h2 className="text-2xl font-bold">Your occupation</h2>
+
+                <div className="mt-6 space-y-3">
+                  {OCCUPATIONS.map((opt) => {
+                    const active = occupation === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={[
+                          "w-full rounded-xl border px-4 py-4 text-left font-medium",
+                          active ? "border-gray-900" : "border-gray-300",
+                        ].join(" ")}
+                        onClick={() => {
+                          setOccupation(opt);
+                          setErrors((p) => ({ ...p, occupation: undefined }));
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                  {errors.occupation && (
+                    <div className="mt-1 text-xs text-red-600">{errors.occupation}</div>
+                  )}
+                </div>
+
+                <div className="mt-8">
+                  <label className="text-sm font-medium">Do you have a Laptop? *</label>
+                  <select
+                    className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                    value={laptop}
+                    onChange={(e) => {
+                      setLaptop(e.target.value);
+                      setErrors((p) => ({ ...p, laptop: undefined }));
+                    }}
+                  >
+                    {LAPTOP_OPTIONS.map((o) => (
+                      <option key={o.v} value={o.v}>
+                        {o.t}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.laptop && <div className="mt-1 text-xs text-red-600">{errors.laptop}</div>}
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className="h-12 rounded-2xl border border-gray-300 font-semibold"
+                    onClick={() => {
+                      setErrors({});
+                      setStep(1);
+                    }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className="h-12 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 font-semibold text-white"
+                    onClick={() => {
+                      if (!validateStep2()) return;
+                      setErrors({});
+                      setStep(3);
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div>
+                <h2 className="text-2xl font-bold">
+                  What is your Goal for taking this program? <span className="text-red-600">*</span>
+                </h2>
+
+                <div className="mt-6 space-y-3">
+                  {GOALS.map((opt) => {
+                    const active = goal === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={[
+                          "w-full rounded-xl border px-4 py-4 text-left font-medium",
+                          active ? "border-gray-900" : "border-gray-300",
+                        ].join(" ")}
+                        onClick={() => {
+                          setGoal(opt);
+                          setErrors((p) => ({ ...p, goal: undefined }));
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                  {errors.goal && <div className="mt-1 text-xs text-red-600">{errors.goal}</div>}
+                </div>
+
+                {errors.submit && (
+                  <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {errors.submit}
+                  </div>
+                )}
+
+                <div className="mt-8 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className="h-12 rounded-2xl border border-gray-300 font-semibold"
+                    onClick={() => {
+                      setErrors({});
+                      setStep(2);
+                    }}
+                    disabled={submitting}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className="h-12 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 font-semibold text-white disabled:opacity-60"
+                    onClick={() => {
+                      if (!validateStep3()) return;
+                      postLead();
+                    }}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Submit"}
+                  </button>
+                </div>
+
+                <div className="mt-4 text-xs text-gray-500">
+                  After submit, WhatsApp group invite will open.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

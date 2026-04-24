@@ -1,0 +1,62 @@
+[
+  {
+    "family": "ai-skills",
+    "count": 1000,
+    "first": "ai-skills-for-students-in-delhi",
+    "last": "ai-skills-certification-in-noida"
+  },
+  {
+    "family": "ai-tools",
+    "count": 1000,
+    "first": "ai-tools-for-students-in-delhi",
+    "last": "ai-tools-certification-in-noida"
+  },
+  {
+    "family": "ai-course",
+    "count": 1000,
+    "first": "ai-course-for-students-in-delhi",
+    "last": "ai-course-certification-in-noida"
+  },
+  {
+    "family": "ai-career",
+    "count": 1000,
+    "first": "ai-career-for-students-in-delhi",
+    "last": "ai-career-certification-in-noida"
+  },
+  {
+    "family": "ai-jobs",
+    "count": 1000,
+    "first": "ai-jobs-for-students-in-delhi",
+    "last": "ai-jobs-certification-in-noida"
+  },
+  {
+    "family": "ai-freelancing",
+    "count": 1000,
+    "first": "ai-freelancing-for-students-in-delhi",
+    "last": "ai-freelancing-certification-in-noida"
+  },
+  {
+    "family": "ai-content-creation",
+    "count": 1000,
+    "first": "ai-content-creation-for-students-in-delhi",
+    "last": "ai-content-creation-certification-in-noida"
+  },
+  {
+    "family": "ai-video-editing",
+    "count": 1000,
+    "first": "ai-video-editing-for-students-in-delhi",
+    "last": "ai-video-editing-certification-in-noida"
+  },
+  {
+    "family": "ai-marketing",
+    "count": 1000,
+    "first": "ai-marketing-for-students-in-delhi",
+    "last": "ai-marketing-certification-in-noida"
+  },
+  {
+    "family": "prompt-engineering",
+    "count": 1000,
+    "first": "prompt-engineering-for-students-in-delhi",
+    "last": "prompt-engineering-certification-in-noida"
+  }
+]

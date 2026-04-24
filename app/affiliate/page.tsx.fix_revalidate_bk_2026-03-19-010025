@@ -1,0 +1,659 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import Link from "next/link";
+import {
+  useMemo,
+  useState } from "react";
+import {
+  ChevronDown,
+  ArrowRight,
+  BarChart3,
+  Wallet,
+  ShieldCheck,
+  BadgeIndianRupee,
+  Users,
+  GraduationCap,
+  Megaphone,
+  TrendingUp,
+  Quote,
+  Star,
+  Sparkles,
+  Compass,
+  ClipboardCheck,
+  Rocket
+} from "lucide-react";
+
+
+
+const benefits = [
+  {
+    icon: BadgeIndianRupee,
+    title: "Rewarding Earning Opportunity",
+    text: "Promote Sikhadenge programs with a structured growth and reward model.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Attractive Growth Structure",
+    text: "Built for long-term partner growth with cleaner business alignment.",
+  },
+  {
+    icon: Users,
+    title: "Inclusive Partner Model",
+    text: "Students, creators, affiliates, and communities can participate.",
+  },
+  {
+    icon: BarChart3,
+    title: "Tracking-Oriented Workflow",
+    text: "Designed to support structured promotion, tracking, and outcome visibility.",
+  },
+];
+
+const steps = [
+  {
+    no: "1",
+    title: "Explore the Program",
+    text: "Understand the ambassador, affiliate, and creator-led partner opportunity.",
+  },
+  {
+    no: "2",
+    title: "Apply & Get Reviewed",
+    text: "Submit your details, audience type, and promotion source for review.",
+  },
+  {
+    no: "3",
+    title: "Start Growing",
+    text: "Approved partners move forward into a cleaner long-term growth workflow.",
+  },
+];
+
+const testimonials = [
+  {
+    name: "Priya Patel",
+    role: "Affiliate Partner",
+    text: "This kind of program is useful because it combines visibility, growth, and monetisation opportunity in one place.",
+  },
+  {
+    name: "Rohan Gupta",
+    role: "Creator Partner",
+    text: "A structured partner system feels more credible than a plain referral page. It gives better clarity, trust, and positioning for promotion.",
+  },
+  {
+    name: "Neha Sharma",
+    role: "Creator Partner",
+    text: "For creators and affiliate-style communities, this kind of page makes the program feel more premium and serious.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Who can apply to join the program?",
+    a: "Creators, communities, affiliate partners, and promotion-focused profiles can apply.",
+  },
+  {
+    q: "Is approval automatic?",
+    a: "No. The current setup is review-based and depends on fit, relevance, and quality.",
+  },
+  {
+    q: "How are rewards decided?",
+    a: "The recommended structure is better aligned to verified outcomes instead of random low-quality traffic.",
+  },
+  {
+    q: "Will referral workflows be added later?",
+    a: "Yes. Approved partners can be mapped into cleaner tracking and referral workflows in the next phase.",
+  },
+  {
+    q: "Can students also join?",
+    a: "Yes. Students and promotion partners are one of the strongest fit categories for this model.",
+  },
+  {
+    q: "Is this only for influencers?",
+    a: "No. This page is for affiliates, creators, communities, and creators.",
+  },
+];
+
+function FaqItem({
+  q,
+  a,
+  open,
+  onClick,
+}: {
+  q: string;
+  a: string;
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-[#F5F7FB]">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+      >
+        <span className="text-sm font-semibold text-slate-900 sm:text-base">{q}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? (
+        <div className="px-5 pb-5 text-sm leading-7 text-slate-600">{a}</div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function AffiliatePage() {
+  const [courses, setCourses] = useState(100);
+  const [orderValue, setOrderValue] = useState(1000);
+  const [openFaq, setOpenFaq] = useState<number>(0);
+
+  const estimated = useMemo(() => {
+    const rate = 0.08;
+    return Math.round(courses * orderValue * rate);
+  }, [courses, orderValue]);
+
+  return (
+    <main className="min-h-screen bg-white text-slate-900">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#f7f9ff_0%,#eef4ff_100%)]">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-[-120px] top-[-40px] h-[320px] w-[320px] rounded-full bg-blue-100/80 blur-3xl" />
+          <div className="absolute right-[-100px] top-[20px] h-[280px] w-[280px] rounded-full bg-violet-100/70 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E2FF] bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5B4FE9] shadow-sm">
+                <Users className="h-4 w-4" />
+                Influencer & Affiliate Program
+              </div>
+
+              <h1 className="mt-4 max-w-xl text-2xl font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+                Grow with
+                <span className="block text-[#5B4FE9]">
+                  Sikhadenge&apos;s
+                  <span className="block text-[#5B4FE9]">
+                    Influencer & Affiliate Program
+                  </span>
+                </span>
+              </h1>
+
+              <p className="mt-4 max-w-md text-[13px] leading-6 text-slate-600 sm:text-sm">
+                Built for creators, affiliates, niche communities, and performance-focused
+                partners who want a cleaner way to promote Sikhadenge and unlock structured growth.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <Link
+                  href="/partner/apply?type=affiliate"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#5B4FE9] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(91,79,233,0.24)] transition hover:opacity-95"
+                >
+                  Apply Now
+                </Link>
+
+                <Link
+                  href="/influencer-program"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Explore Influencer Program
+                </Link>
+              </div>
+
+              <div className="mt-6 grid max-w-lg gap-2.5 sm:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Best For
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Creators & Affiliates
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Model
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Approval Based
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Focus
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Verified Outcomes
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="relative mx-auto h-[430px] max-w-[560px]">
+                <div className="absolute inset-0 rounded-[34px] border border-slate-800/70 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_30%),linear-gradient(180deg,#040816_0%,#071427_100%)] shadow-[0_30px_90px_rgba(2,8,23,0.35)]">
+                  <div className="absolute inset-0 rounded-[34px] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_28%)]" />
+                  <div className="absolute inset-x-0 bottom-0 h-24 rounded-b-[34px] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.12),transparent_55%)]" />
+                </div>
+
+                <div className="absolute left-8 top-6 h-[210px] w-[255px] rounded-[26px] border border-[#6F7BF7]/60 bg-[linear-gradient(180deg,rgba(18,27,54,0.92),rgba(10,18,38,0.96))] p-5 shadow-[0_18px_50px_rgba(2,8,23,0.35)]">
+                  <div className="text-[28px] font-bold leading-none text-white">
+                    Book Your Call
+                  </div>
+
+                  <div className="mt-5 h-[120px] rounded-[18px] border border-dashed border-[#7C86FF]/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))] p-4">
+                    <div className="rounded-2xl border border-[#6E79F6]/40 bg-[linear-gradient(180deg,rgba(17,24,39,0.95),rgba(9,14,28,0.98))] px-4 py-3 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[12px] font-medium text-white/80">Mon, 11th 11:00 AM</div>
+                        <div className="h-7 w-7 rounded-lg bg-emerald-400/15 ring-1 ring-emerald-400/30" />
+                      </div>
+
+                      <div className="mt-3 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
+                        Consultation
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-[linear-gradient(180deg,#a1a1aa,#52525b)] ring-2 ring-white/10" />
+                        <div className="text-[11px] leading-4 text-white/80">Sikhadenge Partner</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[linear-gradient(90deg,rgba(111,123,247,0.08),transparent_25%,transparent_75%,rgba(34,197,94,0.06))]" />
+                </div>
+
+                <div className="absolute right-4 top-[120px] h-[150px] w-[305px] rounded-[24px] border border-[#4B5BB8]/45 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(9,16,31,0.98))] p-4 shadow-[0_16px_40px_rgba(2,8,23,0.35)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[14px] font-semibold text-white">Overview</div>
+                    <div className="flex items-center gap-2 text-[10px] text-white/60">
+                      <span>All Time</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/80">1 Month</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 h-[92px] overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))]">
+                    <svg viewBox="0 0 320 100" className="h-full w-full">
+                      <path d="M0,72 C28,38 50,24 76,55 C98,82 128,86 146,42 C165,0 195,8 212,48 C228,84 248,84 268,48 C286,18 304,20 320,42" fill="none" stroke="#22c55e" strokeWidth="3.2" strokeLinecap="round" />
+                      <path d="M0,82 C28,64 54,62 78,76 C98,88 124,86 144,68 C164,50 188,48 210,68 C230,86 252,88 274,72 C292,58 306,58 320,66" fill="none" stroke="#8b9cff" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+                      <circle cx="318" cy="42" r="4.5" fill="#34d399" />
+                      <circle cx="318" cy="66" r="4.5" fill="#93c5fd" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="absolute left-8 bottom-6 h-[152px] w-[348px] rounded-[24px] border border-[#334B87]/45 bg-[linear-gradient(180deg,rgba(10,18,38,0.98),rgba(6,12,26,0.99))] px-5 pb-5 pt-4 shadow-[0_18px_45px_rgba(2,8,23,0.35)]">
+                  <div className="text-[15px] font-semibold text-white">
+                    Profit with Sikhadenge
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-[1fr_28px_1fr] items-end gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="relative h-[72px] w-[72px]">
+                        <div className="absolute inset-0 rounded-full border-[6px] border-white/10" />
+                        <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-l-emerald-400 border-t-emerald-400 rotate-[210deg]" />
+                        <div className="absolute left-1/2 top-1/2 h-1 w-6 -translate-x-[10%] -translate-y-1/2 rounded-full bg-emerald-300 origin-left rotate-[190deg]" />
+                      </div>
+                      <div className="mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/85">20%</div>
+                      <div className="mt-0 text-[9px] text-white/45">No System</div>
+                    </div>
+
+                    <div className="pb-4 text-center text-white/30">→</div>
+
+                    <div className="flex flex-col items-center">
+                      <div className="relative h-[72px] w-[72px]">
+                        <div className="absolute inset-0 rounded-full border-[6px] border-white/10" />
+                        <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-l-emerald-400 border-b-cyan-400 border-t-emerald-300 rotate-[145deg]" />
+                        <div className="absolute left-1/2 top-1/2 h-1 w-6 -translate-x-[10%] -translate-y-1/2 rounded-full bg-emerald-300 origin-left rotate-[138deg]" />
+                      </div>
+                      <div className="mt-2 rounded-full bg-[#7C86FF]/18 px-2 py-0.5 text-[10px] font-semibold text-white/85">75%</div>
+                      <div className="mt-0 text-[9px] text-white/50">Sikhadenge System</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center rounded-full border border-[#D9E2F2] bg-[#F7F9FF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5B4FE9]">
+              Why Join
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Why join Sikhadenge’s partner program?
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-[17px]">
+              Built for creators, affiliates, and niche promoters who want a more structured,
+              credible, and growth-focused way to promote Sikhadenge.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-2">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <TrendingUp className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Structured Growth Model</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Promote Sikhadenge through a cleaner and more organized partner framework.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <Users className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Built for Multiple Profiles</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Relevant for creators, affiliates, niche communities, and student-led promoters.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <ShieldCheck className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Better Quality Workflow</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    More aligned with serious promotion, tracked outcomes, and long-term collaboration.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <Sparkles className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Future-Ready Partner System</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Designed to grow into a stronger partner ecosystem with more support and visibility.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="calculator" className="bg-[#F3F0FF]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              How much can you Earn?
+            </h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Drag the slider to calculate your total earning
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-5xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
+            <div className="text-center">
+              <div className="text-[13px] text-slate-500">Upto</div>
+              <div className="mt-1 text-5xl font-bold text-[#5B4FE9] sm:text-6xl">
+                ₹{estimated.toLocaleString("en-IN")}
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="text-xs text-slate-500">Number of conversions</div>
+                <div className="mt-2 text-2xl font-bold text-slate-900">{courses}</div>
+                <input
+                  type="range"
+                  min={0}
+                  max={200}
+                  value={courses}
+                  onChange={(e) => setCourses(Number(e.target.value))}
+                  className="mt-5 w-full accent-[#5B4FE9]"
+                />
+                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                  <span>0</span>
+                  <span>200</span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="text-xs text-slate-500">1 Conversion Value</div>
+                <div className="mt-2 text-2xl font-bold text-slate-900">{orderValue.toLocaleString("en-IN")}</div>
+                <input
+                  type="range"
+                  min={1000}
+                  max={20000}
+                  step={500}
+                  value={orderValue}
+                  onChange={(e) => setOrderValue(Number(e.target.value))}
+                  className="mt-5 w-full accent-[#5B4FE9]"
+                />
+                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                  <span>1000</span>
+                  <span>20000</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-6 text-center text-xs text-slate-400">
+              *Earning estimates are illustrative and depend on actual program rules and outcomes.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[linear-gradient(180deg,#FCFDFF_0%,#F7FAFF_100%)]">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center rounded-full border border-[#D9E2F2] bg-[#F7F9FF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5B4FE9]">
+              How It Works
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Start growing with Sikhadenge in 3 simple steps
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-[17px]">
+              A cleaner partner journey for creators, affiliates, and promotion-focused profiles.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-6xl gap-6 md:grid-cols-3">
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                1
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#EFF4FF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Statistics</div>
+                    <div className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-500">This Week</div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF4FF]">
+                      <Compass className="h-4 w-4 text-[#5B4FE9]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold text-slate-800">Sikhadenge</div>
+                      <div className="text-[10px] text-slate-500">Partner view</div>
+                    </div>
+                  </div>
+                  <div className="mt-3.5">
+                    <svg viewBox="0 0 220 70" className="h-[54px] w-full">
+                      <path d="M0,48 C18,32 34,26 50,38 C66,50 86,54 104,30 C120,10 142,14 158,34 C174,54 194,56 220,24" fill="none" stroke="#84cc16" strokeWidth="2.5" strokeLinecap="round"/>
+                      <path d="M0,52 C18,44 36,42 52,48 C70,56 90,58 108,42 C126,26 148,26 166,42 C184,58 202,56 220,38" fill="none" stroke="#14532d" strokeWidth="2.5" strokeLinecap="round" opacity="0.9"/>
+                      <circle cx="108" cy="42" r="3.5" fill="#14532d"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Explore the Program</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Understand the partner model, who it is for, and how Sikhadenge positioning works.
+              </p>
+            </div>
+
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                2
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#F4F2FF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Balance</div>
+                    <div className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-500">Weekly</div>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] text-slate-500">Total Balance</div>
+                      <div className="mt-1 text-xl font-bold text-slate-900">$2,100</div>
+                    </div>
+                    <div className="rounded-full bg-[#E8FAEE] px-2 py-1 text-[10px] font-semibold text-[#15803d]">+15%</div>
+                  </div>
+                  <div className="mt-3.5 flex items-end gap-2">
+                    <div className="h-8 w-6 rounded-t-md bg-[#E8EDF8]" />
+                    <div className="h-12 w-6 rounded-t-md bg-[#B7F06A]" />
+                    <div className="h-16 w-6 rounded-t-md bg-[#84cc16]" />
+                    <div className="h-10 w-6 rounded-t-md bg-[#E8EDF8]" />
+                    <div className="h-9 w-6 rounded-t-md bg-[#E8EDF8]" />
+                  </div>
+                  <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+                    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Apply & Get Reviewed</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Submit your details, audience type, and promotion source for profile review.
+              </p>
+            </div>
+
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                3
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#FFF7EF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Subscriptions</div>
+                    <div className="flex gap-1 text-[10px]">
+                      <span className="rounded-full bg-[#F3F4F6] px-2 py-1 text-slate-500">Month</span>
+                      <span className="rounded-full px-2 py-1 text-slate-400">Week</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-start justify-between gap-2.5">
+                    <div>
+                      <div className="text-[10px] text-slate-500">USD</div>
+                      <div className="mt-1 text-lg font-bold text-slate-900">$389.00</div>
+                      <div className="text-[10px] text-slate-500">Total sales</div>
+                    </div>
+                    <div className="rounded-2xl bg-[#F8FAFF] px-3 py-2 text-right">
+                      <div className="text-[10px] text-slate-500">USD</div>
+                      <div className="text-sm font-semibold text-slate-900">$22,678.00</div>
+                    </div>
+                  </div>
+                  <div className="mt-3.5">
+                    <svg viewBox="0 0 220 70" className="h-[54px] w-full">
+                      <path d="M0,58 C22,54 38,48 58,52 C80,56 96,46 116,30 C136,14 154,20 172,18 C192,16 206,8 220,4" fill="none" stroke="#84cc16" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Start Growing</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Approved partners move into a cleaner long-term growth workflow.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Words from Our Partners
+          </h2>
+
+          <div className="mx-auto mt-14 grid max-w-6xl gap-6 md:grid-cols-3">
+            {testimonials.map((item) => (
+              <div
+                key={item.name}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+              >
+                <Quote className="h-8 w-8 text-slate-200" />
+                <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
+                <div className="mt-6">
+                  <div className="text-sm font-semibold text-slate-900">{item.name}</div>
+                  <div className="text-sm text-[#5B4FE9]">{item.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Frequently Asked Questions
+          </h2>
+
+          <div className="mt-12 space-y-3">
+            {faqs.map((item, idx) => (
+              <FaqItem
+                key={item.q}
+                q={item.q}
+                a={item.a}
+                open={openFaq === idx}
+                onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#0B1220]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_center,rgba(91,79,233,0.18),transparent_50%),linear-gradient(180deg,#101828_0%,#0B1220_100%)] px-6 py-12 text-center shadow-2xl sm:px-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+              <Star className="h-4 w-4 text-[#F5B301]" />
+              Sikhadenge Influencer & Affiliate Program
+            </div>
+
+            <h2 className="mx-auto mt-6 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-5xl">
+              Join Us & Maximise Your Earning Potential!
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/70">
+              Ready to build stronger reach, referrals, and revenue with Sikhadenge?
+              Join a cleaner, more premium influencer and affiliate journey.
+            </p>
+
+            <div className="mt-8">
+              <Link
+                href="/partner/apply?type=affiliate"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                Get Started
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

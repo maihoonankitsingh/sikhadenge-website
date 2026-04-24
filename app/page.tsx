@@ -1,0 +1,190 @@
+import type { Metadata } from "next";
+import LandingPage from "./landing/page";
+import SeoContentBlock from "./components/SeoContentBlock";
+import { siteConfig, absoluteUrl } from "../lib/seo";
+import InternalLinksBlock from "@/app/components/InternalLinksBlock";
+import JsonLd from "@/app/components/JsonLd";
+import { organizationSchema, websiteSchema, breadcrumbSchema, faqSchema, courseSchema } from "@/lib/schema";
+import AnswerEngineBlock from "@/app/components/AnswerEngineBlock";
+
+export const metadata: Metadata = {
+  title: "Sikhadenge | India-Focused AI and Skill Learning Platform",
+  description:
+    "Sikhadenge is an India-focused AI and skill learning platform for students, freelancers, creators, and working professionals. Learn practical AI skills across design, video, content, marketing, websites, automation, and modern digital workflows.",
+  keywords: [
+    "AI course India",
+    "AI Expert Professional Program",
+    "AI tools course",
+    "AI skills for beginners",
+    "AI design course",
+    "AI video creation course",
+    "AI content creation course",
+    "AI automation course",
+    "AI marketing course",
+    "learn AI tools",
+    "AI course for students",
+    "AI course for freelancers",
+    "AI course for content creators",
+    "Sikhadenge AI course"
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Sikhadenge | India-Focused AI and Skill Learning Platform",
+  description:
+      "Sikhadenge helps students, freelancers, creators, and working professionals learn practical AI skills across design, video, content, marketing, websites, automation, and digital workflows.",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    type: "website",
+    locale: "en_IN",
+    images: [
+      {
+        url: absoluteUrl(siteConfig.ogImage),
+        width: 1200,
+        height: 630,
+        alt: "Sikhadenge AI Expert Professional Program",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sikhadenge | India-Focused AI and Skill Learning Platform",
+  description:
+      "Learn practical AI skills for modern digital work across content, design, video, marketing, websites, and automation with Sikhadenge.",
+    images: [absoluteUrl(siteConfig.ogImage)],
+  },
+};
+
+const homeSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteConfig.url}/#organization`,
+      name: siteConfig.name,
+      url: siteConfig.url,
+      logo: absoluteUrl(siteConfig.logo),
+      email: siteConfig.email,
+      telephone: siteConfig.phone,
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: siteConfig.email,
+          telephone: siteConfig.phone,
+          areaServed: "IN",
+          availableLanguage: ["English", "Hindi"],
+        },
+      ],
+      sameAs: [
+        siteConfig.social.instagram,
+        siteConfig.social.linkedin,
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteConfig.url}/#website`,
+      url: siteConfig.url,
+      name: siteConfig.name,
+      publisher: {
+        "@id": `${siteConfig.url}/#organization`,
+      },
+      inLanguage: "en-IN",
+    },
+    {
+      "@type": "Course",
+      "@id": `${siteConfig.url}/#course`,
+      name: siteConfig.program.name,
+      description:
+        "Sikhadenge is an India-focused AI and skill learning platform that helps students, freelancers, creators, and working professionals build practical capability across AI design, AI video creation, AI content creation, AI marketing, AI websites, and automation workflows.",
+      provider: {
+        "@id": `${siteConfig.url}/#organization`,
+      },
+      educationalCredentialAwarded: "Certificate of Completion",
+      courseMode: "online",
+      inLanguage: "en-IN",
+      timeRequired: "P8W",
+      offers: {
+        "@type": "Offer",
+        priceCurrency: siteConfig.program.currency,
+        price: siteConfig.program.offerPrice,
+        category: "EducationalOccupationalProgram",
+        availability: "https://schema.org/InStock",
+        url: siteConfig.url,
+      },
+    },
+    {
+      "@type": "Event",
+      "@id": `${siteConfig.url}/#masterclass`,
+      name: "Sikhadenge Free AI Masterclass",
+      eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+      eventStatus: "https://schema.org/EventScheduled",
+      organizer: {
+        "@id": `${siteConfig.url}/#organization`,
+      },
+      location: {
+        "@type": "VirtualLocation",
+        url: `${siteConfig.url}/masterclass`,
+      },
+      url: `${siteConfig.url}/masterclass`,
+      description:
+        "A free online masterclass introducing AI tools, AI workflows, and digital creation skills for beginners, students, freelancers, and creators.",
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${siteConfig.url}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is an AI Expert?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "An AI Expert is a person who can use multiple AI tools to create digital assets across design, video, content, marketing, websites, and automation workflows.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can beginners learn AI tools without coding?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "Yes. Beginners can learn AI tools without coding if they follow a structured program that focuses on practical execution, workflows, and real output creation.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What does the Sikhadenge program teach?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "The Sikhadenge AI Expert Professional Program teaches AI design, AI video creation, AI content creation, AI marketing assets, AI websites, and AI automation workflows in a practical 8-week format.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Who is this program for?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "This program is designed for students, freelancers, content creators, career switchers, and beginners in India who want to build practical AI-based digital skills.",
+          },
+        },
+      ],
+    },
+  ],
+};
+
+export default function Page() {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeSchema) }}
+      />
+      <LandingPage />
+      <SeoContentBlock />
+    </>
+  );
+}

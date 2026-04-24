@@ -2,24 +2,316 @@
 @tailwind components;
 @tailwind utilities;
 
+/* optional: keep your custom base styles below */
+html, body { height: 100%; }
+
+/* Offer strip height + header offset */
 :root{
-  --sd-bg:#0B1220;
-  --sd-surface:#111827;
-  --sd-border:rgba(255,255,255,0.10);
+  --sd-offer-h:0px;
+
+  --sd-bg:#F8FAFC;
+  --sd-brand:#0B1220;
+  --sd-brand-2:#111827;
+  --sd-card:#FFF7E6;
+
+  --sd-border:rgba(15,23,42,0.15);
+
+  --sd-text:#0F172A;
+  --sd-text-2:#334155;
+  --sd-text-3:#64748B;
+
   --sd-primary:#2563EB;
   --sd-primary-dark:#1D4ED8;
   --sd-gold:#F5B301;
-  --sd-text:#FFFFFF;
-  --sd-text-2:#B0B7C3;
-  --sd-text-3:#9CA3AF;
+
+  --sd-glow-blue:0 0 18px rgba(37,99,235,0.55);
+  --sd-glow-gold:0 0 18px rgba(245,179,1,0.55);
+}
+.sd-header-under-offer{ top: var(--sd-offer-h) !important; }
+
+/* Global header spacing (offer strip + header) */
+:root{ --sd-header-h: 56px; }
+.sd-global-header-spacer{ height: calc(var(--sd-offer-h) + var(--sd-header-h)); }
+
+/* gen-ai-masterclass: hide global header (only on this page) */
+
+
+/* GENAI_AUDIENCE_CARDS_BG */
+.page-genai-masterclass .sd-audience-card{
+  background: var(--sd-card) !important;
 }
 
-/* base */
-html, body { height: 100%; }
-body{
-  background: var(--sd-bg);
-  color: var(--sd-text);
+/* Hide scrollbar but keep scroll working */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+
+/* Prevent accidental horizontal page scrollbar */
+html, body { overflow-x: hidden; }
+
+
+/* Optional: show grab cursor for horizontal scrollers */
+.drag-scroll { cursor: grab; }
+.drag-scroll:active { cursor: grabbing; }
+
+/* Sikhadenge: branded subtle grid background (light page, brand lines) */
+.sd-hero-grid-bg{
+  background-color: #F8FAFC;
+  background-image:
+    linear-gradient(rgba(11,18,32,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11,18,32,0.08) 1px, transparent 1px);
+  background-size: 52px 52px;
 }
 
-/* optional: smoother */
-* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+/* hide scrollbar (horizontal reels) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* === CONTACT PAGE VISUAL POLISH :: START === */
+.sd-contact-polish {
+  background:
+    linear-gradient(180deg, #f8fbff 0%, #f8fafc 22%, #f8fafc 100%);
+}
+
+.sd-contact-polish h1,
+.sd-contact-polish h2,
+.sd-contact-polish h3 {
+  color: #0b1220;
+  letter-spacing: -0.02em;
+}
+
+.sd-contact-polish p {
+  color: #475569;
+}
+
+.sd-contact-polish .rounded-2xl,
+.sd-contact-polish .rounded-3xl,
+.sd-contact-polish .rounded-\[24px\],
+.sd-contact-polish .rounded-\[28px\],
+.sd-contact-polish .rounded-\[30px\],
+.sd-contact-polish .rounded-\[32px\] {
+  border-color: #d7e3f4 !important;
+}
+
+.sd-contact-polish form,
+.sd-contact-polish [class*="form"],
+.sd-contact-polish [class*="Form"] {
+  border-radius: 28px;
+}
+
+.sd-contact-polish input,
+.sd-contact-polish textarea,
+.sd-contact-polish select {
+  background: #ffffff !important;
+  border: 1px solid #d7e3f4 !important;
+  color: #0b1220 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset;
+}
+
+.sd-contact-polish input::placeholder,
+.sd-contact-polish textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.sd-contact-polish input:focus,
+.sd-contact-polish textarea:focus,
+.sd-contact-polish select:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12) !important;
+}
+
+.sd-contact-polish button,
+.sd-contact-polish a[href^="tel:"],
+.sd-contact-polish a[href^="mailto:"] {
+  transition: all 180ms ease;
+}
+
+.sd-contact-polish button:not(.unstyled):not([class*="ghost"]),
+.sd-contact-polish a.inline-flex,
+.sd-contact-polish a.flex {
+  border-radius: 9999px;
+}
+
+.sd-contact-polish [class*="shadow-"] {
+  box-shadow: 0 12px 30px rgba(15,23,42,0.05) !important;
+}
+
+.sd-contact-polish .border,
+.sd-contact-polish [class*="border-"] {
+  border-color: #d7e3f4;
+}
+
+.sd-contact-polish .bg-white {
+  background: #ffffff !important;
+}
+
+.sd-contact-polish .bg-slate-50,
+.sd-contact-polish .bg-gray-50,
+.sd-contact-polish .bg-zinc-50,
+.sd-contact-polish .bg-neutral-50 {
+  background: #f8fbff !important;
+}
+
+.sd-contact-polish .text-slate-900,
+.sd-contact-polish .text-gray-900,
+.sd-contact-polish .text-zinc-900,
+.sd-contact-polish .text-neutral-900 {
+  color: #0b1220 !important;
+}
+
+.sd-contact-polish .text-slate-600,
+.sd-contact-polish .text-slate-500,
+.sd-contact-polish .text-gray-600,
+.sd-contact-polish .text-gray-500,
+.sd-contact-polish .text-zinc-600,
+.sd-contact-polish .text-neutral-600 {
+  color: #475569 !important;
+}
+
+.sd-contact-polish svg {
+  color: #2563eb;
+}
+
+.sd-contact-polish [class*="icon"],
+.sd-contact-polish [class*="Icon"] {
+  border-radius: 20px;
+}
+
+.sd-contact-polish .group:hover,
+.sd-contact-polish [role="button"]:hover,
+.sd-contact-polish a:hover,
+.sd-contact-polish button:hover {
+  transform: translateY(-1px);
+}
+
+.sd-contact-polish > section,
+.sd-contact-polish > div > section {
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .sd-contact-polish h1 {
+    line-height: 1.04;
+  }
+}
+/* === CONTACT PAGE VISUAL POLISH :: END === */
+
+/* === ABOUT PAGE SAFE VISUAL POLISH :: START === */
+.sd-about-polish {
+  background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 24%, #f8fafc 100%);
+}
+
+.sd-about-polish h1,
+.sd-about-polish h2,
+.sd-about-polish h3,
+.sd-about-polish h4 {
+  color: #0b1220;
+  letter-spacing: -0.02em;
+}
+
+.sd-about-polish p,
+.sd-about-polish li {
+  color: #475569;
+}
+
+.sd-about-polish .bg-white {
+  background: #ffffff !important;
+}
+
+.sd-about-polish .border,
+.sd-about-polish [class*="border-"] {
+  border-color: #d7e3f4 !important;
+}
+
+.sd-about-polish .rounded-2xl,
+.sd-about-polish .rounded-3xl,
+.sd-about-polish .rounded-\[20px\],
+.sd-about-polish .rounded-\[24px\],
+.sd-about-polish .rounded-\[28px\],
+.sd-about-polish .rounded-\[30px\],
+.sd-about-polish .rounded-\[32px\] {
+  border-color: #d7e3f4 !important;
+}
+
+.sd-about-polish [class*="shadow-"] {
+  box-shadow: 0 12px 30px rgba(15,23,42,0.05) !important;
+}
+
+.sd-about-polish svg {
+  color: #2563eb;
+}
+
+.sd-about-polish a.inline-flex,
+.sd-about-polish a.flex,
+.sd-about-polish button {
+  transition: all 180ms ease;
+}
+
+.sd-about-polish a.inline-flex:hover,
+.sd-about-polish a.flex:hover,
+.sd-about-polish button:hover {
+  transform: translateY(-1px);
+}
+
+.sd-about-polish .text-slate-900,
+.sd-about-polish .text-gray-900,
+.sd-about-polish .text-zinc-900,
+.sd-about-polish .text-neutral-900 {
+  color: #0b1220 !important;
+}
+
+.sd-about-polish .text-slate-600,
+.sd-about-polish .text-slate-500,
+.sd-about-polish .text-gray-600,
+.sd-about-polish .text-gray-500,
+.sd-about-polish .text-zinc-600,
+.sd-about-polish .text-neutral-600 {
+  color: #475569 !important;
+}
+
+.sd-about-polish .bg-slate-50,
+.sd-about-polish .bg-gray-50,
+.sd-about-polish .bg-zinc-50,
+.sd-about-polish .bg-neutral-50 {
+  background: #f8fbff !important;
+}
+
+@media (min-width: 768px) {
+  .sd-about-polish h1 {
+    line-height: 1.04;
+  }
+}
+/* === ABOUT PAGE SAFE VISUAL POLISH :: END === */
+
+/* ===== SD_PLYR_YT_THEME ===== */
+:root{
+  --plyr-color-main:#ff0000;           /* YouTube red */
+  --plyr-control-icon-size:18px;
+  --plyr-control-spacing:12px;
+  --plyr-range-thumb-height:12px;
+  --plyr-range-track-height:4px;
+}
+
+/* round + slightly thicker progress bar */
+.plyr--video .plyr__progress input[type=range]{
+  border-radius:999px;
+}
+.plyr--video .plyr__progress__buffer{
+  border-radius:999px;
+}
+
+/* cleaner control bar */
+.plyr--video .plyr__controls{
+  padding:10px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,0));
+}
+
+/* bigger center play button */
+.plyr__control--overlaid{
+  background: rgba(0,0,0,.65);
+  border: 1px solid rgba(255,255,255,.25);
+  padding: 18px;
+}

@@ -1,0 +1,170 @@
+'use client';
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Play, ChevronDown, Clock, Calendar, Users, Star, 
+  CheckCircle, ArrowRight, Phone, Mail, Instagram, X,
+  Sparkles, Award, Zap, BookOpen, Briefcase, MessageCircle, 
+  Quote, User, Palette, Video, Brain, Target, Layers,
+  FileText, BarChart3, PenTool, Presentation, TrendingUp,
+  Rocket, Globe, Monitor, Image, Wand2, Mic, Bot, Check,
+  ChevronLeft, ChevronRight, Gift, Shield, PlayCircle,
+  GraduationCap, Lightbulb, Laptop, Flame, Timer
+} from 'lucide-react';
+
+// ==================== CONFIG ====================
+const CONFIG = {
+  pricing: {
+    original: '₹9,999',
+    current: 'FREE',
+    value: '₹15,000'
+  },
+  workshop: {
+    title: 'Master Gen-AI, Graphic Design & Video Editing',
+    subtitle: 'Live Workshop में सीखो Practical Skills जो आप तुरंत Use कर सकते हो',
+    duration: '3 HOURS',
+    date: 'This Weekend',
+    time: '7 PM - 10 PM',
+    seats: 'Limited 100 Seats'
+  },
+  stats: {
+    batches: '500+',
+    learners: '5000+',
+    rating: '4.9',
+    companies: '50+'
+  },
+  contact: {
+    phone: '+91 8808505575',
+    email: 'support@sikhadenge.in',
+    whatsapp: 'https://chat.whatsapp.com/CvbSGsautwH0CGuOzW2c8q'
+  },
+  mentor: {
+    name: 'Expert Mentors',
+    title: 'Sikhadenge Team',
+    bio: 'Industry experts with 10+ years experience in top companies',
+    stats: { experience: '10+', students: '5000+', rating: '4.9' }
+  }
+};
+
+// Company logos with proper colors for visibility
+const companies = [
+  { name: 'Rapido', color: '#FFD700' },
+  { name: 'Zomato', color: '#E23744' },
+  { name: 'Flipkart', color: '#2874F0' },
+  { name: 'PhonePe', color: '#5F259F' },
+  { name: 'Swiggy', color: '#FC8019' },
+  { name: 'BookMyShow', color: '#C4242B' },
+  { name: 'Oracle', color: '#F80000' },
+  { name: 'Juspay', color: '#2563EB' },
+  { name: 'Quora', color: '#B92B27' },
+  { name: 'Blinkit', color: '#F8CB46' }
+];
+
+// What you'll learn
+const learningPoints = [
+  { icon: Brain, title: '25+ AI Tools Master करो', desc: 'ChatGPT, Midjourney, DALL-E, Runway, HeyGen' },
+  { icon: Palette, title: 'Professional Design सीखो', desc: 'Photoshop, Illustrator, Canva, Figma' },
+  { icon: Video, title: 'Video Editing में Expert बनो', desc: 'Premiere Pro, After Effects, CapCut' },
+  { icon: Wand2, title: 'AI से Images Generate करो', desc: 'Text-to-Image, Image Enhancement' },
+  { icon: PenTool, title: 'Brand Identity Design', desc: 'Logos, Typography, Color Theory' },
+  { icon: Rocket, title: 'Freelance Career Start करो', desc: 'Portfolio Building, Client Management' }
+];
+
+// Workshop bonuses
+const bonuses = [
+  { title: 'AI Prompts Library', value: '₹999', desc: '100+ ready-to-use prompts' },
+  { title: 'Design Templates Pack', value: '₹1,499', desc: '50+ professional templates' },
+  { title: 'Video Editing Presets', value: '₹799', desc: 'Premium effects & transitions' },
+  { title: 'Resource Guide PDF', value: '₹499', desc: 'Complete learning roadmap' }
+];
+
+// Testimonials
+const testimonials = [
+  { 
+    name: 'Rahul Singh', 
+    role: 'Graphic Designer at Swiggy',
+    image: null,
+    text: 'Workshop में इतना practical सिखाया कि तुरंत apply कर पाया। अब मेरी salary 2x हो गई है।', 
+    rating: 5,
+    result: 'Salary 2X'
+  },
+  { 
+    name: 'Sneha Yadav', 
+    role: 'Freelance Video Editor',
+    image: null,
+    text: 'Ek hi workshop me graphic design + video editing दोनों cover हो गया। Ab monthly ₹50K कमा रही हूँ।', 
+    rating: 5,
+    result: '₹50K/month'
+  },
+  { 
+    name: 'Amit Verma', 
+    role: 'Content Creator',
+    image: null,
+    text: 'AI tools सीखने के बाद मेरा content quality 10X improve हुआ। Views बढ़ गए और brands approach कर रहे हैं।', 
+    rating: 5,
+    result: '10X Growth'
+  },
+  { 
+    name: 'Pooja Sharma', 
+    role: 'Digital Marketing Manager',
+    image: null,
+    text: 'Creative skills सीखने के बाद promotion मिली। अब team lead करती हूँ।', 
+    rating: 5,
+    result: 'Promoted'
+  },
+  { 
+    name: 'Mohit Kumar', 
+    role: 'UI/UX Designer',
+    image: null,
+    text: 'Sikhadenge से सीखकर अपनी first freelance project land की। Best decision ever!', 
+    rating: 5,
+    result: 'First Client'
+  }
+];
+
+// FAQs
+const faqs = [
+  { q: 'Workshop की fees कितनी है?', a: 'Workshop एकदम FREE है! बस register करो और attend करो। कोई hidden charges नहीं।' },
+  { q: 'क्या prior experience चाहिए?', a: 'बिल्कुल नहीं। Beginners के लिए designed है। Basics से शुरू करके advanced तक ले जाते हैं।' },
+  { q: 'Workshop का timing क्या है?', a: 'Evening 7 PM - 10 PM. Weekend workshop है, working professionals भी attend कर सकते हैं।' },
+  { q: 'Recording मिलेगी?', a: 'हाँ, workshop की recording available होगी। Miss करने पर catch-up कर सकते हो।' },
+  { q: 'Certificate मिलेगा?', a: 'हाँ, workshop completion पर certificate मिलता है जो आप LinkedIn पर share कर सकते हो।' },
+  { q: 'कौन से tools सिखाओगे?', a: 'Photoshop, Illustrator, Premiere Pro, After Effects, और 25+ AI tools जैसे ChatGPT, Midjourney, DALL-E।' }
+];
+
+// AI Tools
+const aiTools = [
+  'ChatGPT', 'Gemini', 'Midjourney', 'DALL-E 3', 'Runway', 'HeyGen',
+  'Adobe Firefly', 'Canva AI', 'ElevenLabs', 'Synthesia', 'Ideogram', 'Loom',
+  'NotebookLM', 'Copilot', 'Claude', 'Stable Diffusion'
+];
+
+// ==================== COUNTDOWN TIMER ====================
+const CountdownTimer = () => {
+  const [time, setTime] = useState({ hours: 2, minutes: 45, seconds: 30 });
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(prev => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="flex items-center gap-1 text-white font-mono">
+      <span className="bg-white/20 px-2 py-1 rounded">{String(time.hours).padStart(2, '0')}</span>:
+      <span className="bg-white/20 px-2 py-1 rounded">{String(time.minutes).padStart(2, '0')}</span>:
+      <span className="bg-white/20 px-2 py-1 rounded">{String(time.seconds).padStart(2, '0')}</span>
+    </div>
+  );
+};
+
+export default CountdownTimer;
+

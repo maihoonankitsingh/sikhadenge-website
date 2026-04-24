@@ -1,0 +1,103 @@
+import { MetadataRoute } from 'next';
+import fs from 'fs';
+import path from 'path';
+import { skillsData } from '../data/skillsData';
+
+function getRecords(fileName: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'data', fileName);
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(fileContents);
+  } catch {
+    return [];
+  }
+}
+
+function getSlugs(fileName: string) {
+  const records = getRecords(fileName);
+  return records.map((record: any) => record?.slug).filter(Boolean);
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://sikhadenge.in';
+  const now = new Date();
+
+  const staticRoutes = [
+    '',
+    '/about-us',
+    '/contact-us',
+    '/ai-expert',
+    '/ai-skills',
+    '/courses',
+    '/experts',
+    '/gen-ai-masterclass',
+    '/gen-ai-masterclass/register-one-step',
+    '/blog',
+    '/site-map'
+  ].map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: now,
+    changeFrequency: 'daily' as const,
+    priority: route === '' ? 1.0 : 0.9,
+  }));
+
+  // Root skill pages only from skillsData
+  const rootSkillUrls = skillsData.map((skill: any) => ({
+    url: `${baseUrl}/${skill.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
+  // Prompt pages
+  const promptUrls = getSlugs('generated-prompts.json').map((slug: string) => ({
+    url: `${baseUrl}/prompts/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
+  // Free tools
+  const toolsUrls = getSlugs('generated-mini-tools.json').map((slug: string) => ({
+    url: `${baseUrl}/free-tools/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.9,
+  }));
+
+  // Compare pages
+  const compareUrls = getSlugs('generated-vs.json').map((slug: string) => ({
+    url: `${baseUrl}/compare/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
+  // Expert pages only from generated-seo.json
+  const expertUrls = getSlugs('generated-seo.json').map((slug: string) => ({
+    url: `${baseUrl}/expert/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  // Hindi pages
+  const hindiUrls = getSlugs('generated-hindi.json').map((slug: string) => ({
+    url: `${baseUrl}/hindi/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.75,
+  }));
+
+  const allUrls = [
+    ...staticRoutes,
+    ...rootSkillUrls,
+    ...promptUrls,
+    ...toolsUrls,
+    ...compareUrls,
+    ...expertUrls,
+    ...hindiUrls,
+  ];
+
+  return Array.from(new Map(allUrls.map((item) => [item.url, item])).values());
+}

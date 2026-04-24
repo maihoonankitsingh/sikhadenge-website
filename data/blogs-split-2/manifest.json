@@ -1,0 +1,19 @@
+{
+  "total_blogs": 25010,
+  "parts": 2,
+  "chunk_size": 12505,
+  "files": [
+    {
+      "file": "blogs-a.json",
+      "count": 12505,
+      "start_index": 0,
+      "end_index": 12504
+    },
+    {
+      "file": "blogs-b.json",
+      "count": 12505,
+      "start_index": 12505,
+      "end_index": 25009
+    }
+  ]
+}

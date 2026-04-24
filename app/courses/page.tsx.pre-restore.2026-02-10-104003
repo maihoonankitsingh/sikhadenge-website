@@ -1,0 +1,195 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import FbqViewContent from "../components/FbqViewContent";
+
+export const metadata: Metadata = {
+  title: "Courses",
+  description:
+    "Explore live online courses: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills. Portfolio-focused learning with structured classes.",
+  alternates: { canonical: "/courses" },
+  openGraph: {
+    type: "website",
+    url: "https://sikhadenge.in/courses",
+    siteName: "Sikhadenge",
+    title: "Courses | Sikhadenge",
+    description:
+      "Explore live online courses: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Courses | Sikhadenge",
+    description:
+      "Explore live online courses: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+  },
+};
+
+const courses = [
+  {
+    title: "Graphic Design",
+    href: "/courses/graphic-design",
+    chips: ["Photoshop", "Illustrator", "Layout", "Portfolio"],
+    desc:
+      "Foundation to portfolio. Learn composition, typography, branding basics, and production-ready workflows.",
+    meta: ["4 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "Video Editing",
+    href: "/courses/video-editing",
+    chips: ["Premiere Pro", "Reels", "Longform", "Export"],
+    desc:
+      "Editing fundamentals for real output. Timeline workflow, pacing, captions, and platform-ready exports.",
+    meta: ["4 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "Motion Graphics",
+    href: "/courses/motion-graphics",
+    chips: ["After Effects", "Keyframes", "Transitions", "Reels"],
+    desc:
+      "Motion fundamentals to reel-ready output. Keyframes, typography animation, and clean transitions.",
+    meta: ["4 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "AI Mastery",
+    href: "/courses/ai-mastery",
+    chips: ["GenAI", "Prompts", "Workflows", "Output"],
+    desc:
+      "Practical GenAI workflows for creators. Prompting, ideation, and AI-assisted production for design & editing.",
+    meta: ["2 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "AI Color Theory & Systems",
+    href: "/courses/ai-color-theory",
+    chips: ["Color", "Contrast", "Composition", "AI Assist"],
+    desc:
+      "Color harmony, contrast, and practical composition with AI-assisted exploration and practice.",
+    meta: ["2 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "AI Typography & Layout",
+    href: "/courses/ai-typography-layout",
+    chips: ["Hierarchy", "Grid", "Spacing", "Layout"],
+    desc:
+      "Typography + layout essentials: hierarchy, grids, spacing, and composition for clarity and readability.",
+    meta: ["2 months", "2 hrs/day", "Next batch soon"],
+  },
+  {
+    title: "AI Branding & Packaging",
+    href: "/courses/ai-branding-packaging",
+    chips: ["Brand System", "Packaging", "Concepts", "Mockups"],
+    desc:
+      "Branding and packaging basics: brand systems, packaging layout, and AI-assisted concept ideation with output.",
+    meta: ["2 months", "2 hrs/day", "Next batch soon"],
+  },
+];
+
+export default function Page() {
+  const faq = [
+    {
+      q: "Which courses are available at Sikhadenge?",
+      a: "Graphic Design, Video Editing, Motion Graphics, and AI-powered creator modules like AI Mastery, Color Theory, Typography & Layout, Branding & Packaging.",
+    },
+    { q: "Are classes live online?", a: "Yes. Classes are live online with structured lessons and practical assignments." },
+    { q: "Do you teach industry tools?", a: "Yes. Courses use industry-standard tools and focus on practical workflows and output." },
+    { q: "Is this beginner friendly?", a: "Yes. Courses start from fundamentals and move towards portfolio-ready output." },
+  ];
+
+  return (
+    <>
+      <FbqViewContent />
+      <main className="min-h-screen bg-[#0B1220] text-white">
+        <section className="mx-auto max-w-7xl px-4 pt-24 pb-12">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#B0B7C3]">
+                <span className="h-2 w-2 rounded-full bg-[#F5B301]" />
+                Courses • Sikhadenge
+              </div>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-5xl">
+                Live online courses for creators
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm md:text-lg text-[#B0B7C3] leading-relaxed">
+                Choose a track based on your goal. Structured live classes, daily practice, and portfolio-focused output.
+              </p>
+            </div>
+
+            <Link
+              href="/counselling"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2563EB] px-5 text-sm font-semibold text-white hover:shadow-[0_0_18px_rgba(37,99,235,0.55)] transition-shadow"
+            >
+              Counselling
+            </Link>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c) => (
+              <div key={c.href} className="rounded-2xl border border-white/10 bg-[#111827] overflow-hidden">
+                <div className="h-28 border-b border-white/10 bg-gradient-to-br from-[#0B1220] via-[#111827] to-[#0B1220] relative">
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white">
+                    <span className="h-2 w-2 rounded-full bg-[#F5B301]" />
+                    Track
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <div className="text-lg font-semibold leading-6">{c.title}</div>
+                  <p className="mt-2 text-sm text-[#B0B7C3] leading-6">{c.desc}</p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {c.chips.map((x) => (
+                      <span
+                        key={x}
+                        className="rounded-full border border-white/10 bg-[#0B1220]/40 px-3 py-1 text-xs text-[#B0B7C3]"
+                      >
+                        {x}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#B0B7C3]">
+                    {c.meta.map((m) => (
+                      <span key={m} className="rounded-lg border border-white/10 bg-[#0B1220]/40 px-2 py-2">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 flex gap-3">
+                    <Link
+                      href={c.href}
+                      className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-white/10 bg-[#0B1220]/40 text-sm font-semibold text-white hover:bg-[#0B1220]/60"
+                    >
+                      View details
+                    </Link>
+                    <Link
+                      href="/counselling"
+                      className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-[#F5B301] text-sm font-semibold text-[#0B1220] hover:shadow-[0_0_18px_rgba(245,179,1,0.55)] transition-shadow"
+                    >
+                      Enquire
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* FAQ schema */}
+          <script
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: faq.map((x) => ({
+                  "@type": "Question",
+                  name: x.q,
+                  acceptedAnswer: { "@type": "Answer", text: x.a },
+                })),
+              }),
+            }}
+          />
+        </section>
+      </main>
+    </>
+  );
+}

@@ -1,0 +1,227 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local', quiet: true });
+dotenv.config({ quiet: true });
+
+import { PrismaClient } from '@prisma/client';
+import fs from 'node:fs/promises';
+
+const prisma = new PrismaClient();
+
+const START_AT = new Date('2026-04-06T16:00:00+05:30');
+const END_AT   = new Date('2026-04-07T12:40:00+05:30');
+const SEND_NOW = process.env.SEND_NOW === '1';
+
+function normalizePhone(phone) {
+  const raw = String(phone || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return digits;
+  return null;
+}
+
+function lowerFirst(s) {
+  return s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+}
+
+async function getSettings() {
+  const rows = await prisma.siteSetting.findMany({
+    where: {
+      key: {
+        in: [
+          'masterclass_date',
+          'masterclass_time',
+          'masterclass_community_link',
+          'masterclass_aisensy_campaign_name',
+          'masterclass_aisensy_media_url',
+        ],
+      },
+    },
+  });
+
+  const map = new Map(rows.map(r => [r.key, r.value]));
+
+  return {
+    apiKey: process.env.AISENSY_API_KEY || '',
+    campaignName: map.get('masterclass_aisensy_campaign_name') || '15 April',
+    masterclassDate: map.get('masterclass_date') || '⏰07 April | Tuesday',
+    masterclassTime: map.get('masterclass_time') || '🔴Live Class | 08:00 PM',
+    communityLink: map.get('masterclass_community_link') || 'https://chat.whatsapp.com/J9CbMlCEfLrGPkiUHzlLx0',
+    mediaUrl: map.get('masterclass_aisensy_media_url') || process.env.AISENSY_MEDIA_URL || '',
+  };
+}
+
+function chooseLeadModel() {
+  const models = Object.values(prisma._runtimeDataModel.models || {});
+  const scored = models
+    .filter((m) => {
+      const fields = new Set((m.fields || []).map(f => f.name));
+      return fields.has('createdAt') && fields.has('phone');
+    })
+    .map((m) => {
+      const name = m.name.toLowerCase();
+      let score = 0;
+      if (name.includes('masterclass')) score += 5;
+      if (name.includes('lead')) score += 4;
+      if (name.includes('registration')) score += 2;
+      if (name.includes('contact')) score += 1;
+      return { model: m, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0]?.model || null;
+}
+
+async function fetchLeads() {
+  const model = chooseLeadModel();
+  if (!model) throw new Error('Lead model auto-detect nahi hua');
+
+  const delegate = prisma[lowerFirst(model.name)];
+  if (!delegate || typeof delegate.findMany !== 'function') {
+    throw new Error(`Prisma delegate nahi mila for model ${model.name}`);
+  }
+
+  const fieldNames = new Set(model.fields.map(f => f.name));
+  const select = {};
+  for (const f of ['id', 'name', 'phone', 'email', 'createdAt']) {
+    if (fieldNames.has(f)) select[f] = true;
+  }
+
+  const rows = await delegate.findMany({
+    where: {
+      createdAt: {
+        gte: START_AT,
+        lte: END_AT,
+      },
+    },
+    select,
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return { modelName: model.name, rows };
+}
+
+async function sendAisensy(settings, row) {
+  const destination = normalizePhone(row.phone);
+  if (!destination) {
+    return { ok: false, phone: row.phone, reason: 'invalid-phone-format' };
+  }
+
+  const payload = {
+    apiKey: settings.apiKey,
+    campaignName: settings.campaignName,
+    destination,
+    userName: row.name || 'Student',
+    source: 'website',
+    templateParams: [
+      row.name || 'Student',
+      settings.masterclassDate || '',
+      settings.masterclassTime || '',
+      settings.communityLink || '',
+    ],
+    tags: ['masterclass-range-batch'],
+  };
+
+  if (settings.mediaUrl) {
+    payload.media = {
+      url: settings.mediaUrl,
+      filename: 'masterclass-info.jpg',
+    };
+  }
+
+  const res = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    return { ok: false, phone: row.phone, reason: `HTTP ${res.status} ${text}` };
+  }
+
+  return { ok: true, phone: row.phone, reason: text };
+}
+
+async function main() {
+  const settings = await getSettings();
+
+  if (!settings.apiKey) throw new Error('AISENSY_API_KEY missing hai');
+  if (!settings.campaignName) throw new Error('AiSensy campaign name missing hai');
+
+  const { modelName, rows } = await fetchLeads();
+
+  const deduped = [];
+  const seen = new Set();
+
+  for (const row of rows) {
+    const p = normalizePhone(row.phone);
+    if (!p) continue;
+    if (seen.has(p)) continue;
+    seen.add(p);
+    deduped.push({ ...row, phone: p });
+  }
+
+  console.log('==============================');
+  console.log('Detected lead model:', modelName);
+  console.log('Range IST: 2026-04-06 04:00 PM -> 2026-04-07 12:40 PM');
+  console.log('Raw rows:', rows.length);
+  console.log('Unique valid phones:', deduped.length);
+  console.log('Campaign:', settings.campaignName);
+  console.log('Date:', settings.masterclassDate);
+  console.log('Time:', settings.masterclassTime);
+  console.log('Community:', settings.communityLink);
+  console.log('Media URL:', settings.mediaUrl || '(none)');
+  console.log('SEND_NOW:', SEND_NOW ? 'YES' : 'NO');
+  console.log('==============================');
+
+  console.log('Preview first 20:');
+  console.log(deduped.slice(0, 20).map(r => ({
+    createdAt: r.createdAt,
+    name: r.name || null,
+    phone: r.phone,
+    email: r.email || null,
+  })));
+
+  if (!SEND_NOW) {
+    console.log('\nDry run complete.');
+    console.log('Actual send ke liye: SEND_NOW=1 node scripts/aisensy_range_send.mjs');
+    return;
+  }
+
+  const results = [];
+  for (const row of deduped) {
+    const out = await sendAisensy(settings, row);
+    results.push({
+      createdAt: row.createdAt,
+      name: row.name || null,
+      phone: row.phone,
+      email: row.email || null,
+      ok: out.ok,
+      reason: out.reason,
+    });
+    console.log(out.ok ? `SENT ${row.phone}` : `FAILED ${row.phone} :: ${out.reason}`);
+  }
+
+  const ok = results.filter(r => r.ok).length;
+  const fail = results.length - ok;
+  const outFile = `./aisensy_range_results_${Date.now()}.json`;
+
+  await fs.writeFile(outFile, JSON.stringify(results, null, 2), 'utf8');
+
+  console.log('\n==============================');
+  console.log('Done');
+  console.log('Success:', ok);
+  console.log('Failed:', fail);
+  console.log('Results file:', outFile);
+  console.log('==============================');
+}
+
+main()
+  .catch((err) => {
+    console.error('FATAL:', err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

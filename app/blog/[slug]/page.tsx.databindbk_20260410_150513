@@ -1,0 +1,347 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import fs from "fs";
+import path from "path";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  Info,
+  Lightbulb,
+  Sparkles,
+} from "lucide-react";
+
+type BlogItem = {
+  slug: string;
+  title: string;
+  excerpt?: string;
+  category?: string;
+  readTime?: string;
+};
+
+function getBlogs(): BlogItem[] {
+  try {
+    const filePath = path.join(process.cwd(), "data/blogs.json");
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function formatTitle(slug: string) {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function normalizeText(value?: string) {
+  return (value || "").toLowerCase().trim();
+}
+
+function tokenize(value?: string) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function getRelatedBlogs(all: BlogItem[], current: BlogItem) {
+  const currentTitle = new Set(tokenize(current.title));
+  const currentCategory = normalizeText(current.category);
+
+  return all
+    .filter((item) => item.slug !== current.slug)
+    .map((item) => {
+      let score = 0;
+
+      tokenize(item.title).forEach((token) => {
+        if (currentTitle.has(token)) score += 3;
+      });
+
+      if (normalizeText(item.category) === currentCategory) score += 4;
+
+      return { item, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map((entry) => entry.item);
+}
+
+export async function generateStaticParams() {
+  return getBlogs().map((post) => ({ slug: post.slug }));
+}
+
+export const dynamicParams = true;
+export const revalidate = 2592000;
+
+export function generateMetadata({ params }: { params: { slug: string } }) {
+  const blogs = getBlogs();
+  const post = blogs.find((item) => item.slug === params.slug);
+
+  if (!post) {
+    return { title: "Blog | Sikhadenge" };
+  }
+
+  return {
+    title: `${post.title} | Sikhadenge`,
+    description:
+      post.excerpt ||
+      `Read this practical guide on ${post.title} with simple explanations, real use cases, and execution-focused learning.`,
+    alternates: {
+      canonical: `https://sikhadenge.in/blog/${post.slug}`,
+    },
+    openGraph: {
+      title: `${post.title} | Sikhadenge`,
+      description:
+        post.excerpt ||
+        `Read this practical guide on ${post.title} with simple explanations, real use cases, and execution-focused learning.`,
+      url: `https://sikhadenge.in/blog/${post.slug}`,
+      type: "article",
+    },
+  };
+}
+
+export default function Page({ params }: { params: { slug: string } }) {
+  const blogs = getBlogs();
+  const post = blogs.find((item) => item.slug === params.slug);
+
+  if (!params.slug) return notFound();
+
+  const title = post?.title || formatTitle(params.slug);
+  const excerpt =
+    post?.excerpt ||
+    `This guide explains ${title} in a practical way so beginners can understand the topic, use AI more effectively, and build better digital workflows.`;
+  const category = post?.category || "AI Guide";
+  const readTime = post?.readTime || "6 min read";
+
+  const relatedBlogs = getRelatedBlogs(blogs, {
+    slug: params.slug,
+    title,
+    excerpt,
+    category,
+    readTime,
+  });
+
+  const summaryPoints = [
+    `${title} ko simple aur practical tareeke se samajhna`,
+    "Beginners ke liye clear direction aur use-cases dekhna",
+    "AI tools ko real workflow me kaise use karein, ye samajhna",
+  ];
+
+  const practicalSteps = [
+    "Pehle topic ko clear outcome ke saath samjho",
+    "Relevant AI tools aur workflow ka basic structure dekho",
+    "Ek simple use-case se start karo aur output test karo",
+    "Refine karke practical implementation tak jao",
+  ];
+
+  const mistakes = [
+    "Topic ko sirf theory ke level par samajhna",
+    "AI tools ko random tareeke se use karna",
+    "Without structure output expect karna",
+    "Execution aur workflow ko ignore kar dena",
+  ];
+
+  const FAQs = [
+    {
+      q: `${title} beginners ke liye useful hai kya?`,
+      a: `Haan. Ye topic beginners ke liye useful hai agar aap ise practical use-case aur step-by-step workflow ke saath samjhen.`,
+    },
+    {
+      q: `Kya iske liye coding knowledge zaruri hai?`,
+      a: `Har case me nahi. Bahut se AI use-cases bina coding ke bhi practical tareeke se samjhe aur use kiye ja sakte hain.`,
+    },
+    {
+      q: `Is topic ko seekhne ka best tareeka kya hai?`,
+      a: `Best tareeka ye hai ki aap theory ke saath real examples, tools, prompts, aur workflows ko combine karke seekhein.`,
+    },
+    {
+      q: `Kya isse earning ya career growth me help mil sakti hai?`,
+      a: `Haan, agar aap is topic ko practical output, services, execution, aur market relevance ke saath build karte ho to ye career aur earning direction dono me useful ho sakta hai.`,
+    },
+  ];
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+
+      <section className="bg-white border-b border-slate-200 pt-20 pb-16 sm:pt-24 sm:pb-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-4 py-2 text-sm font-bold text-blue-600 mb-6">
+            <Sparkles className="w-4 h-4 mr-2" />
+            {category}
+          </div>
+
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.08] mb-6">
+            {title}
+          </h1>
+
+          <p className="text-xl text-slate-600 leading-relaxed max-w-3xl mb-8">
+            {excerpt}
+          </p>
+
+          <div className="flex flex-wrap gap-3 text-sm font-bold text-slate-500">
+            <div className="inline-flex items-center rounded-full bg-slate-100 px-4 py-2">
+              <Clock3 className="w-4 h-4 mr-2" />
+              {readTime}
+            </div>
+            <div className="inline-flex items-center rounded-full bg-slate-100 px-4 py-2">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Practical AI Guide
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+              <Info className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3">Quick summary</h2>
+              <div className="space-y-3">
+                {summaryPoints.map((item, index) => (
+                  <div key={index} className="flex items-start">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-3 mt-0.5 shrink-0" />
+                    <span className="font-bold text-slate-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-black text-slate-900 mb-4">What is {title}?</h2>
+            <p className="text-slate-700 leading-relaxed">
+              {title} ek aisa topic hai jo AI tools, workflows, prompts, aur execution systems ke through better output aur faster work ko support karta hai. Isko sirf concept ke roop me nahi, balki practical application ke roop me samajhna zyada important hota hai.
+            </p>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-black text-slate-900 mb-4">Who should learn this?</h2>
+            <ul className="space-y-3">
+              {[
+                "Students jo AI ke saath smarter work karna chahte hain",
+                "Freelancers jo faster delivery aur better output chahte hain",
+                "Creators jo content aur workflow improve karna chahte hain",
+                "Beginners jo digital skills build karna chahte hain",
+              ].map((item, index) => (
+                <li key={index} className="flex items-start">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600 mr-3 mt-0.5 shrink-0" />
+                  <span className="text-slate-700 font-medium">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
+          <h2 className="text-3xl font-black text-slate-900 mb-6">Practical steps to understand this better</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {practicalSteps.map((step, index) => (
+              <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <div className="text-sm font-black text-blue-600 mb-2">Step {index + 1}</div>
+                <p className="text-slate-700 font-medium leading-relaxed">{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
+          <div className="flex items-center mb-6">
+            <Lightbulb className="w-6 h-6 text-amber-500 mr-3" />
+            <h2 className="text-2xl font-black text-slate-900">Common mistakes</h2>
+          </div>
+          <div className="space-y-4">
+            {mistakes.map((item, index) => (
+              <div key={index} className="flex items-start">
+                <CheckCircle2 className="w-5 h-5 text-amber-500 mr-3 mt-0.5 shrink-0" />
+                <span className="text-slate-700 font-medium">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="rounded-[2.5rem] bg-slate-900 text-white p-10 md:p-12 overflow-hidden relative">
+          <h2 className="text-3xl md:text-4xl font-black mb-4">Learn AI with Sikhadenge</h2>
+          <p className="text-slate-300 text-lg max-w-2xl leading-relaxed mb-8">
+            Sikhadenge learners ko practical AI skills, tools, workflows, prompts, aur real execution direction ke saath guide karta hai taki learning sirf theory tak limited na rahe.
+          </p>
+          <Link
+            href="/gen-ai-masterclass"
+            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-full font-black text-lg transition"
+          >
+            Join Free AI Masterclass
+            <ArrowRight className="ml-2 w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
+      {relatedBlogs.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+          <h2 className="text-3xl font-black text-slate-900 mb-8">Related blog posts</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedBlogs.map((item, index) => (
+              <Link
+                key={index}
+                href={`/blog/${item.slug}`}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:border-blue-300 transition"
+              >
+                <div className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+                  {item.category || "AI Guide"}
+                </div>
+                <h3 className="text-xl font-black text-slate-900 leading-tight mb-3">{item.title}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {item.excerpt || "Read this practical guide."}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+        <h2 className="text-3xl font-black text-slate-900 mb-10">Frequently asked questions</h2>
+        <div className="space-y-4">
+          {FAQs.map((faq, i) => (
+            <details key={i} className="group bg-white border border-slate-200 rounded-2xl open:ring-2 open:ring-blue-100 transition">
+              <summary className="flex items-center justify-between cursor-pointer p-6 font-bold text-slate-900 list-none [&::-webkit-details-marker]:hidden">
+                {faq.q}
+                <ChevronDown className="w-5 h-5 text-slate-400 group-open:text-blue-600 group-open:rotate-180 transition-transform duration-300" />
+              </summary>
+              <div className="px-6 pb-6 text-slate-600 leading-relaxed">{faq.a}</div>
+            </details>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}

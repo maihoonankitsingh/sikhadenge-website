@@ -1,0 +1,78 @@
+import { NextRequest, NextResponse } from "next/server";
+import * as prismaModule from "../../../../lib/prisma";
+
+const prisma: any = (prismaModule as any).default ?? (prismaModule as any).prisma;
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    const name = String(body?.name ?? "").trim();
+    const email = String(body?.email ?? "").trim();
+    const phone = String(body?.phone ?? "").trim();
+    const occupation = String(body?.experience ?? body?.occupation ?? "").trim();
+    const goal = String(body?.goal ?? "").trim();
+    const laptop = String(body?.laptop ?? "").trim();
+
+    if (!name || !email || !phone) {
+      return NextResponse.json(
+        { error: "Name, email and phone are required" },
+        { status: 400 }
+      );
+    }
+
+    const page = String(body?.page ?? "/gen-ai-masterclass/register-one-step").trim();
+
+    const tracking = {
+      utm_source: body?.utm_source ? String(body.utm_source) : "",
+      utm_medium: body?.utm_medium ? String(body.utm_medium) : "",
+      utm_campaign: body?.utm_campaign ? String(body.utm_campaign) : "",
+      utm_term: body?.utm_term ? String(body.utm_term) : "",
+      utm_content: body?.utm_content ? String(body.utm_content) : "",
+      utm_campaign_id: body?.utm_campaign_id ? String(body.utm_campaign_id) : "",
+      utm_adset_id: body?.utm_adset_id ? String(body.utm_adset_id) : "",
+      utm_ad_id: body?.utm_ad_id ? String(body.utm_ad_id) : "",
+      fbclid: body?.fbclid ? String(body.fbclid) : "",
+    };
+
+    const laptopBool =
+      laptop === "true" ? true :
+      laptop === "false" ? false :
+      null;
+
+    const data: any = {};
+
+  data.name = name;
+  data.email = email;
+  data.phone = phone;
+  data.goal = goal;
+  data.laptop = laptopBool;
+  data.page = page;
+  if (tracking.utm_source) data.utm_source = tracking.utm_source;
+  if (tracking.utm_medium) data.utm_medium = tracking.utm_medium;
+  if (tracking.utm_campaign) data.utm_campaign = tracking.utm_campaign;
+  if (tracking.utm_term) data.utm_term = tracking.utm_term;
+  if (tracking.utm_content) data.utm_content = tracking.utm_content;
+  if (tracking.utm_campaign_id) data.utm_campaign_id = tracking.utm_campaign_id;
+  if (tracking.utm_adset_id) data.utm_adset_id = tracking.utm_adset_id;
+  if (tracking.utm_ad_id) data.utm_ad_id = tracking.utm_ad_id;
+  if (tracking.fbclid) data.fbclid = tracking.fbclid;
+  if (!data.createdAt) data.createdAt = new Date();
+
+    const created = await prisma.masterclassLead.create({ data });
+
+    return NextResponse.json({
+      ok: true,
+      id: created?.id ?? null,
+      message: "Lead created successfully"
+    });
+  } catch (error: any) {
+    console.error("MASTERCLASS_LEAD_CREATE_ERROR", error);
+    return NextResponse.json(
+      {
+        error: error?.message || "Submission failed"
+      },
+      { status: 500 }
+    );
+  }
+}

@@ -14,6 +14,7 @@ import {
   MonitorPlay,
   Paintbrush,
   Sparkles,
+  Star as LucideStar,
   Target,
   Wand2,
 } from "lucide-react";
@@ -54,76 +55,95 @@ export default function AiExpertPage() {
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       
       {/* Hero Section */}
-      <section className="bg-white border-b border-slate-200 pt-20 pb-16 sm:pt-28 sm:pb-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            {/* Small Top Label */}
-            <div className="mb-6 inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-blue-700">
-              AI Expert Mastery
+      <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.10),_transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] pt-20 pb-16 sm:pt-28 sm:pb-24">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-10 right-0 h-64 w-64 rounded-full bg-blue-100/40 blur-3xl"></div>
+          <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-slate-100 blur-3xl"></div>
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl">
+            <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-700 shadow-[0_8px_24px_rgba(37,99,235,0.10)] sm:text-sm">
+              Flagship AI Expert Guide
             </div>
-            
-            {/* Hero Heading */}
-            <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              How to Become an <span className="text-blue-600">AI Expert</span>: Top Skills & Workflows
+
+            <h1 className="mb-6 max-w-5xl text-4xl font-black leading-[1.02] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem]">
+              Become an <span className="text-blue-600">AI Expert</span> with Practical Skills, Tools, and Real Workflows
             </h1>
-            
-            {/* Intro Paragraph */}
-            <p className="mb-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-              The best AI skills are practical skills across content, visuals, video, marketing, pages, and workflows. 
-              The goal is to build stronger real-world execution capability, not only tool familiarity. People who 
-              learn the right AI skills become faster, more useful, and more adaptable in modern digital work.
+
+            <p className="mb-8 max-w-4xl text-base font-medium leading-8 text-slate-600 sm:text-xl">
+              The most valuable AI capability is not random tool usage. It is the ability to combine content, visuals, video, systems, and workflow execution into practical output. People who learn this properly become faster, more useful, and more adaptable in modern digital work.
             </p>
-            
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <Link 
-                href="/gen-ai-masterclass" 
-                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
+
+            <div className="mb-10 flex flex-col gap-4 sm:flex-row">
+              <Link
+                href="/gen-ai-masterclass"
+                className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-[0_16px_40px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-0.5 hover:bg-blue-700"
               >
-                Join free masterclass
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Join Free AI Masterclass
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <Link 
-                href="/ai-generalist" 
-                className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-colors"
+              <Link
+                href="/courses"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-800 shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600"
               >
-                Explore AI Generalist
+                Explore Courses
               </Link>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                "Content, visuals, video, and workflow execution",
+                "Useful for students, freelancers, and professionals",
+                "Practical learning path, not random AI tools",
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-slate-200 bg-white/90 px-5 py-4 text-sm font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.04)] backdrop-blur"
+                >
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 space-y-24">
         
         {/* 3 Summary Cards */}
         <section>
+          <div className="mb-8 max-w-3xl">
+            <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">Why this path matters</h2>
+            <h3 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+              AI expertise now means stronger execution across connected digital layers
+            </h3>
+          </div>
+
           <div className="grid gap-6 sm:grid-cols-3">
             {[
-              { 
-                title: "Practical, not random", 
-                desc: "The most useful AI skills improve real execution across content, visuals, video, and workflows instead of isolated tool usage." 
+              {
+                title: "Practical, not random",
+                desc: "The strongest AI capability comes from real execution across content, visuals, video, pages, and workflows instead of disconnected tool knowledge."
               },
-              { 
-                title: "Broader digital capability", 
-                desc: "People who can contribute across multiple connected execution areas often become more useful than those who only know one narrow digital task." 
+              {
+                title: "More useful digital range",
+                desc: "People who can contribute across multiple connected areas usually become more valuable than those limited to one narrow task."
               },
-              { 
-                title: "Faster output execution", 
-                desc: "The biggest shift is not only new tools. The real shift is faster planning, better systems, and improved execution speed." 
+              {
+                title: "Faster systems and output",
+                desc: "The biggest shift is better speed, stronger systems, and sharper execution quality across modern digital work."
               },
             ].map((card, i) => (
-              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <StarIcon className="h-5 w-5" />
+              <div key={i} className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(15,23,42,0.08)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                  <LucideStar className="h-6 w-6" />
                 </div>
-                <h3 className="mb-2 text-lg font-bold text-slate-900">{card.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{card.desc}</p>
+                <h3 className="mb-3 text-xl font-black text-slate-900">{card.title}</h3>
+                <p className="text-[15px] leading-7 text-slate-600">{card.desc}</p>
               </div>
             ))}
           </div>
         </section>
-
         {/* Skill Area - Light Card Grid Section */}
         <section>
           <div className="mb-8">
@@ -166,43 +186,53 @@ export default function AiExpertPage() {
         </section>
 
         {/* Dark Navy Outcomes Block */}
-        <section className="overflow-hidden rounded-3xl bg-[#0B1220] py-16 sm:py-24 relative">
-          {/* Subtle background glow effect if needed, kept minimal for clean look */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-blue-900/10 blur-3xl pointer-events-none rounded-full" />
-          
-          <div className="relative mx-auto max-w-7xl px-6 lg:px-12 text-center text-white">
-            <h2 className="text-sm font-bold tracking-wider text-blue-400 uppercase mb-4">Professional Adaptation</h2>
-            <h3 className="text-3xl font-extrabold sm:text-5xl mb-8">Better Decision-Making & Adaptability</h3>
-            <p className="mx-auto max-w-2xl text-lg text-slate-300 mb-16 leading-relaxed">
-              When people understand where AI actually fits, they make better choices about output, systems, priorities, and digital execution strategy.
-            </p>
+        <section className="relative overflow-hidden rounded-[34px] bg-[#0B1220] py-16 sm:py-24">
+          <div className="absolute left-1/2 top-0 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-blue-700/10 blur-3xl"></div>
 
-            <div className="grid gap-8 text-left sm:grid-cols-3">
-              <div className="border border-slate-800 bg-slate-900/50 p-8 rounded-2xl backdrop-blur-sm">
-                <div className="mb-4 rounded-full bg-blue-500/10 w-12 h-12 flex items-center justify-center text-blue-400">
-                  <GraduationCap className="w-6 h-6" />
+          <div className="relative mx-auto max-w-7xl px-6 lg:px-12 text-white">
+            <div className="max-w-3xl">
+              <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">Professional outcomes</h2>
+              <h3 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">
+                Strong AI capability improves speed, adaptability, and market value
+              </h3>
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+                When people understand where AI actually fits, they make better decisions about output, systems, priorities, and execution strategy. That is what turns AI familiarity into practical value.
+              </p>
+            </div>
+
+            <div className="mt-14 grid gap-8 text-left sm:grid-cols-3">
+              <div className="rounded-[26px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm shadow-[0_18px_48px_rgba(2,6,23,0.24)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-300">
+                  <GraduationCap className="h-7 w-7" />
                 </div>
-                <h4 className="font-bold text-white mb-2 text-lg">Students</h4>
-                <p className="text-slate-400">Cross the entry-level gap by walking into job interviews armed with highly relevant tech capabilities.</p>
+                <h4 className="mb-3 text-xl font-black text-white">Students</h4>
+                <p className="text-sm leading-7 text-slate-300">
+                  Build stronger career readiness by connecting modern AI capability with digital execution, projects, and real interview relevance.
+                </p>
               </div>
-              <div className="border border-slate-800 bg-slate-900/50 p-8 rounded-2xl backdrop-blur-sm">
-                <div className="mb-4 rounded-full bg-blue-500/10 w-12 h-12 flex items-center justify-center text-blue-400">
-                  <Briefcase className="w-6 h-6" />
+
+              <div className="rounded-[26px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm shadow-[0_18px_48px_rgba(2,6,23,0.24)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-300">
+                  <Briefcase className="h-7 w-7" />
                 </div>
-                <h4 className="font-bold text-white mb-2 text-lg">Freelancers</h4>
-                <p className="text-slate-400">Increase client output volume reliably without compromising your creative baseline and quality.</p>
+                <h4 className="mb-3 text-xl font-black text-white">Freelancers</h4>
+                <p className="text-sm leading-7 text-slate-300">
+                  Increase output speed, improve service depth, and handle more client execution without depending only on traditional manual methods.
+                </p>
               </div>
-              <div className="border border-slate-800 bg-slate-900/50 p-8 rounded-2xl backdrop-blur-sm">
-                <div className="mb-4 rounded-full bg-blue-500/10 w-12 h-12 flex items-center justify-center text-blue-400">
-                  <Globe className="w-6 h-6" />
+
+              <div className="rounded-[26px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm shadow-[0_18px_48px_rgba(2,6,23,0.24)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-300">
+                  <Globe className="h-7 w-7" />
                 </div>
-                <h4 className="font-bold text-white mb-2 text-lg">Professionals</h4>
-                <p className="text-slate-400">Automate corporate workflows, analyze creative data accurately, and boost practical cross-functional value.</p>
+                <h4 className="mb-3 text-xl font-black text-white">Professionals</h4>
+                <p className="text-sm leading-7 text-slate-300">
+                  Improve workflow clarity, automate repetitive execution, and bring stronger cross-functional value into modern business environments.
+                </p>
               </div>
             </div>
           </div>
         </section>
-
         {/* Related Internal Links Block */}
         <section>
           <div className="mb-8">
@@ -219,6 +249,11 @@ export default function AiExpertPage() {
               { label: "AI Skills for Creators", href: "/ai-skills-for-creators" },
               { label: "AI Tools Hub", href: "/ai-tools" },
               { label: "Best AI Skills to Learn", href: "/best-ai-skills-to-learn" },
+              { label: "AI Course Roadmap", href: "/ai-course-roadmap" },
+              { label: "AI Automation Roadmap", href: "/ai-automation-roadmap" },
+              { label: "AI Video Editing Roadmap", href: "/ai-video-editing-roadmap" },
+              { label: "AI No Code Roadmap", href: "/ai-no-code-roadmap" },
+              { label: "AI Freelancing Roadmap", href: "/ai-freelancing-roadmap" },
             ].map((link, i) => (
               <Link 
                 key={i} 
@@ -235,41 +270,41 @@ export default function AiExpertPage() {
         {/* Accordion-style FAQ Block */}
         <section className="mx-auto max-w-4xl pt-8">
           <div className="text-center mb-12">
-            <h2 className="text-sm font-bold tracking-wider text-blue-600 uppercase mb-3">Common Questions</h2>
-            <h3 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">Frequently asked questions</h3>
+            <h2 className="text-sm font-bold tracking-[0.18em] text-blue-600 uppercase mb-3">Common Questions</h2>
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Frequently asked questions</h3>
             <p className="mt-4 text-slate-600">Clear answers to common questions people usually have before deciding which AI skills are worth learning.</p>
           </div>
-          
+
           <div className="space-y-4">
             {[
               {
                 q: "Do I need an advanced coding background to become an AI Expert?",
-                a: "No. Modern AI expertise in creative and marketing fields relies heavily on workflow structuring, tool chaining, and prompt logic rather than traditional software development. The most useful AI skills right now involve content creation, visual support, and workflow execution."
+                a: "No. Modern AI expertise in creative, marketing, and workflow-based environments relies more on prompt logic, execution systems, and connected digital capability than traditional software development."
               },
               {
                 q: "What industries are actively searching for AI Experts?",
-                a: "Digital marketing agencies, video production houses, and e-commerce brands actively look for AI-skilled talent to scale their output efficiently. The goal is real-world capability over simple tool familiarity."
+                a: "Digital marketing, media, creator businesses, agencies, e-commerce, education, and modern business operations all benefit from people who can combine AI with practical execution."
               },
               {
-                q: "Will generative AI tools simply replace creative freelancers?",
-                a: "AI amplifies a creator's capabilities. Those who use AI effectively will simply outpace those who rely only on traditional manual methods. People who learn the right AI skills become faster, more useful, and adaptable."
+                q: "Will generative AI tools replace creative freelancers?",
+                a: "AI usually amplifies capable people. Those who use AI effectively tend to outpace those who depend only on manual methods. Practical capability becomes more important, not less."
               },
               {
-                q: "Are the AI trainings provided hands-on and practical?",
-                a: "Yes. The curriculum focuses heavily on end-to-end project execution instead of random tool usage. The strongest AI skill stack is practical, cross-functional, and tied to true digital deployment."
+                q: "Are the AI trainings practical and hands-on?",
+                a: "Yes. The strongest training approach focuses on projects, real workflows, execution systems, and useful output instead of random tool exploration."
               }
             ].map((faq, idx) => (
-              <details 
-                key={idx} 
-                className="group rounded-2xl border border-slate-200 bg-white [&_summary::-webkit-details-marker]:hidden"
+              <details
+                key={idx}
+                className="group rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.04)] [&_summary::-webkit-details-marker]:hidden"
               >
-                <summary className="flex cursor-pointer items-center justify-between gap-1.5 p-6 font-bold text-slate-900">
+                <summary className="flex cursor-pointer items-center justify-between gap-3 p-6 font-bold text-slate-900">
                   <span className="text-lg">{faq.q}</span>
-                  <span className="shrink-0 rounded-full bg-slate-50 p-1.5 text-slate-500 sm:p-3 group-open:bg-blue-50 group-open:text-blue-600 transition-colors">
+                  <span className="shrink-0 rounded-full bg-slate-50 p-2 text-slate-500 transition-colors group-open:bg-blue-50 group-open:text-blue-600 sm:p-3">
                     <ChevronDown className="h-5 w-5 transition duration-300 group-open:-rotate-180" />
                   </span>
                 </summary>
-                <div className="px-6 pb-6 text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                <div className="border-t border-slate-100 px-6 pb-6 pt-4 text-slate-600 leading-7">
                   {faq.a}
                 </div>
               </details>
@@ -277,13 +312,43 @@ export default function AiExpertPage() {
           </div>
         </section>
 
+        <section className="rounded-[32px] border-t border-slate-100 bg-[#07152E] px-4 py-20 text-white sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-200 sm:text-sm">
+                Final Next Step
+              </div>
+              <h2 className="mb-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
+                Start building real AI expert capability with Sikhadenge
+              </h2>
+              <p className="mb-8 text-sm leading-7 text-slate-300 sm:text-base">
+                Learn practical AI skills across content, visuals, video, systems, and real execution workflows. Start with the free masterclass and move toward stronger output, better adaptability, and career-ready capability.
+              </p>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <Link
+                  href="/gen-ai-masterclass"
+                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700 sm:text-base"
+                >
+                  Join Free AI Masterclass
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 sm:text-base"
+                >
+                  Explore Courses
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );
 }
 
 // Simple internal icon for summary cards
-function StarIcon(props: React.SVGProps<SVGSVGElement>) {
+function Star(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />

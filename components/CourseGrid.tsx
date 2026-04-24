@@ -57,7 +57,7 @@ export default function CourseGrid() {
               <div className="mt-5 sd-divider" />
 
               <div className="mt-4 flex gap-3">
-                <a href="/#counselling" className="sd-btn-primary">Counselling</a>
+                <a href="/counselling" className="sd-btn-primary">Counselling</a>
                 <a href="/contact" className="sd-btn-secondary">Ask a question</a>
               </div>
             </div>

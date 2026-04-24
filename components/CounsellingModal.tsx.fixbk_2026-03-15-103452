@@ -1,0 +1,234 @@
+"use client";
+
+import React, { useMemo, useState } from "react";
+import styles from "../styles/counselling.module.css";
+
+type Props = { open: boolean; onClose: () => void };
+
+export default function CounsellingModal({ open, onClose }: Props) {
+  const courses = useMemo(
+    () => ["Graphic Design", "Video Editing", "Motion Graphics", "AI for Designers", "Not sure (Need guidance)"],
+    []
+  );
+
+  const iam = useMemo(
+    () => ["Student", "College", "Working Professional", "Freelancer", "Business / Agency", "Other"],
+    []
+  );
+
+  const specs = useMemo(
+    () => ["Beginner", "Intermediate", "Advanced", "Career Switch", "Portfolio Building"],
+    []
+  );
+
+  const [form, setForm] = useState({
+    course: "",
+    fullName: "",
+    phone: "",
+    iam: "",
+    specialization: "",
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [device, setDevice] = useState("");
+  const [done, setDone] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 481;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setDone(null);
+
+      ;(window as any).fbq?.("track","Lead");
+    if (!form.course) return setErr("Course required");
+    if (!form.fullName || form.fullName.trim().length < 2) return setErr("Full name required");
+    if (!form.phone || form.phone.replace(/[^\d]/g, "").length < 10) return setErr("Valid phone required");
+    if (!form.iam) return setErr("Required");
+    if (!form.specialization) return setErr("Required");
+    if (!device) return setErr("Laptop/PC required");
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: form.fullName.trim(),
+        phone: form.phone.trim(),
+        course: form.course,
+        message: `I am: ${form.iam} | Level: ${form.specialization}`,
+        page: "counselling-modal",
+        promoCode: promoCode,
+        device: device,
+      };
+
+      const r = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload, { cache: "no-store" }),
+      });
+
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.ok) throw new Error(j?.error || "Submit failed");
+
+      setDone("Thanks! Your request is submitted. Our team will connect with you within 1 hour.");
+      setForm({ course: "", fullName: "", phone: "", iam: "", specialization: "" });
+      setPromoCode("");
+      setDevice("");
+    } catch (e: any) {
+      setErr(String(e?.message || "Server error"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Counselling form" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.close} onMouseDown={(e) => e.stopPropagation()} onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+
+        <div className={styles.left} style={isMobile ? { display: "none" } : undefined}>
+          <div className={styles.pill}>
+            <span className={styles.dot} />
+            FIRST CALL IS ON US
+          </div>
+
+          <div className={styles.title}>{isMobile ? "Free 1:1 Counselling" : "Schedule 1:1 free counselling."}</div>
+          <div className={styles.sub}>Course-fit guidance, batch timing, and a clear learning plan. No spam.</div>
+
+          <div className={styles.bullets}>
+            {["Tailored guidance for your goal", "Real-world tools & expectations", "Portfolio + placement direction"].map((t) => (
+              <div className={styles.bullet} key={t}>
+                <div className={styles.tick}>✓</div>
+                <div className={styles.bulletText}>{t}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.right}>
+          <div className={styles.card}>
+            <div className={styles.mobileHero}>
+
+              <div className={styles.kicker}>FIRST CALL IS ON US</div>
+
+              <div className={styles.mobileTitle}>Schedule a 1:1 counselling call.</div>
+
+            </div>
+
+            
+{done ? (
+  <div className="h-full w-full bg-white rounded-2xl flex items-center justify-center">
+    <div className="text-center px-6 py-10">
+      <div className="mx-auto h-14 w-14 rounded-full bg-green-600 flex items-center justify-center text-white text-2xl">✓</div>
+      <div className="mt-4 text-xl font-semibold text-black">Request submitted</div>
+      <div className="mt-2 text-sm text-black/70">Our team will connect with you within 1 hour.</div>
+      <button
+        type="button"
+        className="mt-6 px-5 py-2 rounded-xl bg-black text-white text-sm"
+        onClick={() => setDone(null)}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+) : (
+<form className={styles.form} onSubmit={submit}>
+              <div className={styles.field}>
+                <div className={styles.label}>Course interested in *</div>
+                <select className={styles.select} value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })}>
+                  <option value="">Select</option>
+                  {courses.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>Full name *</div>
+                <input
+                  className={styles.input}
+                  value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  placeholder="Your name"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>Phone *</div>
+                <div className={styles.rowPhone}>
+                  <div className={styles.cc}>+91</div>
+                  <input
+                    className={styles.input}
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="10-digit number"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>I am *</div>
+                <select className={styles.select} value={form.iam} onChange={(e) => setForm({ ...form, iam: e.target.value })}>
+                  <option value="">Select</option>
+                  {iam.map((x) => (
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>Select specialization *</div>
+                <select
+                  className={styles.select}
+                  value={form.specialization}
+                  onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+                >
+                  <option value="">Select</option>
+                  {specs.map((x) => (
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>Promo code</div>
+                <input className={styles.input} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="Optional" />
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.label}>Laptop/PC available? *</div>
+                <select className={styles.select} value={device} onChange={(e) => setDevice(e.target.value)}>
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="Will arrange soon">Will arrange soon</option>
+                </select>
+              </div>
+
+              <button className={styles.btn} disabled={submitting} type="submit">
+                {submitting ? "Submitting..." : "Get Free Counselling →"}
+              </button>
+
+              {err ? <div className={styles.err}>{err}</div> : null}
+              {done ? <div className={styles.ok}>{done}</div> : null}
+
+              <div className={styles.note}>By submitting, you agree to our Terms & Privacy policy.</div>
+            </form>
+)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

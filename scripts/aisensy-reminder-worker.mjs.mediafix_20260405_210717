@@ -1,0 +1,169 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local', quiet: true });
+dotenv.config({ quiet: true });
+
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const AISENSY_API_KEY = process.env.AISENSY_API_KEY;
+const AISENSY_MEDIA_URL = process.env.AISENSY_MEDIA_URL;
+const AISENSY_TARGET_PHONE = process.env.AISENSY_TARGET_PHONE ? normalizePhone(process.env.AISENSY_TARGET_PHONE) : null;
+
+function normalizePhone(phone) {
+  const raw = String(phone || '').trim();
+  const digits = raw.replace(/\D/g, '');
+
+  if (!digits) return null;
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return digits;
+
+  return digits;
+}
+
+function toPositiveInt(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
+}
+
+async function getMasterclassSettings() {
+  const keys = [
+    'masterclass_date',
+    'masterclass_time',
+    'masterclass_community_link',
+    'masterclass_welcome_redirect_link',
+    'masterclass_welcome_redirect_delay_seconds',
+    'masterclass_aisensy_campaign_name',
+  ];
+
+  const rows = await prisma.siteSetting.findMany({
+    where: { key: { in: keys } }
+  });
+
+  const map = new Map(rows.map((row) => [row.key, row.value]));
+
+  return {
+    campaignName: map.get('masterclass_aisensy_campaign_name') || 'masterclass_auto_1',
+    masterclassDate: map.get('masterclass_date') || '⏰24 March | Tuesday',
+    masterclassTime: map.get('masterclass_time') || '🔴Live Class | 07:00 PM',
+    communityLink: map.get('masterclass_community_link') || 'https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD',
+    redirectLink: map.get('masterclass_welcome_redirect_link') || 'https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD',
+    redirectDelaySeconds: toPositiveInt(map.get('masterclass_welcome_redirect_delay_seconds'), 5),
+  };
+}
+
+async function sendAisensyMessage(row) {
+  const destination = normalizePhone(row.phone);
+
+  if (!destination) {
+    throw new Error('Invalid phone number');
+  }
+
+  if (!AISENSY_API_KEY) throw new Error('Missing AISENSY_API_KEY');
+
+  const settings = await getMasterclassSettings();
+
+  if (!settings.campaignName) {
+    throw new Error('Missing masterclass campaign name');
+  }
+
+  const payload = {
+    apiKey: AISENSY_API_KEY,
+    campaignName: settings.campaignName,
+    destination,
+    userName: row.name || 'Student',
+    source: 'website',
+    templateParams: [
+      row.name || 'Student',
+      settings.masterclassDate || '',
+      settings.masterclassTime || '',
+      settings.communityLink || ''
+    ],
+    tags: ['masterclass-registered']
+  };
+
+  if (AISENSY_MEDIA_URL) {
+    payload.media = {
+      url: AISENSY_MEDIA_URL,
+      filename: 'masterclass-info.jpg'
+    };
+  }
+
+  const response = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`AiSensy API failed: ${response.status} ${text}`);
+  }
+
+  return text;
+}
+
+async function main() {
+  const now = new Date();
+
+  const rows = await prisma.aisensyReminderQueue.findMany({
+    where: {
+      status: 'pending',
+      sendAt: { lte: now },
+      ...(AISENSY_TARGET_PHONE ? { phone: AISENSY_TARGET_PHONE } : {})
+    },
+    orderBy: {
+      sendAt: 'asc'
+    },
+    take: AISENSY_TARGET_PHONE ? 1 : 20
+  });
+
+  console.log(`Found ${rows.length} pending reminder(s)`);
+
+  for (const row of rows) {
+    try {
+      await prisma.aisensyReminderQueue.update({
+        where: { id: row.id },
+        data: { status: 'processing' }
+      });
+
+      await sendAisensyMessage(row);
+
+      await prisma.aisensyReminderQueue.update({
+        where: { id: row.id },
+        data: {
+          status: 'sent',
+          lastError: null
+        }
+      });
+
+      console.log(`Sent: ${row.phone}`);
+    } catch (error) {
+      const retries = row.retries + 1;
+
+      await prisma.aisensyReminderQueue.update({
+        where: { id: row.id },
+        data: {
+          status: retries >= 5 ? 'failed' : 'pending',
+          retries,
+          lastError: error instanceof Error ? error.message : String(error),
+          sendAt: retries >= 5 ? row.sendAt : new Date(Date.now() + 5 * 60 * 1000)
+        }
+      });
+
+      console.error(`Failed: ${row.phone}`, error);
+    }
+  }
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

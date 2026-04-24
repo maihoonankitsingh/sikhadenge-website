@@ -1,0 +1,33 @@
+
+/* Banner Positioning */
+.offer-banner {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: #2563EB; /* Blue color */
+  color: white;
+  padding: 10px 20px;
+  z-index: 1000;
+  text-align: center;
+}
+
+/* Text Size and Structure */
+.offer-banner span {
+  font-size: 1.5em; /* Larger text size */
+  font-weight: bold;
+}
+
+/* Columns and Scrolling */
+.offer-banner .offer-content {
+  display: flex;
+  justify-content: space-between;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Styling for each column */
+.offer-banner .offer-content div {
+  flex: 1;
+  padding: 0 10px;
+}
+

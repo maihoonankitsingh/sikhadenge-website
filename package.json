@@ -5,29 +5,43 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 3000",
-    "lint": "next lint"
+    "start": "next start",
+    "lint": "next lint",
+    "seo:generate": "node scripts/generate-seo-pages.mjs",
+    "seo:refresh": "node scripts/refresh-seo-engine.mjs",
+    "seo:expand": "node scripts/expand-seed-slugs.mjs"
   },
   "dependencies": {
+    "@google-analytics/data": "^5.2.1",
+    "@next/third-parties": "^16.2.1",
     "@prisma/client": "^6.12.0",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^17.3.1",
     "lucide-react": "^0.562.0",
     "mysql2": "^3.16.0",
     "next": "14.2.35",
-    "react": "^18",
-    "react-dom": "^18",
-    "sharp": "^0.34.5"
+    "nodemailer": "^8.0.1",
+    "plyr": "^3.8.4",
+    "razorpay": "^2.9.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^3.8.0",
+    "sharp": "^0.34.5",
+    "video.js": "^8.23.7"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "prisma": "^6.12.0",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -1,0 +1,8 @@
+/* sd learner proof patch */
+
+/* --- Learner Proof: guard against accidental white overlay caps --- */
+[data-sd-learner-proof] .sd-proof-guard-white,
+[data-sd-learner-proof] [style*="background: white"],
+[data-sd-learner-proof] [style*="background:white"]{
+  background: transparent !important;
+}

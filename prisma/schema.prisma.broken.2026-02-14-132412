@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admission {
+  id        String    @id @default(cuid())
+  leadId    String?
+
+  // Core
+  name       String
+  fatherName String?
+  dob        DateTime?
+  age        Int?
+  gender     String?
+  phone      String
+  email      String?
+
+  // Course
+  course     String?
+
+  // Address
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  pincode      String?
+
+  // Education
+  qualificationLevel String?
+  qualificationName  String?
+  passingYear        Int?
+  instituteName      String?
+
+  // Documents (server stored paths)
+  photoPath       String?
+  aadhaarPath     String?
+  certificatePath String?
+
+  // Fees + relations
+  feeTotal  Int?
+  feePaid   Int?      @default(0)
+  createdAt DateTime  @default(now())
+  // Student identifiers
+  studentId String?
+
+  // Student identifiers
+  regId     String  @unique
+
+  updatedAt DateTime  @updatedAt
+  lead      Lead?     @relation(fields: [leadId], references: [id])
+  payments  Payment[]
+
+  @@index([leadId])
+  @@index([phone])
+}

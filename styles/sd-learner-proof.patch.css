@@ -1,0 +1,38 @@
+/* Scoped fixes for Learner Proof section (video + written testimonials) */
+[data-sd-learner-proof="1"]{
+  --sd-proof-max: 1120px;
+}
+
+/* unify horizontal rhythm */
+[data-sd-learner-proof="1"] > *{
+  max-width: var(--sd-proof-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* headings hierarchy + readability */
+[data-sd-learner-proof="1"] h1,
+[data-sd-learner-proof="1"] h2{
+  letter-spacing: -0.02em;
+}
+[data-sd-learner-proof="1"] p{
+  line-height: 1.55;
+}
+
+/* soften heavy scrollbars (keep usable) */
+[data-sd-learner-proof="1"] *::-webkit-scrollbar{
+  height: 8px;
+}
+[data-sd-learner-proof="1"] *::-webkit-scrollbar-thumb{
+  border-radius: 999px;
+}
+[data-sd-learner-proof="1"] *::-webkit-scrollbar-track{
+  border-radius: 999px;
+}
+
+/* optional tip text */
+[data-sd-learner-proof="1"] .sd-proof-tip,
+[data-sd-learner-proof="1"] [data-proof-tip="1"]{
+  font-size: 12px !important;
+  opacity: 0.75;
+}

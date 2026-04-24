@@ -1,0 +1,10 @@
+import RegisterOneStepPage from "./_components/RegisterOneStepPage";
+
+export const metadata = {
+  title: "Register | Sikhadenge",
+  description: "Single-step registration page for Sikhadenge masterclass.",
+};
+
+export default function Page() {
+  return <RegisterOneStepPage />;
+}

@@ -1,0 +1,346 @@
+import { notFound } from "next/navigation";
+import { skillsData } from "../../data/skillsData";
+import Link from "next/link";
+import fs from "fs";
+import path from "path";
+import { ArrowRight, Star, ChevronDown, Zap, Briefcase, TrendingUp, BookOpen, Award, CircleDollarSign, Users, Target, Sparkles, BarChart, Globe } from "lucide-react";
+
+function getGeneratedSeoData() {
+  try {
+    const filePath = path.join(process.cwd(), 'data/generated-seo.json');
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(fileContents);
+  } catch (error) { return []; }
+}
+
+export async function generateStaticParams() {
+  const rootSkills = skillsData.map((s) => ({ skill: s.slug }));
+  const seoData = getGeneratedSeoData();
+  const topGenerated = seoData.slice(0, 100).map((s: any) => ({ skill: s.slug }));
+  return [...rootSkills, ...topGenerated];
+}
+
+export const dynamicParams = true;
+export const revalidate = 2592000; 
+
+export function generateMetadata({ params }: { params: { skill: string } }) {
+  const rootSkill = skillsData.find((s) => s.slug === params.skill);
+  if (rootSkill) return { title: `How to Become a ${rootSkill.title} | Sikhadenge`, description: rootSkill.description };
+  const seoData = getGeneratedSeoData();
+  const generatedPage = seoData.find((s: any) => s.slug === params.skill);
+  if (generatedPage) return { title: generatedPage.title, description: generatedPage.description };
+  return { title: "Page Not Found" };
+}
+
+function shuffleArray(array: any[]) {
+  const shiffted = [...array];
+  for (let i = shiffted.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shiffted[i], shiffted[j]] = [shiffted[j], shiffted[i]];
+  }
+  return shiffted;
+}
+
+export default function UniversalRootPage({ params }: { params: { skill: string } }) {
+  const rootSkill = skillsData.find((s) => s.slug === params.skill);
+  
+  if (rootSkill) {
+    const rootFaqs = [
+      { q: `What is the best way to start learning ${rootSkill.title}?`, a: `The best way is to start with practical fundamentals, understand the workflow, build small outputs, and then move toward real projects instead of depending only on theory.` },
+      { q: `Can beginners build a career in ${rootSkill.title}?`, a: `Yes. Beginners can enter this field with structured practice, portfolio-focused execution, and consistent learning support.` },
+      { q: `Does Sikhadenge focus on practical learning for ${rootSkill.title}?`, a: `Yes. Sikhadenge focuses on practical implementation, guided learning, and real output so learners can build job-ready and freelance-ready capability.` }
+    ];
+
+    const rootFaqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": rootFaqs.map((faq) => ({
+        "@type": "Question",
+        "name": faq.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.a
+        }
+      }))
+    };
+
+    const rootCourseSchema = {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "name": rootSkill.title,
+      "description": rootSkill.description,
+      "provider": {
+        "@type": "Organization",
+        "name": "Sikhadenge",
+        "sameAs": "https://sikhadenge.in"
+      }
+    };
+
+    return (
+      <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-200">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(rootFaqSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(rootCourseSchema) }} />
+
+        <section className="relative overflow-hidden border-b border-slate-100 px-4 pb-20 pt-24 sm:px-6 lg:px-8">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-white"></div>
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-4xl">
+              <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">
+                Premium Skill Guide
+              </div>
+              <h1 className="mb-6 max-w-5xl text-4xl font-black leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem]">
+                How to Become a {rootSkill.title}
+              </h1>
+              <p className="mb-10 max-w-4xl text-base font-medium leading-8 text-slate-600 sm:text-xl">
+                {rootSkill.description} Sikhadenge helps students, freelancers, creators, and working professionals build practical skill depth, better workflow understanding, and strong real-world capability.
+              </p>
+
+              <div className="mb-16 flex flex-col gap-4 sm:flex-row">
+                <Link
+                  href="/gen-ai-masterclass/register-one-step"
+                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-[0_14px_40px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-1 hover:bg-blue-700 sm:text-lg"
+                >
+                  Join Free Masterclass
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+
+                <Link
+                  href="/courses/ai-mastery"
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-slate-50 sm:text-lg"
+                >
+                  Explore AI Path
+                </Link>
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-3">
+                {[
+                  { icon: BookOpen, title: "Practical Foundation", desc: `Build clear understanding and real execution ability in ${rootSkill.title}.` },
+                  { icon: Briefcase, title: "Career Direction", desc: "Connect learning with freelancing, jobs, portfolio building, and real digital work." },
+                  { icon: Award, title: "Structured Growth", desc: "Learn through guided progression, strong workflow clarity, and output-focused practice." }
+                ].map((item, i) => (
+                  <div key={i} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_35px_rgba(15,23,42,0.05)]">
+                    <item.icon className="mb-4 h-8 w-8 text-blue-600" />
+                    <h3 className="mb-2 font-bold text-slate-900">{item.title}</h3>
+                    <p className="text-sm leading-relaxed text-slate-500">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-50 px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="mb-12 max-w-4xl text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
+              Why learning {rootSkill.title} matters now
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {[
+                { title: "Modern digital work is changing", desc: `${rootSkill.title} is becoming more relevant in practical execution, creative work, workflow support, and modern earning opportunities.`, icon: Zap },
+                { title: "Professionals need better output", desc: "People who can produce faster, better, and more structured output usually have stronger market value.", icon: TrendingUp },
+                { title: "Skill-based opportunity is rising", desc: "Students, freelancers, and working professionals can use this skill to improve readiness for jobs, projects, and service delivery.", icon: Users },
+                { title: "Structured learning creates leverage", desc: "Clear systems, guided practice, and practical application help learners move faster than random learning methods.", icon: Target }
+              ].map((feature, i) => (
+                <div key={i} className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-[0_8px_28px_rgba(15,23,42,0.04)]">
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <feature.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mb-3 text-xl font-bold text-slate-900">{feature.title}</h3>
+                  <p className="text-slate-600">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 bg-white px-4 py-20">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="mb-8 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+              Explore related skill paths
+            </h2>
+            <p className="mb-10 text-slate-600">
+              Build stronger topical depth by exploring connected skill pages, AI learning directions, and practical workflow categories.
+            </p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {shuffleArray(skillsData)
+                .filter((s) => s.slug !== rootSkill.slug)
+                .slice(0, 12)
+                .map((item, i) => (
+                  <Link
+                    key={i}
+                    href={`/${item.slug}`}
+                    className="rounded-[22px] border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-500 hover:bg-white hover:text-blue-600"
+                  >
+                    {item.title}
+                  </Link>
+                ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-14 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
+              Frequently asked questions
+            </h2>
+            <div className="space-y-5">
+              {rootFaqs.map((faq, i) => (
+                <details
+                  key={i}
+                  className="group rounded-[26px] border border-slate-200 bg-slate-50 transition-all duration-200 open:bg-white open:ring-2 open:ring-blue-100"
+                >
+                  <summary className="flex list-none cursor-pointer items-center justify-between p-6 text-base font-bold text-slate-900 [&::-webkit-details-marker]:hidden">
+                    {faq.q}
+                    <ChevronDown className="h-5 w-5 text-slate-400 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-600" />
+                  </summary>
+                  <div className="px-6 pb-6 pt-2 text-sm leading-7 text-slate-600 sm:text-base">
+                    {faq.a}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const seoData = getGeneratedSeoData();
+  const generatedPage = seoData.find((s: any) => s.slug === params.skill);
+
+  if (generatedPage) {
+    const isExpert = generatedPage.type === 'freelance';
+    const relatedLinks = shuffleArray(seoData).filter(p => p.slug !== params.skill).slice(0, 12);
+    
+    // THE SECRET SAUCE: Google JSON-LD Schema Generation
+    const FAQs = [
+       { q: `Why is ${generatedPage.skill} so important right now?`, a: `Manual execution is being rapidly augmented by intelligent systems. Mastering ${generatedPage.skill} bridges the gap between traditional operations and smart delivery.` },
+       { q: `Do you focus on theory or practical implementation?`, a: `100% practical implementation. You learn by building workflows that you can immediately deploy.` },
+       { q: `Will I get certification?`, a: `Yes, you will receive our verified program completion certificate which adds significant credibility.` }
+    ];
+
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": FAQs.map(faq => ({
+        "@type": "Question",
+        "name": faq.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.a
+        }
+      }))
+    };
+
+    const courseSchema = {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "name": generatedPage.title.split('|')[0],
+      "description": generatedPage.description,
+      "provider": {
+        "@type": "Organization",
+        "name": "Sikhadenge",
+        "sameAs": "https://sikhadenge.in"
+      }
+    };
+
+    return (
+      <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-200">
+        {/* Inject Invisible Microdata for Google Bot */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }} />
+        
+        {/* HERO SECTION */}
+        <section className="relative overflow-hidden border-b border-slate-100 px-4 pb-20 pt-24 sm:px-6 lg:px-8">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-white -z-10"></div>
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-4xl">
+              <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">
+                Premium Skill Guide
+              </div>
+              <h1 className="mb-6 max-w-5xl text-4xl font-black leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem]">
+                {generatedPage.title.split('|')[0]}
+              </h1>
+              <p className="mb-10 max-w-4xl text-base font-medium leading-8 text-slate-600 sm:text-xl">
+                {generatedPage.description} We emphasize actionable speed, high-quality workflows, and practical intelligence so you can immediately add value.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-16">
+                <Link href="https://sikhadenge.in/gen-ai-masterclass/register-one-step" className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-[0_14px_40px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-1 hover:bg-blue-700 sm:text-lg">
+                  Join Free Masterclass
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-3">
+                {[
+                   { icon: BookOpen, title: "Deep Expertise", desc: `Comprehensive real-world use cases for ${generatedPage.skill}.` },
+                   { icon: Briefcase, title: "Market Ready", desc: "Build practical output that supports client work, freelance positioning, and real digital delivery." },
+                   { icon: Award, title: "Verified Skills", desc: "Sikhadenge certification and dedicated QA." }
+                ].map((item, i) => (
+                  <div key={i} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_35px_rgba(15,23,42,0.05)]">
+                     <item.icon className="w-8 h-8 text-blue-600 mb-4" />
+                     <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3><p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* WHY LEARN THIS GRID */}
+        <section className="bg-slate-50 px-4 py-24 sm:px-6 lg:px-8" id="details">
+          <div className="max-w-7xl mx-auto">
+             <h2 className="mb-12 max-w-4xl text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">Why professionals should build {generatedPage.skill} skills now</h2>
+             <div className="grid gap-6 md:grid-cols-2">
+              {[
+                { title: "Professionals need stronger service capability", desc: "Clients expect high-level strategic reasoning.", icon: Zap },
+                { title: "Improves speed and delivery quality", desc: "Delivering faster and with higher quality creates leverage.", icon: TrendingUp },
+                { title: `Modern clients demand ${generatedPage.skill} support`, desc: "Every modern startup desires people who practically understand these technologies.", icon: Users },
+                { title: "Smart automation creates leverage", desc: "Systemize your approach to handle more volume.", icon: Target }
+              ].map((feature, i) => (
+                <div key={i} className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-[0_8px_28px_rgba(15,23,42,0.04)]">
+                   <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6"><feature.icon className="w-6 h-6" /></div>
+                   <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3><p className="text-slate-600">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* DYNAMIC SPIDER WEB LINKS (AUTO INJECTION) */}
+        <section className="border-t border-slate-100 bg-white px-4 py-20">
+           <div className="max-w-7xl mx-auto">
+              <h2 className="mb-8 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Master Related Categories</h2>
+              <p className="text-slate-600 mb-10">Google relies on connected topics. Explore these high demand skills to expand your toolkit:</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                 {relatedLinks.map((linkData: any, i: number) => (
+                   <Link key={i} href={`/${linkData.slug}`} className="rounded-[22px] border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-500 hover:bg-white hover:text-blue-600">
+                     {linkData.title.split('|')[0]}
+                   </Link>
+                 ))}
+              </div>
+           </div>
+        </section>
+
+        {/* FAQs */}
+        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="mb-14 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">Frequently asked questions</h2>
+            <div className="space-y-5">
+              {FAQs.map((faq, i) => (
+                <details key={i} className="group rounded-[26px] border border-slate-200 bg-slate-50 transition-all duration-200 open:bg-white open:ring-2 open:ring-blue-100">
+                  <summary className="flex list-none cursor-pointer items-center justify-between p-6 text-base font-bold text-slate-900 [&::-webkit-details-marker]:hidden">
+                    {faq.q}
+                    <ChevronDown className="w-5 h-5 text-slate-400 group-open:text-blue-600 group-open:rotate-180 transition-transform duration-300" />
+                  </summary>
+                  <div className="px-6 pb-6 pt-2 text-sm leading-7 text-slate-600 sm:text-base">{faq.a}</div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  notFound();
+}

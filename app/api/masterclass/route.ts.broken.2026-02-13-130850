@@ -1,0 +1,86 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function clean(v: unknown, max = 200) {
+  const s = (typeof v === "string" ? v : v == null ? "" : String(v)).trim();
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+function json(data: any, status = 200) {
+  return new NextResponse(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+function getPublicBaseUrl(req: Request) {
+  // Prefer explicit base URL if set
+  const envBase =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "";
+  if (envBase) return envBase.replace(/\/+$/, "");
+
+  const h = req.headers;
+  const proto = (h.get("x-forwarded-proto") || "https").split(",")[0].trim();
+  const host =
+    (h.get("x-forwarded-host") || h.get("host") || "sikhadenge.in")
+      .split(",")[0]
+      .trim();
+  return `${proto}://${host}`;
+}
+
+export async function GET() {
+  return json({ ok: true, route: "/api/masterclass", method: "GET" }, 200);
+}
+
+export async function POST(req: Request) {
+  try {
+    const ct = (req.headers.get("content-type") || "").toLowerCase();
+
+    let name = "";
+    let phone = "";
+    let email = "";
+    let source = "website";
+    let page = "/masterclass";
+
+    if (ct.includes("multipart/form-data") || ct.includes("application/x-www-form-urlencoded")) {
+      const form = await req.formData();
+      name = clean(form.get("name"), 80);
+      phone = clean(form.get("phone"), 20);
+      email = clean(form.get("email"), 120);
+      source = clean(form.get("source"), 40) || "website";
+      page = clean(form.get("page"), 120) || "/masterclass";
+    } else if (ct.includes("application/json")) {
+      const body = (await req.json().catch(() => ({}))) as any;
+      name = clean(body?.name, 80);
+      phone = clean(body?.phone, 20);
+      email = clean(body?.email, 120);
+      source = clean(body?.source, 40) || "website";
+      page = clean(body?.page, 120) || "/masterclass";
+    } else {
+      return json({ ok: false, error: "unsupported_content_type" }, 415);
+    }
+
+    if (!name || !phone || !email) {
+      return json({ ok: false, error: "missing_fields" }, 400);
+    }
+
+    // Upsert by phone (assumes unique constraint on phone)
+    await prisma.masterclassLead.upsert({
+      where: { phone },
+      update: { name, email, source, page },
+      create: { name, phone, email, source, page },
+    });
+
+    const base = getPublicBaseUrl(req);
+    return NextResponse.redirect(`${base}/masterclass?ok=1`, 303);
+  } catch (e) {
+    console.error("masterclass api error:", e);
+    return json({ ok: false, error: "server_error" }, 500);
+  }
+}

@@ -1,0 +1,715 @@
+"use client";
+
+
+import Link from "next/link";
+import {
+  useMemo,
+  useState } from "react";
+import {
+  ChevronDown,
+  ArrowRight,
+  BarChart3,
+  Wallet,
+  ShieldCheck,
+  BadgeIndianRupee,
+  Users,
+  GraduationCap,
+  Megaphone,
+  TrendingUp,
+  Quote,
+  Star,
+  Sparkles,
+  Compass,
+  ClipboardCheck,
+  Rocket
+} from "lucide-react";
+
+
+
+const benefits = [
+  {
+    icon: BadgeIndianRupee,
+    title: "Creator Collaboration Opportunity",
+    text: "Collaborate with Sikhadenge through a cleaner creator-first partnership model.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Long-Term Creator Growth",
+    text: "Built for creators who want repeat campaigns, stronger brand fit, and long-term collaboration.",
+  },
+  {
+    icon: Users,
+    title: "Built for Multiple Creator Profiles",
+    text: "Relevant for Instagram creators, YouTube channels, niche pages, Telegram communities, and student creators.",
+  },
+  {
+    icon: BarChart3,
+    title: "Campaign-Ready Workflow",
+    text: "Designed for creator collaborations, campaign visibility, and audience-fit promotion.",
+  },
+];
+
+const steps = [
+  {
+    no: "1",
+    title: "Explore the Collaboration",
+    text: "Understand the creator collaboration model, audience fit, and how Sikhadenge partnerships work.",
+  },
+  {
+    no: "2",
+    title: "Apply & Get Reviewed",
+    text: "Submit your profile, audience type, content niche, and platform details for review.",
+  },
+  {
+    no: "3",
+    title: "Start Collaborating",
+    text: "Approved creators move into a cleaner campaign and collaboration workflow.",
+  },
+];
+
+const testimonials = [
+  {
+    name: "Priya Patel",
+    role: "Creator Partner",
+    text: "A creator collaboration page like this makes the program feel more premium, structured, and easier to trust.",
+  },
+  {
+    name: "Rohan Gupta",
+    role: "Creator Partner",
+    text: "This type of structure is better than random collab DMs because it clearly explains the opportunity and fit.",
+  },
+  {
+    name: "Neha Sharma",
+    role: "Creator Partner",
+    text: "For niche creators, student pages, and education communities, this kind of page creates stronger brand confidence.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Who can apply to join as a creator?",
+    a: "Creators, niche pages, YouTube channels, Telegram communities, and audience-led profiles can apply.",
+  },
+  {
+    q: "Is approval automatic?",
+    a: "No. The current setup is review-based and depends on fit, relevance, audience quality, and profile clarity.",
+  },
+  {
+    q: "Do micro creators also qualify?",
+    a: "Yes. A smaller but relevant audience can still be a strong fit if the niche, engagement, and content quality are aligned.",
+  },
+  {
+    q: "Is there a minimum follower requirement?",
+    a: "There is no single fixed public threshold right now. Profile quality, niche relevance, and audience trust matter more than raw numbers alone.",
+  },
+  {
+    q: "Which platforms are accepted?",
+    a: "Instagram, YouTube, Telegram, niche community channels, and other audience-led platforms can be considered during review.",
+  },
+  {
+    q: "Can student creators also apply?",
+    a: "Yes. Student creators, college communities, and niche learning pages can be a strong fit for this program.",
+  },
+  {
+    q: "What type of creators are most suitable?",
+    a: "Education creators, AI creators, design creators, skill-learning pages, student communities, and career-focused niche pages are generally the best fit.",
+  },
+  {
+    q: "Is this a paid collaboration program?",
+    a: "The collaboration structure can vary based on campaign type, creator profile, audience fit, and approved promotion model.",
+  },
+  {
+    q: "Can this also work as a performance-based partnership?",
+    a: "Yes. Some creator collaborations can be aligned with performance, tracked outcomes, or campaign-specific structures where relevant.",
+  },
+  {
+    q: "What will I promote as a creator partner?",
+    a: "Approved creators may be mapped to relevant Sikhadenge learning programs, campaigns, workshops, launches, or creator-fit promotion opportunities.",
+  },
+  {
+    q: "How long does the review process take?",
+    a: "Review time can vary depending on application quality and volume, but the process is intended to stay clean, selective, and relevance-based.",
+  },
+  {
+    q: "Will I get a personal referral or campaign workflow later?",
+    a: "Yes. Approved creators can be mapped into cleaner campaign, collaboration, and tracking workflows in later phases.",
+  },
+  {
+    q: "Can communities or page admins apply instead of personal influencers?",
+    a: "Yes. Niche communities, theme pages, education pages, and admin-led audience channels can also apply if the audience is relevant.",
+  },
+  {
+    q: "Is this only for large influencers?",
+    a: "No. This page is built for creators, niche communities, education pages, and audience-led collaborators — not only for large influencers.",
+  },
+  {
+    q: "Can I apply if I have worked with brands before?",
+    a: "Yes. Previous collaboration experience can strengthen your profile, but it is not the only deciding factor.",
+  },
+  {
+    q: "What makes an application stronger?",
+    a: "A clear niche, relevant audience, consistent content quality, and clean profile presentation usually make a creator application stronger.",
+  },
+];
+
+function FaqItem({
+  q,
+  a,
+  open,
+  onClick,
+}: {
+  q: string;
+  a: string;
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-h-[86px] w-full items-center justify-between gap-6 px-6 py-5 text-left sm:px-8"
+      >
+        <span className="pr-4 text-[18px] font-semibold leading-tight text-slate-900 sm:text-[19px]">
+          {q}
+        </span>
+
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#5B4FE9] shadow-sm">
+          <ChevronDown
+            className={`h-5 w-5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+
+      {open ? (
+        <div className="px-6 pb-6 pt-0 sm:px-8">
+          <div className="rounded-2xl bg-[#F8FAFF] px-5 py-4 text-[15px] leading-7 text-slate-600">
+            {a}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function AffiliatePage() {
+  const [courses, setCourses] = useState(100);
+  const [orderValue, setOrderValue] = useState(1000);
+  const [openFaq, setOpenFaq] = useState<number>(0);
+
+  const estimated = useMemo(() => {
+    const rate = 0.08;
+    return Math.round(courses * orderValue * rate);
+  }, [courses, orderValue]);
+
+  return (
+    <main className="min-h-screen bg-white text-slate-900">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#f7f9ff_0%,#eef4ff_100%)]">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-[-120px] top-[-40px] h-[320px] w-[320px] rounded-full bg-blue-100/80 blur-3xl" />
+          <div className="absolute right-[-100px] top-[20px] h-[280px] w-[280px] rounded-full bg-violet-100/70 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E2FF] bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5B4FE9] shadow-sm">
+                <Users className="h-4 w-4" />
+                Creator Partner Program
+              </div>
+
+              <h1 className="mt-4 max-w-[560px] text-[34px] font-bold leading-[0.98] tracking-[-0.025em] text-slate-900 sm:text-[40px] lg:text-[46px]">
+                <span className="block text-slate-900">Collaborate with</span>
+                <span className="block text-[#5B4FE9]">Sikhadenge&apos;s</span>
+                <span className="block text-[#5B4FE9]">Creator Partner Program</span>
+              </h1>
+
+              <p className="mt-4 max-w-md text-[13px] leading-6 text-slate-600 sm:text-sm">
+                Built for creators, niche pages, communities, and audience-led profiles who want a cleaner way to collaborate with Sikhadenge and unlock structured growth.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <Link
+                  href="/partner/apply?type=influencer"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#5B4FE9] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(91,79,233,0.24)] transition hover:opacity-95"
+                >
+                  Apply as Creator
+                </Link>
+
+                <Link
+                  href="/influencer-program"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Explore Creator Program
+                </Link>
+              </div>
+
+              <div className="mt-6 grid max-w-lg gap-2.5 sm:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Best For
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Creators & Niche Pages
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Model
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Review Based
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Focus
+                  </div>
+                  <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                    Audience Fit
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="relative mx-auto h-[448px] max-w-[585px]">
+                <div className="absolute inset-0 rounded-[38px] border border-white/8 bg-[linear-gradient(90deg,#0C2458_0%,#0A1738_34%,#151B28_68%,#111827_100%)] shadow-[0_34px_100px_rgba(2,8,23,0.38)]">
+                  <div className="absolute inset-0 rounded-[38px] bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_28%),radial-gradient(circle_at_65%_45%,rgba(245,179,1,0.08),transparent_18%),radial-gradient(circle_at_18%_80%,rgba(37,99,235,0.16),transparent_22%)] bg-[size:72px_100%,100%_100%,100%_100%,100%_100%] opacity-100" />
+                  <div className="absolute inset-x-0 bottom-0 h-28 rounded-b-[38px] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.15),transparent_55%)]" />
+                </div>
+
+                <div className="absolute left-8 top-7 h-[220px] w-[275px] rounded-[28px] border border-[#6F7BF7]/60 bg-[linear-gradient(180deg,rgba(18,27,54,0.94),rgba(10,18,38,0.97))] p-6 shadow-[0_20px_54px_rgba(2,8,23,0.36)]">
+                  <div className="text-[24px] font-bold leading-[0.96] tracking-tight text-white">
+                    Creator Collaboration
+                  </div>
+
+                  <div className="mt-5 h-[126px] rounded-[20px] border border-dashed border-[#7C86FF]/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.01))] p-4">
+                    <div className="rounded-2xl border border-[#6E79F6]/40 bg-[linear-gradient(180deg,rgba(17,24,39,0.96),rgba(9,14,28,0.99))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[12px] font-medium text-white/80">Mon, 11th 11:00 AM</div>
+                        <div className="h-7 w-7 rounded-lg bg-emerald-400/15 ring-1 ring-emerald-400/30" />
+                      </div>
+
+                      <div className="mt-3 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
+                        Consultation
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-[linear-gradient(180deg,#a1a1aa,#52525b)] ring-2 ring-white/10" />
+                        <div className="text-[11px] leading-4 text-white/80">Creator Partner</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[linear-gradient(90deg,rgba(111,123,247,0.08),transparent_25%,transparent_75%,rgba(34,197,94,0.06))]" />
+                </div>
+
+                <div className="absolute right-4 top-[120px] h-[150px] w-[305px] rounded-[24px] border border-[#4B5BB8]/45 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(9,16,31,0.98))] p-4 shadow-[0_16px_40px_rgba(2,8,23,0.35)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[15px] font-semibold text-white">Creator Insights</div>
+                    <div className="flex items-center gap-2 text-[10px] text-white/60">
+                      <span>Audience</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/80">This Month</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 h-[92px] overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))]">
+                    <svg viewBox="0 0 320 100" className="h-full w-full">
+                      <path d="M0,72 C28,38 50,24 76,55 C98,82 128,86 146,42 C165,0 195,8 212,48 C228,84 248,84 268,48 C286,18 304,20 320,42" fill="none" stroke="#22c55e" strokeWidth="3.2" strokeLinecap="round" />
+                      <path d="M0,82 C28,64 54,62 78,76 C98,88 124,86 144,68 C164,50 188,48 210,68 C230,86 252,88 274,72 C292,58 306,58 320,66" fill="none" stroke="#8b9cff" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+                      <circle cx="318" cy="42" r="4.5" fill="#34d399" />
+                      <circle cx="318" cy="66" r="4.5" fill="#93c5fd" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="absolute left-8 bottom-8 h-[202px] w-[372px] rounded-[26px] border border-[#334B87]/50 bg-[linear-gradient(180deg,rgba(10,18,38,0.985),rgba(6,12,26,0.995))] px-5 pb-6 pt-4 shadow-[0_20px_48px_rgba(2,8,23,0.36)]">
+                  <div className="text-[15px] font-semibold text-white">
+                    Creator Growth Potential
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-[1fr_32px_1fr] items-end gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="relative h-[84px] w-[84px]">
+                        <div className="absolute inset-0 rounded-full border-[6px] border-white/10" />
+                        <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-l-emerald-400 border-t-emerald-400 rotate-[210deg]" />
+                        <div className="absolute left-1/2 top-1/2 h-1 w-7 -translate-x-[10%] -translate-y-1/2 rounded-full bg-emerald-300 origin-left rotate-[190deg]" />
+                      </div>
+                      <div className="mt-3 rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold text-white">20%</div>
+                      <div className="mt-3 text-[11px] font-medium text-white/92">No Structure</div>
+                    </div>
+
+                    <div className="pb-6 text-center text-white/40">→</div>
+
+                    <div className="flex flex-col items-center">
+                      <div className="relative h-[84px] w-[84px]">
+                        <div className="absolute inset-0 rounded-full border-[6px] border-white/10" />
+                        <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-l-emerald-400 border-b-cyan-400 border-t-emerald-300 rotate-[145deg]" />
+                        <div className="absolute left-1/2 top-1/2 h-1 w-7 -translate-x-[10%] -translate-y-1/2 rounded-full bg-emerald-300 origin-left rotate-[138deg]" />
+                      </div>
+                      <div className="mt-3 rounded-full bg-[#7C86FF]/18 px-2.5 py-0.5 text-[10px] font-semibold text-white">75%</div>
+                      <div className="mt-4 text-[11px] font-medium text-white">Creator Workflow</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center rounded-full border border-[#D9E2F2] bg-[#F7F9FF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5B4FE9]">
+              Why Join
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Why creators choose Sikhadenge’s partner program
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-[17px]">
+              A cleaner collaboration system for creators, communities, and niche pages that want stronger positioning, better audience fit, and long-term brand alignment.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-6xl gap-6 md:grid-cols-2">
+            <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <TrendingUp className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-[20px] font-semibold leading-tight text-slate-900">Cleaner Collaboration Model</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                    Work with Sikhadenge through a more organized creator partnership structure instead of informal or unclear collaboration flows.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <Users className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-[20px] font-semibold leading-tight text-slate-900">Built for Real Creator Profiles</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                    Relevant for Instagram creators, YouTube channels, Telegram communities, niche education pages, and student-led creator ecosystems.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <ShieldCheck className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-[20px] font-semibold leading-tight text-slate-900">Better Campaign Quality</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                    More aligned with audience relevance, higher-quality promotion, tracked outcomes, and long-term campaign credibility.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F4F4FF]">
+                  <Sparkles className="h-5 w-5 text-[#5B4FE9]" />
+                </div>
+                <div>
+                  <h3 className="text-[20px] font-semibold leading-tight text-slate-900">Long-Term Creator Potential</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                    Designed to evolve into stronger creator campaigns, better visibility, and more mature collaboration opportunities over time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="calculator" className="bg-[#F3F0FF]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              How much can your creator impact grow?
+            </h2>
+            <p className="mt-3 text-sm text-slate-600">
+              A simple preview based on estimated conversions and value per conversion
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-5xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
+            <div className="text-center">
+              <div className="text-[13px] text-slate-500">Upto</div>
+              <div className="mt-1 text-5xl font-bold text-[#5B4FE9] sm:text-6xl">
+                ₹{estimated.toLocaleString("en-IN")}
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="text-xs text-slate-500">Estimated Conversions</div>
+                <div className="mt-2 text-2xl font-bold text-slate-900">{courses}</div>
+                <input
+                  type="range"
+                  min={0}
+                  max={200}
+                  value={courses}
+                  onChange={(e) => setCourses(Number(e.target.value))}
+                  className="mt-5 w-full accent-[#5B4FE9]"
+                />
+                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                  <span>0</span>
+                  <span>200</span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="text-xs text-slate-500">1 Conversion Value</div>
+                <div className="mt-2 text-2xl font-bold text-slate-900">{orderValue.toLocaleString("en-IN")}</div>
+                <input
+                  type="range"
+                  min={1000}
+                  max={20000}
+                  step={500}
+                  value={orderValue}
+                  onChange={(e) => setOrderValue(Number(e.target.value))}
+                  className="mt-5 w-full accent-[#5B4FE9]"
+                />
+                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                  <span>1000</span>
+                  <span>20000</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-6 text-center text-xs text-slate-400">
+              *Earning estimates are illustrative and depend on actual program rules and outcomes.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[linear-gradient(180deg,#FCFDFF_0%,#F7FAFF_100%)]">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center rounded-full border border-[#D9E2F2] bg-[#F7F9FF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5B4FE9]">
+              How It Works
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Start collaborating with Sikhadenge in 3 simple steps
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-[17px]">
+              A cleaner collaboration journey for creators, niche pages, and audience-led profiles.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-6xl gap-6 md:grid-cols-3">
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                1
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#EFF4FF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Statistics</div>
+                    <div className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-500">This Week</div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF4FF]">
+                      <Compass className="h-4 w-4 text-[#5B4FE9]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold text-slate-800">Sikhadenge</div>
+                      <div className="text-[10px] text-slate-500">Partner view</div>
+                    </div>
+                  </div>
+                  <div className="mt-3.5">
+                    <svg viewBox="0 0 220 70" className="h-[54px] w-full">
+                      <path d="M0,48 C18,32 34,26 50,38 C66,50 86,54 104,30 C120,10 142,14 158,34 C174,54 194,56 220,24" fill="none" stroke="#84cc16" strokeWidth="2.5" strokeLinecap="round"/>
+                      <path d="M0,52 C18,44 36,42 52,48 C70,56 90,58 108,42 C126,26 148,26 166,42 C184,58 202,56 220,38" fill="none" stroke="#14532d" strokeWidth="2.5" strokeLinecap="round" opacity="0.9"/>
+                      <circle cx="108" cy="42" r="3.5" fill="#14532d"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Explore the Collaboration</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Understand the collaboration model, who it is for, and how Sikhadenge creator partnerships work.
+              </p>
+            </div>
+
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                2
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#F4F2FF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Balance</div>
+                    <div className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-500">Weekly</div>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] text-slate-500">Total Balance</div>
+                      <div className="mt-1 text-xl font-bold text-slate-900">$2,100</div>
+                    </div>
+                    <div className="rounded-full bg-[#E8FAEE] px-2 py-1 text-[10px] font-semibold text-[#15803d]">+15%</div>
+                  </div>
+                  <div className="mt-3.5 flex items-end gap-2">
+                    <div className="h-8 w-6 rounded-t-md bg-[#E8EDF8]" />
+                    <div className="h-12 w-6 rounded-t-md bg-[#B7F06A]" />
+                    <div className="h-16 w-6 rounded-t-md bg-[#84cc16]" />
+                    <div className="h-10 w-6 rounded-t-md bg-[#E8EDF8]" />
+                    <div className="h-9 w-6 rounded-t-md bg-[#E8EDF8]" />
+                  </div>
+                  <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+                    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Apply & Get Reviewed</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Submit your profile, niche, audience type, and platform details for review.
+              </p>
+            </div>
+
+            <div className="relative rounded-[30px] border border-slate-200/90 bg-white px-7 pb-7 pt-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B4FE9] text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(91,79,233,0.18)]">
+                3
+              </div>
+              <div className="mt-4 rounded-[22px] border border-[#E7EBF4] bg-[linear-gradient(180deg,#F8FAFF_0%,#FFF7EF_100%)] p-3.5">
+                <div className="rounded-[18px] bg-white px-4 pb-4 pt-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-slate-500">Subscriptions</div>
+                    <div className="flex gap-1 text-[10px]">
+                      <span className="rounded-full bg-[#F3F4F6] px-2 py-1 text-slate-500">Month</span>
+                      <span className="rounded-full px-2 py-1 text-slate-400">Week</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-start justify-between gap-2.5">
+                    <div>
+                      <div className="text-[10px] text-slate-500">USD</div>
+                      <div className="mt-1 text-lg font-bold text-slate-900">$389.00</div>
+                      <div className="text-[10px] text-slate-500">Total sales</div>
+                    </div>
+                    <div className="rounded-2xl bg-[#F8FAFF] px-3 py-2 text-right">
+                      <div className="text-[10px] text-slate-500">USD</div>
+                      <div className="text-sm font-semibold text-slate-900">$22,678.00</div>
+                    </div>
+                  </div>
+                  <div className="mt-3.5">
+                    <svg viewBox="0 0 220 70" className="h-[54px] w-full">
+                      <path d="M0,58 C22,54 38,48 58,52 C80,56 96,46 116,30 C136,14 154,20 172,18 C192,16 206,8 220,4" fill="none" stroke="#84cc16" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold leading-tight text-slate-900">Start Collaborating</h3>
+              <p className="mt-3 text-[14px] leading-[1.85] text-slate-600">
+                Approved creators move into a cleaner campaign and collaboration workflow.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center rounded-full border border-[#D9E2F2] bg-[#F7F9FF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5B4FE9]">
+              Creator Fit
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Who is this creator program best for?
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Designed for creators and communities with relevant audience quality, niche trust, and collaboration potential.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">Instagram Creators</div>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Creators posting reels, carousels, story-led content, or niche education content.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">YouTube & Video Creators</div>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Channels creating skill-based, AI, design, editing, learning, or career-focused content.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">Communities & Niche Pages</div>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Telegram channels, student communities, niche pages, and audience-led education groups.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Common questions creators ask
+          </h2>
+
+          <div className="mt-12 space-y-4">
+            {faqs.map((item, idx) => (
+              <FaqItem
+                key={item.q}
+                q={item.q}
+                a={item.a}
+                open={openFaq === idx}
+                onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#0B1220]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_center,rgba(91,79,233,0.18),transparent_50%),linear-gradient(180deg,#101828_0%,#0B1220_100%)] px-6 py-12 text-center shadow-2xl sm:px-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
+              <Star className="h-4 w-4 text-[#F5B301]" />
+              Sikhadenge Creator Partner Program
+            </div>
+
+            <h2 className="mx-auto mt-6 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-5xl">
+              Collaborate with Sikhadenge as a Creator
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/70">
+              Ready to build stronger reach, creator visibility, and collaboration outcomes with Sikhadenge? Join a cleaner, more premium creator partnership journey.
+            </p>
+
+            <div className="mt-8">
+              <Link
+                href="/partner/apply?type=influencer"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                Get Started
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
