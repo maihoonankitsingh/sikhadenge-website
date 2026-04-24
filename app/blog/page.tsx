@@ -1,388 +1,337 @@
+import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  Blocks,
-  Bot,
-  BriefcaseBusiness,
-  Clapperboard,
-  FileText,
-  Globe,
-  LayoutTemplate,
-  Lightbulb,
-  Megaphone,
-  PenTool,
-  Search,
-  Sparkles,
-  Workflow,
-} from "lucide-react";
+import { ArrowRight, BookOpen, FolderKanban, Search, Sparkles } from "lucide-react";
+import { getBlogs, type BlogItem } from "@/lib/blogs";
 
-import SectionHeader from "@/app/components/brand/SectionHeader";
-import LightFeatureCard from "@/app/components/brand/LightFeatureCard";
-import DarkCapabilityCard from "@/app/components/brand/DarkCapabilityCard";
-import FaqBlock, { type FaqItem } from "@/app/components/brand/FaqBlock";
+const BASE_URL = "https://sikhadenge.in";
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "AI Blog, Guides and Learning Resources | Sikhadenge",
+  title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
   description:
-    "Explore AI blog articles, practical guides and learning resources across AI skills, tools, content, design, video, digital execution and workflow systems.",
+    "Explore 25,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
   alternates: {
-    canonical: "https://sikhadenge.in/blog",
+    canonical: `${BASE_URL}/blog`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    url: `${BASE_URL}/blog`,
+    title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
+    description:
+      "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
+    siteName: "Sikhadenge",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
+    description:
+      "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
   },
 };
 
-const whyCards = [
-  {
-    icon: <Search className="h-9 w-9" />,
-    title: "Learn through practical topic clusters",
-    description:
-      "The blog is structured to help readers understand how AI connects with real digital execution across content, visuals, videos, pages, communication, and workflows.",
-  },
-  {
-    icon: <Sparkles className="h-9 w-9" />,
-    title: "Useful guides matter more than random articles",
-    description:
-      "The strongest learning resources are the ones that improve clarity, decision-making, output quality, and practical understanding instead of just listing tools.",
-  },
-  {
-    icon: <Blocks className="h-9 w-9" />,
-    title: "Connected content builds stronger understanding",
-    description:
-      "Readers learn faster when articles are linked across related themes such as AI skills, AI tools, creator workflows, freelancer execution, and digital systems.",
-  },
-  {
-    icon: <BriefcaseBusiness className="h-9 w-9" />,
-    title: "Business relevance comes from execution context",
-    description:
-      "The blog is designed to support people who want AI knowledge that is useful for actual work, projects, teams, freelancing, and digital growth.",
-  },
-];
+function getCategoryStats(posts: BlogItem[]) {
+  const counts = new Map<string, number>();
 
-const categoryCards = [
-  {
-    icon: <Bot className="h-9 w-9" />,
-    title: "AI career and role guides",
-    description:
-      "Articles that explain modern AI-linked roles, career paths, execution relevance, and how broader digital capability is changing practical opportunities.",
-  },
-  {
-    icon: <PenTool className="h-9 w-9" />,
-    title: "AI design and visual execution",
-    description:
-      "Guides on visuals, brand assets, design support, thumbnails, creative production, and how AI fits into modern visual workflows.",
-  },
-  {
-    icon: <FileText className="h-9 w-9" />,
-    title: "AI content and communication systems",
-    description:
-      "Articles focused on writing support, scripting, captions, audience messaging, copy structure, and practical content workflows.",
-  },
-  {
-    icon: <Clapperboard className="h-9 w-9" />,
-    title: "AI video workflow guides",
-    description:
-      "Resources that cover reels, edits, short-form systems, production support, creator execution, and AI-assisted video workflows.",
-  },
-  {
-    icon: <Megaphone className="h-9 w-9" />,
-    title: "AI tools and execution guides",
-    description:
-      "Practical tool-focused content that explains where tools fit, how to use them intelligently, and which kinds of output they support best.",
-  },
-  {
-    icon: <Workflow className="h-9 w-9" />,
-    title: "Workflow and digital systems thinking",
-    description:
-      "Articles that connect AI with productivity, documentation, repeatable systems, page execution, and practical digital organization.",
-  },
-];
+  for (const post of posts) {
+    const key = post.category || "AI Guides";
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
 
-const clusterCards = [
-  {
-    icon: <Bot className="h-10 w-10" />,
-    title: "AI Career Cluster",
-    description:
-      "For readers exploring AI Expert roles, freelancer skill paths, digital career relevance, and the changing nature of modern work.",
-  },
-  {
-    icon: <PenTool className="h-10 w-10" />,
-    title: "Design with AI Cluster",
-    description:
-      "For readers interested in creative assets, visual systems, layouts, AI-supported design execution, and brand-oriented digital work.",
-  },
-  {
-    icon: <FileText className="h-10 w-10" />,
-    title: "Create Content with AI Cluster",
-    description:
-      "For readers focused on scripts, copy, communication, audience messaging, structured content planning, and publishing systems.",
-  },
-  {
-    icon: <Clapperboard className="h-10 w-10" />,
-    title: "Edit Videos with AI Cluster",
-    description:
-      "For readers learning short-form execution, editing support, reels workflows, production systems, and creator-side video improvement.",
-  },
-  {
-    icon: <Lightbulb className="h-10 w-10" />,
-    title: "AI Tools Cluster",
-    description:
-      "For readers trying to understand which tools matter, where they fit, and how to choose practical stacks for real output.",
-  },
-  {
-    icon: <Globe className="h-10 w-10" />,
-    title: "Digital Execution Cluster",
-    description:
-      "For readers connecting AI with pages, campaigns, content systems, workflow clarity, and broader practical execution.",
-  },
-];
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([label, count]) => ({ label, count }));
+}
 
-const faqItems: FaqItem[] = [
-  {
-    question: "What is covered in the Sikhadenge blog?",
-    answer:
-      "The blog covers AI skills, AI tools, content systems, design workflows, video execution, career guides, and practical digital execution topics connected to modern work.",
-  },
-  {
-    question: "Is this blog only for beginners?",
-    answer:
-      "No. The blog is useful for beginners, students, freelancers, creators, and working professionals who want clearer understanding of how AI fits into practical digital execution.",
-  },
-  {
-    question: "Are the articles focused on theory or real application?",
-    answer:
-      "The content is designed to stay practical. The focus is on execution relevance, useful systems, and real output rather than only abstract theory.",
-  },
-  {
-    question: "How should someone use these blog resources properly?",
-    answer:
-      "The best approach is to read connected topic clusters instead of isolated posts. That helps build stronger understanding across skills, tools, workflows, and practical use-cases.",
-  },
-  {
-    question: "Does the blog connect with the broader Sikhadenge learning path?",
-    answer:
-      "Yes. The blog supports deeper learning across AI Expert thinking, AI skills, AI tools, and broader digital execution capability.",
-  },
-  {
-    question: "Why does a structured blog matter for SEO and learning?",
-    answer:
-      "A structured blog helps both readers and search engines understand the site’s authority across connected topics. That improves clarity, discoverability, and topical strength.",
-  },
-];
+function getRepresentativePosts(posts: BlogItem[]) {
+  const seen = new Set<string>();
+  const picked: BlogItem[] = [];
 
-const quickAnswers = [
-  {
-    label: "Best use",
-    value:
-      "Use the blog to learn practical AI skills, tool categories, role guides, and execution systems through connected topic clusters.",
-  },
-  {
-    label: "Main goal",
-    value:
-      "The goal is to build clearer understanding of how AI fits into real digital work, not just collect random information.",
-  },
-  {
-    label: "Big advantage",
-    value:
-      "Readers get structured learning across skills, tools, workflows, and execution topics that support modern digital capability.",
-  },
-];
+  for (const post of posts) {
+    const category = post.category || "AI Guides";
+    if (seen.has(category)) continue;
+    seen.add(category);
+    picked.push(post);
+    if (picked.length >= 12) break;
+  }
 
-export default function BlogPage() {
+  return picked;
+}
+
+function getPriorityPosts(posts: BlogItem[]) {
+  const priorityTerms = [
+    "chatgpt",
+    "gemini",
+    "claude",
+    "prompt",
+    "freelancing",
+    "career",
+    "tools",
+    "students",
+    "business",
+    "marketing",
+  ];
+
+  const scored = posts
+    .map((post) => {
+      const haystack = `${post.slug} ${post.title} ${post.category || ""}`.toLowerCase();
+      const score = priorityTerms.reduce(
+        (total, term) => total + (haystack.includes(term) ? 1 : 0),
+        0,
+      );
+
+      return { post, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const unique = new Set<string>();
+  const picked: BlogItem[] = [];
+
+  for (const item of scored) {
+    if (unique.has(item.post.slug)) continue;
+    unique.add(item.post.slug);
+    picked.push(item.post);
+    if (picked.length >= 9) break;
+  }
+
+  return picked;
+}
+
+export default function BlogHubPage() {
+  const posts = getBlogs();
+  const categoryStats = getCategoryStats(posts);
+  const representativePosts = getRepresentativePosts(posts);
+  const priorityPosts = getPriorityPosts(posts);
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Sikhadenge AI Blog",
+    url: `${BASE_URL}/blog`,
+    description:
+      "Large practical AI blog hub covering tools, workflows, freelancing, careers, prompts, SEO, AEO, and GEO execution.",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Sikhadenge",
+      url: BASE_URL,
+    },
+    hasPart: priorityPosts.slice(0, 6).map((post, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${BASE_URL}/blog/${post.slug}`,
+      name: post.title,
+    })),
+  };
+
   return (
-    <main className="bg-[#F8FAFC] text-[#0B1220]">
-      <section className="border-b border-[#E2E8F0] bg-[linear-gradient(180deg,#F8FBFF_0%,#F8FAFC_100%)]">
-        <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
-          <div className="max-w-5xl">
-            <div className="inline-flex items-center rounded-full border border-[#BFD3F2] bg-[#EFF6FF] px-4 py-2 text-[15px] font-semibold text-[#2563EB] shadow-[0_4px_14px_rgba(37,99,235,0.08)]">
-              AI blog hub
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
+      <section className="bg-[linear-gradient(135deg,#13204f_0%,#1f3f9e_100%)] px-4 pb-16 pt-24 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/80">
+            Sikhadenge AI Blog
+          </div>
+
+          <h1 className="mt-6 max-w-5xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+            Practical AI guides built for search, answers, ranking signals, and leads
+          </h1>
+
+          <p className="mt-5 max-w-3xl text-base leading-8 text-blue-50/85 sm:text-lg">
+            Explore real blog coverage across ChatGPT, Gemini, Claude, AI tools,
+            prompts, careers, freelancing, business execution, SEO, AEO, GEO,
+            and digital growth systems.
+          </p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
+                Total Blog Pages
+              </div>
+              <div className="mt-3 text-3xl font-black">{posts.length.toLocaleString()}</div>
             </div>
-
-            <h1 className="mt-6 text-[40px] font-bold leading-[1.04] tracking-[-0.03em] text-[#0B1220] md:text-[68px]">
-              AI blog, guides and practical learning resources
-            </h1>
-
-            <p className="mt-6 max-w-4xl text-[19px] leading-[1.8] text-[#475569] md:text-[22px]">
-              Explore practical blog resources across AI skills, tools, content, design, video,
-              workflows, and digital execution. The goal is to help readers build useful understanding
-              through connected topic clusters instead of scattered information.
-            </p>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-              <a
-                href="/ai-generalist"
-                className="inline-flex items-center rounded-full bg-[#2563EB] px-7 py-3.5 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:bg-[#1D4ED8]"
-              >
-                Explore AI Expert
-              </a>
-
-              <a
-                href="/ai-tools"
-                className="inline-flex items-center rounded-full border border-[#C7D7EF] bg-white px-7 py-3.5 text-[16px] font-semibold text-[#0B1220] shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:border-[#2563EB] hover:text-[#2563EB]"
-              >
-                Explore AI Tools
-              </a>
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
+                Topic Clusters
+              </div>
+              <div className="mt-3 text-3xl font-black">{categoryStats.length}+</div>
             </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {quickAnswers.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[24px] border border-[#D7E3F4] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#2563EB]">
-                    {item.label}
-                  </div>
-                  <p className="mt-3 text-[16px] leading-[1.8] text-[#475569]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
+                Search Focus
+              </div>
+              <div className="mt-3 text-lg font-bold">SEO + AEO + GEO + internal linking</div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
-        <SectionHeader
-          pill="Why this matters"
-          title="Why a structured AI blog matters"
-          description="A strong AI blog helps readers learn faster and helps search engines understand topic depth, content quality, and authority across connected subject areas."
-        />
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {whyCards.map((item) => (
-            <LightFeatureCard
-              key={item.title}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-        <SectionHeader
-          pill="Content categories"
-          title="What kinds of guides are covered here"
-          description="The blog is organized around practical categories that connect AI with real digital execution and modern work."
-        />
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {categoryCards.map((item) => (
-            <LightFeatureCard
-              key={item.title}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
-        <SectionHeader
-          pill="Topic clusters"
-          title="How the blog builds topical authority"
-          description="The strongest authority comes from connected topic clusters that reinforce each other across roles, tools, skills, and execution systems."
-        />
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {clusterCards.map((item) => (
-            <DarkCapabilityCard
-              key={item.title}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-        <div className="rounded-[36px] border border-[#D7E3F4] bg-white p-8 shadow-[0_18px_42px_rgba(15,23,42,0.06)] md:p-12">
-          <SectionHeader
-            pill="Related learning paths"
-            title="Explore connected AI pages"
-            description="These pages connect the blog with broader Sikhadenge learning paths across AI skills, tools, and practical execution."
-          />
-
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { href: "/ai-generalist", label: "AI Expert" },
-              { href: "/ai-skills", label: "AI Skills" },
-              { href: "/ai-tools", label: "AI Tools Hub" },
-              { href: "/best-ai-skills-to-learn", label: "Best AI Skills to Learn" },
-              { href: "/ai-content-workflows", label: "Create Content with Automate Work with AI" },
-              { href: "/ai-design-workflows", label: "Design with Automate Work with AI" },
-              { href: "/ai-video-production-workflows", label: "Edit Videos with Automate Work with AI" },
-              { href: "/ai-marketing-workflows", label: "Market with Automate Work with AI" },
-              { href: "/ai-skills-for-students", label: "AI Skills for Students" },
-              { href: "/ai-skills-for-freelancers", label: "AI Skills for Freelancers" },
-              { href: "/ai-skills-for-creators", label: "AI Skills for Creators" },
-              { href: "/site-map", label: "HTML Sitemap" },
-            ].map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="rounded-[22px] border border-[#D7E3F4] bg-[#F8FBFF] px-5 py-4 text-[16px] font-semibold text-[#0B1220] shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+          <div className="mt-8 flex flex-wrap gap-3">
+            {["ChatGPT", "Gemini", "Claude", "AI Tools", "Freelancing", "AI Career"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white/85"
               >
-                {item.label}
-              </a>
+                {item}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 pb-20 md:px-6 md:pb-24">
-        <FaqBlock
-          pill="FAQs"
-          title="Frequently asked questions"
-          description="Clear answers to common questions readers usually have about the Sikhadenge blog and how to use it properly."
-          items={faqItems}
-        />
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-5 md:grid-cols-3">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+            <Search className="h-8 w-8 text-blue-700" />
+            <h2 className="mt-4 text-xl font-black text-slate-900">Search-ready structure</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Blog hub internal links, category discovery, and representative articles
+              help search engines and AI tools understand topical depth.
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+            <Sparkles className="h-8 w-8 text-blue-700" />
+            <h2 className="mt-4 text-xl font-black text-slate-900">Answer-first content</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              High-intent topics like ChatGPT, AI tools, careers, prompts, and
+              execution workflows stay easy to discover and easier to recommend.
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+            <FolderKanban className="h-8 w-8 text-blue-700" />
+            <h2 className="mt-4 text-xl font-black text-slate-900">Authority clusters</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Category-led article discovery improves crawl depth, reduces orphan pages,
+              and helps stronger topical authority build over time.
+            </p>
+          </div>
+        </div>
       </section>
-    
-<section className="border-t border-white/10 bg-[#0B1220]">
-  <div className="mx-auto max-w-[1100px] px-4 py-14 sm:px-6 lg:px-8">
 
-    <h2 className="text-2xl md:text-3xl font-bold text-white">
-      Practical Understanding and Real Use Cases
-    </h2>
+      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+              Priority Articles
+            </p>
+            <h2 className="mt-2 text-3xl font-black text-slate-900">
+              High-intent AI topics readers search for first
+            </h2>
+          </div>
+        </div>
 
-    <p className="mt-4 text-[#B0B7C3] leading-7">
-      This topic is not only theoretical. It is actively used in real digital workflows including content creation, freelance delivery, marketing execution, and online earning systems. Understanding how it works in real scenarios is important for building practical skills.
-    </p>
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {priorityPosts.map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="group rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
+            >
+              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
+                {post.category || "AI Guides"}
+              </span>
+              <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900 transition group-hover:text-blue-700">
+                {post.title}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                {post.excerpt ||
+                  "Practical AI guide with tools, workflow clarity, and real execution support."}
+              </p>
+              <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700">
+                Read article <ArrowRight className="h-4 w-4" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-    <h3 className="mt-8 text-xl font-semibold text-white">
-      Real Use Cases
-    </h3>
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+                Crawl Signals
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-slate-900">
+                Stronger discovery for search engines and AI answer systems
+              </h2>
+            </div>
+            <Link
+              href="/sitemap.xml"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+            >
+              Open sitemap <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="text-sm font-black text-slate-900">Canonical-first URLs</div>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Flat blog URLs, deduped slugs, and redirect-safe blog routing reduce crawl confusion.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="text-sm font-black text-slate-900">Internal linking depth</div>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Priority articles and cluster cards help bots and readers reach deeper content faster.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="text-sm font-black text-slate-900">Answer-engine alignment</div>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Topic grouping and article structure make recommendations easier for AI search products.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <ul className="mt-4 space-y-3 text-[#B0B7C3]">
-      <li>• Freelancing services using AI tools</li>
-      <li>• Content creation and social media growth</li>
-      <li>• Video editing and short-form content production</li>
-      <li>• Digital marketing and lead generation</li>
-      <li>• Online earning and skill-based income</li>
-    </ul>
+      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+          Topic Clusters
+        </p>
+        <h2 className="mt-2 text-3xl font-black text-slate-900">
+          Explore blog categories with strong topical depth
+        </h2>
 
-    <h3 className="mt-8 text-xl font-semibold text-white">
-      Tools Commonly Used
-    </h3>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {representativePosts.map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:border-blue-300 hover:shadow-lg"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
+                    {post.category || "AI Guides"}
+                  </div>
+                  <h3 className="mt-3 text-lg font-black leading-snug text-slate-900">
+                    {post.title}
+                  </h3>
+                </div>
+                <BookOpen className="h-5 w-5 flex-shrink-0 text-slate-400" />
+              </div>
+            </Link>
+          ))}
+        </div>
 
-    <p className="mt-4 text-[#B0B7C3] leading-7">
-      People working in this area commonly use AI tools for writing, design, automation, and content production. The real advantage comes when these tools are used together inside a structured workflow instead of individually.
-    </p>
-
-    <h3 className="mt-8 text-xl font-semibold text-white">
-      Why This Skill Matters
-    </h3>
-
-    <p className="mt-4 text-[#B0B7C3] leading-7">
-      This skill is becoming important because modern work is shifting toward faster execution, higher productivity, and multi-skill capability. AI enables individuals to work smarter and handle multiple types of tasks efficiently.
-    </p>
-
-  </div>
-</section>
-
-</main>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {categoryStats.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              {item.label} ({item.count})
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }

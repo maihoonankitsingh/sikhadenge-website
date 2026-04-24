@@ -16,6 +16,20 @@ const nextConfig = {
 
   async redirects() {
     return [
+      { source: "/blogs", destination: "/blog", permanent: true },
+      { source: "/blogs/:path*", destination: "/blog/:path*", permanent: true },
+      { source: "/blog/index", destination: "/blog", permanent: true },
+      { source: "/blog/page/:page", destination: "/blog", permanent: true },
+      { source: "/blog/ai-career/ai-freelancer-skills", destination: "/blog/ai-skills-for-freelancers", permanent: true },
+      { source: "/blog/ai-career/ai-generalist-career", destination: "/blog/ai-career-paths", permanent: true },
+      { source: "/blog/ai-content/ai-content-tools", destination: "/blog/best-ai-tools-for-content-creators", permanent: true },
+      { source: "/blog/ai-content/ai-copywriting", destination: "/blog/ai-tools-for-copywriting", permanent: true },
+      { source: "/blog/ai-design/ai-graphic-design-tools", destination: "/blog/best-ai-tools-for-graphic-design", permanent: true },
+      { source: "/blog/ai-design/ai-logo-design", destination: "/blog/ai-tools-for-logo-design-beginners", permanent: true },
+      { source: "/blog/ai-tools/chatgpt-guide", destination: "/learn/how-to-use-chatgpt", permanent: true },
+      { source: "/blog/ai-tools/gemini-guide", destination: "/learn/how-to-use-gemini", permanent: true },
+      { source: "/blog/ai-video/ai-reels-workflow", destination: "/blog/ai-video-workflow-for-creators", permanent: true },
+      { source: "/blog/ai-video/ai-video-editing-tools", destination: "/blog/best-ai-tools-for-video-editing", permanent: true },
       { source: "/about", destination: "/about-us", permanent: true },
       { source: "/about-sikhadenge-indias-no-1-graphic-design-video-editing-institute", destination: "/about-us", permanent: true },
       { source: "/contacts", destination: "/contact-us", permanent: true },
