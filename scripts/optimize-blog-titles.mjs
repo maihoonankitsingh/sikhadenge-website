@@ -56,44 +56,44 @@ function buildBetterTitleFromSlug(slug) {
   };
 
   const shortHighIntentMap = {
-    "chatgpt-se-resume-kaise-banaye": "ChatGPT Se Resume Kaise Banaye: Practical Guide",
-    "ai-se-freelancing-kaise-start-kare": "AI Se Freelancing Kaise Start Kare in 2026",
-    "ai-se-paise-kaise-kamaye": "AI Se Paise Kaise Kamaye in 2026",
-    "students-ke-liye-best-ai-tools": "Students Ke Liye Best AI Tools Guide",
-    "beginners-ke-liye-ai-prompts": "Beginners Ke Liye Best AI Prompts Guide",
-    "ai-se-padhai-kaise-kare": "AI Se Padhai Kaise Kare in 2026",
-    "chatgpt-ka-use-kaise-kare": "ChatGPT Ka Use Kaise Kare: Beginner Guide",
-    "freelancers-ke-liye-ai-workflow": "Freelancers Ke Liye AI Workflow Guide",
-    "business-owners-ke-liye-ai-tools": "Business Owners Ke Liye AI Tools Guide",
-    "ai-tools-for-students": "AI Tools for Students Guide 2026",
+    "chatgpt-se-resume-kaise-banaye": "ChatGPT Se Resume Kaise Banaye: Practical Guide 2026",
+    "ai-se-freelancing-kaise-start-kare": "AI Se Freelancing Kaise Start Kare: Beginner Guide",
+    "ai-se-paise-kaise-kamaye": "AI Se Paise Kaise Kamaye: Practical Guide 2026",
+    "students-ke-liye-best-ai-tools": "Students Ke Liye Best AI Tools in 2026",
+    "beginners-ke-liye-ai-prompts": "Beginners Ke Liye Best AI Prompts in 2026",
+    "ai-se-padhai-kaise-kare": "AI Se Padhai Kaise Kare: Student Guide 2026",
+    "chatgpt-ka-use-kaise-kare": "ChatGPT Ka Use Kaise Kare: Full Beginner Guide",
+    "freelancers-ke-liye-ai-workflow": "Freelancers Ke Liye AI Workflow in 2026",
+    "business-owners-ke-liye-ai-tools": "Business Owners Ke Liye AI Tools in 2026",
+    "ai-tools-for-students": "AI Tools for Students to Study Faster (2026)",
     "best-ai-tools-for-students": "Best AI Tools for Students Guide 2026",
-    "chatgpt-for-students": "ChatGPT for Students Guide 2026",
+    "chatgpt-for-students": "ChatGPT for Students: Best Study Uses (2026)",
     "google-gemini-for-students": "Google Gemini for Students Guide",
-    "claude-for-students": "Claude for Students Guide 2026",
+    "claude-for-students": "Claude for Students: Study Guide (2026)",
     "best-chatgpt-prompts-for-students": "Best ChatGPT Prompts for Students Guide",
     "ai-tools-for-freelancers": "AI Tools for Freelancers Guide 2026",
-    "chatgpt-for-freelancers": "ChatGPT for Freelancers Guide 2026",
-    "ai-tools-for-creators": "AI Tools for Creators Guide 2026",
+    "chatgpt-for-freelancers": "ChatGPT for Freelancers: Client Work Guide (2026)",
+    "ai-tools-for-creators": "AI Tools for Creators: Best Picks (2026)",
     "best-ai-tools-for-creators": "Best AI Tools for Creators Guide 2026",
     "chatgpt-for-content-creation": "ChatGPT for Content Creation Guide 2026",
-    "gemini-vs-chatgpt": "Gemini vs ChatGPT Comparison Guide",
-    "claude-vs-chatgpt": "Claude vs ChatGPT Comparison Guide",
+    "gemini-vs-chatgpt": "Gemini vs ChatGPT: Which Is Better in 2026",
+    "claude-vs-chatgpt": "Claude vs ChatGPT: Which Is Better in 2026",
     "perplexity-vs-chatgpt": "Perplexity vs ChatGPT Full Comparison",
     "copilot-vs-chatgpt": "Copilot vs ChatGPT Comparison Guide",
     "google-ai-overviews-guide": "Google AI Overviews Guide for Search",
-    "google-ai-mode-guide": "Google AI Mode Guide for Search",
-    "ai-agents-for-beginners": "AI Agents for Beginners Guide 2026",
+    "google-ai-mode-guide": "Google AI Mode Guide: Ranking Tips (2026)",
+    "ai-agents-for-beginners": "AI Agents for Beginners: Starter Guide (2026)",
     "best-ai-agents-for-business": "Best AI Agents for Business Guide 2026",
     "chatgpt-prompts-for-marketing": "ChatGPT Prompts for Marketing Teams",
-    "chatgpt-prompts-for-sales": "ChatGPT Prompts for Sales Guide",
+    "chatgpt-prompts-for-sales": "ChatGPT Prompts for Sales Teams (2026)",
     "best-ai-tools-for-lead-generation": "Best AI Tools for Lead Generation Guide",
-    "best-ai-tools-for-seo": "Best AI Tools for SEO Guide 2026",
-    "best-ai-tools-for-aeo": "Best AI Tools for AEO Guide 2026",
-    "best-ai-tools-for-geo": "Best AI Tools for GEO Guide 2026",
+    "best-ai-tools-for-seo": "Best AI Tools for SEO Rankings (2026)",
+    "best-ai-tools-for-aeo": "Best AI Tools for AEO Strategy (2026)",
+    "best-ai-tools-for-geo": "Best AI Tools for GEO Strategy (2026)",
     "how-to-rank-in-chatgpt": "How to Rank in ChatGPT Results Guide",
     "how-to-rank-in-google-ai-overviews": "How to Rank in Google AI Overviews Guide",
     "how-to-rank-in-google-ai-mode": "How to Rank in Google AI Mode Guide",
-    "how-to-get-cited-by-ai-tools": "How to Get Cited by AI Tools Guide",
+    "how-to-get-cited-by-ai-tools": "How to Get Cited by AI Tools in 2026",
   };
 
   if (shortHighIntentMap[slug]) {
@@ -151,7 +151,7 @@ function buildBetterTitleFromSlug(slug) {
 
   const beginnerMistakes = captureFamilyAudience("beginner-mistakes-in");
   if (beginnerMistakes) {
-    return `${beginnerMistakes.family} Mistakes for ${beginnerMistakes.audience} (${beginnerMistakes.year})`;
+    return `${beginnerMistakes.family} Mistakes (${beginnerMistakes.year})`;
   }
 
   const advancedTechniques = captureFamilyAudience("advanced-techniques-in");
@@ -196,7 +196,7 @@ function buildBetterTitleFromSlug(slug) {
 
   const paidVsFree = captureFamilyAudience("paid-vs-free-in");
   if (paidVsFree) {
-    return `${paidVsFree.family}: Paid vs Free for ${paidVsFree.audience} (${paidVsFree.year})`;
+    return `${paidVsFree.family}: Paid vs Free (${paidVsFree.year})`;
   }
 
   const prosCons = captureFamilyAudience("pros-and-cons-of");
@@ -334,7 +334,7 @@ function normalizeTitle(title) {
 function shouldOptimize(title) {
   const clean = (title || "").trim();
   if (!clean) return true;
-  if (clean.length < 35 && !/kaise|liye/i.test(clean)) return true;
+  if (clean.length < 35) return true;
   if (clean.length > 68) return true;
   if (/^step by step tutorial for /i.test(clean)) return true;
   if (/^essential skills for /i.test(clean)) return true;
@@ -404,3 +404,4 @@ function main() {
 }
 
 main();
+
