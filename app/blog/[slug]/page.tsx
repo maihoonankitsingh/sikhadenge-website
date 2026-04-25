@@ -19,7 +19,7 @@ import {
   TrendingUp,
   Wand2,
 } from "lucide-react";
-import { getBlogBySlug, getBlogs, type BlogFaq, type BlogItem } from "@/lib/blogs";
+import { getBlogBySlug, getBlogCandidatesForSlug, getBlogs, type BlogFaq, type BlogItem } from "@/lib/blogs";
 
 type ParsedSlug = {
   slug: string;
@@ -444,7 +444,6 @@ export async function generateMetadata({
 }
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
-  const allBlogs = getBlogs();
   const post = getBlogBySlug(params.slug);
 
   if (!post) {
@@ -483,7 +482,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
   const faqs = post.faqs?.length
     ? uniqueFaqs(post.faqs).slice(0, 8)
     : buildSmartFaqs({ title, category, parsed, tools });
-  const relatedPosts = getRelatedPosts(post, allBlogs);
+  const relatedPosts = getRelatedPosts(post, getBlogCandidatesForSlug(post.slug));
 
   const topicClusterLinks = [
     { href: "/blog", label: "Explore full AI blog hub", helper: "Latest guides, comparisons, and practical article clusters." },

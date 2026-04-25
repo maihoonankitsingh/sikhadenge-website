@@ -22,8 +22,14 @@ type BlogManifest = {
   shards?: BlogShard[];
 };
 
+type BlogSlugIndex = {
+  slugs?: Record<string, string>;
+};
+
 let cachedBlogs: BlogItem[] | null = null;
 let cachedBlogBySlug: Map<string, BlogItem> | null = null;
+let cachedSlugIndex: Record<string, string> | null = null;
+const cachedShards = new Map<string, BlogItem[]>();
 
 function getBlogsFilePath() {
   return path.join(process.cwd(), "data", "blogs.json");
@@ -31,6 +37,14 @@ function getBlogsFilePath() {
 
 function getBlogsIndexPath() {
   return path.join(process.cwd(), "data", "blogs", "index.json");
+}
+
+function getBlogsSlugIndexPath() {
+  return path.join(process.cwd(), "data", "blogs", "slug-index.json");
+}
+
+function getBlogsShardPath(file: string) {
+  return path.join(process.cwd(), "data", "blogs", file);
 }
 
 function readJsonFile(filePath: string, fallback: unknown) {
@@ -47,8 +61,7 @@ function readRawBlogs(): unknown[] {
   if (manifest && Array.isArray(manifest.shards)) {
     return manifest.shards.flatMap((shard) => {
       if (!shard?.file) return [];
-      const shardPath = path.join(process.cwd(), "data", "blogs", shard.file);
-      const items = readJsonFile(shardPath, []);
+      const items = readJsonFile(getBlogsShardPath(shard.file), []);
       return Array.isArray(items) ? items : [];
     });
   }
@@ -108,9 +121,35 @@ function sanitizeBlogs(input: unknown): BlogItem[] {
   return cleaned;
 }
 
+function readSlugIndex() {
+  if (cachedSlugIndex) {
+    return cachedSlugIndex;
+  }
+
+  const payload = readJsonFile(getBlogsSlugIndexPath(), null) as BlogSlugIndex | null;
+  cachedSlugIndex = payload && payload.slugs && typeof payload.slugs === "object" ? payload.slugs : {};
+  return cachedSlugIndex;
+}
+
+function readShardBlogs(file: string) {
+  if (cachedShards.has(file)) {
+    return cachedShards.get(file) || [];
+  }
+
+  const items = readJsonFile(getBlogsShardPath(file), []);
+  const blogs = sanitizeBlogs(Array.isArray(items) ? items : []);
+  cachedShards.set(file, blogs);
+  return blogs;
+}
+
 export function getBlogs(forceRefresh = false): BlogItem[] {
   if (!forceRefresh && cachedBlogs) {
     return cachedBlogs;
+  }
+
+  if (forceRefresh) {
+    cachedShards.clear();
+    cachedSlugIndex = null;
   }
 
   cachedBlogs = sanitizeBlogs(readRawBlogs());
@@ -119,11 +158,30 @@ export function getBlogs(forceRefresh = false): BlogItem[] {
 }
 
 export function getBlogBySlug(slug: string) {
-  if (!cachedBlogBySlug) {
-    getBlogs();
+  if (cachedBlogBySlug?.has(slug)) {
+    return cachedBlogBySlug.get(slug);
   }
 
-  return cachedBlogBySlug?.get(slug);
+  const shardFile = readSlugIndex()[slug];
+  if (shardFile) {
+    const found = readShardBlogs(shardFile).find((item) => item.slug === slug);
+    if (found) {
+      if (!cachedBlogBySlug) cachedBlogBySlug = new Map();
+      cachedBlogBySlug.set(slug, found);
+    }
+    return found;
+  }
+
+  return getBlogs().find((item) => item.slug === slug);
+}
+
+export function getBlogCandidatesForSlug(slug: string) {
+  const shardFile = readSlugIndex()[slug];
+  if (!shardFile) {
+    return getBlogs().slice(0, 1000);
+  }
+
+  return readShardBlogs(shardFile);
 }
 
 export function getBlogSlugs() {
