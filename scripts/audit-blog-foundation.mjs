@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs } = await import("./lib/blog-data.cjs");
 const BLOG_APP_DIR = path.join(ROOT, "app", "blog");
 const OUTPUT_DIR = path.join(ROOT, "output", "blog-audit");
 const AUDIT_PATH = path.join(OUTPUT_DIR, "foundation-audit.json");
@@ -82,7 +82,7 @@ function walkStaticBlogRoutes(dir, relative = "") {
 function main() {
   ensureDir(OUTPUT_DIR);
 
-  const blogs = readJson(BLOGS_PATH);
+  const blogs = readBlogs();
   const slugMap = new Map();
   const titleMap = new Map();
   const duplicateSlugs = [];

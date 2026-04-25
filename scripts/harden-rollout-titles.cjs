@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs, writeBlogs } = require("./lib/blog-data.cjs");
 const KNOWN_CITIES = new Set(["delhi","mumbai","bangalore","hyderabad","pune","chennai","kolkata","ahmedabad","jaipur","lucknow","noida","indore","surat","nagpur","bhopal","patna","kanpur","gurgaon","gurugram","faridabad","ghaziabad","kochi","coimbatore","vadodara","visakhapatnam","vijayawada","thane","nashik","rajkot","ludhiana","chandigarh"]);
 const AUDIENCE_COMPACT = {
   "working-professionals": "Working Pros",
@@ -125,5 +125,3 @@ function main() {
   console.log(`Blog count unchanged: ${nextBlogs.length}`);
 }
 main();
-
-

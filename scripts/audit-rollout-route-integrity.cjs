@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs } = require("./lib/blog-data.cjs");
 const ROLLOUT_DIRS = [
   path.join(ROOT, "output", "blog-rollout-10k"),
   path.join(ROOT, "output", "blog-rollout-100k"),
@@ -66,7 +66,7 @@ function buildSummary(report) {
 function main() {
   ensureDir(OUTPUT_DIR);
 
-  const blogs = readJson(BLOGS_PATH, []);
+  const blogs = readBlogs();
   const liveSlugs = blogs.map((blog) => blog.slug).filter(Boolean);
   const liveTitles = blogs.map((blog) => blog.title).filter(Boolean);
   const liveSlugSet = new Set(liveSlugs);
@@ -118,4 +118,3 @@ function main() {
 }
 
 main();
-

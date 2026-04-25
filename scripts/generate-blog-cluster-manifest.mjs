@@ -3,7 +3,7 @@ import path from "path";
 
 const ROOT = process.cwd();
 const BASE_URL = "https://sikhadenge.in";
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs } = await import("./lib/blog-data.cjs");
 const OUTPUT_DIR = path.join(ROOT, "output", "blog-expansion");
 const CLUSTERS_PATH = path.join(OUTPUT_DIR, "trending-topic-clusters.json");
 const BATCH_JSON_PATH = path.join(OUTPUT_DIR, "trending-topic-priority-batch-1.json");

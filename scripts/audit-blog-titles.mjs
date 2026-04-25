@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs } = await import("./lib/blog-data.cjs");
 const OUTPUT_DIR = path.join(ROOT, "output", "blog-title-audit");
 const SUMMARY_PATH = path.join(OUTPUT_DIR, "title-audit-summary.txt");
 const JSON_PATH = path.join(OUTPUT_DIR, "title-audit.json");
@@ -11,13 +11,6 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function readBlogs() {
-  try {
-    return JSON.parse(fs.readFileSync(BLOGS_PATH, "utf8"));
-  } catch {
-    return [];
-  }
-}
 
 function isWeakTitle(title) {
   if (!title) return true;

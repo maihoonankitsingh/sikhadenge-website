@@ -12,6 +12,7 @@ export async function GET() {
     `${baseUrl}/sitemap-blogs-2.xml`,
     `${baseUrl}/sitemap-blogs-3.xml`,
     `${baseUrl}/sitemap-blogs-4.xml`,
+    `${baseUrl}/sitemap-blogs-5.xml`,
     `${baseUrl}/sitemap-tools.xml`,
   ];
 

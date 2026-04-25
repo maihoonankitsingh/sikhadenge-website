@@ -23,6 +23,7 @@ Sitemap: https://sikhadenge.in/sitemap-blogs-1.xml
 Sitemap: https://sikhadenge.in/sitemap-blogs-2.xml
 Sitemap: https://sikhadenge.in/sitemap-blogs-3.xml
 Sitemap: https://sikhadenge.in/sitemap-blogs-4.xml
+Sitemap: https://sikhadenge.in/sitemap-blogs-5.xml
 Sitemap: https://sikhadenge.in/sitemap-prompts.xml
 Sitemap: https://sikhadenge.in/sitemap-expert.xml
 Sitemap: https://sikhadenge.in/sitemap-hindi.xml

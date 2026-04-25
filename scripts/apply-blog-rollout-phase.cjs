@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs, writeBlogs } = require("./lib/blog-data.cjs");
 const ROLLOUT_DIR = path.join(ROOT, "output", "blog-rollout-10k");
 
 function readJson(filePath, fallback) {
@@ -136,7 +136,7 @@ function main() {
   const limit = limitArg ? Number(limitArg.split("=")[1]) : null;
   const phasePath = path.isAbsolute(phaseArg) ? phaseArg : path.join(ROLLOUT_DIR, phaseArg);
 
-  const blogs = readJson(BLOGS_PATH, []);
+  const blogs = readBlogs();
   const phase = readJson(phasePath, { items: [] });
   const existingSlugs = new Set(blogs.map((blog) => blog.slug));
   const sourceItems = Array.isArray(phase.items) ? phase.items : [];
@@ -155,7 +155,7 @@ function main() {
   }
 
   const nextBlogs = [...blogs, ...additions];
-  writeJson(BLOGS_PATH, nextBlogs);
+  writeBlogs(nextBlogs);
 
   console.log(`Phase source: ${path.basename(phasePath)}`);
   console.log(`Requested items: ${items.length}`);

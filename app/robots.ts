@@ -9,6 +9,7 @@ const SITEMAPS = [
   `${BASE}/sitemap-blogs-2.xml`,
   `${BASE}/sitemap-blogs-3.xml`,
   `${BASE}/sitemap-blogs-4.xml`,
+  `${BASE}/sitemap-blogs-5.xml`,
   `${BASE}/sitemap-prompts.xml`,
   `${BASE}/sitemap-expert.xml`,
   `${BASE}/sitemap-hindi.xml`,

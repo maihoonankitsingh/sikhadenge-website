@@ -16,10 +16,44 @@ export type BlogItem = {
   faqs?: BlogFaq[];
 };
 
+type BlogShard = { file: string; count?: number };
+
+type BlogManifest = {
+  shards?: BlogShard[];
+};
+
 let cachedBlogs: BlogItem[] | null = null;
 
 function getBlogsFilePath() {
   return path.join(process.cwd(), "data", "blogs.json");
+}
+
+function getBlogsIndexPath() {
+  return path.join(process.cwd(), "data", "blogs", "index.json");
+}
+
+function readJsonFile(filePath: string, fallback: unknown) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+function readRawBlogs(): unknown[] {
+  const manifest = readJsonFile(getBlogsIndexPath(), null) as BlogManifest | null;
+
+  if (manifest && Array.isArray(manifest.shards)) {
+    return manifest.shards.flatMap((shard) => {
+      if (!shard?.file) return [];
+      const shardPath = path.join(process.cwd(), "data", "blogs", shard.file);
+      const items = readJsonFile(shardPath, []);
+      return Array.isArray(items) ? items : [];
+    });
+  }
+
+  const fallback = readJsonFile(getBlogsFilePath(), []);
+  return Array.isArray(fallback) ? fallback : [];
 }
 
 function sanitizeBlogs(input: unknown): BlogItem[] {
@@ -78,13 +112,7 @@ export function getBlogs(forceRefresh = false): BlogItem[] {
     return cachedBlogs;
   }
 
-  try {
-    const raw = fs.readFileSync(getBlogsFilePath(), "utf8");
-    cachedBlogs = sanitizeBlogs(JSON.parse(raw));
-  } catch {
-    cachedBlogs = [];
-  }
-
+  cachedBlogs = sanitizeBlogs(readRawBlogs());
   return cachedBlogs;
 }
 

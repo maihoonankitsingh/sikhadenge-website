@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs } = await import("./lib/blog-data.cjs");
 const OUTPUT_DIR = path.join(ROOT, "output", "blog-route-audit");
 const BASE_URL = "https://sikhadenge.in/blog";
 
@@ -16,9 +16,6 @@ const STATIC_LEGACY_REDIRECTS = [
   { source: "/blog/top-ai-tools-for-video-editing", destination: "/blog/best-ai-tools-for-video-editing", reason: "top-vs-best" },
 ];
 
-function readBlogs() {
-  return JSON.parse(fs.readFileSync(BLOGS_PATH, "utf8"));
-}
 
 function uniqueBySource(items) {
   const seen = new Set();

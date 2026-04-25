@@ -1,15 +1,4 @@
-import fs from "fs";
-import path from "path";
-
-function getBlogs() {
-  try {
-    const filePath = path.join(process.cwd(), "data", "blogs.json");
-    const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
+import { getBlogs } from "@/lib/blogs";
 
 export async function GET() {
   const blogs = getBlogs().slice(50000, 75000);
@@ -18,9 +7,9 @@ export async function GET() {
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${blogs
-  .filter((b: any) => b?.slug)
+  .filter((b) => b?.slug)
   .map(
-    (b: any) => `<url>
+    (b) => `<url>
   <loc>https://sikhadenge.in/blog/${b.slug}</loc>
   <lastmod>${now}</lastmod>
   <changefreq>weekly</changefreq>

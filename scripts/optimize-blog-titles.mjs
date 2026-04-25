@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const ROOT = process.cwd();
-const BLOGS_PATH = path.join(ROOT, "data", "blogs.json");
+const { readBlogs, writeBlogs } = await import("./lib/blog-data.cjs");
 
 function readBlogs() {
   try {
@@ -13,7 +13,7 @@ function readBlogs() {
 }
 
 function writeBlogs(blogs) {
-  fs.writeFileSync(BLOGS_PATH, JSON.stringify(blogs, null, 2));
+  writeBlogs(blogs);
 }
 
 function toTitleCase(value) {
@@ -437,4 +437,3 @@ function main() {
 }
 
 main();
-
