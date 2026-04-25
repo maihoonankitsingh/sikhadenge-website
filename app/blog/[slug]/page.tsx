@@ -313,9 +313,17 @@ function slugTokens(slug: string) {
     .filter((token) => token && !linkStopWords.has(token));
 }
 
+function getTitleTokens(post: BlogItem) {
+  return (post.title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token && !linkStopWords.has(token));
+}
+
 function getSimilarityScore(basePost: BlogItem, candidate: BlogItem) {
-  const baseTokens = new Set(slugTokens(basePost.slug));
-  const candidateTokens = slugTokens(candidate.slug);
+  const baseTokens = new Set([...slugTokens(basePost.slug), ...getTitleTokens(basePost)]);
+  const candidateTokens = [...slugTokens(candidate.slug), ...getTitleTokens(candidate)];
 
   let score = 0;
 
@@ -326,18 +334,47 @@ function getSimilarityScore(basePost: BlogItem, candidate: BlogItem) {
   }
 
   if (normalizeCategory(basePost.category) === normalizeCategory(candidate.category)) {
-    score += 5;
+    score += 8;
+  }
+
+  const baseCategory = normalizeCategory(basePost.category).toLowerCase();
+  const candidateCategory = normalizeCategory(candidate.category).toLowerCase();
+  if (baseCategory.includes(candidateCategory) || candidateCategory.includes(baseCategory)) {
+    score += 3;
   }
 
   if ((candidate.title || "").includes("ChatGPT") && (basePost.title || "").includes("ChatGPT")) {
-    score += 2;
+    score += 3;
   }
 
   if ((candidate.title || "").includes("Gemini") && (basePost.title || "").includes("Gemini")) {
-    score += 2;
+    score += 3;
+  }
+
+  if ((candidate.title || "").includes("Claude") && (basePost.title || "").includes("Claude")) {
+    score += 3;
   }
 
   return score;
+}
+
+function getRelatedPosts(basePost: BlogItem, allPosts: BlogItem[]) {
+  const picked = new Map<string, BlogItem>();
+  const scored = allPosts
+    .filter((item) => item.slug !== basePost.slug)
+    .map((item) => ({ item, score: getSimilarityScore(basePost, item) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.item.slug.localeCompare(right.item.slug);
+    });
+
+  for (const entry of scored) {
+    if (!picked.has(entry.item.slug)) picked.set(entry.item.slug, entry.item);
+    if (picked.size >= 12) break;
+  }
+
+  return Array.from(picked.values());
 }
 
 export async function generateStaticParams() {
@@ -445,13 +482,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
   const faqs = post.faqs?.length
     ? uniqueFaqs(post.faqs).slice(0, 8)
     : buildSmartFaqs({ title, category, parsed, tools });
-  const relatedPosts = allBlogs
-    .filter((item) => item.slug !== params.slug)
-    .map((item) => ({ item, score: getSimilarityScore(post, item) }))
-    .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 6)
-    .map((entry) => entry.item);
+  const relatedPosts = getRelatedPosts(post, allBlogs);
 
   const topicClusterLinks = [
     { href: "/blog", label: "Explore full AI blog hub", helper: "Latest guides, comparisons, and practical article clusters." },
@@ -479,7 +510,12 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
       url: BASE_URL,
     },
     datePublished: "2026-04-24",
-    dateModified: "2026-04-24",
+    dateModified: "2026-04-25",
+    mentions: relatedPosts.slice(0, 8).map((item) => ({
+      "@type": "WebPage",
+      name: item.title,
+      url: BASE_URL + "/blog/" + item.slug,
+    })),
   };
 
   const breadcrumbJsonLd = {
@@ -836,8 +872,12 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
           <section>
             <div className="flex items-center gap-3">
               <Briefcase className="h-8 w-8 text-blue-700" />
-              <h2 className="text-2xl font-black text-slate-900">Related articles</h2>
+              <h2 className="text-2xl font-black text-slate-900">Related articles and crawl paths</h2>
             </div>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+              Explore nearby guides from the same topic graph. These links help readers, search engines,
+              and AI answer systems understand how this article connects with the wider Sikhadenge AI library.
+            </p>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {relatedPosts.map((item) => (
                 <Link
