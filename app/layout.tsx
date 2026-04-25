@@ -15,27 +15,28 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
+    default: "Sikhadenge | AI Skills, Graphic Design & Video Editing Courses Online",
     template: "%s | Sikhadenge",
   },
 
   description:
-    "Sikhadenge by ThinkGrow Pvt. Ltd. offers live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. Join 12,000+ students across India.",
+    "Sikhadenge by ThinkGrow Pvt. Ltd. — Live, mentor-led online courses in AI Skills, Graphic Design, Video Editing & Motion Graphics. Join 1,50,000+ students across India. Free masterclasses every Sunday on Zoom.",
 
-  alternates: {
-    canonical: "https://sikhadenge.in",
-  },
+  // NO global canonical here — each page sets its own to prevent duplicate canonical issues
+  // alternates.canonical is intentionally omitted from root layout
 
   keywords: [
-    "Graphic Design course",
-    "Video Editing course",
-    "Motion Graphics course",
-    "Adobe Photoshop training",
-    "Adobe Illustrator training",
-    "Premiere Pro course",
-    "After Effects course",
-    "Live online course",
+    "AI skills course India",
+    "learn AI skills online",
+    "graphic design course",
+    "video editing course",
+    "motion graphics course",
+    "AI tools for beginners",
+    "free masterclass online",
     "Sikhadenge",
+    "live online course India",
+    "ChatGPT course Hindi",
+    "AI freelancing course",
   ],
 
   openGraph: {
@@ -43,30 +44,31 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "Sikhadenge",
     locale: "en_IN",
-    title: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
+    title: "Sikhadenge | AI Skills, Graphic Design & Video Editing Courses Online",
     description:
-      "Live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. 12,000+ students trained across India.",
+      "Live mentor-led courses in AI Skills, Graphic Design, Video Editing & Motion Graphics. 1,50,000+ students trained across India. Free Sunday masterclasses on Zoom.",
     images: [
       {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Sikhadenge",
+        alt: "Sikhadenge — AI & Creative Skills Platform",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Sikhadenge",
+    title: "Sikhadenge | AI Skills & Creative Courses",
     description:
-      "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+      "Free live masterclasses every Sunday on Zoom. AI Skills, Graphic Design, Video Editing. 1,50,000+ students across India.",
     images: [OG_IMAGE],
   },
 
   robots: {
     index: true,
     follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large", "max-video-preview": -1 },
   },
 };
 
