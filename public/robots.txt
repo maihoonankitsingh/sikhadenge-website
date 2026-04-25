@@ -6,6 +6,8 @@ Allow: /compare/
 Allow: /expert/
 Allow: /hindi/
 Allow: /free-tools/
+Allow: /llms.txt
+Allow: /ai.txt
 
 Disallow: /api/
 Disallow: /admin/
