@@ -9,6 +9,7 @@ import {
   BookOpen, Award, Play, ArrowRight, BadgeCheck, Briefcase,
 } from "lucide-react";
 import { skillsData } from "../../data/skillsData";
+import SkillPopup from "../../components/SkillPopup";
 
 export const dynamicParams = true;
 export const revalidate = 86400;
@@ -109,6 +110,8 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
+      <SkillPopup skill={skill} waLink={waLink} />
+
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="bg-[#0B1220] pt-20 pb-0 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Breadcrumb */}
@@ -150,7 +153,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
             {/* Key highlights */}
             <div className="grid sm:grid-cols-2 gap-3 mb-8">
               {[
-                { icon: Play,      text: "Live Sunday sessions — not pre-recorded" },
+                { icon: Play,      text: "Live online class on Zoom — not pre-recorded" },
                 { icon: Users,     text: isOnline ? "1,50,000+ student community" : `${city} batch + online community` },
                 { icon: Briefcase, text: "Real client projects in every session" },
                 { icon: Award,     text: "Sikhadenge Certificate on completion" },
@@ -223,7 +226,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
                 <div className="space-y-4 mb-6">
                   {[
                     { icon: Clock,    label: "Duration",   val: "12 Weeks Program" },
-                    { icon: Globe,    label: "Mode",       val: isOnline ? "100% Online (Live)" : `Live in ${city}` },
+                    { icon: Globe,    label: "Mode",       val: isOnline ? "Live on Zoom (Online)" : `Live in ${city}` },
                     { icon: Users,    label: "Community",  val: "1,50,000+ Members" },
                     { icon: Award,    label: "Certificate",val: "Yes, Shareable on LinkedIn" },
                     { icon: Shield,   label: "Fee",        val: "₹0 — Completely Free" },
@@ -532,7 +535,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
               { q: `Is the ${skill} program really free?`, a: `Yes — 100% free. Entry, community, and live sessions are all free. No hidden charges, no surprise fees.` },
               { q: `I'm a complete beginner. Can I join?`, a: `Absolutely. Our program starts from zero. ${audience ? `Especially designed for ${audience}.` : "No prior experience needed."} You'll learn step-by-step with real examples.` },
               { q: "How is this different from YouTube or Udemy?", a: "YouTube gives you theory. Udemy gives you pre-recorded courses. We give you live mentors, real client projects, and a community that pushes you to execute. That's why 1,50,000+ chose us." },
-              { q: "When do sessions happen?", a: "Every Sunday. 2 hours of live, interactive learning. Recordings are shared in the WhatsApp community if you miss a session." },
+              { q: "When do sessions happen?", a: "Every Sunday, live on Zoom. 2 hours of interactive learning starting at 11 AM. The Zoom link is sent on WhatsApp. Recordings are shared if you miss a session." },
               { q: "Will I get a certificate?", a: `Yes — complete the ${skill} program and receive a Sikhadenge Certificate of Completion that you can share on LinkedIn and add to your resume.` },
               { q: "Can I get a job or freelance clients after this?", a: "Many of our students have. We focus on portfolio-worthy projects and real workflows — the exact things employers and clients look for." },
             ].map((faq, i) => (
