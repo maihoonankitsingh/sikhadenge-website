@@ -92,7 +92,9 @@ export default function RootLayout({
         <MetaPixel />
         <JsonLd />
         <Header />
-        {children}
+        <div className="pt-4">
+          {children}
+        </div>
         <Footer />
       </body>
     </html>
