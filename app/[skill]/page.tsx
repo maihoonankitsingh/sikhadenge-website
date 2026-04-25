@@ -1,1577 +1,575 @@
-import { notFound } from "next/navigation";
-import { skillsData } from "../../data/skillsData";
-import Link from "next/link";
 import fs from "fs";
 import path from "path";
+import type { Metadata } from "next";
+import Link from "next/link";
 import {
-  ArrowRight,
-  Briefcase,
-  TrendingUp,
-  BookOpen,
-  Award,
-  Users,
-  Target,
-  ChevronDown,
-  Zap,
-  Sparkles,
-  BarChart3,
-  Globe,
+  CheckCircle, Globe, Zap, Users, Phone, ChevronDown,
+  MapPin, Star, Clock, Shield, Trophy, TrendingUp,
+  BookOpen, Award, Play, ArrowRight, BadgeCheck, Briefcase,
 } from "lucide-react";
+import { skillsData } from "../../data/skillsData";
+import SkillPopup from "../../components/SkillPopup";
 
-function getGeneratedSeoData() {
-  try {
-    const filePath = path.join(process.cwd(), "data/generated-seo-merged.json");
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
+export const dynamicParams = true;
+export const revalidate = 86400;
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+type SeoEntry = {
+  slug: string; title: string; description: string;
+  skill?: string; city?: string; industry?: string;
+  dynamicValues?: { topicLabel?: string; audience?: string; city?: string };
+};
+let _cache: SeoEntry[] | null = null;
+function getAllEntries(): SeoEntry[] {
+  if (_cache) return _cache;
+  for (const rel of ["data/generated-seo-merged.json", "data/generated-seo.json"]) {
+    try { _cache = JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")); return _cache!; } catch {}
   }
+  return [];
 }
+function findEntry(slug: string): SeoEntry | null { return getAllEntries().find((e) => e.slug === slug) ?? null; }
+function toTitle(s?: string) { return s ? s.replace(/\b\w/g, (c) => c.toUpperCase()) : ""; }
+function entryCity(e: SeoEntry) { return e.dynamicValues?.city ?? e.city ?? "Online"; }
+function entrySkill(e: SeoEntry) { return e.dynamicValues?.topicLabel ?? e.skill ?? e.title.split(" ")[0]; }
+function entryAudience(e: SeoEntry): string | null { return e.dynamicValues?.audience ?? null; }
 
-function shuffleArray<T>(array: T[]) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+function uniqueTitle(e: SeoEntry, si?: { title: string }): string {
+  const city = entryCity(e), skill = entrySkill(e) || si?.title || e.title, audience = entryAudience(e);
+  const online = !city || city === "Online" || city === "Remote";
+  if (!online) return audience ? `${toTitle(skill)} for ${toTitle(audience)} in ${city} | Sikhadenge` : `${toTitle(skill)} Training in ${city} | Sikhadenge`;
+  if (audience) return `${toTitle(skill)} for ${toTitle(audience)} — Free Masterclass | Sikhadenge`;
+  if (si) return `How to Become a ${si.title} | Sikhadenge`;
+  return `${toTitle(skill)} — Free Masterclass | Sikhadenge`;
 }
-
-function titleBase(title?: string) {
-  return (title || "").split("|")[0].trim();
-}
-
-function normalizeDisplayTitle(value?: string) {
-  if (!value) return "";
-  return value
-    .replace(/\bai\b/gi, "AI")
-    .replace(/\bseo\b/gi, "SEO")
-    .replace(/\bui\b/gi, "UI")
-    .replace(/\bux\b/gi, "UX")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function makeRootPageHeading(title: string) {
-  const clean = normalizeDisplayTitle(title);
-  const lower = clean.toLowerCase();
-
-  if (
-    lower.includes("roadmap") ||
-    lower.includes("salary") ||
-    lower.startsWith("how to ") ||
-    lower.includes("without coding") ||
-    lower.includes("projects") ||
-    lower.includes("kaise seekhe")
-  ) {
-    return clean;
-  }
-
-  const startsWithVowelSound = /^(ai|seo|ui|ux|a|e|i|o|u)/i.test(clean);
-  return `How to Become ${startsWithVowelSound ? "an" : "a"} ${clean}`;
-}
-
-function makeRootMetaTitle(title: string) {
-  const clean = normalizeDisplayTitle(title);
-  const lower = clean.toLowerCase();
-
-  if (
-    lower.includes("roadmap") ||
-    lower.includes("salary") ||
-    lower.startsWith("how to ") ||
-    lower.includes("without coding") ||
-    lower.includes("projects") ||
-    lower.includes("kaise seekhe")
-  ) {
-    return `${clean} | Sikhadenge`;
-  }
-
-  const startsWithVowelSound = /^(ai|seo|ui|ux|a|e|i|o|u)/i.test(clean);
-  return `How to Become ${startsWithVowelSound ? "an" : "a"} ${clean} | Sikhadenge`;
-}
-
-function getRootRelatedSkills(currentSkill: any) {
-  const currentCategory = (currentSkill.category || "").toLowerCase();
-  const currentTitle = (currentSkill.title || "").toLowerCase();
-  const keywords = currentTitle.split(/[^a-z0-9]+/i).filter(Boolean).slice(0, 4);
-
-  const scored = skillsData
-    .filter((s: any) => s.slug !== currentSkill.slug)
-    .map((s: any) => {
-      let score = 0;
-      const title = (s.title || "").toLowerCase();
-      const category = (s.category || "").toLowerCase();
-
-      if (currentCategory && category === currentCategory) score += 10;
-      for (const kw of keywords) {
-        if (kw.length > 2 && title.includes(kw)) score += 3;
-      }
-      if (title.includes("ai")) score += 1;
-
-      return { ...s, _score: score };
-    })
-    .sort((a: any, b: any) => b._score - a._score);
-
-  return scored.slice(0, 9);
-}
-
-function formatSlugPart(value?: string) {
-  if (!value) return "";
-  return value
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function extractCityFromSlug(slug: string) {
-  const match = slug.match(/-in-([a-z0-9-]+)$/);
-  return match ? formatSlugPart(match[1]) : "";
-}
-
-function extractAudienceFromSlug(slug: string) {
-  const audiences = [
-    "students",
-    "freelancers",
-    "working-professionals",
-    "beginners",
-    "job-seekers",
-    "creators",
-    "founders",
-    "business-owners",
-    "designers",
-    "marketers",
-    "video-editors",
-  ];
-
-  const found = audiences.find((audience) => slug.includes(`for-${audience}`));
-  return found ? formatSlugPart(found) : "";
-}
-
-function extractIntentFromSlug(slug: string) {
-  const intentMap: Array<[string, string]> = [
-    ["roadmap-for-beginners", "roadmap for beginners"],
-    ["step-by-step-guide", "step-by-step guide"],
-    ["salary-in-india", "salary insights"],
-    ["without-coding", "without coding"],
-    ["without-degree", "without degree"],
-    ["without-experience", "without experience"],
-    ["projects-for-beginners", "beginner projects"],
-    ["future-in-2026", "future outlook"],
-    ["how-to-get-clients", "client growth"],
-    ["how-to-make-money", "earning strategy"],
-    ["how-to-get-job", "job direction"],
-    ["certification", "certification value"],
-    ["roadmap", "learning roadmap"],
-    ["jobs", "career opportunities"],
-    ["best", "best options"],
-  ];
-
-  const found = intentMap.find(([key]) => slug.includes(key));
-  return found ? found[1] : "practical growth";
-}
-
-const STATIC_ROUTE_SLUGS = new Set([
-  "ai-jobs-without-coding",
-]);
-
-function buildGeneratedFaqs(pageTitle: string, pageDescription: string, pageSlug: string) {
-  const audience = extractAudienceFromSlug(pageSlug);
-  const city = extractCityFromSlug(pageSlug);
-  const intent = extractIntentFromSlug(pageSlug);
-  const locationText = city ? ` in ${city}` : "";
-  const audienceText = audience ? ` for ${audience}` : "";
-
-  return [
-    {
-      q: `What does ${pageTitle}${locationText} usually cover?`,
-      a: `${pageTitle}${locationText} usually focuses on practical skills, tools, workflows, execution quality, and a clearer path toward real outcomes instead of random learning.`,
-    },
-    {
-      q: `Is ${pageTitle}${audienceText} useful for beginners?`,
-      a: `Yes. A structured path can help beginners move from basic understanding to practical use cases, guided execution, and stronger confidence in real work.`,
-    },
-    {
-      q: `How does Sikhadenge approach ${intent} for ${pageTitle}?`,
-      a: `Sikhadenge focuses on practical learning, workflow clarity, output-based practice, and connected topic depth so learners can build useful capability step by step.`,
-    },
-    {
-      q: `Can this path help with jobs, freelancing, or career growth${locationText}?`,
-      a: `Yes. The goal is to connect learning with stronger execution, portfolio quality, modern digital work, and better readiness for career or freelance opportunities.`,
-    },
-    {
-      q: `Should I learn tools only or build full skill depth as well?`,
-      a: `Tools matter, but full skill depth matters more. The strongest outcomes come when learners understand workflows, communication, delivery quality, and practical implementation together.`,
-    },
-  ];
-}
-
-function buildGeneratedSections(pageTitle: string, pageDescription: string, pageSlug: string) {
-  const audience = extractAudienceFromSlug(pageSlug);
-  const city = extractCityFromSlug(pageSlug);
-  const intent = extractIntentFromSlug(pageSlug);
-
-  const audienceLine = audience
-    ? `${audience} can use this path to build more practical confidence, clearer workflows, and better execution.`
-    : `This path helps learners build more practical confidence, clearer workflows, and better execution.`;
-
-  const cityLine = city
-    ? `${city}-focused search intent often reflects stronger demand for practical skills, career direction, and execution-ready learning.`
-    : `This topic reflects strong demand for practical skills, career direction, and execution-ready learning.`;
-
-  return {
-    summary: `${pageDescription} Sikhadenge connects this topic with practical workflows, stronger output quality, and a conversion-focused learning path.`,
-    highlights: [
-      {
-        icon: BookOpen,
-        title: "Practical foundation",
-        desc: `Build working understanding around ${pageTitle} with clearer use cases, better structure, and guided progression.`,
-      },
-      {
-        icon: Briefcase,
-        title: "Career and freelance direction",
-        desc: `Connect ${pageTitle} with client delivery, job readiness, portfolio thinking, and real market use.`,
-      },
-      {
-        icon: Award,
-        title: "Structured growth system",
-        desc: "Move with a guided path instead of random tutorials, disconnected tools, and scattered learning.",
-      },
-    ],
-    whyCards: [
-      {
-        icon: Zap,
-        title: "Modern digital work needs better execution",
-        desc: `Topics like ${pageTitle} matter because professionals are expected to work faster, think better, and deliver more clearly.`,
-      },
-      {
-        icon: TrendingUp,
-        title: "Skill depth improves outcomes",
-        desc: "People who combine tools, workflows, communication, and practical output usually create stronger value.",
-      },
-      {
-        icon: Users,
-        title: "Audience relevance is rising",
-        desc: audienceLine,
-      },
-      {
-        icon: Target,
-        title: "Structured learning reduces wasted effort",
-        desc: "A guided path helps learners avoid confusion, choose the right sequence, and build useful momentum.",
-      },
-    ],
-    executionCards: [
-      {
-        icon: Sparkles,
-        title: "Use-case clarity",
-        desc: `Understand where ${pageTitle} fits in real projects, digital work, client needs, and modern execution.`,
-      },
-      {
-        icon: BarChart3,
-        title: "Outcome orientation",
-        desc: "Focus on results such as portfolio quality, speed, consistency, positioning, and stronger practical readiness.",
-      },
-      {
-        icon: Globe,
-        title: "Market context",
-        desc: cityLine,
-      },
-    ],
-    roadmap: [
-      "Start with fundamentals and understand the real purpose of the topic.",
-      "Learn the main tools, workflows, and practical categories involved.",
-      "Build small outputs and repeatable exercises instead of passive theory.",
-      "Move toward portfolio-ready work, client-style tasks, or execution practice.",
-      "Strengthen positioning with guided learning, better structure, and connected topic depth.",
-    ],
-    ctaTitle: `Build stronger practical depth around ${pageTitle}`,
-    ctaText:
-      "Use the free masterclass as the first step, then move toward a more structured learning path built for practical execution, workflow clarity, and real digital outcomes.",
-    intentLabel: intent,
-    audience,
-    city,
-  };
-}
-
-function getRelatedGeneratedLinks(seoData: any[], currentPage: any) {
-  const currentSlug = currentPage.slug as string;
-  const familyPrefix = currentSlug.split("-").slice(0, 2).join("-");
-  const sameFamily = seoData.filter(
-    (item) =>
-      item.slug !== currentSlug &&
-      typeof item.slug === "string" &&
-      item.slug.startsWith(familyPrefix)
-  );
-
-  const fallback = seoData.filter((item) => item.slug !== currentSlug);
-
-  return shuffleArray(sameFamily).slice(0, 8).concat(shuffleArray(fallback).slice(0, 4)).slice(0, 12);
+function uniqueDesc(e: SeoEntry, si?: { description: string }): string {
+  const city = entryCity(e), skill = entrySkill(e), audience = entryAudience(e);
+  const online = !city || city === "Online" || city === "Remote";
+  if (!online && audience) return `Join Sikhadenge\'s free ${skill} masterclass for ${audience} in ${city}. Live sessions, real projects, 1,50,000+ community.`;
+  if (!online) return `Learn ${skill} with Sikhadenge\'s live masterclass in ${city}. Practical training, expert mentors, 1,50,000+ student community.`;
+  if (si?.description) return si.description;
+  return e.description || `Master ${skill} with Sikhadenge\'s free live masterclass. Join 1,50,000+ professionals learning practical skills.`;
 }
 
 export async function generateStaticParams() {
-  const rootSkills = skillsData.map((s) => ({ skill: s.slug }));
-  
-const LIMITED_SKILL_SLUGS = [
-  "ai-tools",
-  "ai-skills",
-  "graphic-design",
-  "video-editing",
-  "digital-marketing",
-  "seo",
-  "copywriting",
-  "content-writing",
-  "web-development",
-  "no-code-development",
-  "personal-branding",
-  "freelancing",
-  "motion-graphics",
-  "after-effects",
-  "premiere-pro",
-  "branding-design",
-  "logo-design",
-  "typography-design",
-  "color-theory",
-  "ui-design",
-  "ux-design",
-  "creator-economy",
-  "frontend-development",
-  "backend-development",
-  "full-stack-development",
-  "coding",
-  "python",
-  "app-development",
-  "remote-jobs",
-  "online-business",
-  "corporate-ai-training",
-  "client-work",
-  "graphic-design-career",
-  "video-editing-career",
-  "digital-marketing-career",
-  "social-media-marketing",
-  "performance-marketing",
-  "email-marketing",
-  "content-marketing",
-  "youtube-growth",
-  "instagram-growth",
-  "linkedin-personal-branding",
-  "sales",
-  "consulting",
-  "business-operations",
-  "customer-support",
-  "ecommerce",
-  "ai-for-education",
-  "ai-for-agencies",
-  "ai-for-small-business",
-  "ai-for-startups",
-  "ai-for-creators"
-];
-
-const seoData = getGeneratedSeoData();
-  const topGenerated = seoData.slice(0, 100).map((s: any) => ({ skill: s.slug }));
-  return [...rootSkills, ...topGenerated];
+  const seen = new Set<string>();
+  return [...skillsData.map((s) => ({ skill: s.slug })), ...getAllEntries().slice(0, 500).map((e) => ({ skill: e.slug }))]
+    .filter(({ skill }) => { if (seen.has(skill)) return false; seen.add(skill); return true; });
 }
 
-export const dynamicParams = true;
-export const revalidate = 2592000;
+export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
+  const si = skillsData.find((s) => s.slug === params.skill), entry = findEntry(params.skill);
+  const fallbackSkill = toTitle(params.skill.replace(/-/g, " "));
+  const title = entry ? uniqueTitle(entry, si) : (si ? `How to Become a ${si.title} | Sikhadenge` : `${fallbackSkill} — Free Masterclass | Sikhadenge`);
+  const description = entry ? uniqueDesc(entry, si) : (si ? `Learn ${si.title} with live mentor-led training at Sikhadenge. Join 1,50,000+ students.` : `Master ${fallbackSkill} with Sikhadenge's free live masterclass. Join 1,50,000+ professionals learning practical skills.`);
+  const url = `https://sikhadenge.in/${params.skill}`;
+  return { title, description, alternates: { canonical: url }, openGraph: { type: "article", url, title, description } };
+}
 
-export function generateMetadata({ params }: { params: { skill: string } }) {
-  // temporary disabled static route guard for debug
+const TESTIMONIALS = [
+  { name: "Arjun Mehta", city: "Pune", role: "Freelance Designer", income: "₹80K/month", rating: 5, text: "Sikhadenge join karne ke baad meri freelance income 4x ho gayi. Yahan sikhaya real client kaam hai, theory nahi." },
+  { name: "Priya Sharma", city: "Delhi", role: "Digital Marketer", income: "₹65K/month", rating: 5, text: "2 months mein mujhe agency mein job mili. Portfolio banaya Sikhadenge ke projects se — interviewer impressed tha." },
+  { name: "Rahul Verma", city: "Mumbai", role: "Content Creator", income: "3.2L subscribers", rating: 5, text: "Sunday sessions ne meri soch badal di. Ab main sirf create nahi karta — strategically grow karta hoon." },
+  { name: "Sneha Patel", city: "Ahmedabad", role: "Business Owner", income: "₹1.2L/month", rating: 5, text: "Free masterclass se shuru kiya, ab paid batch mein hoon. ROI? Pehle hi client se course ki cost nikal gayi." },
+  { name: "Karan Singh", city: "Jaipur", role: "Agency Founder", income: "5 employees", rating: 5, text: "Maine apni agency open ki Sikhadenge ki training ke 6 months baad. Best investment of my career." },
+  { name: "Ananya Gupta", city: "Hyderabad", role: "AI Consultant", income: "₹1.5L/month", rating: 5, text: "No coding background. Phir bhi AI consulting start ki. Sikhadenge ne practical path dikhaya." },
+];
 
-  const rootSkill = skillsData.find((s) => s.slug === params.skill);
+const COMPANIES = ["Google", "Meta", "Razorpay", "Flipkart", "Zomato", "Meesho", "PhonePe", "Swiggy"];
 
-  if (rootSkill) {
-    const pageTitle = makeRootMetaTitle(rootSkill.title);
-    return {
-      title: pageTitle,
-      description: normalizeDisplayTitle(rootSkill.description),
-      alternates: {
-        canonical: `https://sikhadenge.in/${params.skill}`,
-      },
-      openGraph: {
-        title: pageTitle,
-        description: rootSkill.description,
-        url: `https://sikhadenge.in/${params.skill}`,
-        siteName: "Sikhadenge",
-        type: "website",
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: pageTitle,
-        description: normalizeDisplayTitle(rootSkill.description),
-      },
-    };
-  }
+const MODULES = [
+  { no: "01", title: "Foundations & Mindset", sessions: "2 Sessions", topics: ["Industry overview & career paths", "Tools setup & workflow", "Real project breakdown", "Client communication basics"] },
+  { no: "02", title: "Core Skills & Execution", sessions: "4 Sessions", topics: ["Hands-on practical workflow", "Live client simulation", "Common mistakes & fixes", "Portfolio-worthy project"] },
+  { no: "03", title: "Advanced Techniques", sessions: "3 Sessions", topics: ["AI-powered workflows", "Speed & quality optimization", "Agency-level delivery", "Pricing your services"] },
+  { no: "04", title: "Business & Growth", sessions: "3 Sessions", topics: ["Finding & closing clients", "Building recurring income", "Personal branding strategy", "Scaling to ₹1L/month"] },
+];
 
-  const seoData = getGeneratedSeoData();
-  const generatedPage = seoData.find((s: any) => s.slug === params.skill);
+export default function SkillPage({ params }: { params: { skill: string } }) {
+  const si = skillsData.find((s) => s.slug === params.skill);
+  const entry = findEntry(params.skill);
+  const fallbackSkill = toTitle(params.skill.replace(/-/g, " "));
 
-  if (generatedPage) {
-    const title = generatedPage.title || generatedPage.topicLabel || "AI Guide";
-    const description =
-      generatedPage.description ||
-      "Practical premium AI guide built by Sikhadenge for modern work, growth, and execution.";
-    const topic = generatedPage.topicLabel || title.replace(/\s+\|\s+Sikhadenge$/, "");
-    const pageSlug = params.skill;
-    const pageKind = generatedPage.pageKind || "guide";
-    const familyKey = generatedPage.familyKey || generatedPage.rootSlug || pageSlug;
-    const rootSlug = generatedPage.rootSlug || familyKey;
-    const audience = generatedPage?.dynamicValues?.audience || "learners";
-    const city = generatedPage?.dynamicValues?.city || generatedPage?.dynamicValues?.location || "India";
-    const location = generatedPage?.dynamicValues?.location || city || "India";
-    const usecase = generatedPage?.dynamicValues?.usecase || "practical work";
-    const modifier = generatedPage?.dynamicValues?.modifier || "practical growth";
-    const relatedFamilies = Array.isArray(generatedPage.relatedFamilies)
-      ? generatedPage.relatedFamilies.slice(0, 8)
-      : [];
+  const city     = entry ? entryCity(entry) : "Online";
+  const skill    = entry ? (entrySkill(entry) || si?.title || fallbackSkill) : (si?.title || fallbackSkill);
+  const audience = entry ? entryAudience(entry) : null;
+  const isOnline = !city || city === "Online" || city === "Remote";
+  const pageTitle = entry ? uniqueTitle(entry, si) : (si ? `How to Become a ${si.title}` : `${fallbackSkill} — Free Masterclass`);
+  const pageDesc  = entry ? uniqueDesc(entry, si) : (si ? si.description : `Master ${fallbackSkill} with Sikhadenge's free live masterclass. Join 1,50,000+ professionals.`);
+  const pageUrl   = `https://sikhadenge.in/${params.skill}`;
+  const registerLink = "/gen-ai-masterclass/register-one-step";
+  const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${skill} Masterclass on Sikhadenge.`;
+  const coreSkills = si?.skills ?? [`${skill} Fundamentals`, "Live Practice Sessions", "Real-World Projects", "Expert Mentorship"];
 
-    const relatedTopicLinks = [
-      rootSlug,
-      ...relatedFamilies,
-      familyKey,
-      "ai-tools",
-      "ai-skills",
-      "ai-career",
-      "make-money-with-ai"
-    ]
-      .filter(Boolean)
-      .filter((value, index, arr) => arr.indexOf(value) === index)
-      .slice(0, 8);
+  const courseSchema = { "@context": "https://schema.org", "@type": "Course", name: pageTitle, description: pageDesc, url: pageUrl, provider: { "@type": "EducationalOrganization", name: "Sikhadenge", url: "https://sikhadenge.in" }, educationalCredentialAwarded: "Certificate of Completion", inLanguage: ["en", "hi"], isAccessibleForFree: false, offers: { "@type": "Offer", price: "0", priceCurrency: "INR", description: "Free demo masterclass — full paid batch available" }, hasCourseInstance: { "@type": "CourseInstance", courseMode: isOnline ? "Online" : "Blended", ...(isOnline ? {} : { location: { "@type": "City", name: city } }), instructor: { "@type": "Person", name: "Sikhadenge Expert", worksFor: { "@type": "Organization", name: "Sikhadenge" } } } };
+  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [ { "@type": "Question", name: `Is the ${skill} masterclass really free?`, acceptedAnswer: { "@type": "Answer", text: `Yes — the demo masterclass and WhatsApp community entry are completely free. After attending, you can optionally join the full paid ${skill} batch starting from ₹12,000.` } }, { "@type": "Question", name: `Who should join this ${skill} program?`, acceptedAnswer: { "@type": "Answer", text: audience ? `Designed for ${audience} wanting practical ${skill} skills.` : "Professionals, freelancers, students, and business owners wanting real skills." } }, { "@type": "Question", name: "How is Sikhadenge different from Udemy or YouTube?", acceptedAnswer: { "@type": "Answer", text: "Live interactive sessions with real client projects. Not pre-recorded theory." } }, { "@type": "Question", name: "Will I get a certificate?", acceptedAnswer: { "@type": "Answer", text: "Yes — Sikhadenge Certificate of Completion, shareable on LinkedIn." } } ] };
+  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [ { "@type": "ListItem", position: 1, name: "Home", item: "https://sikhadenge.in" }, { "@type": "ListItem", position: 2, name: toTitle(skill), item: pageUrl } ] };
 
-    const premiumCtaTitle =
-      pageKind === "salary"
-        ? `Turn ${topic} into real career growth`
-        : pageKind === "jobs"
-        ? `Build job-ready capability in ${topic}`
-        : pageKind === "roadmap"
-        ? `Follow a practical roadmap for ${topic}`
-        : pageKind === "usecase"
-        ? `Use ${topic} in practical execution`
-        : `Build premium practical strength in ${topic}`;
+  return (
+    <main className="min-h-screen bg-white text-slate-900 font-sans">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
-    const premiumCtaText = `Sikhadenge focuses on structured, practical, execution-first learning so topics like ${topic} become useful for output, growth, freelance work, jobs, and long-term positioning.`;
+      <SkillPopup skill={skill} waLink={waLink} />
 
-    const familyToneMap: Record<string, { angle: string; cta: string }> = {
-      "ai-tools": {
-        angle: "tool selection, workflow speed, and practical execution",
-        cta: "Choose better tools, connect them to real workflows, and build faster output with Sikhadenge."
-      },
-      "ai-skills": {
-        angle: "capability building, positioning, and long-term growth",
-        cta: "Build practical AI skills with structured execution so learning turns into usable output and stronger career positioning."
-      },
-      "ai-career": {
-        angle: "career clarity, market relevance, and future readiness",
-        cta: "Use Sikhadenge to move from confusion to career-focused direction with a clearer path for practical growth."
-      },
-      "ai-jobs": {
-        angle: "job readiness, role alignment, and market demand",
-        cta: "Build job-ready capability with a structured path that connects learning to practical execution and stronger interview confidence."
-      },
-      "ai-marketing": {
-        angle: "campaign execution, growth systems, and lead generation",
-        cta: "Learn how to use AI in marketing with practical systems that improve content, campaigns, and execution quality."
-      },
-      "ai-automation": {
-        angle: "systems, workflow leverage, and repeatable efficiency",
-        cta: "Use Sikhadenge to turn AI automation into practical systems that save time and improve output consistency."
-      },
-      "prompt-engineering": {
-        angle: "clear prompting, better outputs, and tool control",
-        cta: "Improve output quality by learning practical prompting structure instead of relying on random experimentation."
-      },
-      "make-money-with-ai": {
-        angle: "earning pathways, service models, and practical monetization",
-        cta: "Connect AI learning with practical earning opportunities, service execution, and scalable digital value."
-      }
-    };
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <section className="bg-[#0B1220] pt-20 pb-0 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Breadcrumb */}
+        <div className="max-w-7xl mx-auto pt-4 pb-6">
+          <p className="text-slate-400 text-sm">
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <span className="mx-2 text-slate-600">/</span>
+            <span className="text-slate-300">{toTitle(skill)}</span>
+          </p>
+        </div>
 
-    const familyTone =
-      familyToneMap[familyKey] ||
-      {
-        angle: "practical work, structured execution, and modern digital growth",
-        cta: `Use Sikhadenge to connect ${topic} with practical execution, growth, and stronger real-world relevance.`
-      };
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_380px] gap-10 pb-0 items-start">
+          {/* LEFT */}
+          <div className="pb-16">
+            {/* Badge */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              <span className="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {isOnline ? "Online Program" : `${city} Batch`}
+              </span>
+              <span className="bg-green-500/20 border border-green-500/30 text-green-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                Free Entry
+              </span>
+              {audience && (
+                <span className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                  For {toTitle(audience)}
+                </span>
+              )}
+            </div>
 
-    const audienceCtaMap: Record<string, string> = {
-      students: `Build ${topic} as a future-ready advantage and turn learning into practical output early.`,
-      freelancers: `Use ${topic} to improve delivery quality, client trust, and repeatable freelance execution.`,
-      founders: `Use ${topic} to improve systems, decision quality, and scalable digital growth.`,
-      marketers: `Apply ${topic} in campaigns, content, and performance workflows for stronger execution.`,
-      designers: `Use ${topic} to improve creative speed, workflow quality, and practical output.`,
-      creators: `Turn ${topic} into better content systems, stronger consistency, and smarter production.`,
-      "working-professionals": `Use ${topic} to improve productivity, clarity, and practical work quality.`,
-      "job-seekers": `Build job-ready proof with ${topic} through structured outputs and stronger positioning.`,
-      beginners: `Start ${topic} with one clear workflow so learning becomes simple, practical, and repeatable.`,
-    };
+            {/* H1 */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-[1.15] mb-5">
+              {isOnline
+                ? <>Master <span className="text-blue-400">{toTitle(skill)}</span> and Build a Career That Pays</>
+                : <>Learn <span className="text-blue-400">{toTitle(skill)}</span> in {city} — Live, Practical, Free</>}
+            </h1>
 
-    const cityInsightMap: Record<string, string> = {
-      delhi: `${topic} is highly relevant in Delhi because competition is high and practical capability matters for visibility, jobs, freelance work, and business execution.`,
-      mumbai: `${topic} matters in Mumbai because speed, execution, and market positioning play a major role in creative, digital, and growth-focused work.`,
-      bangalore: `${topic} is especially valuable in Bangalore because modern digital roles reward structured capability, systems thinking, and practical output.`,
-      hyderabad: `${topic} supports strong growth in Hyderabad because more digital teams now value execution quality and workflow efficiency.`,
-      pune: `${topic} is useful in Pune because students, freelancers, and professionals can use it to build stronger future-ready capability.`,
-      chennai: `${topic} helps in Chennai by improving role relevance, practical output, and structured digital execution.`,
-      kolkata: `${topic} can improve digital competitiveness in Kolkata by helping learners move from scattered effort to structured capability.`,
-      ahmedabad: `${topic} is becoming more relevant in Ahmedabad as businesses and professionals look for faster, smarter digital execution.`,
-      jaipur: `${topic} can create strong practical value in Jaipur for learners and freelancers who want modern digital growth.`,
-      lucknow: `${topic} is useful in Lucknow because it helps bridge the gap between learning and practical market relevance.`,
-    };
+            <p className="text-slate-300 text-lg leading-relaxed mb-8 max-w-2xl">{pageDesc}</p>
 
-    const audienceSpecificCta =
-      audienceCtaMap[(audience || "").toLowerCase().replace(/\s+/g, "-")] ||
-      `Use ${topic} to build stronger execution, clarity, and practical digital growth.`;
+            {/* Key highlights */}
+            <div className="grid sm:grid-cols-2 gap-3 mb-8">
+              {[
+                { icon: Play,      text: "Live online class on Zoom — not pre-recorded" },
+                { icon: Users,     text: isOnline ? "1,50,000+ student community" : `${city} batch + online community` },
+                { icon: Briefcase, text: "Real client projects in every session" },
+                { icon: Award,     text: "Sikhadenge Certificate on completion" },
+                { icon: Clock,     text: "2 hours per session — weekends only" },
+                { icon: BadgeCheck,text: "Industry experts as mentors" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                  </div>
+                  <span className="text-slate-300 text-sm">{item.text}</span>
+                </div>
+              ))}
+            </div>
 
-    const citySpecificInsight =
-      cityInsightMap[(city || "").toLowerCase().replace(/\s+/g, "-")] ||
-      `${topic} becomes more powerful when it is applied with geo-aware relevance, practical workflows, and stronger market context in ${city}.`;
-
-    const familyAwareFaqItems = [
-      {
-        q: `How is ${topic} different from random learning?`,
-        a: `${topic} becomes valuable when it is connected to ${familyTone.angle}. Random learning usually stops at information, while structured learning turns the topic into repeatable practical value.`
-      },
-      {
-        q: `What should ${audience} focus on first in ${topic}?`,
-        a: `${audience} should start with one clear use case, one workable output, and one repeatable workflow. That creates clarity much faster than trying to learn every sub-topic at once.`
-      },
-      {
-        q: `How does ${topic} become more useful in ${location}?`,
-        a: `It becomes more useful when it is applied to the real market context of ${location}, including practical work quality, better positioning, and stronger alignment with current digital demand.`
-      },
-      {
-        q: `What makes a premium page on ${topic} better than a generic page?`,
-        a: `A premium page explains the topic, shows the use case, connects it with user intent, and maps it to practical outcomes. Generic pages usually stay broad and do not help users take action.`
-      },
-      {
-        q: `Can ${topic} support long-term growth and not just short-term interest?`,
-        a: `Yes. When ${topic} is connected with structured execution, skill development, and real output, it becomes useful for long-term growth rather than temporary curiosity.`
-      },
-      {
-        q: `How should I use this page after reading it?`,
-        a: `Use it as a working map: identify one use case, choose one action path, connect it with a workflow, and then build consistency from there.`
-      },
-      {
-        q: `Why does Sikhadenge connect ${topic} with SEO, AEO, and GEO?`,
-        a: `Because real authority comes from combining search relevance, answerable structure, and geo-aware context. That makes the topic stronger for both users and discovery systems.`
-      },
-      {
-        q: `What is the next practical step with Sikhadenge?`,
-        a: familyTone.cta
-      }
-    ];
-
-    const internalLinkGroups = [
-      {
-        title: "Core topic paths",
-        links: relatedTopicLinks.slice(0, 4),
-      },
-      {
-        title: "Growth paths",
-        links: relatedTopicLinks.slice(2, 6),
-      },
-      {
-        title: "Action paths",
-        links: relatedTopicLinks.slice(4, 8),
-      },
-    ].filter((group) => group.links.length > 0);
-
-    const premiumSections = [
-      {
-        title: `Why ${topic} matters now`,
-        paragraphs: [
-          `${topic} is no longer a niche advantage. It now sits at the center of how students, freelancers, creators, job seekers, marketers, founders, and working professionals improve speed, quality, and decision making in real work. In practical terms, this topic is not only about learning one tool or one workflow. It is about building a system that helps you move from random effort to structured execution. That shift is what creates long-term value in SEO, AEO, GEO, personal growth, and digital work outcomes.`,
-          `Most people fail because they consume scattered information without a usable path. A premium learning page should remove that confusion. For ${topic}, the real opportunity comes from understanding where it fits, what outcomes it drives, which use cases matter most, and how to connect tools, workflows, and execution. Once that structure becomes clear, the learning process becomes more focused, more measurable, and far more useful for career growth, earning, content production, or business execution.`
-        ],
-        bullets: [
-          `Clear direction instead of random learning`,
-          `Practical execution for ${audience}`,
-          `Real-world relevance in ${location}`,
-          `Long-term authority building for modern digital work`
-        ]
-      },
-      {
-        title: `Who should focus on ${topic}`,
-        paragraphs: [
-          `${topic} is especially valuable for ${audience} because the market now rewards execution more than theory. A learner who can apply modern systems, produce outcomes faster, and connect strategy with tools has a stronger position than someone who only collects information. This page is designed to make that gap visible. Instead of giving abstract motivation, it frames ${topic} as a working capability that can improve learning speed, output quality, and positioning in real competitive environments.`,
-          `This is also relevant for people at different stages. Beginners need a roadmap that removes overwhelm. Intermediate learners need structure that improves quality and consistency. Advanced users need leverage, systems, and better decision making. Because of that, a premium page must serve more than one level of user intent. It should help someone start, improve, and scale without making the topic feel shallow or generic.`
-        ],
-        bullets: [
-          `Students who want a future-ready advantage`,
-          `Freelancers who need stronger delivery`,
-          `Working professionals improving output and positioning`,
-          `Creators and founders building repeatable systems`
-        ]
-      },
-      {
-        title: `How ${topic} connects with SEO, AEO, and GEO`,
-        paragraphs: [
-          `From an SEO angle, ${topic} becomes powerful when it is connected to search intent, outcome intent, and user stage. That means pages must not stop at broad definitions. They should connect the topic with role-based demand, city-based demand, platform-specific demand, and action-specific demand. That is why this page framework combines family structure, use cases, geo modifiers, learning intent, and outcome-driven phrasing. It increases topical depth and helps search systems understand that this is not a thin page but part of a wider authority cluster.`,
-          `From an AEO angle, AI systems favor structured clarity. They respond better when a page shows definitions, practical applications, who the topic helps, what workflows it influences, what results it can support, and how a user should move from beginner to execution. GEO adds another layer by tying the topic to city relevance, local opportunity, and geo-sensitive language. Together, SEO, AEO, and GEO turn ${topic} from a keyword page into a discoverable authority node.`
-        ],
-        bullets: [
-          `SEO: search intent + topical coverage`,
-          `AEO: answerable structure + entity clarity`,
-          `GEO: location relevance + market context`,
-          `Authority: multi-angle premium clustering`
-        ]
-      },
-      {
-        title: `Core areas you should understand in ${topic}`,
-        paragraphs: [
-          `A premium ${topic} page should move beyond a surface explanation and cover the core pillars that influence real outcomes. These usually include understanding the problem this topic solves, the workflows it improves, the tools or systems involved, the role-specific application, and the business or career impact. Without these pillars, most pages remain informational but not useful. With these pillars, the page becomes a practical guide that can support both discovery and action.`,
-          `The second important layer is context. The same topic looks different for a student, a freelancer, a marketer, or a founder. The same topic also looks different in a city-focused search, in an earning-focused query, or in a workflow-focused query. A strong page accounts for those variations. That is how it becomes premium, because it does not force every visitor into the same simplistic explanation.`
-        ],
-        bullets: [
-          `Problem clarity`,
-          `Workflow relevance`,
-          `Tool and system understanding`,
-          `Role-based execution context`
-        ]
-      },
-      {
-        title: `Practical use cases for ${topic}`,
-        paragraphs: [
-          `The strongest programmatic pages are not built only for traffic. They are built for usefulness. In the case of ${topic}, usefulness comes from showing how the concept works inside practical environments such as ${usecase}, business execution, content systems, lead generation, productivity, education, creator workflows, and service delivery. These use cases help both users and search systems understand the topic in context, not in isolation.`,
-          `When a page explains use cases clearly, it creates stronger trust. A user can map the topic to their daily reality. That is critical for premium perception. People do not convert or remember generic writing. They respond to writing that helps them see how a topic reduces effort, increases quality, improves speed, and creates better opportunities. That is exactly why real use cases are not optional. They are central to premium programmatic content.`
-        ],
-        bullets: [
-          `${topic} in ${usecase}`,
-          `${topic} for client delivery and workflow improvement`,
-          `${topic} for earning, growth, and digital execution`,
-          `${topic} for scalable systems rather than isolated tasks`
-        ]
-      },
-      {
-        title: `Career, earning, and growth value of ${topic}`,
-        paragraphs: [
-          `A page like this must also connect ${topic} to outcomes that matter in the real world. For many users, that means jobs, freelancing, services, portfolio strength, business growth, or faster output. A premium page should show that learning this topic is not just educational. It has career and economic value. That value becomes stronger when the topic is linked with role-specific application, tool literacy, and a repeatable workflow system.`,
-          `For ${audience}, the key is not just knowing the name of the topic. The key is being able to explain what it does, where it helps, how it improves execution, and what type of outcomes it can support. That is what improves positioning in interviews, sales conversations, freelance pitches, portfolio discussions, or business planning. In a premium content system, this section is essential because it turns learning into forward movement.`
-        ],
-        bullets: [
-          `Career-ready clarity`,
-          `Freelance and service relevance`,
-          `Better portfolio and proof of work`,
-          `Stronger long-term positioning`
-        ]
-      },
-      {
-        title: `A practical roadmap to learn ${topic}`,
-        paragraphs: [
-          `The most useful roadmap is the one that begins with clarity, not complexity. Step one is understanding what ${topic} actually means in practical work. Step two is identifying the best beginner-friendly entry point. Step three is mapping it to one or two strong use cases. Step four is learning the tools, prompts, frameworks, or systems involved. Step five is producing real output. Step six is refining that output into repeatable quality. Step seven is using that proof for career, freelance, or business growth.`,
-          `This roadmap matters because most learners stop too early. They either remain in information mode or they jump into tools without structure. A premium roadmap fixes that by sequencing the learning process. It tells the user what to learn first, what to ignore for now, what to practice, and how to compound skill into results. That is the difference between consuming content and building capability.`
-        ],
-        bullets: [
-          `Understand the topic clearly`,
-          `Choose one useful use case`,
-          `Practice with repeatable outputs`,
-          `Convert learning into proof and positioning`
-        ]
-      },
-      {
-        title: `Why this page is designed as a premium authority page`,
-        paragraphs: [
-          `Premium does not mean decorative language. Premium means structural usefulness. This page is built to support discovery, understanding, comparison, practical relevance, and conversion. It uses the topic, the role, the geo signal, the workflow angle, and the outcome angle together so that a visitor gets more than a thin keyword page. That is important for search quality, AI answer quality, and user trust.`,
-          `As Sikhadenge scales across multiple topic families, premium programmatic pages must still feel intentional. They should be clean, direct, strong in structure, and practical in value. That is the standard this page is trying to follow. It should read like a useful guide, not a filler page. It should feel specific enough to matter and broad enough to support clustered authority across many related pages.`
-        ],
-        bullets: [
-          `Premium structure`,
-          `Premium topical coverage`,
-          `Premium relevance for users and search systems`,
-          `Premium conversion readiness`
-        ]
-      }
-    ];
-
-    const faqItems = [
-      {
-        q: `What is the best way to start learning ${topic}?`,
-        a: `Start by understanding the real use case of ${topic}, then choose one beginner-friendly workflow, practice with one clear output, and build consistency before expanding into deeper tools or advanced systems.`
-      },
-      {
-        q: `Is ${topic} useful for ${audience}?`,
-        a: `Yes. ${topic} becomes valuable when it is connected with the actual needs of ${audience}, such as learning speed, output quality, earning opportunities, portfolio building, or practical workflow improvement.`
-      },
-      {
-        q: `How does ${topic} help in ${location}?`,
-        a: `In ${location}, the value of ${topic} comes from better positioning in competitive digital work, stronger practical execution, and clearer alignment with modern market demand.`
-      },
-      {
-        q: `Can beginners learn ${topic} without confusion?`,
-        a: `Yes, but only when the learning path is structured. Beginners usually do better when they start with one use case, one workflow, and one output goal rather than trying to master everything at once.`
-      },
-      {
-        q: `Does ${topic} support SEO, AEO, and GEO growth?`,
-        a: `Yes. When explained properly, ${topic} can be tied to search intent, answer intent, and location relevance. That makes it useful not only for users but also for search systems and AI discovery systems.`
-      },
-      {
-        q: `What outcomes can ${topic} create in practical work?`,
-        a: `The most common outcomes are better speed, higher-quality output, stronger workflow structure, improved career positioning, better freelance delivery, and more confidence in execution.`
-      },
-      {
-        q: `Should I focus on tools first or strategy first in ${topic}?`,
-        a: `Strategy first is usually better. Once you know what problem you are solving and what output you want, tool selection becomes much easier and much more effective.`
-      },
-      {
-        q: `How can Sikhadenge help with ${topic}?`,
-        a: `Sikhadenge can help by giving structured direction, practical workflows, premium learning systems, and a more execution-focused approach so the topic becomes useful in real work rather than staying theoretical.`
-      }
-    ];
-
-    return (
-      <main className="min-h-screen bg-[#0B1220] text-white">
-        <section className="border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.18),transparent_45%),linear-gradient(180deg,#0B1220_0%,#111827_100%)]">
-          <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 lg:px-8 lg:pt-28">
-            <div className="max-w-4xl">
-              <div className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#B0B7C3]">
-                Premium {pageKind.replace(/-/g, " ")} Guide
+            {/* Rating row */}
+            <div className="flex flex-wrap items-center gap-5 mb-8 pb-8 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="flex">{[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}</div>
+                <span className="text-white font-bold">4.9</span>
+                <span className="text-slate-400 text-sm">(12,400+ ratings)</span>
               </div>
-              <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-                {title}
-              </h1>
-              <p className="mt-6 max-w-3xl text-base leading-8 text-[#B0B7C3] sm:text-lg">
-                {description}
-              </p>
+              <div className="flex items-center gap-2 text-slate-300 text-sm">
+                <Users className="w-4 h-4 text-blue-400" />
+                <span><span className="text-white font-bold">1,50,000+</span> students enrolled</span>
+              </div>
+              {!isOnline && (
+                <div className="flex items-center gap-2 text-slate-300 text-sm">
+                  <MapPin className="w-4 h-4 text-blue-400" />
+                  <span>Available in <span className="text-white font-bold">{city}</span></span>
+                </div>
+              )}
+            </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
-                  Audience: <span className="font-semibold text-[#F5B301]">{audience}</span>
+            {/* Mobile CTA */}
+            <div className="flex flex-col sm:flex-row gap-3 lg:hidden">
+              <Link
+                href={registerLink}
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-4 rounded-xl text-lg transition-all"
+              >
+                Join Free Demo <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                href={waLink}
+                className="flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-bold px-6 py-4 rounded-xl text-base transition-all"
+              >
+                <Phone className="w-4 h-4" /> WhatsApp
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT — sticky enrollment card */}
+          <div className="hidden lg:block sticky top-24 self-start">
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+              {/* Card top */}
+              <div className="bg-[#0B1220] p-6 text-white">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-sm font-semibold text-slate-300">Next session: This Sunday</span>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
-                  Location: <span className="font-semibold text-[#F5B301]">{location}</span>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-black text-green-400">Free Demo Class</span>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
-                  Use case: <span className="font-semibold text-[#F5B301]">{usecase}</span>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
-                  Focus: <span className="font-semibold text-[#F5B301]">{modifier}</span>
-                </div>
+                <p className="text-slate-400 text-sm">Full Course starts from <span className="text-white font-bold">₹12,000</span></p>
               </div>
 
-              <div className="mt-10 flex flex-wrap gap-4">
-                <a
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="rounded-2xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
+              {/* Card body */}
+              <div className="p-6">
+                <div className="space-y-4 mb-6">
+                  {[
+                    { icon: Clock,    label: "Duration",   val: "12 Weeks Program" },
+                    { icon: Globe,    label: "Mode",       val: isOnline ? "Live on Zoom (Online)" : `Live in ${city}` },
+                    { icon: Users,    label: "Community",  val: "1,50,000+ Members" },
+                    { icon: Award,    label: "Certificate",val: "Yes, Shareable on LinkedIn" },
+                    { icon: Shield,   label: "Demo Class",  val: "₹0 — Free Entry" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs">{item.label}</p>
+                        <p className="text-slate-800 font-semibold text-sm">{item.val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  href={registerLink}
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl text-lg transition-all mb-3"
                 >
-                  Join Free Masterclass
-                </a>
-                <a
-                  href={`/${rootSlug}`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
+                  Join Free Demo <ArrowRight className="w-5 h-5" />
+                </Link>
+
+                <Link
+                  href={waLink}
+                  className="flex items-center justify-center gap-2 w-full bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] font-bold py-3 rounded-xl text-sm transition-all"
                 >
-                  Explore Root Topic
-                </a>
+                  <Phone className="w-4 h-4" /> Chat on WhatsApp
+                </Link>
+
+                <p className="text-center text-slate-400 text-xs mt-4">
+                  🔒 No payment. No spam. Cancel anytime.
+                </p>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <div className="space-y-8">
-                {premiumSections.map((section, idx) => (
-                  <section
-                    key={section.title}
-                    className="rounded-[28px] border border-white/10 bg-[#111827] p-6 shadow-[0_0_18px_rgba(37,99,235,0.10)] sm:p-8"
-                  >
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-sm font-bold text-[#F5B301]">
-                        {String(idx + 1).padStart(2, "0")}
-                      </div>
-                      <h2 className="text-2xl font-bold tracking-tight text-white">
-                        {section.title}
-                      </h2>
-                    </div>
+      {/* ── COMPANIES BAR ─────────────────────────────────────────────────── */}
+      <section className="bg-[#0f1a2e] border-t border-white/5 py-5 px-4">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">Our students are hired at</p>
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
+            {COMPANIES.map((c, i) => (
+              <span key={i} className="text-slate-400 font-bold text-sm tracking-wide">{c}</span>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                    <div className="space-y-5">
-                      {section.paragraphs.map((paragraph, pIdx) => (
-                        <p key={pIdx} className="text-base leading-8 text-[#B0B7C3]">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
+      {/* ── PROGRAM STATS ─────────────────────────────────────────────────── */}
+      <section className="py-14 px-4 bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { val: "1,50,000+", label: "Students Trained", sub: "Across India" },
+            { val: "4.9 / 5",   label: "Program Rating",  sub: "12,400+ reviews" },
+            { val: "200+",      label: "Sessions Done",    sub: "Live & recorded" },
+            { val: "98%",       label: "Satisfaction",     sub: "Would recommend" },
+          ].map((s, i) => (
+            <div key={i} className="space-y-1">
+              <div className="text-3xl sm:text-4xl font-black text-slate-900">{s.val}</div>
+              <div className="text-sm font-bold text-slate-700">{s.label}</div>
+              <div className="text-xs text-slate-400">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-                    {section.bullets?.length ? (
-                      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                        {section.bullets.map((bullet) => (
-                          <div
-                            key={bullet}
-                            className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white"
-                          >
-                            {bullet}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </section>
+      {/* ── CURRICULUM ────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50" id="curriculum">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Curriculum</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-3">
+              What you'll master in <span className="text-blue-600">{toTitle(skill)}</span>
+            </h2>
+            <p className="text-slate-500">12-week structured program. Every session has a deliverable.</p>
+          </div>
+
+          <div className="space-y-3">
+            {MODULES.map((mod, i) => (
+              <details key={i} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <summary className="flex items-center gap-4 p-5 cursor-pointer list-none [&::-webkit-details-marker]:hidden select-none">
+                  <span className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">{mod.no}</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">{mod.title}</p>
+                    <p className="text-slate-400 text-xs mt-0.5">{mod.sessions}</p>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform flex-shrink-0" />
+                </summary>
+                <div className="px-5 pb-5 border-t border-slate-100">
+                  <ul className="mt-4 grid sm:grid-cols-2 gap-2">
+                    {mod.topics.map((topic, j) => (
+                      <li key={j} className="flex items-center gap-2 text-slate-600 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        {topic}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            ))}
+          </div>
+
+          {/* Core skills from skillsData */}
+          {si?.skills && (
+            <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+              <p className="font-bold text-slate-900 mb-4">Skills you'll gain:</p>
+              <div className="flex flex-wrap gap-2">
+                {coreSkills.map((s, i) => (
+                  <span key={i} className="bg-white border border-blue-200 text-blue-700 text-sm font-semibold px-3 py-1.5 rounded-full">{s}</span>
                 ))}
               </div>
             </div>
+          )}
+        </div>
+      </section>
 
-            <aside className="lg:col-span-4">
-              <div className="sticky top-24 space-y-6">
-                <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
-                  <h3 className="text-lg font-bold text-white">Premium page signals</h3>
-                  <div className="mt-4 space-y-3 text-sm text-[#B0B7C3]">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                      Word target: 1500–1800
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                      Structure: SEO + AEO + GEO aligned
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                      Intent: {pageKind}
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                      Family: {familyKey}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
-                  <h3 className="text-lg font-bold text-white">Related topic paths</h3>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {relatedTopicLinks.map((slug) => (
-                      <a
-                        key={slug}
-                        href={`/${slug}`}
-                        className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-[#B0B7C3] transition hover:border-white/20 hover:text-white"
-                      >
-                        {slug.replace(/-/g, " ")}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6">
-                  <h3 className="text-lg font-bold text-white">Action step</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#B0B7C3]">
-                    Use this page as a structured starting point, then connect the topic with one
-                    strong use case and one practical execution workflow. That approach compounds
-                    much faster than random learning.
-                  </p>
-                  <a
-                    href="/gen-ai-masterclass/register-one-step"
-                    className="mt-5 inline-flex rounded-2xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
-                  >
-                    Start with Sikhadenge
-                  </a>
-                </div>
-              </div>
-            </aside>
+      {/* ── MENTOR SECTION ────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Your Mentor</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900">Learn from practitioners, not professors</h2>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="rounded-[28px] border border-white/10 bg-[#111827] p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-white">Frequently asked questions</h2>
-
-            <div className="mt-6 space-y-4">
-              {familyAwareFaqItems.map((faq) => (
-                <details
-                  key={faq.q}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4"
-                >
-                  <summary className="cursor-pointer list-none text-base font-semibold text-white">
-                    {faq.q}
-                  </summary>
-                  <p className="mt-3 text-sm leading-7 text-[#B0B7C3]">{faq.a}</p>
-                </details>
-              ))}
+          <div className="bg-gradient-to-br from-slate-900 to-[#0B1220] rounded-3xl p-8 sm:p-10 flex flex-col sm:flex-row gap-8 items-center">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-blue-400 to-blue-700 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-4xl font-black">S</span>
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="text-2xl font-black text-white mb-1">Sikhadenge Expert Team</h3>
+              <p className="text-blue-300 font-semibold mb-4">{toTitle(skill)} Specialist · 8+ Years Industry Experience</p>
+              <p className="text-slate-300 leading-relaxed mb-5">Our mentors have worked with 500+ clients across India, UAE, and the US. They don't teach theory — they share the exact workflows they use in real projects, every week.</p>
+              <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+                {[{ val: "500+", label: "Clients Served" }, { val: "8+ Yrs", label: "Industry Exp." }, { val: "1,50,000+", label: "Students" }].map((s, i) => (
+                  <div key={i} className="text-center">
+                    <p className="text-white font-black text-xl">{s.val}</p>
+                    <p className="text-slate-400 text-xs">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-3">
-            {internalLinkGroups.map((group) => (
-              <div
-                key={group.title}
-                className="rounded-[28px] border border-white/10 bg-[#111827] p-6 shadow-[0_0_18px_rgba(37,99,235,0.10)]"
-              >
-                <h3 className="text-lg font-bold text-white">{group.title}</h3>
-                <div className="mt-4 space-y-3">
-                  {group.links.map((slug) => (
-                    <a
-                      key={slug}
-                      href={`/${slug}`}
-                      className="block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[#B0B7C3] transition hover:border-white/20 hover:text-white"
-                    >
-                      {slug.replace(/-/g, " ")}
-                    </a>
-                  ))}
+      {/* ── CERTIFICATE ───────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-10 items-center">
+          {/* Certificate visual */}
+          <div className="flex-shrink-0 w-full sm:w-80">
+            <div className="bg-white border-4 border-blue-100 rounded-3xl p-8 shadow-xl text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 to-blue-400" />
+              <div className="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <Award className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Certificate of Completion</p>
+              <h3 className="text-xl font-black text-slate-900 mb-1">Sikhadenge</h3>
+              <p className="text-slate-500 text-sm mb-4">{toTitle(skill)} Masterclass</p>
+              <div className="w-24 h-0.5 bg-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400 text-xs">Awarded to learners who complete all modules and final project</p>
+            </div>
+          </div>
+
+          <div>
+            <span className="inline-block bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">Industry Certificate</span>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Get certified. Get hired. Get paid more.</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Complete the {toTitle(skill)} program and earn a Sikhadenge Certificate of Completion — recognized by agencies, clients, and hiring managers across India.
+            </p>
+            <ul className="space-y-3">
+              {[
+                "Share on LinkedIn with one click",
+                "Add to your portfolio & resume",
+                "Recognized by 500+ partner companies",
+                "Proves practical skill — not just theory",
+              ].map((point, i) => (
+                <li key={i} className="flex items-center gap-3 text-slate-700 text-sm">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14">
+            <span className="inline-block bg-yellow-50 text-yellow-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Success Stories</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-3">
+              1,50,000+ students. Real results.
+            </h2>
+            <p className="text-slate-500">From freelancers to agency owners — here's what our community achieved.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={i} className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(t.rating)].map((_, j) => <Star key={j} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
+                </div>
+                <p className="text-slate-700 leading-relaxed mb-4 text-sm">"{t.text}"</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                      {t.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{t.name}</p>
+                      <p className="text-slate-400 text-xs">{t.role} · {t.city}</p>
+                    </div>
+                  </div>
+                  <div className="bg-green-50 border border-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-lg">
+                    {t.income}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="border-t border-white/10 bg-[#111827]">
-          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-            <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(135deg,rgba(37,99,235,0.18),rgba(245,179,1,0.08))] p-8 shadow-[0_0_18px_rgba(245,179,1,0.18)]">
-              <h2 className="text-3xl font-black text-white">
-                {premiumCtaTitle}
-              </h2>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
-                {premiumCtaText}
-              </p>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
-                {audienceSpecificCta}
-              </p>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
-                {citySpecificInsight}
-              </p>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
-                {audienceSpecificCta}
-              </p>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#B0B7C3]">
-                {citySpecificInsight}
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <a
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="rounded-2xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(37,99,235,0.55)] transition hover:bg-[#1D4ED8]"
-                >
-                  Book Free Masterclass
-                </a>
-                <a
-                  href={`/${rootSlug}`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
-                >
-                  Explore More {topic}
-                </a>
-                <a
-                  href="/ai-tools"
-                  className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
-                >
-                  Explore AI Tools
-                </a>
-              </div>
-            </div>
+      {/* ── COMPARISON TABLE ──────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Why Sikhadenge</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900">Why 1,50,000+ chose us over others</h2>
           </div>
-        </section>
-      </main>
-    );
-  }
-
-  return { title: "Page Not Found" };
-}
-
-export default function UniversalRootPage({ params }: { params: { skill: string } }) {
-  // temporary disabled static route guard for debug
-
-  const rootSkill = skillsData.find((s) => s.slug === params.skill);
-
-  if (rootSkill) {
-    const rootDisplayTitle = normalizeDisplayTitle(rootSkill.title);
-    const rootHeading = makeRootPageHeading(rootSkill.title);
-    const rootRelatedSkills = getRootRelatedSkills(rootSkill);
-    const rootFaqs = [
-      {
-        q: `What is the best way to start learning ${rootSkill.title}?`,
-        a: `The best way is to start with practical fundamentals, understand the workflow, build small outputs, and then move toward real projects instead of depending only on theory.`,
-      },
-      {
-        q: `Can beginners build a career in ${rootSkill.title}?`,
-        a: `Yes. Beginners can enter this field with structured practice, portfolio-focused execution, and consistent learning support.`,
-      },
-      {
-        q: `Does Sikhadenge focus on practical learning for ${rootSkill.title}?`,
-        a: `Yes. Sikhadenge focuses on practical implementation, guided learning, and real output so learners can build job-ready and freelance-ready capability.`,
-      },
-      {
-        q: `Who should learn ${rootSkill.title}?`,
-        a: `Students, freelancers, creators, job seekers, and working professionals can all benefit when they want stronger execution, clearer workflows, and better digital capability.`,
-      },
-      {
-        q: `Can ${rootSkill.title} help with freelancing and client work?`,
-        a: `Yes. Practical skill depth can support freelance delivery, better communication, stronger outputs, and more confidence in real project work.`,
-      },
-      {
-        q: `Do I need coding or prior experience to start?`,
-        a: `Not always. Many learners start with basic digital comfort, guided workflows, and beginner-friendly tools before moving into more advanced execution.`,
-      },
-      {
-        q: `How long does it take to become confident in ${rootSkill.title}?`,
-        a: `That depends on consistency and practice quality, but learners usually improve faster when they follow a structured roadmap and build real outputs regularly.`,
-      },
-      {
-        q: `Why is structured learning better than random tutorials?`,
-        a: `Structured learning reduces confusion, creates a better sequence, improves retention, and helps learners connect tools, workflows, and real outcomes more effectively.`,
-      },
-    ];
-
-    const rootAudienceCards = [
-      {
-        icon: Users,
-        title: "Students",
-        desc: `Build practical confidence in ${rootDisplayTitle} early and move toward projects, internships, and modern digital readiness.`,
-      },
-      {
-        icon: Briefcase,
-        title: "Freelancers",
-        desc: "Use the skill to improve client delivery, output quality, communication, and better positioning in practical work.",
-      },
-      {
-        icon: TrendingUp,
-        title: "Working Professionals",
-        desc: "Upgrade execution speed, workflow thinking, and modern capability so your work becomes stronger and more relevant.",
-      },
-      {
-        icon: Sparkles,
-        title: "Creators and Builders",
-        desc: "Turn ideas into better content, assets, systems, and practical digital outcomes with more structure.",
-      },
-    ];
-
-    const rootRoadmap = [
-      `Start with the basics and understand what ${rootDisplayTitle} actually means in practical work.`,
-      "Learn the main workflow, core tools, and where this skill creates real value.",
-      "Build small practice outputs instead of consuming only theory or scattered tutorials.",
-      "Move into structured exercises, portfolio-style work, and repeatable execution.",
-      "Connect the skill with freelancing, career growth, and practical digital opportunities.",
-    ];
-
-    const rootFaqSchema = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: rootFaqs.map((faq) => ({
-        "@type": "Question",
-        name: faq.q,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: faq.a,
-        },
-      })),
-    };
-
-    const rootCourseSchema = {
-      "@context": "https://schema.org",
-      "@type": "Course",
-      name: rootSkill.title,
-      description: rootSkill.description,
-      provider: {
-        "@type": "Organization",
-        name: "Sikhadenge",
-        sameAs: "https://sikhadenge.in",
-      },
-    };
-
-    return (
-      <main className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-200">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(rootFaqSchema) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(rootCourseSchema) }} />
-
-        <section className="relative overflow-hidden border-b border-slate-100 px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-white"></div>
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-4xl">
-              <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">
-                Premium Skill Guide
-              </div>
-              <h1 className="mb-6 max-w-5xl text-4xl font-black leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem]">
-                {rootHeading}
-              </h1>
-              <p className="mb-10 max-w-4xl text-base font-medium leading-8 text-slate-600 sm:text-xl">
-                {normalizeDisplayTitle(rootSkill.description)} Sikhadenge helps students, freelancers, creators, and working professionals build practical skill depth, better workflow understanding, and strong real-world capability.
-              </p>
-
-              <div className="mb-16 flex flex-col gap-4 sm:flex-row">
-                <Link
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-[0_14px_40px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-1 hover:bg-blue-700 sm:text-lg"
-                >
-                  Join Free Masterclass
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-
-                <Link
-                  href="/courses/ai-mastery"
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-slate-50 sm:text-lg"
-                >
-                  Explore AI Path
-                </Link>
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-3">
+          <div className="overflow-x-auto">
+            <table className="w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100">
+              <thead>
+                <tr className="bg-slate-900 text-white">
+                  <th className="p-4 text-left text-sm font-bold">Feature</th>
+                  <th className="p-4 text-center text-sm font-bold bg-blue-600">Sikhadenge ✨</th>
+                  <th className="p-4 text-center text-sm font-bold">YouTube</th>
+                  <th className="p-4 text-center text-sm font-bold">Udemy / Paid</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
                 {[
-                  {
-                    icon: BookOpen,
-                    title: "Practical Foundation",
-                    desc: `Build clear understanding and real execution ability in ${rootSkill.title}.`,
-                  },
-                  {
-                    icon: Briefcase,
-                    title: "Career Direction",
-                    desc: "Connect learning with freelancing, jobs, portfolio building, and real digital work.",
-                  },
-                  {
-                    icon: Award,
-                    title: "Structured Growth",
-                    desc: "Learn through guided progression, strong workflow clarity, and output-focused practice.",
-                  },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5"
-                  >
-                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-[0_10px_24px_rgba(37,99,235,0.10)]">
-                      <item.icon className="h-7 w-7" />
-                    </div>
-                    <h3 className="mb-2 font-bold text-slate-900">{item.title}</h3>
-                    <p className="text-sm leading-relaxed text-slate-500">{item.desc}</p>
-                  </div>
+                  ["Live interactive sessions", "✅", "❌", "❌"],
+                  ["Real client projects", "✅", "❌", "❌"],
+                  ["Mentor feedback", "✅", "❌", "❌"],
+                  ["Community support", "✅", "Limited", "Limited"],
+                  ["Certificate", "✅", "❌", "✅"],
+                  ["Demo Class", "FREE", "Free", "Paid"],
+                ].map(([feature, sd, yt, ud], i) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                    <td className="p-4 font-medium text-slate-700">{feature}</td>
+                    <td className="p-4 text-center font-bold text-blue-600 bg-blue-50/50">{sd}</td>
+                    <td className="p-4 text-center text-slate-500">{yt}</td>
+                    <td className="p-4 text-center text-slate-500">{ud}</td>
+                  </tr>
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="bg-[linear-gradient(180deg,#F8FAFC_0%,#EEF4FF_100%)] px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-12 max-w-4xl text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-              Why learning {rootDisplayTitle} matters now
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              {[
-                {
-                  title: "Modern digital work is changing",
-                  desc: `${rootSkill.title} is becoming more relevant in practical execution, creative work, workflow support, and modern earning opportunities.`,
-                  icon: Zap,
-                },
-                {
-                  title: "Professionals need better output",
-                  desc: "People who can produce faster, better, and more structured output usually have stronger market value.",
-                  icon: TrendingUp,
-                },
-                {
-                  title: "Skill-based opportunity is rising",
-                  desc: "Students, freelancers, and working professionals can use this skill to improve readiness for jobs, projects, and service delivery.",
-                  icon: Users,
-                },
-                {
-                  title: "Structured learning creates leverage",
-                  desc: "Clear systems, guided practice, and practical application help learners move faster than random learning methods.",
-                  icon: Target,
-                },
-              ].map((feature, i) => (
-                <div
-                  key={i}
-                  className="rounded-[32px] border border-[#D8E5F4] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5"
-                >
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-3 text-xl font-bold text-slate-900">{feature.title}</h3>
-                  <p className="text-slate-600">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
+      {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#0B1220] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(37,99,235,0.2),_transparent_70%)] pointer-events-none" />
+        <div className="max-w-3xl mx-auto relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 bg-[#F5B301]/10 border border-[#F5B301]/20 text-[#F5B301] px-4 py-1.5 rounded-full text-xs font-bold mb-6">
+            <span className="w-2 h-2 bg-[#F5B301] rounded-full animate-pulse" />
+            Batch filling up — next session this Sunday
           </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-4xl">
-              <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-                Who should learn {rootDisplayTitle}
-              </h2>
-              <p className="mb-12 text-base leading-8 text-slate-600 sm:text-lg">
-                This path is useful for learners who want stronger execution, clearer workflow understanding, and more practical value from their effort.
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {rootAudienceCards.map((item, i) => (
-                <div
-                  key={i}
-                  className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_8px_28px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-3 text-xl font-bold text-slate-900">{item.title}</h3>
-                  <p className="text-slate-600">{item.desc}</p>
-                </div>
-              ))}
-            </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-white mb-5 leading-tight">
+            Your career won't change<br />until <span className="text-blue-400">you do.</span>
+          </h2>
+          <p className="text-slate-400 text-lg mb-4 max-w-xl mx-auto">
+            Join 1,50,000+ professionals who chose practical learning over passive watching. Free demo this Sunday on Zoom.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+            <Link
+              href={registerLink}
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black px-10 py-5 rounded-xl text-lg transition-all hover:-translate-y-0.5"
+            >
+              Enroll Free Now <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link
+              href={waLink}
+              className="inline-flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-bold px-8 py-5 rounded-xl text-lg transition-all"
+            >
+              <Phone className="w-5 h-5" /> WhatsApp Us
+            </Link>
           </div>
-        </section>
+          <p className="text-slate-600 text-sm">No credit card · No spam · Cancel anytime</p>
+        </div>
+      </section>
 
-        <section className="border-t border-slate-100 bg-slate-50 px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-4xl">
-              <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-                Practical roadmap
-              </h2>
-              <p className="mb-12 text-base leading-8 text-slate-600 sm:text-lg">
-                A strong path is not random. Use a clear sequence so your learning turns into practical outputs, better skill retention, and real capability.
-              </p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-5">
-              {rootRoadmap.map((step, i) => (
-                <div
-                  key={i}
-                  className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]"
-                >
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">
-                    {i + 1}
-                  </div>
-                  <p className="text-sm font-medium leading-7 text-slate-700">{step}</p>
-                </div>
-              ))}
-            </div>
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">FAQ</span>
+            <h2 className="text-3xl font-black text-slate-900">Common questions answered</h2>
           </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-20">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-8 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Explore related skill paths
-            </h2>
-            <p className="mb-10 text-slate-600">
-              Build stronger topical depth by exploring connected skill pages, AI learning directions, and practical workflow categories.
-            </p>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {rootRelatedSkills.map((item, i) => (
-                  <Link
-                    key={i}
-                    href={`/${item.slug}`}
-                    className="group rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_100%)] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-1 hover:border-blue-300 hover:bg-white"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="mb-3 inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700">
-                          Related Path
-                        </div>
-                        <h3 className="text-lg font-bold leading-7 text-slate-900 transition group-hover:text-blue-700">
-                          {item.title}
-                        </h3>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
-                          Explore this connected topic to build stronger practical depth, better workflow understanding, and broader digital capability.
-                        </p>
-                      </div>
-                      <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-blue-600 transition group-hover:translate-x-0.5" />
-                    </div>
-                  </Link>
-                ))}
-            </div>
+          <div className="space-y-2">
+            {[
+              { q: `Is the ${skill} masterclass really free?`, a: `Yes — the demo masterclass and community entry are 100% free. After attending, if you want to join the full paid batch with assignments, projects, and mentorship, course fees apply (starting ₹12,000). No hidden charges in the free session.` },
+              { q: `I'm a complete beginner. Can I join?`, a: `Absolutely. Our program starts from zero. ${audience ? `Especially designed for ${audience}.` : "No prior experience needed."} You'll learn step-by-step with real examples.` },
+              { q: "How is this different from YouTube or Udemy?", a: "YouTube is free but unstructured. Udemy has pre-recorded courses. We give you live mentors, real client projects, and a community that pushes you to execute. The demo is free — and you'll see the difference immediately. That's why 1,50,000+ chose us." },
+              { q: "When do sessions happen?", a: "Every Sunday, live on Zoom. 2 hours of interactive learning starting at 11 AM. The Zoom link is sent on WhatsApp. Recordings are shared if you miss a session." },
+              { q: "Will I get a certificate?", a: `Yes — complete the ${skill} program and receive a Sikhadenge Certificate of Completion that you can share on LinkedIn and add to your resume.` },
+              { q: "Can I get a job or freelance clients after this?", a: "Many of our students have. We focus on portfolio-worthy projects and real workflows — the exact things employers and clients look for." },
+            ].map((faq, i) => (
+              <details key={i} className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer font-semibold text-slate-900 list-none [&::-webkit-details-marker]:hidden select-none gap-4">
+                  <span className="text-sm sm:text-base">{faq.q}</span>
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform flex-shrink-0" />
+                </summary>
+                <div className="px-5 pb-5 text-slate-600 text-sm leading-relaxed border-t border-slate-100 pt-4">{faq.a}</div>
+              </details>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="mb-14 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-              Frequently asked questions
-            </h2>
-            <div className="space-y-5">
-              {rootFaqs.map((faq, i) => (
-                <details
-                  key={i}
-                  className="group rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_100%)] transition-all duration-200 open:bg-white open:ring-2 open:ring-blue-100 shadow-[0_10px_26px_rgba(15,23,42,0.04)]"
-                >
-                  <summary className="flex list-none cursor-pointer items-center justify-between px-6 py-6 text-base font-bold text-slate-900 sm:text-lg [&::-webkit-details-marker]:hidden">
-                    {faq.q}
-                    <ChevronDown className="h-5 w-5 text-slate-400 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-600" />
-                  </summary>
-                  <div className="px-6 pb-6 pt-2 text-sm leading-7 text-slate-600 sm:text-base">{faq.a}</div>
-                </details>
-              ))}
-            </div>
+      {/* ── STICKY MOBILE BOTTOM BAR ──────────────────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
+        <div className="bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+          <div className="flex gap-3">
+            <Link
+              href={registerLink}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 text-white font-black py-3.5 rounded-xl text-sm"
+            >
+              Join Free Demo <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href={waLink}
+              className="w-14 flex items-center justify-center bg-[#25D366] text-white rounded-xl"
+            >
+              <Phone className="w-5 h-5 fill-white" />
+            </Link>
           </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-[#07152E] px-4 py-20 text-white sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,42,0.9))] p-8 shadow-[0_24px_80px_rgba(2,6,23,0.45)] sm:p-10">
-            <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-200 sm:text-sm">
-                Final Next Step
-              </div>
-              <h2 className="mb-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
-                Start practical learning with Sikhadenge
-              </h2>
-              <p className="mb-8 text-sm leading-7 text-slate-300 sm:text-base">
-                Build real skill depth through structured learning, practical workflows, guided support, and connected topic pages. Start with the free masterclass, then move toward stronger execution, portfolio work, and career-ready capability.
-              </p>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <Link
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700 sm:text-base"
-                >
-                  Join Free AI Masterclass
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-                <Link
-                  href="/courses/ai-mastery"
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 sm:text-base"
-                >
-                  Explore Courses
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  const seoData = getGeneratedSeoData();
-  const generatedPage = seoData.find((s: any) => s.slug === params.skill);
-
-  if (generatedPage) {
-    const pageTitle = titleBase(generatedPage.title);
-    const relatedLinks = getRelatedGeneratedLinks(seoData, generatedPage);
-    const faqs = buildGeneratedFaqs(pageTitle, generatedPage.description, generatedPage.slug);
-    const sections = buildGeneratedSections(pageTitle, generatedPage.description, generatedPage.slug);
-
-    const faqSchema = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faqs.map((faq) => ({
-        "@type": "Question",
-        name: faq.q,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: faq.a,
-        },
-      })),
-    };
-
-    const courseSchema = {
-      "@context": "https://schema.org",
-      "@type": "Course",
-      name: pageTitle,
-      description: generatedPage.description,
-      provider: {
-        "@type": "Organization",
-        name: "Sikhadenge",
-        sameAs: "https://sikhadenge.in",
-      },
-    };
-
-    return (
-      <main className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-200">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }} />
-
-        <section className="relative overflow-hidden border-b border-slate-100 px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-white"></div>
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-5xl">
-              <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">
-                Premium Learning Page
-              </div>
-
-              <h1 className="mb-6 max-w-5xl text-4xl font-black leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem]">
-                {pageTitle}
-              </h1>
-
-              <p className="mb-10 max-w-4xl text-base font-medium leading-8 text-slate-600 sm:text-xl">
-                {sections.summary}
-              </p>
-
-              <div className="mb-6 flex flex-wrap gap-3">
-                {sections.audience ? (
-                  <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-                    Audience: {sections.audience}
-                  </div>
-                ) : null}
-                {sections.city ? (
-                  <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-                    City Focus: {sections.city}
-                  </div>
-                ) : null}
-                <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-                  Intent: {sections.intentLabel}
-                </div>
-              </div>
-
-              <div className="mb-16 flex flex-col gap-4 sm:flex-row">
-                <Link
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-[0_14px_40px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-1 hover:bg-blue-700 sm:text-lg"
-                >
-                  Join Free Masterclass
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-
-                <Link
-                  href="/courses/ai-mastery"
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-slate-50 sm:text-lg"
-                >
-                  Explore AI Path
-                </Link>
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-3">
-                {sections.highlights.map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.07)] transition hover:-translate-y-0.5"
-                  >
-                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-[0_10px_24px_rgba(37,99,235,0.10)]">
-                      <item.icon className="h-7 w-7" />
-                    </div>
-                    <h3 className="mb-2 font-bold text-slate-900">{item.title}</h3>
-                    <p className="text-sm leading-relaxed text-slate-500">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-slate-50 px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-12 max-w-4xl text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-              Why this page matters now
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              {sections.whyCards.map((feature, i) => (
-                <div
-                  key={i}
-                  className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-[0_8px_28px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-3 text-xl font-bold text-slate-900">{feature.title}</h3>
-                  <p className="text-slate-600">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-4xl">
-              <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-                Practical roadmap
-              </h2>
-              <p className="mb-12 text-base leading-8 text-slate-600 sm:text-lg">
-                Use a structured sequence instead of random tutorials. This helps you build stronger clarity, more practical execution, and better long-term results.
-              </p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-5">
-              {sections.roadmap.map((step, i) => (
-                <div
-                  key={i}
-                  className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]"
-                >
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">
-                    {i + 1}
-                  </div>
-                  <p className="text-sm font-medium leading-7 text-slate-700">{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-20">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-8 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Execution advantages
-            </h2>
-            <p className="mb-10 max-w-4xl text-slate-600">
-              These pages should not exist only for search visibility. They should also help learners understand practical direction, market relevance, and why structured execution matters.
-            </p>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {sections.executionCards.map((card, i) => (
-                <div
-                  key={i}
-                  className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_8px_28px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <card.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-3 text-xl font-bold text-slate-900">{card.title}</h3>
-                  <p className="text-slate-600">{card.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-20">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-8 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Explore related pages
-            </h2>
-            <p className="mb-10 text-slate-600">
-              Build stronger topic depth through connected learning pages, related search intents, and nearby opportunities within the same family.
-            </p>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {relatedLinks.map((linkData: any, i: number) => (
-                <Link
-                  key={i}
-                  href={`/${linkData.slug}`}
-                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-500 hover:bg-white hover:text-blue-600"
-                >
-                  {titleBase(linkData.title)}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-white px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="mb-14 text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
-              Frequently asked questions
-            </h2>
-            <div className="space-y-5">
-              {faqs.map((faq, i) => (
-                <details
-                  key={i}
-                  className="group rounded-[26px] border border-slate-200 bg-slate-50 transition-all duration-200 open:bg-white open:ring-2 open:ring-blue-100"
-                >
-                  <summary className="flex list-none cursor-pointer items-center justify-between p-6 text-base font-bold text-slate-900 [&::-webkit-details-marker]:hidden">
-                    {faq.q}
-                    <ChevronDown className="h-5 w-5 text-slate-400 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-600" />
-                  </summary>
-                  <div className="px-6 pb-6 pt-2 text-sm leading-7 text-slate-600 sm:text-base">{faq.a}</div>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-slate-100 bg-[#07152E] px-4 py-20 text-white sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,42,0.9))] p-8 shadow-[0_24px_80px_rgba(2,6,23,0.45)] sm:p-10">
-            <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-blue-200 sm:text-sm">
-                Final Next Step
-              </div>
-              <h2 className="mb-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
-                {sections.ctaTitle}
-              </h2>
-              <p className="mb-8 text-sm leading-7 text-slate-300 sm:text-base">{sections.ctaText}</p>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <Link
-                  href="/gen-ai-masterclass/register-one-step"
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700 sm:text-base"
-                >
-                  Join Free AI Masterclass
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-                <Link
-                  href="/courses/ai-mastery"
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 sm:text-base"
-                >
-                  Explore Courses
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  notFound();
+          <p className="text-center text-slate-400 text-xs mt-1.5">1,50,000+ students · Free · This Sunday</p>
+        </div>
+      </div>
+      <div className="h-24 sm:hidden bg-white" />
+    </main>
+  );
 }
