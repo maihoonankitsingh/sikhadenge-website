@@ -78,8 +78,8 @@ export const viewport: Viewport = {
   themeColor: "#0B1220",
 };
 
-const Header = dynamic(() => import("../components/Header"), { ssr: false });
-const Footer = dynamic(() => import("../components/Footer"), { ssr: false });
+const Header = dynamic(() => import("../components/Header"));
+const Footer = dynamic(() => import("../components/Footer"));
 
 export default function RootLayout({
   children,
