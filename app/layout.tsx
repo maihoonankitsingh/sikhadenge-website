@@ -92,6 +92,7 @@ export default function RootLayout({
         <MetaPixel />
         <JsonLd />
         <Header />
+        <div className="h-[82px]" aria-hidden="true" />
         {children}
         <Footer />
       </body>

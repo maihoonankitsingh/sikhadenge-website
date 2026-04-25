@@ -7,6 +7,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Header />
+      <div style={{ height: 82 }} aria-hidden="true" />
       <Component {...pageProps} />
     </>
   );
