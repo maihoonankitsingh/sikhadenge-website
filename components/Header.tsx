@@ -6,11 +6,9 @@ import { useState } from 'react'
 
 const nav = [
   { label: 'Home', href: '/' },
-  { label: 'Courses', href: '/courses' },
   { label: 'About', href: '/about-us' },
   { label: 'Contact', href: '/contact' },
   { label: 'Blog', href: '/blog' },
-  { label: 'Reviews', href: '/reviews' },
 ]
 
 function cx(...classes: Array<string | false | undefined | null>) {
