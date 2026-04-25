@@ -569,7 +569,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
           <p className="text-center text-slate-400 text-xs mt-1.5">1,50,000+ students · Free · This Sunday</p>
         </div>
       </div>
-      <div className="h-24 sm:hidden" />
+      <div className="h-24 sm:hidden bg-white" />
     </main>
   );
 }

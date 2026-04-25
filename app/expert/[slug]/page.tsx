@@ -309,7 +309,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
       </div>
 
       {/* Bottom padding for sticky CTA on mobile */}
-      <div className="h-20 sm:hidden" />
+      <div className="h-20 sm:hidden bg-white" />
 
     </main>
   );

@@ -18,7 +18,7 @@ const policyLinks = [
 
 export default function Footer() {
   return (
-    <footer className="mt-20 border-t border-slate-200 bg-white text-slate-900">
+    <footer className="border-t border-slate-200 bg-white text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr_1fr_1.1fr]">
           <div>
