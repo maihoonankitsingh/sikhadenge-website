@@ -99,8 +99,8 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${skill} Masterclass on Sikhadenge.`;
   const coreSkills = si?.skills ?? [`${skill} Fundamentals`, "Live Practice Sessions", "Real-World Projects", "Expert Mentorship"];
 
-  const courseSchema = { "@context": "https://schema.org", "@type": "Course", name: pageTitle, description: pageDesc, url: pageUrl, provider: { "@type": "EducationalOrganization", name: "Sikhadenge", url: "https://sikhadenge.in" }, educationalCredentialAwarded: "Certificate of Completion", inLanguage: ["en", "hi"], isAccessibleForFree: true, hasCourseInstance: { "@type": "CourseInstance", courseMode: isOnline ? "Online" : "Blended", ...(isOnline ? {} : { location: { "@type": "City", name: city } }), instructor: { "@type": "Person", name: "Sikhadenge Expert", worksFor: { "@type": "Organization", name: "Sikhadenge" } } } };
-  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [ { "@type": "Question", name: `Is the ${skill} program really free?`, acceptedAnswer: { "@type": "Answer", text: "Yes — entry to the masterclass and WhatsApp community is completely free." } }, { "@type": "Question", name: `Who should join this ${skill} program?`, acceptedAnswer: { "@type": "Answer", text: audience ? `Designed for ${audience} wanting practical ${skill} skills.` : "Professionals, freelancers, students, and business owners wanting real skills." } }, { "@type": "Question", name: "How is Sikhadenge different from Udemy or YouTube?", acceptedAnswer: { "@type": "Answer", text: "Live interactive sessions with real client projects. Not pre-recorded theory." } }, { "@type": "Question", name: "Will I get a certificate?", acceptedAnswer: { "@type": "Answer", text: "Yes — Sikhadenge Certificate of Completion, shareable on LinkedIn." } } ] };
+  const courseSchema = { "@context": "https://schema.org", "@type": "Course", name: pageTitle, description: pageDesc, url: pageUrl, provider: { "@type": "EducationalOrganization", name: "Sikhadenge", url: "https://sikhadenge.in" }, educationalCredentialAwarded: "Certificate of Completion", inLanguage: ["en", "hi"], isAccessibleForFree: false, offers: { "@type": "Offer", price: "0", priceCurrency: "INR", description: "Free demo masterclass — full paid batch available" }, hasCourseInstance: { "@type": "CourseInstance", courseMode: isOnline ? "Online" : "Blended", ...(isOnline ? {} : { location: { "@type": "City", name: city } }), instructor: { "@type": "Person", name: "Sikhadenge Expert", worksFor: { "@type": "Organization", name: "Sikhadenge" } } } };
+  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [ { "@type": "Question", name: `Is the ${skill} masterclass really free?`, acceptedAnswer: { "@type": "Answer", text: `Yes — the demo masterclass and WhatsApp community entry are completely free. After attending, you can optionally join the full paid ${skill} batch starting from ₹12,000.` } }, { "@type": "Question", name: `Who should join this ${skill} program?`, acceptedAnswer: { "@type": "Answer", text: audience ? `Designed for ${audience} wanting practical ${skill} skills.` : "Professionals, freelancers, students, and business owners wanting real skills." } }, { "@type": "Question", name: "How is Sikhadenge different from Udemy or YouTube?", acceptedAnswer: { "@type": "Answer", text: "Live interactive sessions with real client projects. Not pre-recorded theory." } }, { "@type": "Question", name: "Will I get a certificate?", acceptedAnswer: { "@type": "Answer", text: "Yes — Sikhadenge Certificate of Completion, shareable on LinkedIn." } } ] };
   const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [ { "@type": "ListItem", position: 1, name: "Home", item: "https://sikhadenge.in" }, { "@type": "ListItem", position: 2, name: toTitle(skill), item: pageUrl } ] };
 
   return (
@@ -193,7 +193,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
                 href={registerLink}
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-4 rounded-xl text-lg transition-all"
               >
-                Enroll Free Now <ArrowRight className="w-5 h-5" />
+                Join Free Demo <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href={waLink}
@@ -208,16 +208,15 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
           <div className="hidden lg:block sticky top-24 self-start">
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
               {/* Card top */}
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white">
+              <div className="bg-[#0B1220] p-6 text-white">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-sm font-semibold text-blue-100">Next session: This Sunday</span>
+                  <span className="text-sm font-semibold text-slate-300">Next session: This Sunday</span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-4xl font-black">FREE</span>
-                  <span className="text-blue-200 text-sm line-through">Worth ₹12,000</span>
+                  <span className="text-3xl font-black text-green-400">Free Demo Class</span>
                 </div>
-                <p className="text-blue-100 text-sm">Limited seats per batch</p>
+                <p className="text-slate-400 text-sm">Full Course starts from <span className="text-white font-bold">₹12,000</span></p>
               </div>
 
               {/* Card body */}
@@ -228,7 +227,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
                     { icon: Globe,    label: "Mode",       val: isOnline ? "Live on Zoom (Online)" : `Live in ${city}` },
                     { icon: Users,    label: "Community",  val: "1,50,000+ Members" },
                     { icon: Award,    label: "Certificate",val: "Yes, Shareable on LinkedIn" },
-                    { icon: Shield,   label: "Fee",        val: "₹0 — Completely Free" },
+                    { icon: Shield,   label: "Demo Class",  val: "₹0 — Free Entry" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -246,7 +245,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
                   href={registerLink}
                   className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl text-lg transition-all mb-3"
                 >
-                  Enroll Free Now <ArrowRight className="w-5 h-5" />
+                  Join Free Demo <ArrowRight className="w-5 h-5" />
                 </Link>
 
                 <Link
@@ -475,7 +474,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
                   ["Mentor feedback", "✅", "❌", "❌"],
                   ["Community support", "✅", "Limited", "Limited"],
                   ["Certificate", "✅", "❌", "✅"],
-                  ["Price", "FREE", "Free", "₹999–₹20,000"],
+                  ["Demo Class", "FREE", "Free", "Paid"],
                 ].map(([feature, sd, yt, ud], i) => (
                   <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
                     <td className="p-4 font-medium text-slate-700">{feature}</td>
@@ -502,7 +501,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
             Your career won't change<br />until <span className="text-blue-400">you do.</span>
           </h2>
           <p className="text-slate-400 text-lg mb-4 max-w-xl mx-auto">
-            Join 1,50,000+ professionals who chose practical learning over passive watching. Start this Sunday. Free.
+            Join 1,50,000+ professionals who chose practical learning over passive watching. Free demo this Sunday on Zoom.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
             <Link
@@ -531,9 +530,9 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
           </div>
           <div className="space-y-2">
             {[
-              { q: `Is the ${skill} program really free?`, a: `Yes — 100% free. Entry, community, and live sessions are all free. No hidden charges, no surprise fees.` },
+              { q: `Is the ${skill} masterclass really free?`, a: `Yes — the demo masterclass and community entry are 100% free. After attending, if you want to join the full paid batch with assignments, projects, and mentorship, course fees apply (starting ₹12,000). No hidden charges in the free session.` },
               { q: `I'm a complete beginner. Can I join?`, a: `Absolutely. Our program starts from zero. ${audience ? `Especially designed for ${audience}.` : "No prior experience needed."} You'll learn step-by-step with real examples.` },
-              { q: "How is this different from YouTube or Udemy?", a: "YouTube gives you theory. Udemy gives you pre-recorded courses. We give you live mentors, real client projects, and a community that pushes you to execute. That's why 1,50,000+ chose us." },
+              { q: "How is this different from YouTube or Udemy?", a: "YouTube is free but unstructured. Udemy has pre-recorded courses. We give you live mentors, real client projects, and a community that pushes you to execute. The demo is free — and you'll see the difference immediately. That's why 1,50,000+ chose us." },
               { q: "When do sessions happen?", a: "Every Sunday, live on Zoom. 2 hours of interactive learning starting at 11 AM. The Zoom link is sent on WhatsApp. Recordings are shared if you miss a session." },
               { q: "Will I get a certificate?", a: `Yes — complete the ${skill} program and receive a Sikhadenge Certificate of Completion that you can share on LinkedIn and add to your resume.` },
               { q: "Can I get a job or freelance clients after this?", a: "Many of our students have. We focus on portfolio-worthy projects and real workflows — the exact things employers and clients look for." },
@@ -558,7 +557,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
               href={registerLink}
               className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 text-white font-black py-3.5 rounded-xl text-sm"
             >
-              Enroll Free <ArrowRight className="w-4 h-4" />
+              Join Free Demo <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href={waLink}

@@ -78,6 +78,7 @@ export default function SkillPopup({ skill, waLink }: Props) {
           to   { opacity: 1; transform: translateY(0)    scale(1);    }
         }
         .sd-popup-card { animation: sdPopupIn 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Overlay */}
@@ -181,20 +182,22 @@ export default function SkillPopup({ skill, waLink }: Props) {
                   <CheckCircle size={28} color="#16a34a" />
                 </div>
                 <h3 style={{ fontWeight: 900, fontSize: 18, color: "#0f172a", marginBottom: 6 }}>Registered! 🎉</h3>
-                <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>
-                  Zoom link bheja jayega WhatsApp pe class se pehle.
+                <p style={{ color: "#64748b", fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
+                  Zoom link WhatsApp pe milega. Ab full masterclass ke liye register karein:
                 </p>
                 <Link
                   href={REGISTER_LINK}
                   onClick={dismiss}
                   style={{
-                    display: "block", width: "100%", background: "#2563eb",
-                    color: "#fff", fontWeight: 800, padding: "13px 0",
-                    borderRadius: 12, textAlign: "center", fontSize: 14,
+                    display: "block", width: "100%",
+                    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                    color: "#fff", fontWeight: 900, padding: "16px 0",
+                    borderRadius: 12, textAlign: "center", fontSize: 16,
                     marginBottom: 10, textDecoration: "none",
+                    boxShadow: "0 4px 18px rgba(37,99,235,0.4)",
                   }}
                 >
-                  Complete Enrollment →
+                  🎓 Complete Enrollment Now →
                 </Link>
                 <Link
                   href={waLink}
@@ -290,11 +293,32 @@ export default function SkillPopup({ skill, waLink }: Props) {
                 >
                   {status === "loading"
                     ? <span style={{ width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
-                    : <><span>Join Free Class</span><ArrowRight size={16} /></>
+                    : <><span>Register & Join Free Class</span><ArrowRight size={16} /></>
                   }
                 </button>
 
-                <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 11, marginTop: 10 }}>
+                <div style={{ margin: "10px 0 4px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                  <span style={{ color: "#94a3b8", fontSize: 11 }}>ya</span>
+                  <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                </div>
+
+                <Link
+                  href={REGISTER_LINK}
+                  onClick={dismiss}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    width: "100%", background: "#f8fafc",
+                    border: "1.5px solid #e2e8f0", color: "#2563eb",
+                    fontWeight: 700, fontSize: 13,
+                    padding: "11px 0", borderRadius: 12,
+                    textDecoration: "none",
+                  }}
+                >
+                  Seedha Register Karein <ArrowRight size={13} />
+                </Link>
+
+                <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 11, marginTop: 8 }}>
                   🔒 No payment · No spam · Cancel anytime
                 </p>
               </form>
@@ -303,7 +327,6 @@ export default function SkillPopup({ skill, waLink }: Props) {
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
 }
