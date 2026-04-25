@@ -19,7 +19,7 @@ const TOPIC_COMPACT = {
   jobs: "Jobs Guide",
   trends: "Trends Guide",
   "common-mistakes": "Common Mistakes",
-  "beginner-mistakes": "Beginner Mistakes",
+  "beginner-mistakes": "Beginner Tips",
   "advanced-techniques": "Advanced Tips",
   "best-projects": "Best Projects",
   "best-practices": "Best Practices",
@@ -49,9 +49,15 @@ function finalizeTitle(title) {
     .replace(/Working Professionals/g, "Working Pros")
     .replace(/Small Business Owners/g, "Small Businesses")
     .replace(/Advanced Techniques/g, "Advanced Tips")
-    .replace(/Mistakes for Beginners/g, "Beginner Mistakes")
+    .replace(/Mistakes for Beginners/g, "Beginner Tips")
+    .replace(/Lead Generation/g, "Lead Gen")
+    .replace(/Content Planning/g, "Content Plan")
+    .replace(/Client Delivery/g, "Client Work")
+    .replace(/ for Students and Freelancers/g, " for Students + Freelancers")
     .replace(/: Jobs \(/g, ": Jobs Guide (")
-    .replace(/: Trends \(/g, ": Trends Guide (");
+    .replace(/: Trends \(/g, ": Trends Guide (")
+    .replace(/Best AI Tools for Lead Gen Guide/g, "Best AI Tools for Lead Gen Guide 2026");
+  if (next.length < 35 && /\b(SEO|AEO|GEO)$/i.test(next)) next = `${next} Guide`;
   if (next.length < 35 && /: (SEO|AEO|GEO) for /i.test(next) && !/Guide/i.test(next)) next = next.replace(/ for /i, " Guide for ");
   return next.replace(/\s+/g, " ").trim();
 }
