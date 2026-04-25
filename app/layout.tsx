@@ -92,7 +92,7 @@ export default function RootLayout({
         <MetaPixel />
         <JsonLd />
         <Header />
-        <div className="pt-8">
+        <div style={{ paddingTop: 45 }}>
           {children}
         </div>
         <Footer />

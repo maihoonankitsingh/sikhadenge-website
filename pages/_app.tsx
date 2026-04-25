@@ -7,7 +7,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Header />
-      <div style={{ paddingTop: 32 }}>
+      <div style={{ paddingTop: 45 }}>
         <Component {...pageProps} />
       </div>
     </>
