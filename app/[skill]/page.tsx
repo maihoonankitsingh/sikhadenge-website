@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -59,9 +58,9 @@ export async function generateStaticParams() {
 
 export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
   const si = skillsData.find((s) => s.slug === params.skill), entry = findEntry(params.skill);
-  if (!si && !entry) return { title: "Not Found", robots: { index: false } };
-  const title = entry ? uniqueTitle(entry, si) : `How to Become a ${si!.title} | Sikhadenge`;
-  const description = entry ? uniqueDesc(entry, si) : `Learn ${si!.title} with live mentor-led training at Sikhadenge. Join 1,50,000+ students.`;
+  const fallbackSkill = toTitle(params.skill.replace(/-/g, " "));
+  const title = entry ? uniqueTitle(entry, si) : (si ? `How to Become a ${si.title} | Sikhadenge` : `${fallbackSkill} — Free Masterclass | Sikhadenge`);
+  const description = entry ? uniqueDesc(entry, si) : (si ? `Learn ${si.title} with live mentor-led training at Sikhadenge. Join 1,50,000+ students.` : `Master ${fallbackSkill} with Sikhadenge's free live masterclass. Join 1,50,000+ professionals learning practical skills.`);
   const url = `https://sikhadenge.in/${params.skill}`;
   return { title, description, alternates: { canonical: url }, openGraph: { type: "article", url, title, description } };
 }
@@ -87,14 +86,14 @@ const MODULES = [
 export default function SkillPage({ params }: { params: { skill: string } }) {
   const si = skillsData.find((s) => s.slug === params.skill);
   const entry = findEntry(params.skill);
-  if (!si && !entry) return notFound();
+  const fallbackSkill = toTitle(params.skill.replace(/-/g, " "));
 
   const city     = entry ? entryCity(entry) : "Online";
-  const skill    = entry ? (entrySkill(entry) || si?.title || params.skill) : si!.title;
+  const skill    = entry ? (entrySkill(entry) || si?.title || fallbackSkill) : (si?.title || fallbackSkill);
   const audience = entry ? entryAudience(entry) : null;
   const isOnline = !city || city === "Online" || city === "Remote";
-  const pageTitle = entry ? uniqueTitle(entry, si) : `How to Become a ${si!.title}`;
-  const pageDesc  = entry ? uniqueDesc(entry, si) : si!.description;
+  const pageTitle = entry ? uniqueTitle(entry, si) : (si ? `How to Become a ${si.title}` : `${fallbackSkill} — Free Masterclass`);
+  const pageDesc  = entry ? uniqueDesc(entry, si) : (si ? si.description : `Master ${fallbackSkill} with Sikhadenge's free live masterclass. Join 1,50,000+ professionals.`);
   const pageUrl   = `https://sikhadenge.in/${params.skill}`;
   const registerLink = "/gen-ai-masterclass/register-one-step";
   const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${skill} Masterclass on Sikhadenge.`;

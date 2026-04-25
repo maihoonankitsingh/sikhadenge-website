@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, Star, CheckCircle, Globe, Zap, Users, Phone, ChevronDown, MapPin, BookOpen, Award, TrendingUp } from "lucide-react";
@@ -14,9 +13,14 @@ export async function generateStaticParams() {
 export const dynamicParams = true;
 export const revalidate = 2592000; // 30 days cache
 
+function toTitleCase(s: string) { return s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()); }
+function makeFallback(slug: string) {
+  const title = toTitleCase(slug);
+  return { slug, title, description: `Learn ${title} with expert guidance at Sikhadenge. Live sessions, practical training, 1,50,000+ students.`, skill: title.split(" ")[0], industry: "Technology", city: "India" };
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const pageData = generatedPages.find((p) => p.slug === params.slug);
-  if (!pageData) return { title: "Not Found", robots: { index: false } };
+  const pageData = generatedPages.find((p) => p.slug === params.slug) ?? makeFallback(params.slug);
   const url = `https://sikhadenge.in/expert/${pageData.slug}`;
   return {
     title: `${pageData.title} | Sikhadenge`,
@@ -31,9 +35,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default function ExpertPage({ params }: { params: { slug: string } }) {
-  const pageData = generatedPages.find((p) => p.slug === params.slug);
-
-  if (!pageData) return notFound();
+  const pageData = generatedPages.find((p) => p.slug === params.slug) ?? makeFallback(params.slug);
 
   const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${pageData.skill} Masterclass on Sikhadenge.`;
 
