@@ -23,6 +23,7 @@ type BlogManifest = {
 };
 
 let cachedBlogs: BlogItem[] | null = null;
+let cachedBlogBySlug: Map<string, BlogItem> | null = null;
 
 function getBlogsFilePath() {
   return path.join(process.cwd(), "data", "blogs.json");
@@ -113,11 +114,16 @@ export function getBlogs(forceRefresh = false): BlogItem[] {
   }
 
   cachedBlogs = sanitizeBlogs(readRawBlogs());
+  cachedBlogBySlug = new Map(cachedBlogs.map((item) => [item.slug, item]));
   return cachedBlogs;
 }
 
 export function getBlogBySlug(slug: string) {
-  return getBlogs().find((item) => item.slug === slug);
+  if (!cachedBlogBySlug) {
+    getBlogs();
+  }
+
+  return cachedBlogBySlug?.get(slug);
 }
 
 export function getBlogSlugs() {

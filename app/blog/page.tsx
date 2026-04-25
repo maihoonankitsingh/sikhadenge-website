@@ -9,7 +9,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
   description:
-    "Explore 100,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
+    "Explore 110,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
   alternates: {
     canonical: `${BASE_URL}/blog`,
   },
@@ -148,6 +148,21 @@ export default function BlogHubPage() {
             and digital growth systems.
           </p>
 
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/gen-ai-masterclass/register-one-step"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-blue-800 shadow-[0_12px_30px_rgba(15,23,42,0.22)] transition hover:-translate-y-0.5 hover:bg-blue-50"
+            >
+              Join Free AI Masterclass <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              Explore AI Courses
+            </Link>
+          </div>
+
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
@@ -183,6 +198,28 @@ export default function BlogHubPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 rounded-[28px] border border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#eff6ff_100%)] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <div className="grid gap-5 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                High Intent Learning Path
+              </p>
+              <h2 className="mt-3 text-2xl font-black text-slate-900">
+                ChatGPT, Canva AI, Claude, AI images, reels, and lead-generation topics ko practical training se connect karo.
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Blog reader ko next step clear milna chahiye: guide padho, workflow samjho, free masterclass join karo, aur real project output banao.
+              </p>
+            </div>
+            <Link
+              href="/gen-ai-masterclass/register-one-step"
+              className="inline-flex justify-center rounded-full bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-blue-800"
+            >
+              Register Free Now
+            </Link>
+          </div>
+        </div>
+
         <div className="grid gap-5 md:grid-cols-3">
           <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
             <Search className="h-8 w-8 text-blue-700" />

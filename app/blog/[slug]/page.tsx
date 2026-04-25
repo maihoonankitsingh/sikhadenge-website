@@ -31,6 +31,7 @@ type ParsedSlug = {
 };
 
 const BASE_URL = "https://sikhadenge.in";
+const PRE_RENDERED_BLOG_COUNT = 300;
 
 const audienceMap: Record<string, string> = {
   students: "Students",
@@ -379,7 +380,7 @@ function getRelatedPosts(basePost: BlogItem, allPosts: BlogItem[]) {
 
 export async function generateStaticParams() {
   return getBlogs()
-    .slice(0, 1200)
+    .slice(0, PRE_RENDERED_BLOG_COUNT)
     .map((post) => ({ slug: post.slug }));
 }
 
@@ -605,6 +606,21 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
             {intro}
           </p>
 
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/gen-ai-masterclass/register-one-step"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-blue-800 shadow-[0_12px_30px_rgba(15,23,42,0.22)] transition hover:-translate-y-0.5 hover:bg-blue-50"
+            >
+              Register Free AI Masterclass <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              See AI Courses
+            </Link>
+          </div>
+
           <div className="mt-6 flex flex-wrap gap-3">
             {parsed.keywordCluster.slice(0, 6).map((keyword) => (
               <span
@@ -635,9 +651,9 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
 
             <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
               <TrendingUp className="h-7 w-7 text-blue-200" />
-              <div className="mt-4 text-lg font-black">Career and earning angle</div>
+              <div className="mt-4 text-lg font-black">Lead and earning angle</div>
               <p className="mt-2 text-sm leading-7 text-blue-50/75">
-                Useful for roles, projects, portfolio work, and growth systems.
+                Useful for registrations, client work, portfolio proof, and growth systems.
               </p>
             </div>
           </div>
