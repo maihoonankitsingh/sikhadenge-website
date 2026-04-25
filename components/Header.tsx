@@ -25,7 +25,7 @@ export default function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0B1220]/88 backdrop-blur">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur" style={{ backgroundColor: 'rgba(11,18,32,0.92)' }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-[82px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-4">
