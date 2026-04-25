@@ -112,7 +112,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
       <SkillPopup skill={skill} waLink={waLink} />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="bg-[#0B1220] pt-20 pb-0 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="bg-[#0B1220] pt-6 pb-0 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto pt-4 pb-6">
           <p className="text-slate-400 text-sm">

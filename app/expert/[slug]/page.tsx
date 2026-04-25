@@ -108,7 +108,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
       />
 
       {/* ── 1. HERO ── */}
-      <section className="relative pt-28 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-slate-100">
+      <section className="relative pt-6 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-slate-100">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/60 via-white to-white -z-10" />
 
         <div className="max-w-7xl mx-auto">
