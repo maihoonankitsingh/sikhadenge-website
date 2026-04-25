@@ -10,6 +10,8 @@ export async function GET() {
     `${baseUrl}/sitemap-hindi.xml`,
     `${baseUrl}/sitemap-blogs-1.xml`,
     `${baseUrl}/sitemap-blogs-2.xml`,
+    `${baseUrl}/sitemap-blogs-3.xml`,
+    `${baseUrl}/sitemap-blogs-4.xml`,
     `${baseUrl}/sitemap-tools.xml`,
   ];
 

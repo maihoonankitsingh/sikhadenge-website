@@ -9,7 +9,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
   description:
-    "Explore 25,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
+    "Explore 30,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
   alternates: {
     canonical: `${BASE_URL}/blog`,
   },

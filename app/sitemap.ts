@@ -45,12 +45,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  const careerRoutes: MetadataRoute.Sitemap = skillsData.map((skill) => ({
-    url: `${BASE}/career/${skill.slug}`,
+  const skillRoutes: MetadataRoute.Sitemap = skillsData.map((skill) => ({
+    url: `${BASE}/${skill.slug}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...blogRoutes, ...careerRoutes, ...expertRoutes];
+  return [...staticRoutes, ...blogRoutes, ...skillRoutes, ...expertRoutes];
 }
