@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   AlertTriangle,
@@ -32,6 +32,13 @@ type ParsedSlug = {
 
 const BASE_URL = "https://sikhadenge.in";
 const PRE_RENDERED_BLOG_COUNT = 300;
+
+function getYearCanonicalSlug(slug: string) {
+  if (/-in-\d{4}$/.test(slug)) return null;
+
+  const canonicalSlug = `${slug}-in-2026`;
+  return getBlogBySlug(canonicalSlug) ? canonicalSlug : null;
+}
 
 const audienceMap: Record<string, string> = {
   students: "Students",
@@ -395,6 +402,29 @@ export async function generateMetadata({
   const post = getBlogBySlug(params.slug);
 
   if (!post) {
+    const canonicalSlug = getYearCanonicalSlug(params.slug);
+    const canonicalPost = canonicalSlug ? getBlogBySlug(canonicalSlug) : null;
+
+    if (canonicalSlug && canonicalPost) {
+      const parsed = parseSlug(canonicalSlug, canonicalPost);
+      const description =
+        canonicalPost.excerpt ||
+        `${canonicalPost.title} practical guide with tools, workflow, FAQs, earning angle, and execution clarity for ${parsed.audienceLabel.toLowerCase()}.`;
+
+      return {
+        title: `${canonicalPost.title} | Sikhadenge`,
+        description,
+        alternates: {
+          canonical: `${BASE_URL}/blog/${canonicalSlug}`,
+        },
+        keywords: parsed.keywordCluster,
+        robots: {
+          index: true,
+          follow: true,
+        },
+      };
+    }
+
     return {
       title: "Blog Article Not Found | Sikhadenge",
       robots: {
@@ -447,6 +477,11 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
   const post = getBlogBySlug(params.slug);
 
   if (!post) {
+    const canonicalSlug = getYearCanonicalSlug(params.slug);
+    if (canonicalSlug) {
+      permanentRedirect(`/blog/${canonicalSlug}`);
+    }
+
     notFound();
   }
 
