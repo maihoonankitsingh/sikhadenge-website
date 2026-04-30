@@ -4,10 +4,6 @@ export async function GET() {
 
   const sitemaps = [
     `${baseUrl}/sitemap-static.xml`,
-    `${baseUrl}/sitemap-prompts.xml`,
-    `${baseUrl}/sitemap-compare.xml`,
-    `${baseUrl}/sitemap-expert.xml`,
-    `${baseUrl}/sitemap-hindi.xml`,
     `${baseUrl}/sitemap-blogs-1.xml`,
     `${baseUrl}/sitemap-blogs-2.xml`,
     `${baseUrl}/sitemap-blogs-3.xml`,
@@ -15,6 +11,13 @@ export async function GET() {
     `${baseUrl}/sitemap-blogs-4d.xml`,
     `${baseUrl}/sitemap-blogs-4e.xml`,
     `${baseUrl}/sitemap-blogs-5.xml`,
+    `${baseUrl}/sitemap-skills-1.xml`,
+    `${baseUrl}/sitemap-skills-2.xml`,
+    `${baseUrl}/sitemap-skills-3.xml`,
+    `${baseUrl}/sitemap-expert.xml`,
+    `${baseUrl}/sitemap-prompts.xml`,
+    `${baseUrl}/sitemap-compare.xml`,
+    `${baseUrl}/sitemap-hindi.xml`,
     `${baseUrl}/sitemap-tools.xml`,
   ];
 
