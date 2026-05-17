@@ -19,15 +19,20 @@ function makeFallback(slug: string) {
   return { slug, title, description: `Learn ${title} with expert guidance at Sikhadenge. Live sessions, practical training, 1,50,000+ students.`, skill: title.split(" ")[0], industry: "Technology", city: "India" };
 }
 
+function stripSikhadengeBrand(title: string) {
+  return title.replace(/(\s*\|\s*Sikhadenge)+$/gi, "").trim();
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const pageData = generatedPages.find((p) => p.slug === params.slug) ?? makeFallback(params.slug);
+  const title = stripSikhadengeBrand(pageData.title || "Expert Guide");
   const url = `https://sikhadenge.in/expert/${pageData.slug}`;
   return {
-    title: `${pageData.title} | Sikhadenge`,
+    title,
     description: pageData.description,
     alternates: { canonical: url },
     openGraph: {
-      title: `${pageData.title} | Sikhadenge`,
+      title: `${title} | Sikhadenge`,
       description: pageData.description,
       url,
     },
@@ -36,6 +41,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default function ExpertPage({ params }: { params: { slug: string } }) {
   const pageData = generatedPages.find((p) => p.slug === params.slug) ?? makeFallback(params.slug);
+  const cleanTitle = stripSikhadengeBrand(pageData.title);
 
   const waLink = `https://wa.me/918808505575?text=Hi, I want to join the free ${pageData.skill} Masterclass on Sikhadenge.`;
 
@@ -81,7 +87,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: pageData.title,
+    name: cleanTitle,
     description: pageData.description,
     url: `https://sikhadenge.in/expert/${pageData.slug}`,
     provider: {
@@ -126,7 +132,7 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
 
             {/* H1 */}
             <h1 className="text-5xl sm:text-6xl lg:text-[4.2rem] font-black tracking-tight text-slate-900 leading-[1.1] mb-6">
-              {pageData.title}
+              {cleanTitle}
             </h1>
 
             <p className="text-xl text-slate-600 leading-relaxed mb-10 max-w-3xl font-medium">
