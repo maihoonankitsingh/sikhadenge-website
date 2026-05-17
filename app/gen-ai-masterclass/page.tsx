@@ -2,6 +2,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
+export const metadata = {
+  alternates: {
+    canonical: "/gen-ai-masterclass",
+  },
+};
+
+
 import PageOverrides from "./_pageOverrides";
 import { headers } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
