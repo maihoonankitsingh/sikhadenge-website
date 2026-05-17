@@ -24,7 +24,7 @@ import HubInternalLinks from "@/components/seo/HubInternalLinks";
 export const metadata: Metadata = {
   title: "AI Tools for Modern Digital Work",
   description:
-    "Explore practical AI tools for content, design, video, marketing, websites, and workflows, and understand how Sikhadenge connects these tools to real digital execution for students, freelancers, creators, and working professionals in India.",
+    "Explore practical AI tools for content, design, video, marketing, websites, and automation workflows for digital work in India.",
   alternates: {
     canonical: "https://sikhadenge.in/ai-tools",
   },
