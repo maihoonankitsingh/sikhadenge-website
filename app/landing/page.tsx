@@ -17,7 +17,7 @@ const CONFIG = {
     subheadline:
       "Join 150,000+ learners who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
     duration: "8 WEEKS",
-    batchDate: "NEXT BATCH SOON",
+    batchDate: "TODAY LIVE MASTERCLASS",
     timing: "3 HRS/DAY",
     learnerCount: "5000+",
   },
