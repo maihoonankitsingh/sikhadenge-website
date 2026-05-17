@@ -412,7 +412,7 @@ export async function generateMetadata({
         `${canonicalPost.title} practical guide with tools, workflow, FAQs, earning angle, and execution clarity for ${parsed.audienceLabel.toLowerCase()}.`;
 
       return {
-        title: `${canonicalPost.title} | Sikhadenge`,
+        title: canonicalPost.title,
         description,
         alternates: {
           canonical: `${BASE_URL}/blog/${canonicalSlug}`,
@@ -426,7 +426,7 @@ export async function generateMetadata({
     }
 
     return {
-      title: "Blog Article Not Found | Sikhadenge",
+      title: "Blog Article Not Found",
       robots: {
         index: false,
         follow: false,
@@ -441,7 +441,7 @@ export async function generateMetadata({
     `${title} practical guide with tools, workflow, FAQs, earning angle, and execution clarity for ${parsed.audienceLabel.toLowerCase()}.`;
 
   return {
-    title: `${title} | Sikhadenge`,
+    title,
     description,
     alternates: {
       canonical: `${BASE_URL}/blog/${params.slug}`,

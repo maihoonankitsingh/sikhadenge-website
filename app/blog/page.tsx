@@ -7,7 +7,7 @@ const BASE_URL = "https://sikhadenge.in";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
+  title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows",
   description:
     "Explore 110,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
   alternates: {
