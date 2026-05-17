@@ -18,7 +18,7 @@ import {
 import HubInternalLinks from "@/components/seo/HubInternalLinks";
 
 export const metadata: Metadata = {
-  title: "AI Skills for Modern Digital Work | Sikhadenge",
+  title: "AI Skills for Modern Digital Work",
   description:
     "Explore the most useful AI skills for students, freelancers, creators, and working professionals in India. Learn how content, design, video, marketing, websites, tools, workflows, and automation fit into one practical AI skill system at Sikhadenge.",
   alternates: {

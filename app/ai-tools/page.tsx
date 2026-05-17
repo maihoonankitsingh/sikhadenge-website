@@ -22,7 +22,7 @@ import FaqBlock, { type FaqItem } from "@/app/components/brand/FaqBlock";
 import HubInternalLinks from "@/components/seo/HubInternalLinks";
 
 export const metadata: Metadata = {
-  title: "AI Tools for Modern Digital Work | Sikhadenge",
+  title: "AI Tools for Modern Digital Work",
   description:
     "Explore practical AI tools for content, design, video, marketing, websites, and workflows, and understand how Sikhadenge connects these tools to real digital execution for students, freelancers, creators, and working professionals in India.",
   alternates: {
