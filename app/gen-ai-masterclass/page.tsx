@@ -3,6 +3,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 export const metadata = {
+  description: "Join Sikhadenge Gen AI Masterclass to learn practical AI skills with live mentor-led sessions, tools, projects, and career guidance.",
   alternates: {
     canonical: "/gen-ai-masterclass",
   },

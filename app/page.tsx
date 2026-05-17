@@ -10,7 +10,7 @@ import AnswerEngineBlock from "@/app/components/AnswerEngineBlock";
 export const metadata: Metadata = {
   title: "Sikhadenge | India-Focused AI and Skill Learning Platform",
   description:
-    "Sikhadenge is an India-focused AI and skill learning platform for students, freelancers, creators, and working professionals. Learn practical AI skills across design, video, content, marketing, websites, automation, and modern digital workflows.",
+    "Learn practical AI skills in India for content, design, video, marketing, websites, automation, and modern digital workflows.",
   keywords: [
     "AI course India",
     "AI Expert Professional Program",
