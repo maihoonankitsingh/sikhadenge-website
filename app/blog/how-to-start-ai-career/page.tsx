@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Lightbulb, Sparkles, Workflow } from "lucide-react";
+import { StaticBlogSeoSignals } from "@/components/StaticBlogSeoSignals";
 
 export const metadata: Metadata = {
   title: "How To Start AI Career | Sikhadenge",
@@ -59,6 +60,20 @@ function SectionTitle({ title, desc }: { title: string; desc?: string }) {
 export default function Page() {
   return (
     <main className="bg-[#F8FAFC] text-[#071533]">
+        {/* STATIC_BLOG_SCHEMA_PATCH_V1 */}
+        <StaticBlogSeoSignals
+          slug="how-to-start-ai-career"
+          title="How To Start AI Career"
+          description="A practical beginner-friendly guide to starting an AI career with useful tools, workflow thinking, portfolio projects, and real digital work."
+          topic="how to start an AI career"
+          faqs={[
+            { question: "How can a beginner start an AI career?", answer: "A beginner can start by learning AI fundamentals, choosing one practical workflow, building portfolio projects, and applying AI inside real digital tasks." },
+            { question: "Do you need coding to start an AI career?", answer: "Coding is useful for some AI roles, but many AI careers start with content, design, video, marketing, automation, and workflow skills without deep coding." },
+            { question: "What should students build for an AI career?", answer: "Students should build proof-of-work projects such as content systems, AI-assisted designs, video workflows, research summaries, automations, and practical case studies." }
+          ]}
+        />
+
+
       <section className="border-b border-[#E4ECF7] bg-[linear-gradient(180deg,#F8FBFF_0%,#F8FAFC_100%)]">
         <div className="mx-auto max-w-[1080px] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
           <Pill>AI Guide</Pill>
