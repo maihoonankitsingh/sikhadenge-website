@@ -51,3 +51,10 @@ public/reviews/videos/
 *.pre_restore*
 *.save.*
 data/tmp/
+
+# Sikhadenge local/generated heavy artifacts
+data/generated/
+backups/
+tsconfig.tsbuildinfo
+*.broken_*
+*.disabled_*

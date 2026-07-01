@@ -1,9 +1,8 @@
+export const revalidate = 86400;
 import type { Metadata } from "next";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-export const fetchCache = "force-no-store";
 
 type PageProps = {
   params: {

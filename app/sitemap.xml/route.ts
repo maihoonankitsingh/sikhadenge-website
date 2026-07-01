@@ -1,41 +1,40 @@
-export async function GET() {
-  const now = new Date().toISOString();
-  const baseUrl = "https://sikhadenge.in";
+const BASE_URL = "https://sikhadenge.in";
 
-  const sitemaps = [
-    `${baseUrl}/sitemap-static.xml`,
-    `${baseUrl}/sitemap-blogs-1.xml`,
-    `${baseUrl}/sitemap-blogs-2.xml`,
-    `${baseUrl}/sitemap-blogs-3.xml`,
-    `${baseUrl}/sitemap-blogs-4c.xml`,
-    `${baseUrl}/sitemap-blogs-4d.xml`,
-    `${baseUrl}/sitemap-blogs-4e.xml`,
-    `${baseUrl}/sitemap-blogs-5.xml`,
-    `${baseUrl}/sitemap-skills-1.xml`,
-    `${baseUrl}/sitemap-skills-2.xml`,
-    `${baseUrl}/sitemap-skills-3.xml`,
-    `${baseUrl}/sitemap-expert.xml`,
-    `${baseUrl}/sitemap-prompts.xml`,
-    `${baseUrl}/sitemap-compare.xml`,
-    `${baseUrl}/sitemap-hindi.xml`,
-    `${baseUrl}/sitemap-tools.xml`,
-  ];
+const SITEMAPS = [
+  "sitemap-static.xml",
+  "sitemap-blogs-1.xml",
+  "sitemap-blogs-2.xml",
+  "sitemap-blogs-3.xml",
+  "sitemap-blogs-4c.xml",
+  "sitemap-blogs-4d.xml",
+  "sitemap-blogs-4e.xml",
+  "sitemap-blogs-5.xml",
+  "sitemap-skills-1.xml",
+  "sitemap-skills-2.xml",
+  "sitemap-skills-3.xml",
+  "sitemap-expert.xml",
+  "sitemap-prompts.xml",
+  "sitemap-compare.xml",
+  "sitemap-hindi.xml",
+  "sitemap-tools.xml",
+  "sitemap-learn.xml",
+];
+
+export async function GET() {
+  const lastmod = new Date().toISOString();
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemaps
-  .map(
-    (url) => `  <sitemap>
-    <loc>${url}</loc>
-    <lastmod>${now}</lastmod>
-  </sitemap>`
-  )
-  .join("\n")}
+${SITEMAPS.map((name) => `  <sitemap>
+    <loc>${BASE_URL}/${name}</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>`).join("\n")}
 </sitemapindex>`;
 
   return new Response(body, {
     headers: {
-      "Content-Type": "application/xml",
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
     },
   });
 }
