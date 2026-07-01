@@ -20,11 +20,12 @@ export default function Header() {
   return (
     <header className="fixed inset-x-0 top-[56px] z-50 sd-header-under-offer border-b border-black/10 bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-black/5 shadow-[0_0_18px_rgba(37,99,235,0.55)]">
-            <span className="text-sm font-semibold text-black">SD</span>
-          </span>
-          <span className="text-sm font-semibold tracking-wide text-black">Sikhadenge</span>
+        <Link href="/" className="flex h-16 items-center overflow-visible" aria-label="Sikhadenge Home">
+          <img
+            src="/brand/sikhadenge-header-safe-320.png?v=headersafe1"
+            alt="Sikhadenge"
+            className="block h-12 w-auto object-contain"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

@@ -13,13 +13,13 @@ import {
 // ==================== CONFIG DATA (EASY TO EDIT) ====================
 const CONFIG = {
   hero: {
-    headline: "Become an AI Expert",
-    subheadline:
-      "Join 150,000+ learners who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
-    duration: "8 WEEKS",
-    batchDate: "TODAY LIVE MASTERCLASS",
-    timing: "3 HRS/DAY",
-    learnerCount: "5000+",
+      headline: "AI Expert Program",
+      subheadline:
+        "AI tools ka practical use seekho aur design, video, content, website aur automation projects banana start karo — live classes, assignments aur step-by-step guidance ke saath.",
+      duration: "8-Week Program",
+      batchDate: "Live + Practical",
+      timing: "No Coding Required",
+      learnerCount: "150,000+",
   },
   contact: {
     phone: "+91 8808505575",
@@ -108,11 +108,12 @@ const Navbar = () => {
  >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
-          <a href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#2563EB] rounded-xl flex items-center justify-center">
-              <span className="text-text font-bold text-xl">S</span>
-            </div>
-            <span className="font-bold text-xl text-[#0F172A]">Sikhadenge</span>
+          <a href="/" className="flex items-center gap-2" aria-label="Sikhadenge Home">
+            <img
+            src="/brand/sikhadenge-header-safe-320.png?v=headersafe1"
+            alt="Sikhadenge"
+            className="block h-12 w-auto object-contain"
+          />
           </a>
 
           <div className="hidden md:flex items-center gap-6">
@@ -157,105 +158,199 @@ const Navbar = () => {
 const HeroSection = () => {
   const [showVideo, setShowVideo] = useState(false)
 
+  const proofCards = [
+    { icon: Users, value: CONFIG.hero.learnerCount, label: "Learners Trained" },
+    { icon: Star, value: "4.8/5", label: "Average Rating" },
+    { icon: Rocket, value: "25+", label: "AI Tools Covered" },
+    { icon: Zap, value: "Live", label: "Practical Training" },
+  ]
+
+  const floatingTools = ["ChatGPT", "Claude", "Gemini", "Runway", "Canva", "Zapier"]
+
   return (
-    <section className="pt-3 md:pt-8 pb-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] border border-white/10 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 opacity-[0.22]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
-              backgroundSize: "56px 56px",
-            }}
-          />
-          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(1200px_600px_at_20%_20%,rgba(37,99,235,0.22),transparent_60%),radial-gradient(900px_500px_at_85%_45%,rgba(245,179,1,0.18),transparent_55%)]" />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,0.14),transparent_34%),radial-gradient(circle_at_84%_18%,rgba(139,92,246,0.16),transparent_30%),linear-gradient(180deg,#F8FBFF_0%,#FFFFFF_58%,#F6F9FF_100%)] pt-6 pb-10 md:pt-10 md:pb-16">
+      <div aria-hidden="true" className="absolute inset-0 opacity-[0.55] [background-image:linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px)] [background-size:42px_42px]" />
+      <div aria-hidden="true" className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-blue-400/20 blur-3xl" />
+      <div aria-hidden="true" className="absolute -right-24 top-12 h-80 w-80 rounded-full bg-violet-400/20 blur-3xl" />
 
-          <div className="relative px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8 items-center">
-              <div className="space-y-3 md:space-y-6">
-                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full">
-                  <Sparkles className="w-4 h-4 text-[#2563EB]" />
-                  <span className="text-white/85 text-sm font-medium">{CONFIG.company.tagline}</span>
-                </div>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#2563EB] shadow-[0_10px_30px_rgba(37,99,235,0.08)] backdrop-blur">
+              <Sparkles className="h-4 w-4" />
+              {CONFIG.company.tagline}
+            </div>
 
-                <h1 className="text-[34px] sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-[1.08] tracking-[-0.03em]">
-                  {CONFIG.hero.headline}
-                </h1>
+            <h1 className="mt-6 text-[42px] font-black leading-[0.98] tracking-[-0.055em] text-[#08111F] sm:text-[56px] lg:text-[68px]">
+              Become an <span className="bg-gradient-to-r from-[#2563EB] via-[#7C3AED] to-[#06B6D4] bg-clip-text text-transparent">AI Expert.</span>
+              <span className="block">Build Real Digital Skills.</span>
+            </h1>
 
-                <p className="max-w-xl text-[15px] md:text-base text-white/75 leading-7 md:leading-relaxed">
-                  {CONFIG.hero.subheadline}
-                </p>
+            <p className="mt-6 max-w-xl text-[16px] leading-8 text-[#475569] md:text-[18px]">
+              AI tools ka practical use seekho aur design, video, content, website aur automation projects banana start karo — live classes, assignments aur step-by-step guidance ke saath.
+            </p>
 
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
-                    <Clock className="w-5 h-5 text-[#2563EB]" />
-                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
-                    <Calendar className="w-5 h-5 text-[#F5B301]" />
-                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.batchDate}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
-                    <Users className="w-5 h-5 text-emerald-400" />
-                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.timing}</span>
-                  </div>
-                </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {[
+                "Live Classes",
+                "Hands-on Projects",
+                "No Coding Required",
+                "Hindi + English",
+              ].map((item) => (
+                <span key={item} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)]" />
+                  {item}
+                </span>
+              ))}
+            </div>
 
-                <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
-                  <a
-                    href="/gen-ai-masterclass/register"
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#d69e01] text-black font-bold text-base px-6 py-3.5 rounded-full transition-all hover:scale-[1.02] shadow-lg"
-                    style={{ boxShadow: "0 0 18px rgba(245,179,1,0.55)" }}
- >
-                    Join Free Masterclass
-                    <ArrowRight className="w-5 h-5" />
-                  </a>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="/gen-ai-masterclass/register"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-7 py-4 text-base font-bold text-white shadow-[0_18px_44px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1D4ED8]"
+              >
+                Join Free Masterclass
+                <ArrowRight className="h-5 w-5" />
+              </a>
 
-                </div>
-              </div>
-
-              <div
-                className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group bg-[#111827] mt-1"
+              <button
+                type="button"
                 onClick={() => setShowVideo(true)}
- >
-                <img
-                  src="/demo/thumbs/hero-demo.jpg?v=20260326231041"
-                  alt="Live Class Demo"
-                  className="w-full aspect-video object-cover"
-                />
-                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/25 transition-all flex items-center justify-center">
-                  <div className="w-20 h-20 bg-[#F5B301] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                    <Play className="w-8 h-8 text-black ml-1" fill="black" />
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-bold text-[#0F172A] shadow-[0_14px_34px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:text-[#2563EB]"
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#F5B301] text-black">
+                  <Play className="h-4 w-4 fill-black" />
+                </span>
+                Watch Preview
+              </button>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {proofCards.map((item) => {
+                const ProofIcon = item.icon
+                return (
+                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-[0_14px_35px_rgba(15,23,42,0.06)] backdrop-blur">
+                    <ProofIcon className="h-5 w-5 text-[#2563EB]" />
+                    <p className="mt-3 text-xl font-black text-[#0F172A]">{item.value}</p>
+                    <p className="mt-1 text-xs font-medium text-[#64748B]">{item.label}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="relative min-h-[560px] [perspective:1200px]">
+            <div aria-hidden="true" className="absolute left-1/2 top-[58%] h-40 w-[82%] -translate-x-1/2 rounded-[100%] bg-[radial-gradient(circle,rgba(37,99,235,0.25),transparent_68%)] blur-2xl" />
+
+            <div className="absolute left-1/2 top-[58%] h-36 w-[78%] -translate-x-1/2 rounded-[100%] border border-blue-200/70 bg-white/55 shadow-[0_30px_90px_rgba(37,99,235,0.18)] [transform:rotateX(64deg)]" />
+            <div className="absolute left-1/2 top-[49%] h-24 w-[58%] -translate-x-1/2 rounded-[100%] border border-violet-200/80 bg-[linear-gradient(90deg,rgba(37,99,235,0.13),rgba(139,92,246,0.14),rgba(6,182,212,0.12))] [transform:rotateX(64deg)]" />
+
+            <div className="relative mx-auto mt-2 w-full max-w-[580px] rounded-[34px] border border-white/80 bg-white/75 p-5 shadow-[0_35px_100px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+              <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF_0%,#F4F8FF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#2563EB]">AI Skill OS</p>
+                    <h3 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#0F172A]">Project Workflow Dashboard</h3>
+                  </div>
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#2563EB] text-white shadow-[0_16px_34px_rgba(37,99,235,0.26)]">
+                    <Cpu className="h-7 w-7" />
                   </div>
                 </div>
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <p className="text-[#0F172A] text-sm font-medium">🎬 Watch Live Class Demo</p>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
+                  <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-[#0F172A]">Weekly Progress</p>
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">+42%</span>
+                    </div>
+                    <div className="mt-5 flex h-28 items-end gap-2">
+                      {[42, 58, 48, 72, 66, 84, 94].map((h, i) => (
+                        <div key={i} className="flex-1 rounded-t-xl bg-[linear-gradient(180deg,#2563EB,#93C5FD)]" style={{ height: `${h}%` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {[
+                      ["Content", "Scripts, captions, ideas"],
+                      ["Design", "Posts, thumbnails, ads"],
+                      ["Video", "Reels, promos, edits"],
+                    ].map(([title, desc]) => (
+                      <div key={title} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                        <p className="text-sm font-bold text-[#0F172A]">{title}</p>
+                        <p className="mt-1 text-xs text-[#64748B]">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  {floatingTools.slice(0, 6).map((tool) => (
+                    <div key={tool} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center text-xs font-bold text-[#0F172A] shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                      {tool}
+                    </div>
+                  ))}
                 </div>
               </div>
+            </div>
+
+            <div className="absolute left-0 top-14 hidden w-56 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-[0_22px_60px_rgba(37,99,235,0.18)] backdrop-blur-xl md:block">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50">
+                  <Layers className="h-5 w-5 text-[#2563EB]" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#0F172A]">AI Projects</p>
+                  <p className="text-xs text-[#64748B]">Portfolio ready</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute right-0 top-24 hidden w-56 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-[0_22px_60px_rgba(139,92,246,0.18)] backdrop-blur-xl md:block">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">Automation</p>
+              <p className="mt-2 text-2xl font-black text-[#0F172A]">96%</p>
+              <p className="mt-1 text-xs text-[#64748B]">Workflow accuracy</p>
+            </div>
+
+            <div className="absolute bottom-14 left-6 hidden w-64 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-[0_22px_60px_rgba(6,182,212,0.18)] backdrop-blur-xl md:block">
+              <p className="text-sm font-black text-[#0F172A]">Build real outputs</p>
+              <p className="mt-1 text-xs leading-5 text-[#64748B]">Designs, videos, content systems, pages and automation workflows.</p>
             </div>
           </div>
         </div>
       </div>
 
       {showVideo && (
-        <div className="fixed inset-0 z-50 bg-[#0F172A]/80 flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
-          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[#F5B301]" aria-label="close">
-              <X className="w-8 h-8" />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0F172A]/80 p-4 backdrop-blur-sm" onClick={() => setShowVideo(false)}>
+          <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShowVideo(false)}
+              className="absolute -top-12 right-0 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+              aria-label="close"
+            >
+              <X className="h-6 w-6" />
             </button>
-            <div className="aspect-video bg-black rounded-xl overflow-hidden">
-              <div className="w-full h-full"><PlyrPlayer src="/demo/ai-expert-program-live.mp4?v=20260405-final-1" poster="/demo/thumbs/hero-demo.jpg?v=20260326231041" /></div></div>
+            <div className="overflow-hidden rounded-3xl border border-white/15 bg-black shadow-2xl">
+              <video
+                className="aspect-video w-full"
+                controls
+                playsInline
+                preload="metadata"
+                poster="/demo/thumbs/hero-demo.jpg?v=20260326231041"
+              >
+                <source src="/demo/ai-expert-program-live.mp4?v=20260405-final-1" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
       )}
     </section>
   )
-  };
+}
 
-  // ==================== SECTION 3: LEARNERS + COMPANIES ====================
+// ==================== SECTION 3: LEARNERS + COMPANIES ====================
 const LearnersSection = () => (
   <section className="py-14 md:py-16 bg-transparent">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -926,7 +1021,7 @@ const MentorSection = () => (
                 <p className="text-[#475569] text-xs">Instagram</p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
-                <p className="text-2xl font-bold text-[#2563EB]">35000+</p>
+                <p className="text-2xl font-bold text-[#2563EB]">150,000+</p>
                 <p className="text-[#475569] text-xs">Students</p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
