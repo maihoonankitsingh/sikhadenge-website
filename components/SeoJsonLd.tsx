@@ -3,7 +3,7 @@ export function OrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Sikhadenge",
-    url: "https://sikhadenge.space",
+    url: "https://sikhadenge.in",
     logo: "https://sikhadenge.in/images/logo.png",
     sameAs: [
       "https://www.instagram.com/sikhadenge.ai",

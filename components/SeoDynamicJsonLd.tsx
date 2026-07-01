@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 
-const DOMAIN = "https://sikhadenge.space";
+const DOMAIN = "https://sikhadenge.in";
 
 function safeJson(obj: unknown) {
   return JSON.stringify(obj).replace(/<\/script/gi, "<\\/script");

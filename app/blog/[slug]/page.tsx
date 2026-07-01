@@ -385,6 +385,194 @@ function getRelatedPosts(basePost: BlogItem, allPosts: BlogItem[]) {
   return Array.from(picked.values());
 }
 
+
+function cleanBlogText(value?: string) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function blogUrl(slug: string) {
+  return `${BASE_URL}/blog/${slug}`;
+}
+
+function fallbackBlogFaqs(blog: BlogItem): BlogFaq[] {
+  const title = cleanBlogText(blog.title);
+  const topic = title || "this AI topic";
+  const intro = cleanBlogText(blog.intro || blog.excerpt);
+
+  return [
+    {
+      q: `What is ${topic}?`,
+      a:
+        intro ||
+        `${topic} is a practical AI learning topic focused on real workflows, useful tools, and better digital execution.`,
+    },
+    {
+      q: `Who should learn ${topic}?`,
+      a:
+        "This topic is useful for students, freelancers, creators, job seekers, and working professionals who want practical AI skills for real work.",
+    },
+    {
+      q: `How can beginners start with ${topic}?`,
+      a:
+        "Beginners should start with the core concept, follow a simple workflow, practice on small projects, and improve output quality step by step.",
+    },
+  ];
+}
+
+function buildBlogJsonLd(blog: BlogItem) {
+  // BLOG_SCHEMA_EEAT_PATCH_V3
+  const url = blogUrl(blog.slug);
+  const title = cleanBlogText(blog.title);
+  const description = cleanBlogText(
+    blog.excerpt || blog.intro || `${title} by Sikhadenge.`,
+  );
+  const faqs = blog.faqs && blog.faqs.length ? blog.faqs.slice(0, 6) : fallbackBlogFaqs(blog);
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": `${url}#article`,
+        headline: title,
+        description,
+        url,
+        image: `${BASE_URL}/opengraph-image`,
+        author: {
+          "@type": "Organization",
+          name: "Sikhadenge",
+          url: `${BASE_URL}/about-us`,
+        },
+        publisher: {
+          "@type": "Organization",
+          "@id": `${BASE_URL}/#organization`,
+          name: "Sikhadenge",
+          logo: {
+            "@type": "ImageObject",
+            url: `${BASE_URL}/icon.png`,
+          },
+        },
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": url,
+        },
+        dateModified: "2026-07-01",
+        inLanguage: ["en", "hi"],
+        about: [
+          "AI skills",
+          "AI tools",
+          "Generative AI",
+          "AI workflows",
+          "Practical digital skills",
+          "Sikhadenge",
+        ],
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: BASE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: `${BASE_URL}/blog`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: title,
+            item: url,
+          },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${url}#faq`,
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: cleanBlogText(faq.q),
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: cleanBlogText(faq.a),
+          },
+        })),
+      },
+    ],
+  };
+}
+
+function BlogTrustBlock({ blog }: { blog: BlogItem }) {
+  const steps = blog.practicalSteps && blog.practicalSteps.length ? blog.practicalSteps.slice(0, 4) : [];
+
+  return (
+    <section className="border-y border-[#E3EBF7] bg-white">
+      <div className="mx-auto max-w-[1080px] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="rounded-[28px] border border-[#D8E5F4] bg-[#F8FAFC] p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2563EB]">
+            Sikhadenge AI Search Notes
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#071533]">
+            Quick answer for readers, Google, Bing, and AI search
+          </h2>
+          <p className="mt-4 text-[16px] leading-[1.85] text-[#47607F]">
+            {cleanBlogText(blog.intro || blog.excerpt) ||
+              `${blog.title} is a practical AI skills topic. Sikhadenge explains it with workflow-first learning, beginner-friendly examples, and real digital work context.`}
+          </p>
+
+          {steps.length ? (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-[#071533]">Practical workflow steps</h3>
+              <ol className="mt-4 space-y-3">
+                {steps.map((step, index) => (
+                  <li key={step} className="flex gap-3 text-[15px] leading-7 text-[#47607F]">
+                    <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-semibold text-white">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#D8E5F4] bg-white p-4">
+              <p className="text-sm font-semibold text-[#071533]">Reviewed by</p>
+              <p className="mt-1 text-sm text-[#47607F]">Sikhadenge editorial team</p>
+            </div>
+            <div className="rounded-2xl border border-[#D8E5F4] bg-white p-4">
+              <p className="text-sm font-semibold text-[#071533]">Updated</p>
+              <p className="mt-1 text-sm text-[#47607F]">July 2026</p>
+            </div>
+            <div className="rounded-2xl border border-[#D8E5F4] bg-white p-4">
+              <p className="text-sm font-semibold text-[#071533]">Search focus</p>
+              <p className="mt-1 text-sm text-[#47607F]">SEO, AEO, GEO, LLM visibility, and practical AI execution</p>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/gen-ai-masterclass" className="rounded-full bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white">
+              Join Free AI Masterclass
+            </Link>
+            <Link href="/blog" className="rounded-full border border-[#CFE0F6] bg-white px-5 py-3 text-sm font-semibold text-[#0A2245]">
+              Explore more AI guides
+            </Link>
+            <Link href="/site-map" className="rounded-full border border-[#CFE0F6] bg-white px-5 py-3 text-sm font-semibold text-[#0A2245]">
+              Browse sitemap
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export async function generateStaticParams() {
   return getBlogs()
     .slice(0, PRE_RENDERED_BLOG_COUNT)
@@ -587,7 +775,12 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
 
   return (
     <article className="min-h-screen bg-slate-50 text-slate-900">
+
       <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBlogJsonLd(post)) }}
+      />
+<script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
@@ -954,6 +1147,8 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
           </section>
         )}
       </div>
-    </article>
+
+      <BlogTrustBlock blog={post} />
+</article>
   );
 }
