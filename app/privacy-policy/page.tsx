@@ -46,6 +46,22 @@ function PageShell({
           {children}
         </div>
       </section>
+    
+      <section>
+        <h2>Microsoft Clarity Analytics</h2>
+        <p>
+          We use Microsoft Clarity to understand how visitors interact with our website,
+          improve page experience, identify usability issues, and measure conversion journeys.
+          Clarity may collect interaction data such as clicks, scroll depth, page visits,
+          device/browser information, and session behavior. Sensitive fields such as forms,
+          contact details, OTP, payment, and login inputs are masked or excluded from recording.
+        </p>
+        <p>
+          By using this website, you agree that we and Microsoft can collect and use this
+          analytics data to improve our services and website performance.
+        </p>
+      </section>
+
     </main>
   );
 }

@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 
 import MetaPixel from "./_components/MetaPixel";
 import JsonLd from "./_components/JsonLd";
+import MicrosoftClarity from "./MicrosoftClarity";
+import ClarityEvents from "./ClarityEvents";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -12,6 +14,16 @@ const SITE_URL = "https://sikhadenge.in";
 const OG_IMAGE = "/images/og/og-home.jpg"; // ensure this file exists in /public/images/og/
 
 export const metadata: Metadata = {
+  
+  icons: {
+    icon: [
+      { url: "/favicon-white-bg-48x48.png?v=whitebg-folder-final", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-white-bg-32x32.png?v=whitebg-folder-final", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico?v=whitebg-folder-final" },
+    ],
+    shortcut: ["/favicon-white-bg-48x48.png?v=whitebg-folder-final"],
+    apple: [{ url: "/apple-touch-icon.png?v=whitebg-folder-final", sizes: "180x180", type: "image/png" }],
+  },
   metadataBase: new URL(SITE_URL),
 
   title: {
@@ -88,10 +100,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* SIKHADENGE_FAVICON_FORCE_WHITE_BG */}
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-white-bg-48x48.png?v=whitebg-folder-final" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-white-bg-32x32.png?v=whitebg-folder-final" />
+        <link rel="shortcut icon" href="/favicon.ico?v=whitebg-folder-final" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=whitebg-folder-final" />
+      </head>
       <body className={inter.className}>
+        <MicrosoftClarity />
+        <ClarityEvents />
         <MetaPixel />
         <JsonLd />
         <Header />
+        <div className="sd-header-spacer" aria-hidden="true" />
         {children}
         <Footer />
       </body>

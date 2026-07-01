@@ -315,3 +315,15 @@ html, body { overflow-x: hidden; }
   border: 1px solid rgba(255,255,255,.25);
   padding: 18px;
 }
+
+/* Header spacer below fixed header */
+.sd-header-spacer {
+  height: 42px;
+  background: #f8fafc;
+}
+
+@media (min-width: 768px) {
+  .sd-header-spacer {
+    height: 54px;
+  }
+}
