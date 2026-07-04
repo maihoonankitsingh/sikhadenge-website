@@ -37,11 +37,27 @@ const CONFIG = {
 
 // Company logos - Text based for better visibility
 const companyLogos = [
-  { name: 'Rapido' }, { name: 'Quora' }, { name: 'PocketFM' }, { name: 'Oracle' },
-  { name: 'PhonePe' }, { name: 'Juspay' }, { name: 'Zomato' }, { name: 'Blinkit' },
-  { name: 'Flipkart' }, { name: 'BookMyShow' }, { name: 'Swiggy' }, { name: 'Razorpay' }
+  { name: "Omkar", src: "/company-logos/company-logo-01.png" },
+  { name: "AECOM", src: "/company-logos/company-logo-02.png" },
+  { name: "Housing.com", src: "/company-logos/company-logo-03.png" },
+  { name: "Just My Films", src: "/company-logos/company-logo-04.png" },
+  { name: "Adani", src: "/company-logos/company-logo-05.png" },
+  { name: "Godrej", src: "/company-logos/company-logo-06.png" },
+  { name: "JLL", src: "/company-logos/company-logo-07.png" },
+  { name: "Flipkart", src: "/company-logos/company-logo-08.png" },
+  { name: "Dar", src: "/company-logos/company-logo-09.png" },
+  { name: "ZEE", src: "/company-logos/company-logo-10.png" },
+  { name: "PW", src: "/company-logos/company-logo-11.png" },
+  { name: "Pepperfry", src: "/company-logos/company-logo-12.png" },
+  { name: "redBus", src: "/company-logos/company-logo-13.png" },
+  { name: "Disney+ Hotstar", src: "/company-logos/company-logo-14.png" },
+  { name: "DCS", src: "/company-logos/company-logo-15.png" },
+  { name: "Apna", src: "/company-logos/company-logo-16.png" },
+  { name: "F1 Studioz", src: "/company-logos/company-logo-17.png" },
+  { name: "Partner Brand", src: "/company-logos/company-logo-18.png" },
+  { name: "Creative Partner", src: "/company-logos/company-logo-19.png" },
+  { name: "Hiring Partner", src: "/company-logos/company-logo-20.png" },
 ]
-
 // Video testimonials - Reel format with video URLs
 const videoTestimonials = [
   { name: "Radhika", location: "Mumbai", poster: "/images/testimonials/t1.jpg", videoUrl: "/images/testimonials/t1.mp4" },
@@ -256,57 +272,88 @@ const HeroSection = () => {
   };
 
   // ==================== SECTION 3: LEARNERS + COMPANIES ====================
-const LearnersSection = () => (
-  <section className="py-14 md:py-16 bg-transparent">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-10">
-        <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-[#0F172A]">
+const LearnersSection = () => {
+  const logoRows = [companyLogos.slice(0, 10), companyLogos.slice(10, 20)]
+
+  return (
+    <section className="py-12 md:py-16 bg-[#F8FAFC] overflow-hidden">
+      <style>{`
+        @keyframes sikhadenge-logo-scroll-left {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @keyframes sikhadenge-logo-scroll-right {
+          from { transform: translateX(-50%); }
+          to { transform: translateX(0); }
+        }
+        .sikhadenge-logo-track-left {
+          animation: sikhadenge-logo-scroll-left 34s linear infinite;
+        }
+        .sikhadenge-logo-track-right {
+          animation: sikhadenge-logo-scroll-right 38s linear infinite;
+        }
+        .sikhadenge-logo-marquee:hover .sikhadenge-logo-track-left,
+        .sikhadenge-logo-marquee:hover .sikhadenge-logo-track-right {
+          animation-play-state: paused;
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 className="text-4xl md:text-6xl font-black text-[#0F172A] leading-tight tracking-[-0.05em]">
           <span className="text-[#2563EB]">150,000+</span> Students
         </h2>
-        <p className="mx-auto mt-3 max-w-3xl text-[#475569] text-base md:text-xl">
-          are building practical digital skills through live sessions, structured assignments and real outputs.
+        <p className="mt-4 text-lg md:text-xl text-[#334155] max-w-3xl mx-auto leading-relaxed">
+          are building practical digital skills through live sessions, structured assignments
+          and real outputs.
         </p>
       </div>
 
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#F8FAFC] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#F8FAFC] to-transparent" />
+      <div className="mt-10 space-y-5">
+        {logoRows.map((row, rowIndex) => {
+          const repeated = [...row, ...row, ...row]
+          return (
+            <div key={rowIndex} className="sikhadenge-logo-marquee relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#F8FAFC] to-transparent md:w-40" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#F8FAFC] to-transparent md:w-40" />
 
-        <div className="flex w-max gap-4 whitespace-nowrap will-change-transform [animation:sdMarquee_26s_linear_infinite] [@keyframes_sdMarquee:{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}]">
-          {[...companyLogos, ...companyLogos].map((company, i) => (
-            <div
-              key={i}
-              className="flex h-14 min-w-[170px] flex-shrink-0 items-center justify-center rounded-full border border-[#0F172A]/10 bg-white px-8 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition-all hover:border-[#2563EB]/30 hover:bg-[#EFF6FF]"
-              aria-hidden={i >= companyLogos.length}
-            >
-              <span className="whitespace-nowrap text-lg font-semibold text-[#0F172A]">{company.name}</span>
+              <div
+                className={`flex w-max items-center gap-5 px-5 ${
+                  rowIndex % 2 === 0 ? "sikhadenge-logo-track-left" : "sikhadenge-logo-track-right"
+                }`}
+              >
+                {repeated.map((logo, index) => (
+                  <div
+                    key={`${logo.name}-${index}`}
+                    className="flex h-[68px] w-[210px] shrink-0 items-center justify-center overflow-hidden rounded-full"
+                  >
+                    <img
+                      src={logo.src}
+                      alt={`${logo.name} logo`}
+                      className="h-[68px] w-[210px] rounded-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
       <div className="mt-10 flex justify-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-[#F5B301]/35 bg-[#FEF9E7] px-6 py-3 shadow-[0_8px_24px_rgba(245,179,1,0.10)]">
-          <div className="flex items-center gap-1 text-[#F5B301]">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-5 w-5 fill-current" />
-            ))}
-          </div>
-          <span className="font-semibold text-[#0F172A]">4.8/5 rating</span>
-          <span className="text-[#0F172A]/50">•</span>
-          <span className="inline-flex items-center gap-2 font-medium text-[#334155]">
-            <Users className="h-4 w-4 text-[#2563EB]" />
-            Trusted by learners across India
-          </span>
+        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-[#F5B301]/45 bg-white px-6 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.06)]">
+          <span className="text-[#F5B301] text-xl">★★★★★</span>
+          <span className="font-bold text-[#0F172A]">4.8/5 rating</span>
+          <span className="hidden h-1 w-1 rounded-full bg-[#CBD5E1] sm:block" />
+          <span className="text-[#334155] font-semibold">Trusted by learners across India</span>
         </div>
       </div>
-    </div>
-  </section>
-  );
+    </section>
+  )
+}
 
-  // ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
-  const RealPractitionersBanner = () => null;
-
+// ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
+const RealPractitionersBanner = () => null
 
 // ==================== SECTION 5: 3-STEP PROCESS ====================
 const ProcessSection = () => {
