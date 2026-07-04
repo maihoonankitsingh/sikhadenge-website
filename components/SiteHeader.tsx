@@ -11,7 +11,6 @@ const NAV = [
   { href: "/courses", label: "Courses" },
   { href: "/ai-tools", label: "AI Tools" },
   { href: "/blog", label: "Blog" },
-  { href: "/reviews", label: "Reviews" },
   { href: "/contact-us", label: "Contact" },
 ];
 

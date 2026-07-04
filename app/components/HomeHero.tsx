@@ -53,10 +53,7 @@ export default function HomeHero() {
                     <Link href="/courses" className="text-white/90 hover:text-white">
                       View courses
                     </Link>
-                    <Link href="/reviews" className="text-white/70 hover:text-white/90">
-                      Reviews
-                    </Link>
-                  </div>
+</div>
                 </div>
 
                 {/* 1:1 Counselling (yellow) */}

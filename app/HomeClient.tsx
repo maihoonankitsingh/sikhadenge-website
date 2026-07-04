@@ -203,13 +203,7 @@ return (
             </p>
           </div>
 
-          <Link
-            href="/companies"
-            className="text-sm text-[#B0B7C3] hover:text-white underline underline-offset-4"
-         >
-            View all companies
-          </Link>
-        </div>
+</div>
       </div>
 
       <FullBleed>
@@ -1892,13 +1886,7 @@ export default function HomePage() {
                  >
                     Open counselling form
                   </button>
-                  <Link
-                    href="/reviews"
-                    className="sd-btn-secondary px-5 py-3 text-sm inline-flex items-center justify-center"
-                 >
-                    View reviews
-                  </Link>
-                </div>
+</div>
               </div>
 
               <div className="mt-4 text-xs text-[#9CA3AF]">

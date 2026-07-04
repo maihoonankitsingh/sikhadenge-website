@@ -115,10 +115,7 @@ export default function CompaniesMarquee() {
 
       <div className="mx-auto max-w-7xl px-4 pb-12 pt-6">
         <div className="flex justify-center">
-          <Link href="/companies" className="sd-btn-secondary">
-            View all companies
-          </Link>
-        </div>
+</div>
         <div className="mt-10 sd-divider"></div>
       </div>
     </section>
