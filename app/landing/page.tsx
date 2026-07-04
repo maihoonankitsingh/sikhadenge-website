@@ -474,7 +474,7 @@ const QuoteTestimonial = () => {
                 </div>
 
                 <div className="ml-4 md:ml-0 md:mt-4">
-                  <p className="text-lg font-black text-[#071533]">{active.author}</p>
+                  <p className="text-base font-black text-[#071533]">{active.author}</p>
                   <p className="mt-1 text-xs font-bold text-[#64748B]">{active.role}</p>
                 </div>
               </div>
