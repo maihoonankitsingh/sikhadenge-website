@@ -13,13 +13,13 @@ import {
 // ==================== CONFIG DATA (EASY TO EDIT) ====================
 const CONFIG = {
   hero: {
-    headline: "AI Expert Professional Program",
+    headline: "Become an AI Expert",
     subheadline:
-      "AI tools ko real digital work me use karna seekho — design, video, content, websites, automation aur client-ready workflows ke saath.",
-    duration: "8-Week Live Program",
-    batchDate: "Next Batch Open",
-    timing: "No Coding Required",
-    learnerCount: "150,000+",
+      "Join 150,000+ learners who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
+    duration: "8 WEEKS",
+    batchDate: "NEXT BATCH SOON",
+    timing: "3 HRS/DAY",
+    learnerCount: "5000+",
   },
   contact: {
     phone: "+91 8808505575",
@@ -91,95 +91,59 @@ const aiTools = [
 
 // ==================== SECTION 1: NAVBAR ====================
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  const navItems = [
-    { label: "Program", href: "#program" },
-    { label: "Tools", href: "#tools" },
-    { label: "Reviews", href: "#reviews" },
-    { label: "Mentor", href: "#mentor" },
-    { label: "FAQ", href: "#faq" },
-  ]
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#E6EDF7] bg-white/82 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-[72px] items-center justify-between">
-          <a href="/" className="flex items-center gap-3" aria-label="Sikhadenge Home">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#F3F7FF] ring-1 ring-[#D8E6FF]">
-              <img
-                src="/brand/sikhadenge-logo-header-320.png"
-                alt="Sikhadenge"
-                className="h-8 w-auto object-contain"
-              />
-            </span>
-            <span className="leading-tight">
-              <span className="block text-[18px] font-black tracking-[-0.03em] text-[#071533]">
-                Sikhadenge
-              </span>
-              <span className="hidden text-[11px] font-semibold uppercase tracking-[0.16em] text-[#64748B] sm:block">
-                AI Skills Platform
-              </span>
-            </span>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'
+      }`}
+ >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 md:h-20">
+          <a href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-[#2563EB] rounded-xl flex items-center justify-center">
+              <span className="text-text font-bold text-xl">S</span>
+            </div>
+            <span className="font-bold text-xl text-[#0F172A]">Sikhadenge</span>
           </a>
 
-          <div className="hidden items-center gap-7 lg:flex">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-sm font-semibold text-[#475569] transition hover:text-[#2563EB]"
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <a
-              href="/contact-us"
-              className="rounded-full border border-[#D8E5F4] bg-white px-5 py-2.5 text-sm font-bold text-[#071533] shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:border-[#2563EB]/40 hover:text-[#2563EB]"
-            >
-              Counselling
-            </a>
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#courses" className="text-[#475569] hover:text-[#2563EB] transition font-medium">Courses</a>
+            <a href="#reviews" className="text-[#475569] hover:text-[#2563EB] transition font-medium">Reviews</a>
+            <a href="#faq" className="text-[#475569] hover:text-[#2563EB] transition font-medium">FAQ</a>
             <a
               href="/gen-ai-masterclass/register"
-              className="inline-flex items-center gap-2 rounded-full bg-[#F5B301] px-5 py-2.5 text-sm font-black text-black shadow-[0_14px_34px_rgba(245,179,1,0.30)] transition hover:-translate-y-0.5 hover:bg-[#E7A900]"
-            >
-              Join Free
-              <ArrowRight className="h-4 w-4" />
+              className="bg-[#F5B301] hover:bg-[#d69e01] text-text font-semibold px-6 py-2.5 rounded-full transition-all hover:scale-105"
+ >
+              Register Free →
             </a>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D8E5F4] bg-white text-[#071533] md:hidden"
-            aria-label="Toggle menu"
-          >
-            <span className="text-xl font-black">{isOpen ? "×" : "≡"}</span>
+          <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="menu">
+            <div className="w-6 h-5 flex flex-col justify-between">
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
+              <span className={`w-full h-0.5 bg-[#0F172A] transition-all ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+            </div>
           </button>
         </div>
 
-        {isOpen && (
-          <div className="border-t border-[#E6EDF7] py-4 md:hidden">
-            <div className="grid gap-2">
-              {navItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className="rounded-2xl px-4 py-3 text-sm font-bold text-[#475569] hover:bg-[#F3F7FF] hover:text-[#2563EB]"
-                >
-                  {item.label}
-                </a>
-              ))}
-              <a
-                href="/gen-ai-masterclass/register"
-                className="mt-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#F5B301] px-5 py-3 text-sm font-black text-black"
-              >
-                Join Free Masterclass
-                <ArrowRight className="h-4 w-4" />
+        {mobileOpen && (
+          <div className="md:hidden py-4 border-t border-[#0F172A]/10">
+            <div className="flex flex-col gap-4">
+              <a href="#courses" className="text-[#475569] hover:text-[#2563EB]">Courses</a>
+              <a href="#reviews" className="text-[#475569] hover:text-[#2563EB]">Reviews</a>
+              <a href="#faq" className="text-[#475569] hover:text-[#2563EB]">FAQ</a>
+              <a href="/gen-ai-masterclass/register" className="bg-[#F5B301] text-text font-semibold px-6 py-2.5 rounded-full text-center">
+                Register Free →
               </a>
             </div>
           </div>
@@ -193,193 +157,105 @@ const Navbar = () => {
 const HeroSection = () => {
   const [showVideo, setShowVideo] = useState(false)
 
-  const trustItems = [
-    "Hindi + English Training",
-    "Real Projects",
-    "Beginner Friendly",
-    "Career + Freelance Skills",
-  ]
-
-  const statCards = [
-    { value: CONFIG.hero.learnerCount, label: "Learners community" },
-    { value: "25+", label: "AI tools & workflows" },
-    { value: "8 weeks", label: "Guided live roadmap" },
-  ]
-
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#F8FBFF_0%,#FFFFFF_52%,#F6F9FF_100%)] pb-12 pt-6 md:pb-18 md:pt-10">
-      <div aria-hidden="true" className="absolute inset-0 opacity-[0.55] [background-image:linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-      <div aria-hidden="true" className="absolute -left-32 top-20 h-80 w-80 rounded-full bg-[#2563EB]/18 blur-3xl" />
-      <div aria-hidden="true" className="absolute -right-28 top-8 h-96 w-96 rounded-full bg-[#F5B301]/18 blur-3xl" />
-      <div aria-hidden="true" className="absolute left-[44%] top-28 h-72 w-72 rounded-full bg-[#7C3AED]/12 blur-3xl" />
+    <section className="pt-3 md:pt-8 pb-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] border border-white/10 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.22]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
+              backgroundSize: "56px 56px",
+            }}
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(1200px_600px_at_20%_20%,rgba(37,99,235,0.22),transparent_60%),radial-gradient(900px_500px_at_85%_45%,rgba(245,179,1,0.18),transparent_55%)]" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[34px] border border-[#DDE8F7] bg-white/78 shadow-[0_34px_110px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-          <div className="grid items-stretch lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="relative z-10 px-5 py-8 sm:px-8 md:px-10 md:py-12 lg:py-14">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E5F4] bg-white px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_12px_30px_rgba(37,99,235,0.08)]">
-                <Sparkles className="h-4 w-4" />
-                {CONFIG.company.tagline}
-              </div>
-
-              <h1 className="mt-6 max-w-3xl text-[42px] font-black leading-[0.96] tracking-[-0.06em] text-[#071533] sm:text-[56px] lg:text-[68px]">
-                Become an
-                <span className="block bg-gradient-to-r from-[#2563EB] via-[#7C3AED] to-[#06B6D4] bg-clip-text text-transparent">
-                  AI Expert.
-                </span>
-                <span className="block text-[#071533]">Build Real Digital Skills.</span>
-              </h1>
-
-              <p className="mt-6 max-w-2xl text-[16px] leading-8 text-[#475569] md:text-[18px]">
-                {CONFIG.hero.subheadline}
-              </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                {trustItems.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#E2EAF6] bg-white px-4 py-2 text-sm font-bold text-[#0F172A] shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.75)]" />
-                    {item}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="/gen-ai-masterclass/register"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#F5B301] px-7 py-4 text-base font-black text-black shadow-[0_18px_46px_rgba(245,179,1,0.32)] transition hover:-translate-y-0.5 hover:bg-[#E7A900]"
-                >
-                  Join Free Masterclass
-                  <ArrowRight className="h-5 w-5" />
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => setShowVideo(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#D8E5F4] bg-white px-7 py-4 text-base font-black text-[#071533] shadow-[0_14px_34px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#2563EB]/40 hover:text-[#2563EB]"
-                >
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-[#2563EB] text-white">
-                    <Play className="h-4 w-4 fill-white" />
-                  </span>
-                  Watch Class Demo
-                </button>
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {statCards.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-3xl border border-[#E2EAF6] bg-[#F8FBFF] p-4 shadow-[0_14px_34px_rgba(15,23,42,0.05)]"
-                  >
-                    <p className="text-2xl font-black tracking-[-0.04em] text-[#071533]">{item.value}</p>
-                    <p className="mt-1 text-sm font-semibold text-[#64748B]">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative min-h-[520px] overflow-hidden bg-[#08111F] p-5 sm:p-7 lg:p-8">
-              <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(37,99,235,0.36),transparent_34%),radial-gradient(circle_at_84%_30%,rgba(245,179,1,0.22),transparent_30%),linear-gradient(180deg,#0B1220_0%,#07101E_100%)]" />
-              <div aria-hidden="true" className="absolute inset-0 opacity-[0.26] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:42px_42px]" />
-
-              <div className="relative flex h-full flex-col justify-between gap-5">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {[
-                    [CONFIG.hero.duration, Clock],
-                    [CONFIG.hero.batchDate, Calendar],
-                    [CONFIG.hero.timing, Users],
-                  ].map(([label, Icon]) => {
-                    const ToolIcon = Icon as typeof Clock
-                    return (
-                      <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/10 p-4 text-white shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur">
-                        <ToolIcon className="h-5 w-5 text-[#F5B301]" />
-                        <p className="mt-3 text-sm font-black">{String(label)}</p>
-                      </div>
-                    )
-                  })}
+          <div className="relative px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8 items-center">
+              <div className="space-y-3 md:space-y-6">
+                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full">
+                  <Sparkles className="w-4 h-4 text-[#2563EB]" />
+                  <span className="text-white/85 text-sm font-medium">{CONFIG.company.tagline}</span>
                 </div>
 
-                <div
-                  className="group relative overflow-hidden rounded-[30px] border border-white/12 bg-black shadow-[0_30px_90px_rgba(0,0,0,0.34)]"
-                  onClick={() => setShowVideo(true)}
-                >
-                  <img
-                    src="/demo/thumbs/hero-demo.jpg?v=20260426"
-                    alt="AI Expert Program live class demo"
-                    className="aspect-video w-full object-cover opacity-92 transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/20 to-transparent" />
-                  <div className="absolute inset-0 grid place-items-center">
-                    <div className="grid h-20 w-20 place-items-center rounded-full bg-[#F5B301] text-black shadow-[0_0_42px_rgba(245,179,1,0.55)] transition group-hover:scale-110">
-                      <Play className="h-8 w-8 fill-black" />
-                    </div>
+                <h1 className="text-[34px] sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-[1.08] tracking-[-0.03em]">
+                  {CONFIG.hero.headline}
+                </h1>
+
+                <p className="max-w-xl text-[15px] md:text-base text-white/75 leading-7 md:leading-relaxed">
+                  {CONFIG.hero.subheadline}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Clock className="w-5 h-5 text-[#2563EB]" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.duration}</span>
                   </div>
-                  <div className="absolute bottom-5 left-5 right-5">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#F5B301]">
-                      Watch Preview
-                    </p>
-                    <h3 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white">
-                      See how AI workflows turn into real output
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-white/72">
-                      Design, video, content, websites and automation — practical training for modern digital work.
-                    </p>
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Calendar className="w-5 h-5 text-[#F5B301]" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.batchDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full min-w-0">
+                    <Users className="w-5 h-5 text-emerald-400" />
+                    <span className="text-white font-semibold text-sm truncate">{CONFIG.hero.timing}</span>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {["Design", "Video", "Content"].map((item) => (
-                    <div key={item} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white/90 backdrop-blur">
-                      <p className="text-sm font-black">{item}</p>
-                      <p className="mt-1 text-xs text-white/58">AI workflow ready</p>
-                    </div>
-                  ))}
+                <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
+                  <a
+                    href="/gen-ai-masterclass/register"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#d69e01] text-black font-bold text-base px-6 py-3.5 rounded-full transition-all hover:scale-[1.02] shadow-lg"
+                    style={{ boxShadow: "0 0 18px rgba(245,179,1,0.55)" }}
+ >
+                    Join Free Masterclass
+                    <ArrowRight className="w-5 h-5" />
+                  </a>
+
+                </div>
+              </div>
+
+              <div
+                className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group bg-[#111827] mt-1"
+                onClick={() => setShowVideo(true)}
+ >
+                <img
+                  src="/demo/thumbs/hero-demo.jpg?v=20260326231041"
+                  alt="Live Class Demo"
+                  className="w-full aspect-video object-cover"
+                />
+                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/25 transition-all flex items-center justify-center">
+                  <div className="w-20 h-20 bg-[#F5B301] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                    <Play className="w-8 h-8 text-black ml-1" fill="black" />
+                  </div>
+                </div>
+                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <p className="text-[#0F172A] text-sm font-medium">🎬 Watch Live Class Demo</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {showVideo && (
-          <div className="fixed inset-0 z-[80] grid place-items-center bg-black/78 px-4 backdrop-blur-sm" onClick={() => setShowVideo(false)}>
-            <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-[#08111F] p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setShowVideo(false)}
-                className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white text-xl font-black text-black"
-                aria-label="Close demo"
-              >
-                ×
-              </button>
-              <img
-                src="/demo/thumbs/hero-demo.jpg?v=20260426"
-                alt="AI Expert Program demo preview"
-                className="aspect-video w-full rounded-2xl object-cover opacity-90"
-              />
-              <div className="p-5">
-                <h3 className="text-2xl font-black text-white">Live class demo preview</h3>
-                <p className="mt-2 text-white/70">
-                  Demo video preview section ready. Final video player source can be connected here.
-                </p>
-                <a
-                  href="/gen-ai-masterclass/register"
-                  className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#F5B301] px-6 py-3 text-sm font-black text-black"
-                >
-                  Join Free Masterclass
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {showVideo && (
+        <div className="fixed inset-0 z-50 bg-[#0F172A]/80 flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
+          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[#F5B301]" aria-label="close">
+              <X className="w-8 h-8" />
+            </button>
+            <div className="aspect-video bg-black rounded-xl overflow-hidden">
+              <div className="w-full h-full"><PlyrPlayer src="/demo/ai-expert-program-live.mp4?v=20260405-final-1" poster="/demo/thumbs/hero-demo.jpg?v=20260326231041" /></div></div>
+          </div>
+        </div>
+      )}
     </section>
   )
-}
+  };
 
-// ==================== SECTION 3: LEARNERS + COMPANIES ====================
+  // ==================== SECTION 3: LEARNERS + COMPANIES ====================
 const LearnersSection = () => (
   <section className="py-14 md:py-16 bg-transparent">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
