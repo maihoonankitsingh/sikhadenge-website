@@ -340,12 +340,28 @@ const LearnersSection = () => {
         })}
       </div>
 
-      <div className="mt-10 flex justify-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-[#F5B301]/45 bg-white px-6 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.06)]">
-          <span className="text-[#F5B301] text-xl">★★★★★</span>
-          <span className="font-bold text-[#0F172A]">4.8/5 rating</span>
-          <span className="hidden h-1 w-1 rounded-full bg-[#CBD5E1] sm:block" />
-          <span className="text-[#334155] font-semibold">Trusted by learners across India</span>
+      <div className="mt-10 flex justify-center px-4">
+        <div className="group inline-flex w-full max-w-[720px] flex-col items-center justify-center gap-3 rounded-[28px] border border-[#F5B301]/45 bg-white px-5 py-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition-all hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(15,23,42,0.11)] sm:w-auto sm:flex-row sm:gap-4 sm:rounded-full sm:px-7 sm:py-3">
+          <div className="flex items-center gap-1.5 text-[#F5B301]" aria-label="4.9 out of 5 rating">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-5 w-5 fill-current drop-shadow-[0_2px_8px_rgba(245,179,1,0.25)]" />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[17px] font-black tracking-[-0.02em] text-[#0F172A]">4.9/5 rating</span>
+          </div>
+
+          <span className="hidden h-5 w-px bg-[#CBD5E1] sm:block" />
+
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-[#EFF6FF] text-[#2563EB] ring-1 ring-[#DBEAFE]">
+              <Users className="h-4 w-4" />
+            </span>
+            <span className="text-center text-sm font-bold text-[#334155] sm:text-base">
+              Trusted by learners across India
+            </span>
+          </div>
         </div>
       </div>
     </section>
