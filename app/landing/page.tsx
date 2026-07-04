@@ -376,160 +376,310 @@ const ProcessSection = () => {
   const cards = [
     {
       step: "01",
-      label: "Start",
-      title: "AI tools alone are not enough",
+      title: "Learn More Than Tools",
       desc:
-        "ChatGPT, Canva ya AI tools use karna start hai. Real skill tab banti hai jab tum un tools se useful output, content aur digital assets bana pao.",
-      chips: ["AI Tools", "Content", "Output"],
-      accent: "bg-[#2563EB]",
-      soft: "bg-[#EFF6FF]",
+        "Go beyond random tools. Master AI for content, graphics, websites, chatbots, SEO, AEO, GEO and analytics.",
+      mobileDesc:
+        "Go beyond random tools. Master AI for content, websites, chatbots, SEO and analytics.",
+      chips: ["AI Tools", "Content", "Websites"],
+      color: "#7C3AED",
+      soft: "#F5F3FF",
       icon: (
-        <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="10" y="12" width="44" height="34" rx="10" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="3" />
-          <path d="M19 25h16M19 34h26" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" />
-          <path d="M43 18l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6Z" fill="#F5B301" />
-          <path d="M24 52h16" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
+        <svg viewBox="0 0 64 64" className="h-8 w-8" fill="none" aria-hidden="true">
+          <rect x="12" y="14" width="40" height="36" rx="10" fill="#F5F3FF" stroke="#C4B5FD" strokeWidth="3" />
+          <path d="M20 24h13M20 33h20M20 42h12" stroke="#7C3AED" strokeWidth="4" strokeLinecap="round" />
+          <path d="M43 18l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="#F5B301" />
         </svg>
       ),
     },
     {
       step: "02",
-      label: "Build",
-      title: "Build practical digital assets",
+      title: "Build Connected Systems",
       desc:
-        "Landing pages, posts, reels, lead forms, chatbots, AI agents, automation workflows, SEO pages aur dashboards banana step-by-step seekho.",
-      chips: ["Websites", "Chatbots", "Automation"],
-      accent: "bg-[#7C3AED]",
-      soft: "bg-[#F5F3FF]",
+        "Connect AI agents, chatbots, automation and data into workflows that scale your digital operations.",
+      mobileDesc:
+        "Connect AI agents, chatbots and automation into workflows that scale your digital operations.",
+      chips: ["Workflows", "Automation", "AI Agents"],
+      color: "#2563EB",
+      soft: "#EFF6FF",
       icon: (
-        <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <circle cx="32" cy="32" r="12" fill="#7C3AED" />
-          <path d="M32 8v12M32 44v12M8 32h12M44 32h12" stroke="#2563EB" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="32" cy="8" r="5" fill="#F5B301" />
-          <circle cx="32" cy="56" r="5" fill="#06B6D4" />
-          <circle cx="8" cy="32" r="5" fill="#06B6D4" />
-          <circle cx="56" cy="32" r="5" fill="#F5B301" />
-          <path d="M27 32h10M32 27v10" stroke="white" strokeWidth="4" strokeLinecap="round" />
+        <svg viewBox="0 0 64 64" className="h-8 w-8" fill="none" aria-hidden="true">
+          <circle cx="32" cy="32" r="8" fill="#2563EB" />
+          <path d="M32 13v11M32 40v11M13 32h11M40 32h11" stroke="#60A5FA" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="32" cy="13" r="5" fill="#7C3AED" />
+          <circle cx="32" cy="51" r="5" fill="#06B6D4" />
+          <circle cx="13" cy="32" r="5" fill="#06B6D4" />
+          <circle cx="51" cy="32" r="5" fill="#7C3AED" />
+          <path d="M28 32h8M32 28v8" stroke="white" strokeWidth="4" strokeLinecap="round" />
         </svg>
       ),
     },
     {
       step: "03",
-      label: "Grow",
-      title: "Create opportunities for yourself",
+      title: "Create Real Outcomes",
       desc:
-        "Student ho, freelancer ho, creator ho, marketer ho ya business owner — ye skills portfolio, client work, jobs aur income opportunities ko strong banati hain.",
-      chips: ["Portfolio", "Client Work", "Career"],
-      accent: "bg-[#06B6D4]",
-      soft: "bg-[#ECFEFF]",
+        "Launch content engines, rank on search and AI platforms, generate leads and grow with measurable results.",
+      mobileDesc:
+        "Launch content, rank on search and AI platforms, generate leads and grow with measurable results.",
+      chips: ["Results", "Growth", "Analytics"],
+      color: "#06B6D4",
+      soft: "#ECFEFF",
       icon: (
-        <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="12" y="20" width="40" height="30" rx="9" fill="#ECFEFF" stroke="#A5F3FC" strokeWidth="3" />
-          <path d="M22 20v-4c0-4 3-7 7-7h6c4 0 7 3 7 7v4" stroke="#2563EB" strokeWidth="5" strokeLinecap="round" />
-          <path d="M22 38h8l5-8 5 12 4-6h8" stroke="#06B6D4" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="48" cy="44" r="10" fill="#F5B301" />
-          <path d="M43 44l3 3 7-8" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 64 64" className="h-8 w-8" fill="none" aria-hidden="true">
+          <rect x="12" y="36" width="8" height="14" rx="3" fill="#06B6D4" />
+          <rect x="28" y="28" width="8" height="22" rx="3" fill="#2563EB" />
+          <rect x="44" y="18" width="8" height="32" rx="3" fill="#7C3AED" />
+          <path d="M13 26c10 0 17-8 25-8h10" stroke="#F5B301" strokeWidth="5" strokeLinecap="round" />
+          <path d="M43 12h9v9" stroke="#F5B301" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
   ]
 
-  const flow = ["Learn AI", "Create", "Build", "Automate", "Market", "Grow"]
+  const audiences = [
+    { name: "Entrepreneurs", icon: "👤" },
+    { name: "Marketers", icon: "🎯" },
+    { name: "Freelancers", icon: "👥" },
+    { name: "Creators", icon: "✍️" },
+    { name: "Business Owners", icon: "🏢" },
+    { name: "Agencies", icon: "🤝" },
+  ]
+
+  const dashboardCards = [
+    { title: "Content Engine", value: "24 Articles", tone: "text-[#7C3AED]" },
+    { title: "Chatbot", value: "1,240 Chats", tone: "text-[#2563EB]" },
+    { title: "Website", value: "Live", tone: "text-[#06B6D4]" },
+  ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-14 md:py-20">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(37,99,235,0.12),transparent_30%),radial-gradient(circle_at_82%_22%,rgba(124,58,237,0.10),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(6,182,212,0.12),transparent_38%)]" />
-      <div aria-hidden="true" className="absolute inset-0 opacity-[0.28] [background-image:linear-gradient(rgba(37,99,235,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.07)_1px,transparent_1px)] [background-size:42px_42px]" />
+    <section className="relative overflow-hidden bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_46%,#EEF6FF_100%)] py-14 md:py-20">
+      <div aria-hidden="true" className="absolute inset-0 opacity-[0.28] [background-image:radial-gradient(#CBD5E1_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div aria-hidden="true" className="absolute -left-28 top-16 h-80 w-80 rounded-full bg-[#7C3AED]/10 blur-3xl" />
+      <div aria-hidden="true" className="absolute -right-28 bottom-12 h-80 w-80 rounded-full bg-[#06B6D4]/12 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl rounded-[34px] border border-[#DDE8F7] bg-white/88 p-5 text-center shadow-[0_30px_90px_rgba(15,23,42,0.09)] backdrop-blur md:p-10">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#F8FBFF] px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_10px_26px_rgba(37,99,235,0.08)]">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EFF6FF] text-xs">⚡</span>
-            AI Digital Growth Creator Program
-          </div>
-
-          <h2 className="mx-auto mt-5 max-w-4xl text-[34px] font-black leading-[1.03] tracking-[-0.055em] text-[#071533] sm:text-[48px] md:text-[64px]">
-            From AI Tool User to
-            <span className="block bg-gradient-to-r from-[#6D28D9] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
-              AI Digital Growth Creator
-            </span>
-          </h2>
-
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-[#475569] sm:text-lg md:text-xl md:leading-8">
-            Sirf AI tools chalana nahi — real digital growth assets banana sikho:
-            content, websites, landing pages, chatbots, automation, SEO, AEO, GEO, ads and analytics.
-          </p>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
-          {cards.map((item) => (
-            <article
-              key={item.step}
-              className="group relative min-h-[320px] overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_90px_rgba(37,99,235,0.14)] sm:p-7"
-            >
-              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 ${item.accent}`} />
-              <div aria-hidden="true" className={`absolute -right-16 -top-16 h-48 w-48 rounded-full ${item.soft} transition-transform duration-500 group-hover:scale-125`} />
-              <div aria-hidden="true" className="absolute bottom-0 left-0 h-24 w-full bg-gradient-to-t from-[#F8FBFF] to-transparent" />
-
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-white shadow-[0_16px_38px_rgba(37,99,235,0.12)] ring-1 ring-[#DBEAFE]">
-                  {item.icon}
-                </div>
-
-                <div className="text-right">
-                  <span className={`inline-flex rounded-full ${item.accent} px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(37,99,235,0.18)]`}>
-                    {item.label}
-                  </span>
-                  <p className="mt-2 text-5xl font-black tracking-[-0.08em] text-[#E3EEFF]">{item.step}</p>
-                </div>
+        <div className="grid items-center gap-8 lg:grid-cols-[360px_1fr]">
+          <div className="order-2 hidden lg:block">
+            <div className="mx-auto max-w-[340px] rounded-[46px] border border-[#D7E4F6] bg-white p-5 shadow-[0_32px_90px_rgba(15,23,42,0.14)]">
+              <div className="mb-5 flex items-center justify-between text-xs font-black text-[#0F172A]">
+                <span>9:41</span>
+                <span>●●●</span>
               </div>
 
-              <div className="relative mt-7">
-                <h3 className="text-[24px] font-black leading-tight tracking-[-0.04em] text-[#071533]">
-                  {item.title}
-                </h3>
-                <p className="mt-4 text-[15px] leading-7 text-[#475569] sm:text-base">
-                  {item.desc}
-                </p>
+              <div className="mb-5 flex justify-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#F8FBFF] px-3 py-1.5 text-[11px] font-black text-[#2563EB]">
+                  <span>⚡</span> AI Digital Growth Creator Program
+                </span>
+              </div>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {item.chips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="rounded-full border border-[#D8E5F4] bg-[#F8FBFF] px-3 py-1.5 text-xs font-black text-[#334155]"
-                    >
-                      {chip}
+              <h3 className="text-center text-[26px] font-black leading-[1.05] tracking-[-0.05em] text-[#071533]">
+                From AI Tool User to
+                <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+                  AI Digital Growth Creator
+                </span>
+              </h3>
+
+              <p className="mx-auto mt-4 max-w-[260px] text-center text-sm leading-6 text-[#475569]">
+                Learn AI to create content, websites, chatbots, automation, SEO and analytics systems.
+              </p>
+
+              <div className="mt-6 space-y-3">
+                {cards.map((card) => (
+                  <div key={card.step} className="rounded-2xl border border-[#E2EAF6] bg-[#F8FBFF] p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)]">
+                    <div className="flex gap-3">
+                      <div
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-white shadow-[0_12px_28px_rgba(37,99,235,0.16)]"
+                        style={{ backgroundColor: card.color }}
+                      >
+                        {card.icon}
+                      </div>
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <h4 className="text-sm font-black leading-tight text-[#071533]">{card.title}</h4>
+                          <span
+                            className="rounded-full px-2 py-1 text-[11px] font-black"
+                            style={{ color: card.color, backgroundColor: card.soft }}
+                          >
+                            {card.step}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-[#475569]">{card.mobileDesc}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <p className="mb-3 text-center text-sm font-black text-[#071533]">Perfect For</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {audiences.slice(0, 6).map((audience) => (
+                    <span key={audience.name} className="rounded-full border border-[#E2EAF6] bg-white px-3 py-2 text-center text-[11px] font-black text-[#334155]">
+                      {audience.name}
                     </span>
                   ))}
                 </div>
               </div>
-            </article>
-          ))}
-        </div>
+            </div>
+          </div>
 
-        <div className="mt-7 overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.07)] md:p-6">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-[#2563EB]">
-                Beginner-friendly growth path
+          <div className="order-1 overflow-hidden rounded-[34px] border border-[#DDE8F7] bg-white/90 p-5 shadow-[0_30px_90px_rgba(15,23,42,0.09)] backdrop-blur md:p-8 lg:order-2 lg:p-10">
+            <div className="text-center">
+              <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#F8FBFF] px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_10px_26px_rgba(37,99,235,0.08)]">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EFF6FF] text-xs">⚡</span>
+                AI Digital Growth Creator Program
+              </div>
+
+              <h2 className="mx-auto mt-5 max-w-4xl text-[34px] font-black leading-[1.03] tracking-[-0.055em] text-[#071533] sm:text-[48px] md:text-[62px]">
+                From AI Tool User to
+                <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+                  AI Digital Growth Creator
+                </span>
+              </h2>
+
+              <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-[#475569] sm:text-lg md:text-xl md:leading-8">
+                Learn AI to create content, graphics, websites, chatbots, automation, SEO, AEO, GEO
+                and analytics systems that drive real digital growth.
               </p>
-              <h3 className="mt-1 text-2xl font-black tracking-[-0.04em] text-[#071533]">
-                Learn AI → Create Assets → Build Systems → Grow Digitally
-              </h3>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {flow.map((item, index) => (
-                <div
-                  key={item}
-                  className="min-w-[86px] rounded-2xl border border-[#E2EAF6] bg-[#F8FBFF] px-3 py-3 text-center shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="mx-auto mb-1 grid h-7 w-7 place-items-center rounded-full bg-[#EFF6FF] text-xs font-black text-[#2563EB]">
-                    {index + 1}
+            <div className="mt-9 grid gap-6 xl:grid-cols-[430px_1fr]">
+              <div className="space-y-4">
+                {cards.map((card) => (
+                  <article
+                    key={card.step}
+                    className="group relative overflow-hidden rounded-[26px] border border-[#DDE8F7] bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(37,99,235,0.12)]"
+                  >
+                    <div className="flex gap-4">
+                      <div
+                        className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl text-white shadow-[0_16px_38px_rgba(37,99,235,0.15)]"
+                        style={{ backgroundColor: card.color }}
+                      >
+                        {card.icon}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="text-[20px] font-black leading-tight tracking-[-0.035em] text-[#071533]">
+                            {card.title}
+                          </h3>
+                          <span
+                            className="rounded-full px-3 py-1 text-sm font-black"
+                            style={{ color: card.color, backgroundColor: card.soft }}
+                          >
+                            {card.step}
+                          </span>
+                        </div>
+
+                        <p className="mt-2 text-sm leading-6 text-[#475569] sm:text-[15px]">
+                          {card.desc}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {card.chips.map((chip) => (
+                            <span
+                              key={chip}
+                              className="rounded-full border border-[#D8E5F4] bg-[#F8FBFF] px-3 py-1.5 text-xs font-black text-[#334155]"
+                            >
+                              {chip}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="relative hidden min-h-[420px] xl:block">
+                <div className="absolute inset-y-8 left-0 w-px border-l border-dashed border-[#BCD2F0]" />
+                <div className="absolute left-[-6px] top-[38%] h-3 w-3 rounded-full bg-[#2563EB] shadow-[0_0_0_8px_rgba(37,99,235,0.08)]" />
+
+                <div className="absolute right-0 top-0 w-[420px] rounded-[28px] border border-[#DDE8F7] bg-[#F8FBFF] p-5 shadow-[0_24px_75px_rgba(15,23,42,0.10)]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <span className="h-3 w-3 rounded-full bg-[#7C3AED]/60" />
+                      <span className="h-3 w-3 rounded-full bg-[#2563EB]/50" />
+                      <span className="h-3 w-3 rounded-full bg-[#06B6D4]/50" />
+                    </div>
+                    <span className="text-xs font-black text-[#94A3B8]">Growth Dashboard</span>
                   </div>
-                  <p className="text-xs font-black text-[#334155]">{item}</p>
+
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    {dashboardCards.map((item) => (
+                      <div key={item.title} className="rounded-2xl border border-[#E2EAF6] bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                        <p className="text-[11px] font-bold text-[#64748B]">{item.title}</p>
+                        <p className={`mt-1 text-sm font-black ${item.tone}`}>{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-[#E2EAF6] bg-white p-4">
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-sm font-black text-[#071533]">Performance Overview</p>
+                      <span className="rounded-full bg-[#ECFEFF] px-3 py-1 text-xs font-black text-[#0891B2]">Live</span>
+                    </div>
+                    <div className="flex h-32 items-end gap-2">
+                      {[35, 54, 42, 68, 62, 82, 72, 90].map((h, i) => (
+                        <div key={i} className="flex-1 rounded-t-xl bg-gradient-to-t from-[#2563EB] to-[#06B6D4]" style={{ height: `${h}%` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    <div className="rounded-2xl border border-[#E2EAF6] bg-white p-3">
+                      <p className="text-[11px] text-[#64748B]">Sessions</p>
+                      <p className="text-lg font-black text-[#071533]">24.8K</p>
+                      <p className="text-xs font-bold text-[#16A34A]">+18.6%</p>
+                    </div>
+                    <div className="rounded-2xl border border-[#E2EAF6] bg-white p-3">
+                      <p className="text-[11px] text-[#64748B]">Leads</p>
+                      <p className="text-lg font-black text-[#071533]">1.8K</p>
+                      <p className="text-xs font-bold text-[#16A34A]">+22.4%</p>
+                    </div>
+                    <div className="rounded-2xl border border-[#E2EAF6] bg-white p-3">
+                      <p className="text-[11px] text-[#64748B]">Ranking</p>
+                      <p className="text-lg font-black text-[#071533]">Top 3</p>
+                      <p className="text-xs font-bold text-[#16A34A]">+12</p>
+                    </div>
+                  </div>
                 </div>
-              ))}
+
+                <div className="absolute bottom-10 left-10 w-[170px] rounded-[26px] border border-[#DDE8F7] bg-white p-4 shadow-[0_22px_60px_rgba(37,99,235,0.12)]">
+                  <p className="text-xs font-black text-[#2563EB]">AI Assistant</p>
+                  <p className="mt-2 rounded-2xl bg-[#F8FBFF] p-3 text-xs leading-5 text-[#475569]">
+                    Show me content ideas for my niche.
+                  </p>
+                  <button className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#2563EB] px-3 py-2 text-xs font-black text-white">
+                    Generate ideas
+                  </button>
+                </div>
+
+                <div className="absolute right-[-8px] top-[47%] rounded-2xl border border-[#DDE8F7] bg-white p-3 shadow-[0_18px_48px_rgba(15,23,42,0.10)]">
+                  <p className="text-xs font-black text-[#06B6D4]">Automation</p>
+                  <p className="text-[11px] text-[#64748B]">12 workflows</p>
+                </div>
+
+                <div className="absolute right-8 bottom-5 rounded-2xl border border-[#DDE8F7] bg-white p-3 shadow-[0_18px_48px_rgba(15,23,42,0.10)]">
+                  <p className="text-xs font-black text-[#2563EB]">Analytics</p>
+                  <p className="text-[11px] text-[#64748B]">Growth insights</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-[#E2EAF6] pt-6">
+              <p className="mb-4 text-center text-sm font-black text-[#071533]">Perfect For</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                {audiences.map((audience) => (
+                  <div
+                    key={audience.name}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-[#DDE8F7] bg-white px-3 py-3 text-sm font-black text-[#334155] shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
+                  >
+                    <span className="text-base">{audience.icon}</span>
+                    <span>{audience.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
