@@ -398,61 +398,132 @@ const ProcessSection = () => {
 // ==================== SECTION 6: QUOTE TESTIMONIAL ====================
 const QuoteTestimonial = () => {
   const [currentQuote, setCurrentQuote] = useState(0)
+
   const quotes = [
     {
-      text: "Sikhadenge me sirf tools nahi sikhaye gaye. Design, video, content aur AI workflows ko itne practical way me samjhaya gaya ki real output banana easy ho gaya.",
-      author: "Rahul Singh"
+      text: "Sikhadenge me sirf tools nahi sikhaye gaye. Design, video, content aur AI workflows ko practical way me samjhaya gaya — isliye real output banana easy ho gaya.",
+      author: "Rahul Singh",
+      role: "AI Digital Growth Learner",
+      result: "Built first portfolio project",
+      initials: "RS",
+      chips: ["Design", "Video", "AI Workflow"],
     },
     {
-      text: "Is program ka best part ye tha ki har cheez practical thi. Content ideas se lekar visuals, short videos aur landing sections tak sab kuch step-by-step clear hua.",
-      author: "Sneha Yadav"
+      text: "Program ka best part ye tha ki har cheez output-based thi. Content ideas se landing sections, short videos aur automation tak sab step-by-step clear hua.",
+      author: "Sneha Yadav",
+      role: "Creator & Freelancer",
+      result: "Started client-ready workflow",
+      initials: "SY",
+      chips: ["Content", "Landing Page", "Automation"],
     },
     {
-      text: "Pehle AI tools dekh raha tha, but clarity nahi thi. Sikhadenge ke baad samajh aaya ki AI ko real digital work me kaise use karna hai — faster execution, better structure aur visible output ke saath.",
-      author: "Mohit Kumar"
-    }
+      text: "Pehle AI tools dekh raha tha, but clarity nahi thi. Sikhadenge ke baad samajh aaya ki AI ko real digital work me kaise use karna hai.",
+      author: "Mohit Kumar",
+      role: "Student to Digital Creator",
+      result: "Created practical AI assets",
+      initials: "MK",
+      chips: ["AI Tools", "Portfolio", "Growth"],
+    },
   ]
 
+  const active = quotes[currentQuote]
+
   return (
-    <section className="py-16 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[28px] border border-[#E8D9A8] bg-[#FEF9E7] px-8 py-10 md:px-14 md:py-12">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-5 text-[110px] leading-none font-serif text-[#EFCF79] opacity-90 md:text-[150px]"
-          >
-            “
-          </div>
+    <section className="relative overflow-hidden bg-white py-12 md:py-16">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.08),transparent_30%),radial-gradient(circle_at_88%_24%,rgba(245,179,1,0.14),transparent_28%)]" />
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-1 bottom-[-18px] text-[110px] leading-none font-serif text-[#EFCF79] opacity-90 md:text-[150px]"
-          >
-            ”
-          </div>
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-stretch gap-6 lg:grid-cols-[0.9fr_1.4fr]">
+          <div className="rounded-[30px] border border-[#DDE8F7] bg-[#F8FAFC] p-6 shadow-[0_18px_55px_rgba(15,23,42,0.06)] md:p-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-white px-4 py-2 text-sm font-black text-[#2563EB]">
+              <span className="text-[#F5B301]">★</span>
+              Learner Story
+            </div>
 
-          <div className="relative mx-auto max-w-4xl text-center">
-            <p className="text-lg leading-[1.9] text-[#0F172A] md:text-[20px] md:leading-[1.95]">
-              {quotes[currentQuote].text}
+            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.04em] text-[#071533] md:text-4xl">
+              Real learners.
+              <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+                Real digital output.
+              </span>
+            </h2>
+
+            <p className="mt-4 text-base leading-7 text-[#475569]">
+              Students, creators aur freelancers Sikhadenge ke practical AI workflow se apne portfolio, content aur client-ready output build kar rahe hain.
             </p>
 
-            <p className="mt-8 text-[22px] font-semibold tracking-[-0.01em] text-[#0F172A] md:text-[24px]">
-              {quotes[currentQuote].author}
-            </p>
-
-            <div className="mt-5 flex items-center justify-center gap-3">
-              {quotes.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentQuote(i)}
-                  aria-label={`Show testimonial ${i + 1}`}
-                  className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                    currentQuote === i
-                      ? 'bg-[#0F3D2E]'
-                      : 'bg-[#B9C0AE] hover:bg-[#8E9883]'
-                  }`}
-                />
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              {["4.9/5", "150K+", "Practical"].map((item, i) => (
+                <div key={item} className="rounded-2xl border border-[#E2EAF6] bg-white p-4 text-center shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                  <p className="text-lg font-black text-[#071533]">{item}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#64748B]">
+                    {i === 0 ? "Rating" : i === 1 ? "Learners" : "Training"}
+                  </p>
+                </div>
               ))}
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[34px] border border-[#E8D9A8] bg-gradient-to-br from-[#FFFBEB] via-white to-[#F8FBFF] p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-8 lg:p-10">
+            <div aria-hidden="true" className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#F5B301]/15 blur-2xl" />
+            <div aria-hidden="true" className="absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-[#2563EB]/10 blur-2xl" />
+
+            <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
+              <div className="flex md:block md:w-[170px] md:shrink-0">
+                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#2563EB] to-[#06B6D4] text-2xl font-black text-white shadow-[0_18px_45px_rgba(37,99,235,0.28)]">
+                  {active.initials}
+                </div>
+
+                <div className="ml-4 md:ml-0 md:mt-4">
+                  <p className="text-xl font-black text-[#071533]">{active.author}</p>
+                  <p className="mt-1 text-sm font-bold text-[#64748B]">{active.role}</p>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#FEF3C7] px-3 py-1.5 text-sm font-black text-[#92400E]">
+                    ★★★★★ 4.9/5
+                  </span>
+                  <span className="rounded-full bg-[#ECFEFF] px-3 py-1.5 text-sm font-black text-[#0891B2]">
+                    {active.result}
+                  </span>
+                </div>
+
+                <p className="relative text-[22px] font-bold leading-[1.75] tracking-[-0.025em] text-[#071533] md:text-[27px] md:leading-[1.65]">
+                  <span className="absolute -left-2 -top-8 text-[70px] font-serif leading-none text-[#F5B301]/35 md:-left-8 md:-top-10 md:text-[96px]">“</span>
+                  {active.text}
+                  <span className="ml-2 text-[#F5B301]/60">”</span>
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {active.chips.map((chip) => (
+                    <span key={chip} className="rounded-full border border-[#DDE8F7] bg-white px-3 py-1.5 text-xs font-black text-[#334155] shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-7 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {quotes.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentQuote(i)}
+                        aria-label={`Show learner story ${i + 1}`}
+                        className={`h-3 rounded-full transition-all duration-300 ${
+                          currentQuote === i
+                            ? 'w-9 bg-[#2563EB]'
+                            : 'w-3 bg-[#CBD5E1] hover:bg-[#94A3B8]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="hidden rounded-full border border-[#DDE8F7] bg-white px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_8px_20px_rgba(15,23,42,0.04)] sm:block">
+                    Trusted by learners across India
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -460,6 +531,8 @@ const QuoteTestimonial = () => {
     </section>
   )
 }
+
+
 
 // ==================== SECTION 7: 4 BENEFIT CARDS ====================
 const BenefitsSection = () => {
