@@ -274,19 +274,19 @@ const HeroSection = () => {
   // ==================== SECTION 3: LEARNERS + COMPANIES ====================
 const LearnersSection = () => {
   const trustStats = [
-    { value: "150,000+", label: "Students", icon: "users", tone: "blue" },
-    { value: "4.9/5", label: "Rating", icon: "star", tone: "violet" },
-    { value: "Live", label: "Sessions", icon: "video", tone: "cyan" },
-    { value: "Structured", label: "Assignments", icon: "clipboard", tone: "blue" },
+    { value: "150,000+", label: "Students", desc: "Practical AI learners", icon: "users", tone: "blue" },
+    { value: "4.9/5", label: "Rating", desc: "Learner trust score", icon: "star", tone: "violet" },
+    { value: "Live", label: "Sessions", desc: "Guided class flow", icon: "video", tone: "cyan" },
+    { value: "Structured", label: "Assignments", desc: "Practice-first tasks", icon: "clipboard", tone: "blue" },
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-6 md:py-8">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.08),transparent_24%),radial-gradient(circle_at_88%_18%,rgba(6,182,212,0.08),transparent_24%)]" />
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-5 md:py-7">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(37,99,235,0.08),transparent_24%),radial-gradient(circle_at_90%_12%,rgba(6,182,212,0.08),transparent_24%),linear-gradient(180deg,#F8FAFC_0%,#F1F7FF_100%)]" />
 
       <div className="relative mx-auto max-w-[1420px] px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[28px] border border-[#DDE8F7] bg-white/92 px-4 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur md:px-8 md:py-7 lg:px-10">
-          <div className="mx-auto mb-4 flex max-w-3xl flex-col items-center justify-center gap-2 sm:flex-row">
+        <div className="rounded-[26px] border border-[#DDE8F7] bg-white/92 px-4 py-5 shadow-[0_16px_44px_rgba(15,23,42,0.055)] backdrop-blur md:px-7 md:py-6 lg:px-9">
+          <div className="mx-auto mb-3 flex max-w-3xl flex-col items-center justify-center gap-2 sm:flex-row">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#F2C55C] bg-white px-3 py-1.5 shadow-[0_8px_20px_rgba(245,179,1,0.10)]">
               <div className="flex items-center gap-1 text-[#F5B301]" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -313,68 +313,84 @@ const LearnersSection = () => {
           </div>
 
           <div className="mx-auto max-w-4xl text-center">
-            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#7C3AED] md:text-[11px]">
+            <p className="mb-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-[#7C3AED] md:text-[11px]">
               Skill today. Succeed tomorrow.
             </p>
 
-            <h2 className="text-[36px] font-black leading-[0.95] tracking-[-0.06em] text-[#071533] sm:text-5xl md:text-[58px] lg:text-[70px]">
+            <h2 className="text-[34px] font-black leading-[0.96] tracking-[-0.06em] text-[#071533] sm:text-5xl md:text-[56px] lg:text-[66px]">
               <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
                 150,000+
               </span>{" "}
               Students
             </h2>
 
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#475569] md:text-lg md:leading-7">
+            <p className="mx-auto mt-2.5 max-w-2xl text-sm leading-6 text-[#475569] md:text-base md:leading-7">
               are building practical digital skills through live sessions, structured assignments and guided learning.
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {trustStats.map((item) => (
-              <div key={item.label} className="rounded-[22px] border border-[#E2EAF6] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.045)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(37,99,235,0.09)] md:p-5">
-                <div className={`mb-3 grid h-10 w-10 place-items-center rounded-2xl ${
+              <div key={item.label} className="group relative overflow-hidden rounded-[24px] border border-[#DDE8F7] bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2563EB]/25 hover:shadow-[0_18px_42px_rgba(37,99,235,0.10)] md:p-5">
+                <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${
                   item.tone === "violet"
-                    ? "bg-[#F4F0FF] text-[#7C3AED]"
+                    ? "bg-gradient-to-r from-[#7C3AED] to-[#2563EB]"
                     : item.tone === "cyan"
-                      ? "bg-[#ECFEFF] text-[#0891B2]"
-                      : "bg-[#EEF6FF] text-[#2563EB]"
-                }`}>
-                  {item.icon === "users" && (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                      <circle cx="9.5" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  )}
+                      ? "bg-gradient-to-r from-[#06B6D4] to-[#2563EB]"
+                      : "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]"
+                }`} />
 
-                  {item.icon === "star" && (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
-                      <path d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02l-5.3 2.79 1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />
-                    </svg>
-                  )}
+                <div className="flex items-center gap-3">
+                  <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl shadow-[0_10px_24px_rgba(15,23,42,0.06)] ${
+                    item.tone === "violet"
+                      ? "bg-[#F4F0FF] text-[#7C3AED]"
+                      : item.tone === "cyan"
+                        ? "bg-[#ECFEFF] text-[#0891B2]"
+                        : "bg-[#EEF6FF] text-[#2563EB]"
+                  }`}>
+                    {item.icon === "users" && (
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                        <circle cx="9.5" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    )}
 
-                  {item.icon === "video" && (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
-                      <rect x="3" y="6" width="13" height="12" rx="3" />
-                      <path d="M16 10l5-3v10l-5-3z" />
-                    </svg>
-                  )}
+                    {item.icon === "star" && (
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
+                        <path d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02l-5.3 2.79 1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />
+                      </svg>
+                    )}
 
-                  {item.icon === "clipboard" && (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
-                      <path d="M9 4h6l1 2h3v15H5V6h3l1-2z" />
-                      <path d="M9 11h6" />
-                      <path d="M9 15h4" />
-                    </svg>
-                  )}
+                    {item.icon === "video" && (
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
+                        <rect x="3" y="6" width="13" height="12" rx="3" />
+                        <path d="M16 10l5-3v10l-5-3z" />
+                      </svg>
+                    )}
+
+                    {item.icon === "clipboard" && (
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
+                        <path d="M9 4h6l1 2h3v15H5V6h3l1-2z" />
+                        <path d="M9 11h6" />
+                        <path d="M9 15h4" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#071533] md:text-[28px]">
+                      {item.value}
+                    </p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#64748B] md:text-[11px]">
+                      {item.label}
+                    </p>
+                  </div>
                 </div>
 
-                <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#071533] md:text-[30px]">
-                  {item.value}
-                </p>
-                <p className="mt-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[#64748B] md:text-xs">
-                  {item.label}
+                <p className="mt-3 hidden text-xs font-semibold leading-5 text-[#64748B] sm:block">
+                  {item.desc}
                 </p>
               </div>
             ))}
@@ -1328,8 +1344,7 @@ export default function LandingPage() {
       <LearnersSection />
       <RealPractitionersBanner />
       <ProcessSection />
-      <QuoteTestimonial />
-      <BenefitsSection />
+<BenefitsSection />
       <FrameworksSection />
       <ToolsUseCaseSection />
       <ToolsLogosSection />
