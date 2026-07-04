@@ -369,7 +369,95 @@ const LearnersSection = () => {
 }
 
 // ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
-const RealPractitionersBanner = () => null
+const RealPractitionersBanner = () => {
+  const stats = [
+    {
+      value: "54,836",
+      label: "AI-cited job cuts in 2025",
+      note: "Challenger tracked AI as a layoff reason",
+    },
+    {
+      value: "87,714",
+      label: "AI-cited cuts in 2026 by May",
+      note: "Already above full-year 2025",
+    },
+    {
+      value: "56%",
+      label: "AI skills wage premium",
+      note: "PwC Global AI Jobs Barometer",
+    },
+    {
+      value: "+16%",
+      label: "India AI hiring growth",
+      note: "June 2026 AI hiring vs last year",
+    },
+  ]
+
+  return (
+    <section className="bg-white py-8 md:py-10">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#100018] px-5 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.18)] md:px-8 md:py-10 lg:px-12">
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(124,58,237,0.34),transparent_28%),radial-gradient(circle_at_85%_20%,rgba(37,99,235,0.28),transparent_30%),linear-gradient(135deg,#110018_0%,#080015_52%,#160021_100%)]" />
+          <div aria-hidden="true" className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#A855F7]/70 to-transparent" />
+
+          <div className="relative mx-auto max-w-6xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs font-black text-[#C4B5FD]">
+              <span className="h-2 w-2 rounded-full bg-[#A855F7] shadow-[0_0_18px_rgba(168,85,247,0.95)]" />
+              2025–26 AI job market shift
+            </div>
+
+            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.045em] text-white md:text-5xl">
+              AI is changing jobs fast.
+              <span className="block text-[#7C3AED] md:inline">
+                Skills decide who moves ahead.
+              </span>
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-4xl text-lg font-semibold leading-8 text-white/88 md:text-2xl">
+              AI won’t replace every person. But people who use AI workflows will replace slow, manual work.
+            </p>
+
+            <p className="mx-auto mt-3 max-w-4xl text-xs italic leading-6 text-white/55 md:text-sm">
+              Sources referenced in copy: Challenger job-cut reports, PwC Global AI Jobs Barometer, and Reuters/Naukri hiring data.
+            </p>
+
+            <div className="my-8 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent md:my-10" />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((item) => (
+                <div key={item.label} className="rounded-[24px] border border-white/10 bg-white/[0.06] p-5 text-center backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
+                  <p className="bg-gradient-to-r from-white via-[#DDD6FE] to-[#60A5FA] bg-clip-text text-4xl font-black tracking-[-0.04em] text-transparent md:text-5xl">
+                    {item.value}
+                  </p>
+                  <p className="mt-3 text-base font-black leading-snug text-white md:text-lg">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-white/58">
+                    {item.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/15 px-5 py-2.5 text-sm font-black text-[#DDD6FE]">
+                Learn AI tools
+              </div>
+              <div className="rounded-full border border-[#2563EB]/30 bg-[#2563EB]/15 px-5 py-2.5 text-sm font-black text-[#BFDBFE]">
+                Build practical projects
+              </div>
+              <div className="rounded-full border border-[#06B6D4]/30 bg-[#06B6D4]/15 px-5 py-2.5 text-sm font-black text-[#A5F3FC]">
+                Become job-ready
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
 
 // ==================== SECTION 5: 3-STEP PROCESS ====================
 const ProcessSection = () => {
