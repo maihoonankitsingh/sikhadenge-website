@@ -376,12 +376,13 @@ const ProcessSection = () => {
   const cards = [
     {
       step: "01",
-      label: "Tool User",
-      title: "AI tools alone will not build growth",
+      label: "Start",
+      title: "AI tools alone are not enough",
       desc:
-        "Random tools se output banta hai, but business growth ke liye website, content, lead flow, CRM aur reporting ek saath connected hone chahiye.",
-      chips: ["AI tools", "Content", "Website"],
-      gradient: "from-[#2563EB] to-[#7C3AED]",
+        "ChatGPT, Canva ya AI tools use karna start hai. Real skill tab banti hai jab tum un tools se useful output, content aur digital assets bana pao.",
+      chips: ["AI Tools", "Content", "Output"],
+      accent: "bg-[#2563EB]",
+      soft: "bg-[#EFF6FF]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
           <rect x="10" y="12" width="44" height="34" rx="10" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="3" />
@@ -393,16 +394,17 @@ const ProcessSection = () => {
     },
     {
       step: "02",
-      label: "System Builder",
-      title: "Growth needs connected workflows",
+      label: "Build",
+      title: "Build practical digital assets",
       desc:
-        "AI agents, chatbots, automation, websites, apps, SEO, AEO, GEO, ads aur analytics ko ek practical growth system me connect karna padta hai.",
-      chips: ["Agents", "Automation", "SEO/AEO/GEO"],
-      gradient: "from-[#7C3AED] to-[#06B6D4]",
+        "Landing pages, posts, reels, lead forms, chatbots, AI agents, automation workflows, SEO pages aur dashboards banana step-by-step seekho.",
+      chips: ["Websites", "Chatbots", "Automation"],
+      accent: "bg-[#7C3AED]",
+      soft: "bg-[#F5F3FF]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <circle cx="32" cy="32" r="12" fill="#2563EB" />
-          <path d="M32 8v12M32 44v12M8 32h12M44 32h12" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="32" cy="32" r="12" fill="#7C3AED" />
+          <path d="M32 8v12M32 44v12M8 32h12M44 32h12" stroke="#2563EB" strokeWidth="5" strokeLinecap="round" />
           <circle cx="32" cy="8" r="5" fill="#F5B301" />
           <circle cx="32" cy="56" r="5" fill="#06B6D4" />
           <circle cx="8" cy="32" r="5" fill="#06B6D4" />
@@ -413,17 +415,18 @@ const ProcessSection = () => {
     },
     {
       step: "03",
-      label: "Growth Architect",
-      title: "Real systems create real opportunities",
+      label: "Grow",
+      title: "Create opportunities for yourself",
       desc:
-        "Jab learner landing page, chatbot, automation, dashboard aur marketing system bana pata hai, tab portfolio, confidence aur earning potential strong hota hai.",
-      chips: ["Portfolio", "Clients", "Dashboard"],
-      gradient: "from-[#06B6D4] to-[#2563EB]",
+        "Student ho, freelancer ho, creator ho, marketer ho ya business owner — ye skills portfolio, client work, jobs aur income opportunities ko strong banati hain.",
+      chips: ["Portfolio", "Client Work", "Career"],
+      accent: "bg-[#06B6D4]",
+      soft: "bg-[#ECFEFF]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="12" y="20" width="40" height="30" rx="9" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="3" />
-          <path d="M22 20v-4c0-4 3-7 7-7h6c4 0 7 3 7 7v4" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
-          <path d="M22 38h8l5-8 5 12 4-6h8" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="12" y="20" width="40" height="30" rx="9" fill="#ECFEFF" stroke="#A5F3FC" strokeWidth="3" />
+          <path d="M22 20v-4c0-4 3-7 7-7h6c4 0 7 3 7 7v4" stroke="#2563EB" strokeWidth="5" strokeLinecap="round" />
+          <path d="M22 38h8l5-8 5 12 4-6h8" stroke="#06B6D4" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="48" cy="44" r="10" fill="#F5B301" />
           <path d="M43 44l3 3 7-8" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -431,30 +434,30 @@ const ProcessSection = () => {
     },
   ]
 
-  const flow = ["Learn", "Build", "Automate", "Market", "Track", "Scale"]
+  const flow = ["Learn AI", "Create", "Build", "Automate", "Market", "Grow"]
 
   return (
     <section className="relative overflow-hidden bg-[#F8FAFC] py-14 md:py-20">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.10),transparent_32%),radial-gradient(circle_at_82%_28%,rgba(124,58,237,0.10),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(6,182,212,0.10),transparent_38%)]" />
-      <div aria-hidden="true" className="absolute inset-0 opacity-[0.32] [background-image:linear-gradient(rgba(37,99,235,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.07)_1px,transparent_1px)] [background-size:42px_42px]" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(37,99,235,0.12),transparent_30%),radial-gradient(circle_at_82%_22%,rgba(124,58,237,0.10),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(6,182,212,0.12),transparent_38%)]" />
+      <div aria-hidden="true" className="absolute inset-0 opacity-[0.28] [background-image:linear-gradient(rgba(37,99,235,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.07)_1px,transparent_1px)] [background-size:42px_42px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-[34px] border border-[#DDE8F7] bg-white/80 p-5 text-center shadow-[0_30px_90px_rgba(15,23,42,0.09)] backdrop-blur md:p-10">
+        <div className="mx-auto max-w-5xl rounded-[34px] border border-[#DDE8F7] bg-white/88 p-5 text-center shadow-[0_30px_90px_rgba(15,23,42,0.09)] backdrop-blur md:p-10">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#F8FBFF] px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_10px_26px_rgba(37,99,235,0.08)]">
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EFF6FF] text-xs">⚡</span>
-            AI Business Growth Architect Program
+            AI Digital Growth Creator Program
           </div>
 
-          <h2 className="mx-auto mt-5 max-w-4xl text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-[48px] md:text-[64px]">
+          <h2 className="mx-auto mt-5 max-w-4xl text-[34px] font-black leading-[1.03] tracking-[-0.055em] text-[#071533] sm:text-[48px] md:text-[64px]">
             From AI Tool User to
             <span className="block bg-gradient-to-r from-[#6D28D9] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
-              AI Business Growth Architect
+              AI Digital Growth Creator
             </span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-[#475569] sm:text-lg md:text-xl md:leading-8">
-            Sirf AI tools chalana nahi — real business growth system banana sikho:
-            websites, apps, chatbots, agents, automation, content, SEO, AEO, GEO, ads and analytics.
+            Sirf AI tools chalana nahi — real digital growth assets banana sikho:
+            content, websites, landing pages, chatbots, automation, SEO, AEO, GEO, ads and analytics.
           </p>
         </div>
 
@@ -462,10 +465,10 @@ const ProcessSection = () => {
           {cards.map((item) => (
             <article
               key={item.step}
-              className="group relative min-h-[330px] overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_90px_rgba(37,99,235,0.14)] sm:p-7"
+              className="group relative min-h-[320px] overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_90px_rgba(37,99,235,0.14)] sm:p-7"
             >
-              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${item.gradient}`} />
-              <div aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#EFF6FF] transition-transform duration-500 group-hover:scale-125" />
+              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 ${item.accent}`} />
+              <div aria-hidden="true" className={`absolute -right-16 -top-16 h-48 w-48 rounded-full ${item.soft} transition-transform duration-500 group-hover:scale-125`} />
               <div aria-hidden="true" className="absolute bottom-0 left-0 h-24 w-full bg-gradient-to-t from-[#F8FBFF] to-transparent" />
 
               <div className="relative flex items-start justify-between gap-4">
@@ -474,7 +477,7 @@ const ProcessSection = () => {
                 </div>
 
                 <div className="text-right">
-                  <span className={`inline-flex rounded-full bg-gradient-to-r ${item.gradient} px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(37,99,235,0.18)]`}>
+                  <span className={`inline-flex rounded-full ${item.accent} px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(37,99,235,0.18)]`}>
                     {item.label}
                   </span>
                   <p className="mt-2 text-5xl font-black tracking-[-0.08em] text-[#E3EEFF]">{item.step}</p>
@@ -508,10 +511,10 @@ const ProcessSection = () => {
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.16em] text-[#2563EB]">
-                Complete AI growth flow
+                Beginner-friendly growth path
               </p>
               <h3 className="mt-1 text-2xl font-black tracking-[-0.04em] text-[#071533]">
-                Learn → Build → Automate → Market → Track → Scale
+                Learn AI → Create Assets → Build Systems → Grow Digitally
               </h3>
             </div>
 
