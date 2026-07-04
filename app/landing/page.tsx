@@ -373,134 +373,129 @@ const RealPractitionersBanner = () => null
 
 // ==================== SECTION 5: 3-STEP PROCESS ====================
 const ProcessSection = () => {
-  const shifts = [
+  const cards = [
     {
       step: "01",
-      badge: "AI + Growth",
-      title: "AI is changing how businesses grow",
+      label: "Tool User",
+      title: "AI tools alone will not build growth",
       desc:
-        "Ab sirf ek AI tool use karna enough nahi hai. Website, content, CRM, chatbot, automation aur dashboard ko ek connected growth system ki tarah chalana padta hai.",
-      points: ["Website + lead flow", "Content + marketing", "Reports + analytics"],
+        "Random tools se output banta hai, but business growth ke liye website, content, lead flow, CRM aur reporting ek saath connected hone chahiye.",
+      chips: ["AI tools", "Content", "Website"],
+      gradient: "from-[#2563EB] to-[#7C3AED]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="10" y="34" width="9" height="18" rx="3" fill="#2563EB" />
-          <rect x="27" y="25" width="9" height="27" rx="3" fill="#7C3AED" />
-          <rect x="44" y="15" width="9" height="37" rx="3" fill="#06B6D4" />
-          <path d="M11 24c10 0 18-8 25-8h12" stroke="#F5B301" strokeWidth="5" strokeLinecap="round" />
-          <path d="M43 10h9v9" stroke="#F5B301" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="10" y="12" width="44" height="34" rx="10" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="3" />
+          <path d="M19 25h16M19 34h26" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" />
+          <path d="M43 18l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6Z" fill="#F5B301" />
+          <path d="M24 52h16" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
         </svg>
       ),
     },
     {
       step: "02",
-      badge: "Connected Stack",
-      title: "One-skill learning is no longer enough",
+      label: "System Builder",
+      title: "Growth needs connected workflows",
       desc:
-        "Modern digital work me AI agents, automation, websites, apps, graphics, video, SEO, AEO, GEO aur analytics ka practical combo chahiye.",
-      points: ["AI agents", "Automation", "Website + app + content"],
+        "AI agents, chatbots, automation, websites, apps, SEO, AEO, GEO, ads aur analytics ko ek practical growth system me connect karna padta hai.",
+      chips: ["Agents", "Automation", "SEO/AEO/GEO"],
+      gradient: "from-[#7C3AED] to-[#06B6D4]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="20" y="18" width="24" height="24" rx="8" fill="#2563EB" />
-          <path d="M32 8v10M32 42v14M8 32h12M44 32h12" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="32" cy="30" r="5" fill="white" />
-          <path d="M24 52h16" stroke="#06B6D4" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="10" cy="32" r="5" fill="#F5B301" />
-          <circle cx="54" cy="32" r="5" fill="#F5B301" />
+          <circle cx="32" cy="32" r="12" fill="#2563EB" />
+          <path d="M32 8v12M32 44v12M8 32h12M44 32h12" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="32" cy="8" r="5" fill="#F5B301" />
+          <circle cx="32" cy="56" r="5" fill="#06B6D4" />
+          <circle cx="8" cy="32" r="5" fill="#06B6D4" />
+          <circle cx="56" cy="32" r="5" fill="#F5B301" />
+          <path d="M27 32h10M32 27v10" stroke="white" strokeWidth="4" strokeLinecap="round" />
         </svg>
       ),
     },
     {
       step: "03",
-      badge: "Real Output",
-      title: "Practical systems create real opportunities",
+      label: "Growth Architect",
+      title: "Real systems create real opportunities",
       desc:
-        "Jo learner real business output bana sakta hai — landing page, lead form, chatbot, automation, ads plan aur dashboard — uske paas portfolio aur earning dono strong hote hain.",
-      points: ["Portfolio projects", "Client-ready workflows", "Future-ready skills"],
+        "Jab learner landing page, chatbot, automation, dashboard aur marketing system bana pata hai, tab portfolio, confidence aur earning potential strong hota hai.",
+      chips: ["Portfolio", "Clients", "Dashboard"],
+      gradient: "from-[#06B6D4] to-[#2563EB]",
       icon: (
         <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true">
-          <rect x="12" y="20" width="40" height="30" rx="8" fill="#2563EB" />
+          <rect x="12" y="20" width="40" height="30" rx="9" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="3" />
           <path d="M22 20v-4c0-4 3-7 7-7h6c4 0 7 3 7 7v4" stroke="#7C3AED" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="46" cy="42" r="10" fill="#F5B301" />
-          <path d="M41 42l3 3 7-8" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M22 38h8l5-8 5 12 4-6h8" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="48" cy="44" r="10" fill="#F5B301" />
+          <path d="M43 44l3 3 7-8" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
   ]
 
-  const skillChips = [
-    "AI Agents",
-    "Automation",
-    "Websites",
-    "No-Code Apps",
-    "Graphics & Video",
-    "SEO / AEO / GEO",
-    "Performance Marketing",
-    "Analytics",
-  ]
+  const flow = ["Learn", "Build", "Automate", "Market", "Track", "Scale"]
 
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_52%,#F3F7FF_100%)] py-14 md:py-20">
-      <div aria-hidden="true" className="absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#2563EB]/10 blur-3xl" />
-      <div aria-hidden="true" className="absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-[#F5B301]/16 blur-3xl" />
-      <div aria-hidden="true" className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(#CBD5E1_1px,transparent_1px)] [background-size:28px_28px]" />
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-14 md:py-20">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.10),transparent_32%),radial-gradient(circle_at_82%_28%,rgba(124,58,237,0.10),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(6,182,212,0.10),transparent_38%)]" />
+      <div aria-hidden="true" className="absolute inset-0 opacity-[0.32] [background-image:linear-gradient(rgba(37,99,235,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.07)_1px,transparent_1px)] [background-size:42px_42px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-white px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_12px_30px_rgba(37,99,235,0.08)]">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EFF6FF]">⚡</span>
-            AI Business Growth Stack
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-[34px] border border-[#DDE8F7] bg-white/80 p-5 text-center shadow-[0_30px_90px_rgba(15,23,42,0.09)] backdrop-blur md:p-10">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#F8FBFF] px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_10px_26px_rgba(37,99,235,0.08)]">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EFF6FF] text-xs">⚡</span>
+            AI Business Growth Architect Program
           </div>
 
-          <h2 className="text-[32px] font-black leading-[1.05] tracking-[-0.05em] text-[#071533] sm:text-[44px] md:text-[56px]">
-            AI Is Changing How
-            <span className="block bg-gradient-to-r from-[#2563EB] via-[#7C3AED] to-[#06B6D4] bg-clip-text text-transparent">
-              Businesses Grow
+          <h2 className="mx-auto mt-5 max-w-4xl text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-[48px] md:text-[64px]">
+            From AI Tool User to
+            <span className="block bg-gradient-to-r from-[#6D28D9] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+              AI Business Growth Architect
             </span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-[#475569] sm:text-lg md:text-xl md:leading-8">
-            AI agents, automation, websites, apps, content, SEO, AEO, GEO, paid ads and analytics
-            are becoming the new business growth system.
+            Sirf AI tools chalana nahi — real business growth system banana sikho:
+            websites, apps, chatbots, agents, automation, content, SEO, AEO, GEO, ads and analytics.
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 md:mt-12 lg:grid-cols-3">
-          {shifts.map((item) => (
+        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {cards.map((item) => (
             <article
               key={item.step}
-              className="group relative overflow-hidden rounded-[28px] border border-[#DDE8F7] bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-[#2563EB]/35 hover:shadow-[0_30px_80px_rgba(37,99,235,0.13)] sm:p-7"
+              className="group relative min-h-[330px] overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_90px_rgba(37,99,235,0.14)] sm:p-7"
             >
-              <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#2563EB] via-[#7C3AED] to-[#06B6D4] opacity-0 transition-opacity group-hover:opacity-100" />
-              <div aria-hidden="true" className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#EFF6FF] transition-transform duration-300 group-hover:scale-125" />
+              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${item.gradient}`} />
+              <div aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#EFF6FF] transition-transform duration-500 group-hover:scale-125" />
+              <div aria-hidden="true" className="absolute bottom-0 left-0 h-24 w-full bg-gradient-to-t from-[#F8FBFF] to-transparent" />
 
               <div className="relative flex items-start justify-between gap-4">
-                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-[#F3F7FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_rgba(37,99,235,0.12)] ring-1 ring-[#DBEAFE]">
+                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-white shadow-[0_16px_38px_rgba(37,99,235,0.12)] ring-1 ring-[#DBEAFE]">
                   {item.icon}
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-flex rounded-full bg-[#EEF4FF] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#2563EB]">
-                    {item.badge}
+                  <span className={`inline-flex rounded-full bg-gradient-to-r ${item.gradient} px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(37,99,235,0.18)]`}>
+                    {item.label}
                   </span>
-                  <p className="mt-2 text-4xl font-black tracking-[-0.08em] text-[#DBEAFE]">{item.step}</p>
+                  <p className="mt-2 text-5xl font-black tracking-[-0.08em] text-[#E3EEFF]">{item.step}</p>
                 </div>
               </div>
 
-              <div className="relative mt-6">
-                <h3 className="text-[22px] font-black leading-tight tracking-[-0.03em] text-[#071533]">
+              <div className="relative mt-7">
+                <h3 className="text-[24px] font-black leading-tight tracking-[-0.04em] text-[#071533]">
                   {item.title}
                 </h3>
                 <p className="mt-4 text-[15px] leading-7 text-[#475569] sm:text-base">
                   {item.desc}
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {item.points.map((point) => (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {item.chips.map((chip) => (
                     <span
-                      key={point}
-                      className="rounded-full border border-[#E2EAF6] bg-[#F8FAFC] px-3 py-1.5 text-xs font-bold text-[#334155]"
+                      key={chip}
+                      className="rounded-full border border-[#D8E5F4] bg-[#F8FBFF] px-3 py-1.5 text-xs font-black text-[#334155]"
                     >
-                      {point}
+                      {chip}
                     </span>
                   ))}
                 </div>
@@ -509,20 +504,30 @@ const ProcessSection = () => {
           ))}
         </div>
 
-        <div className="mt-9 rounded-[28px] border border-[#DDE8F7] bg-white/80 p-4 shadow-[0_18px_48px_rgba(15,23,42,0.06)] backdrop-blur md:p-5">
-          <p className="text-center text-sm font-black uppercase tracking-[0.16em] text-[#64748B]">
-            Skills covered in this growth system
-          </p>
+        <div className="mt-7 overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white p-5 shadow-[0_22px_70px_rgba(15,23,42,0.07)] md:p-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.16em] text-[#2563EB]">
+                Complete AI growth flow
+              </p>
+              <h3 className="mt-1 text-2xl font-black tracking-[-0.04em] text-[#071533]">
+                Learn → Build → Automate → Market → Track → Scale
+              </h3>
+            </div>
 
-          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-            {skillChips.map((skill) => (
-              <span
-                key={skill}
-                className="rounded-full border border-[#D8E5F4] bg-[#F8FBFF] px-4 py-2 text-sm font-bold text-[#0F172A] shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
-              >
-                {skill}
-              </span>
-            ))}
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {flow.map((item, index) => (
+                <div
+                  key={item}
+                  className="min-w-[86px] rounded-2xl border border-[#E2EAF6] bg-[#F8FBFF] px-3 py-3 text-center shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+                >
+                  <div className="mx-auto mb-1 grid h-7 w-7 place-items-center rounded-full bg-[#EFF6FF] text-xs font-black text-[#2563EB]">
+                    {index + 1}
+                  </div>
+                  <p className="text-xs font-black text-[#334155]">{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
