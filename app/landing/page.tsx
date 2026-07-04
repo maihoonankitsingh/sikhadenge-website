@@ -274,89 +274,65 @@ const HeroSection = () => {
   // ==================== SECTION 3: LEARNERS + COMPANIES ====================
 const LearnersSection = () => {
   const trustStats = [
-    {
-      value: "150,000+",
-      label: "Students",
-      desc: "Learners building practical digital skills",
-      icon: "users",
-      tone: "blue",
-    },
-    {
-      value: "4.9/5",
-      label: "Rating",
-      desc: "Trusted by learners across India",
-      icon: "star",
-      tone: "violet",
-    },
-    {
-      value: "Live",
-      label: "Sessions",
-      desc: "Guided learning with clear structure",
-      icon: "video",
-      tone: "cyan",
-    },
-    {
-      value: "Structured",
-      label: "Assignments",
-      desc: "Practice-focused learning path",
-      icon: "clipboard",
-      tone: "blue",
-    },
+    { value: "150,000+", label: "Students", icon: "users", tone: "blue" },
+    { value: "4.9/5", label: "Rating", icon: "star", tone: "violet" },
+    { value: "Live", label: "Sessions", icon: "video", tone: "cyan" },
+    { value: "Structured", label: "Assignments", icon: "clipboard", tone: "blue" },
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-10 md:py-14">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.10),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(6,182,212,0.10),transparent_26%),radial-gradient(circle_at_50%_92%,rgba(124,58,237,0.08),transparent_30%)]" />
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-6 md:py-8">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.08),transparent_24%),radial-gradient(circle_at_88%_18%,rgba(6,182,212,0.08),transparent_24%)]" />
 
-      <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[34px] border border-[#DDE8F7] bg-white/92 px-5 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.07)] backdrop-blur md:px-10 md:py-11 lg:px-14">
-          <div className="mx-auto mb-7 flex max-w-4xl flex-col items-center justify-center gap-3 sm:flex-row">
-            <div className="inline-flex items-center gap-3 rounded-full border border-[#F2C55C] bg-white px-4 py-2.5 shadow-[0_10px_28px_rgba(245,179,1,0.12)]">
+      <div className="relative mx-auto max-w-[1420px] px-4 sm:px-6 lg:px-8">
+        <div className="rounded-[28px] border border-[#DDE8F7] bg-white/92 px-4 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur md:px-8 md:py-7 lg:px-10">
+          <div className="mx-auto mb-4 flex max-w-3xl flex-col items-center justify-center gap-2 sm:flex-row">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#F2C55C] bg-white px-3 py-1.5 shadow-[0_8px_20px_rgba(245,179,1,0.10)]">
               <div className="flex items-center gap-1 text-[#F5B301]" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+                  <svg key={star} viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
                     <path d="M12 2.4l2.95 5.98 6.6.96-4.77 4.65 1.13 6.57L12 17.46l-5.91 3.1 1.13-6.57-4.77-4.65 6.6-.96L12 2.4z" />
                   </svg>
                 ))}
               </div>
-              <span className="h-5 w-px bg-[#E5E7EB]" />
-              <span className="text-sm font-black text-[#071533]">4.9/5 rating</span>
+              <span className="h-4 w-px bg-[#E5E7EB]" />
+              <span className="text-xs font-black text-[#071533]">4.9/5 rating</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#DDE8F7] bg-white px-4 py-2.5 shadow-[0_10px_28px_rgba(37,99,235,0.08)]">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#EEF6FF] text-[#2563EB]" aria-hidden="true">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2.4]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#DDE8F7] bg-white px-3 py-1.5 shadow-[0_8px_20px_rgba(37,99,235,0.07)]">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EEF6FF] text-[#2563EB]" aria-hidden="true">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.4]">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
                   <circle cx="9.5" cy="7" r="4" />
                   <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </span>
-              <span className="text-sm font-bold text-[#334155]">Trusted by learners across India</span>
+              <span className="text-xs font-bold text-[#334155]">Trusted by learners across India</span>
             </div>
           </div>
 
-          <div className="mx-auto max-w-5xl text-center">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-[0.32em] text-[#7C3AED] md:text-xs">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#7C3AED] md:text-[11px]">
               Skill today. Succeed tomorrow.
             </p>
 
-            <h2 className="text-[44px] font-black leading-[0.98] tracking-[-0.065em] text-[#071533] sm:text-6xl md:text-7xl lg:text-[92px]">
+            <h2 className="text-[36px] font-black leading-[0.95] tracking-[-0.06em] text-[#071533] sm:text-5xl md:text-[58px] lg:text-[70px]">
               <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
                 150,000+
               </span>{" "}
               Students
             </h2>
 
-            <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-[#475569] md:text-xl md:leading-8">
-              are building practical digital skills through live sessions, structured assignments and guided learning for today’s digital work.
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#475569] md:text-lg md:leading-7">
+              are building practical digital skills through live sessions, structured assignments and guided learning.
             </p>
           </div>
 
-          <div className="mt-9 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {trustStats.map((item) => (
-              <div key={item.label} className="group rounded-[28px] border border-[#E2EAF6] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(37,99,235,0.10)] md:p-6">
-                <div className={`mb-5 grid h-14 w-14 place-items-center rounded-2xl ${
+              <div key={item.label} className="rounded-[22px] border border-[#E2EAF6] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.045)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(37,99,235,0.09)] md:p-5">
+                <div className={`mb-3 grid h-10 w-10 place-items-center rounded-2xl ${
                   item.tone === "violet"
                     ? "bg-[#F4F0FF] text-[#7C3AED]"
                     : item.tone === "cyan"
@@ -364,7 +340,7 @@ const LearnersSection = () => {
                       : "bg-[#EEF6FF] text-[#2563EB]"
                 }`}>
                   {item.icon === "users" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
                       <circle cx="9.5" cy="7" r="4" />
                       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -373,20 +349,20 @@ const LearnersSection = () => {
                   )}
 
                   {item.icon === "star" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
                       <path d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02l-5.3 2.79 1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />
                     </svg>
                   )}
 
                   {item.icon === "video" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
                       <rect x="3" y="6" width="13" height="12" rx="3" />
                       <path d="M16 10l5-3v10l-5-3z" />
                     </svg>
                   )}
 
                   {item.icon === "clipboard" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2.4]">
                       <path d="M9 4h6l1 2h3v15H5V6h3l1-2z" />
                       <path d="M9 11h6" />
                       <path d="M9 15h4" />
@@ -394,14 +370,11 @@ const LearnersSection = () => {
                   )}
                 </div>
 
-                <p className="text-[28px] font-black leading-none tracking-[-0.04em] text-[#071533] md:text-[34px]">
+                <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#071533] md:text-[30px]">
                   {item.value}
                 </p>
-                <p className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[#64748B]">
+                <p className="mt-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[#64748B] md:text-xs">
                   {item.label}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-[#475569]">
-                  {item.desc}
                 </p>
               </div>
             ))}
