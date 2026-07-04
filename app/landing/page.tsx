@@ -374,9 +374,9 @@ const RealPractitionersBanner = () => null
 // ==================== SECTION 5: 3-STEP PROCESS ====================
 const ProcessSection = () => {
   return (
-    <section className="py-14 md:py-20 bg-[#F8FAFC]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[28px] border border-[#E6ECF5] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+    <section className="pt-4 pb-10 md:pt-6 md:pb-14 bg-[#F8FAFC]">
+      <div className="mx-auto max-w-[1500px] px-3 sm:px-5 lg:px-8">
+        <div className="overflow-hidden rounded-[30px] border border-[#E6ECF5] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           <img
             src="/assets/home/process-section/process-section-ai-digital-growth-mobile.png"
             alt="AI Digital Growth Creator Program section mobile view"
