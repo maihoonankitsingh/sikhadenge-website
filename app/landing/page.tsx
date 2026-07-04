@@ -429,32 +429,32 @@ const QuoteTestimonial = () => {
   const active = quotes[currentQuote]
 
   return (
-    <section className="relative overflow-hidden bg-white py-12 md:py-16">
+    <section className="relative overflow-hidden bg-white py-8 md:py-10">
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.08),transparent_30%),radial-gradient(circle_at_88%_24%,rgba(245,179,1,0.14),transparent_28%)]" />
 
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-stretch gap-6 lg:grid-cols-[0.9fr_1.4fr]">
-          <div className="rounded-[30px] border border-[#DDE8F7] bg-[#F8FAFC] p-6 shadow-[0_18px_55px_rgba(15,23,42,0.06)] md:p-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-white px-4 py-2 text-sm font-black text-[#2563EB]">
+      <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-stretch gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="rounded-[26px] border border-[#DDE8F7] bg-[#F8FAFC] p-5 shadow-[0_14px_38px_rgba(15,23,42,0.05)] md:p-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-white px-3 py-1.5 text-xs font-black text-[#2563EB]">
               <span className="text-[#F5B301]">★</span>
               Learner Story
             </div>
 
-            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.04em] text-[#071533] md:text-4xl">
+            <h2 className="mt-4 text-xl font-black leading-tight tracking-[-0.04em] text-[#071533] md:text-3xl">
               Real learners.
               <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
                 Real digital output.
               </span>
             </h2>
 
-            <p className="mt-4 text-base leading-7 text-[#475569]">
+            <p className="mt-3 text-sm leading-6 text-[#475569]">
               Students, creators aur freelancers Sikhadenge ke practical AI workflow se apne portfolio, content aur client-ready output build kar rahe hain.
             </p>
 
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-3 gap-2">
               {["4.9/5", "150K+", "Practical"].map((item, i) => (
-                <div key={item} className="rounded-2xl border border-[#E2EAF6] bg-white p-4 text-center shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-                  <p className="text-lg font-black text-[#071533]">{item}</p>
+                <div key={item} className="rounded-2xl border border-[#E2EAF6] bg-white p-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                  <p className="text-base font-black text-[#071533]">{item}</p>
                   <p className="mt-1 text-[11px] font-bold text-[#64748B]">
                     {i === 0 ? "Rating" : i === 1 ? "Learners" : "Training"}
                   </p>
@@ -463,39 +463,39 @@ const QuoteTestimonial = () => {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[34px] border border-[#E8D9A8] bg-gradient-to-br from-[#FFFBEB] via-white to-[#F8FBFF] p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-8 lg:p-10">
+          <div className="relative overflow-hidden rounded-[28px] border border-[#E8D9A8] bg-gradient-to-br from-[#FFFBEB] via-white to-[#F8FBFF] p-5 shadow-[0_18px_48px_rgba(15,23,42,0.07)] md:p-6 lg:p-7">
             <div aria-hidden="true" className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#F5B301]/15 blur-2xl" />
             <div aria-hidden="true" className="absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-[#2563EB]/10 blur-2xl" />
 
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
-              <div className="flex md:block md:w-[170px] md:shrink-0">
-                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#2563EB] to-[#06B6D4] text-2xl font-black text-white shadow-[0_18px_45px_rgba(37,99,235,0.28)]">
+            <div className="relative flex flex-col gap-5 md:flex-row md:items-start">
+              <div className="flex md:block md:w-[135px] md:shrink-0">
+                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#2563EB] to-[#06B6D4] text-xl font-black text-white shadow-[0_18px_45px_rgba(37,99,235,0.28)]">
                   {active.initials}
                 </div>
 
                 <div className="ml-4 md:ml-0 md:mt-4">
-                  <p className="text-xl font-black text-[#071533]">{active.author}</p>
-                  <p className="mt-1 text-sm font-bold text-[#64748B]">{active.role}</p>
+                  <p className="text-lg font-black text-[#071533]">{active.author}</p>
+                  <p className="mt-1 text-xs font-bold text-[#64748B]">{active.role}</p>
                 </div>
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[#FEF3C7] px-3 py-1.5 text-sm font-black text-[#92400E]">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-black text-[#92400E]">
                     ★★★★★ 4.9/5
                   </span>
-                  <span className="rounded-full bg-[#ECFEFF] px-3 py-1.5 text-sm font-black text-[#0891B2]">
+                  <span className="rounded-full bg-[#ECFEFF] px-3 py-1 text-xs font-black text-[#0891B2]">
                     {active.result}
                   </span>
                 </div>
 
-                <p className="relative text-[22px] font-bold leading-[1.75] tracking-[-0.025em] text-[#071533] md:text-[27px] md:leading-[1.65]">
-                  <span className="absolute -left-2 -top-8 text-[70px] font-serif leading-none text-[#F5B301]/35 md:-left-8 md:-top-10 md:text-[96px]">“</span>
+                <p className="relative text-[18px] font-bold leading-[1.62] tracking-[-0.025em] text-[#071533] md:text-[22px] md:leading-[1.55]">
+                  <span className="absolute -left-2 -top-8 text-[54px] font-serif leading-none text-[#F5B301]/35 md:-left-8 md:-top-10 md:text-[72px]">“</span>
                   {active.text}
                   <span className="ml-2 text-[#F5B301]/60">”</span>
                 </p>
 
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   {active.chips.map((chip) => (
                     <span key={chip} className="rounded-full border border-[#DDE8F7] bg-white px-3 py-1.5 text-xs font-black text-[#334155] shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                       {chip}
@@ -503,7 +503,7 @@ const QuoteTestimonial = () => {
                   ))}
                 </div>
 
-                <div className="mt-7 flex items-center justify-between gap-4">
+                <div className="mt-5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     {quotes.map((_, i) => (
                       <button
@@ -512,14 +512,14 @@ const QuoteTestimonial = () => {
                         aria-label={`Show learner story ${i + 1}`}
                         className={`h-3 rounded-full transition-all duration-300 ${
                           currentQuote === i
-                            ? 'w-9 bg-[#2563EB]'
+                            ? 'w-7 bg-[#2563EB]'
                             : 'w-3 bg-[#CBD5E1] hover:bg-[#94A3B8]'
                         }`}
                       />
                     ))}
                   </div>
 
-                  <div className="hidden rounded-full border border-[#DDE8F7] bg-white px-4 py-2 text-sm font-black text-[#2563EB] shadow-[0_8px_20px_rgba(15,23,42,0.04)] sm:block">
+                  <div className="hidden rounded-full border border-[#DDE8F7] bg-white px-3 py-1.5 text-xs font-black text-[#2563EB] shadow-[0_8px_20px_rgba(15,23,42,0.04)] sm:block">
                     Trusted by learners across India
                   </div>
                 </div>
