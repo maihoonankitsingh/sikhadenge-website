@@ -379,7 +379,7 @@ const RealPractitionersBanner = () => {
 
         <div className="hidden overflow-hidden rounded-[28px] border border-[#E6ECF5] bg-white shadow-[0_18px_55px_rgba(15,23,42,0.07)] md:block">
           <img
-            src="{desktop_url}"
+            src="/assets/home/ai-jobs-data-banner/ai-jobs-data-banner-desktop.webp"
             alt="2025-26 AI job market shift desktop banner showing AI job cuts, AI skills wage premium and India AI hiring growth"
             className="h-auto w-full"
             loading="lazy"
@@ -388,7 +388,7 @@ const RealPractitionersBanner = () => {
 
         <div className="mx-auto block max-w-[560px] overflow-hidden rounded-[28px] border border-[#E6ECF5] bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)] md:hidden">
           <img
-            src="{mobile_url}"
+            src="/assets/home/ai-jobs-data-banner/ai-jobs-data-banner-mobile.webp"
             alt="2025-26 AI job market shift mobile banner with compact AI careers data"
             className="h-auto w-full"
             loading="lazy"
