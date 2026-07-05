@@ -608,7 +608,7 @@ const BenefitsSection = () => {
           Complete AI-Driven Growth System Learn Build Grow
         </h2>
 
-        <div className="hidden overflow-hidden rounded-[32px] border border-[#DDE8F7] bg-white shadow-[0_22px_70px_rgba(15,23,42,0.07)] md:block">
+        <div className="mx-auto hidden max-w-[1420px] overflow-hidden rounded-[32px] border border-[#DDE8F7] bg-white shadow-[0_22px_70px_rgba(15,23,42,0.07)] md:block">
           <img
             src="/assets/home/ai-growth-system-section/ai-growth-system-desktop.webp"
             alt="Complete AI-Driven Growth System desktop section for AI Digital Growth Creator Program"
