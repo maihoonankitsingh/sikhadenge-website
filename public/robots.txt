@@ -18,18 +18,3 @@ Disallow: /checkout/
 Disallow: /influencer/login
 
 Sitemap: https://sikhadenge.in/sitemap.xml
-Sitemap: https://sikhadenge.in/sitemap-static.xml
-Sitemap: https://sikhadenge.in/sitemap-blogs-1.xml
-Sitemap: https://sikhadenge.in/sitemap-blogs-2.xml
-Sitemap: https://sikhadenge.in/sitemap-blogs-3.xml
-Sitemap: https://sikhadenge.in/sitemap-blogs-4.xml
-Sitemap: https://sikhadenge.in/sitemap-blogs-5.xml
-Sitemap: https://sikhadenge.in/sitemap-prompts.xml
-Sitemap: https://sikhadenge.in/sitemap-expert.xml
-Sitemap: https://sikhadenge.in/sitemap-hindi.xml
-Sitemap: https://sikhadenge.in/sitemap-compare.xml
-Sitemap: https://sikhadenge.in/sitemap-tools.xml
-Sitemap: https://sikhadenge.in/sitemap-families-20.xml
-Sitemap: https://sikhadenge.in/sitemap-families-30.xml
-Sitemap: https://sikhadenge.in/sitemap-families.xml
-Sitemap: https://sikhadenge.in/sitemap-tools-index.xml
