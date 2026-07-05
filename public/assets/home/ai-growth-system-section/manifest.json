@@ -1,0 +1,16 @@
+{
+  "section": "AI Digital Growth Creator Program - Complete AI-Driven Growth System",
+  "desktop": {
+    "file_png": "ai-growth-system-desktop.png",
+    "file_webp": "ai-growth-system-desktop.webp",
+    "size": "1920x1080",
+    "recommended_use": "desktop/tablet"
+  },
+  "mobile": {
+    "file_png": "ai-growth-system-mobile.png",
+    "file_webp": "ai-growth-system-mobile.webp",
+    "size": "1080x1350",
+    "recommended_use": "mobile"
+  },
+  "notes": "Use webp in production and keep png as source backup."
+}

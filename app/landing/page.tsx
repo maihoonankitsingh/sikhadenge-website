@@ -601,42 +601,36 @@ const QuoteTestimonial = () => {
 
 // ==================== SECTION 7: 4 BENEFIT CARDS ====================
 const BenefitsSection = () => {
-  const benefits = [
-    { icon: PenTool, title: 'Design with AI', desc: 'Create posters, thumbnails, ad creatives, and social media designs faster with AI support.' },
-    { icon: FileVideo, title: 'Edit Videos with AI', desc: 'Build reels, short-form edits, explainers, and video assets with smarter AI workflows.' },
-    { icon: FileText, title: 'Create Content with AI', desc: 'Generate hooks, captions, scripts, posts, and structured content ideas in less time.' },
-    { icon: Briefcase, title: 'Market with AI', desc: 'Create campaign angles, ad copy, offers, and growth-focused marketing assets with AI.' },
-    { icon: Globe, title: 'Build Pages with AI', desc: 'Create landing page sections, website content, and conversion-focused page structure faster.' },
-    { icon: Cpu, title: 'Automate Work with AI', desc: 'Set up prompts, repeatable workflows, and smart task systems for faster execution.' },
-  ]
-
   return (
-    <section className="py-8 md:py-12 bg-[#F4F0E6]" id="courses">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 md:gap-5">
-          {benefits.map((b) => (
-            <div
-              key={b.title}
-              className="rounded-[32px] border border-[#12305A] bg-[linear-gradient(180deg,#03245A_0%,#001B49_100%)] px-4 py-5 md:px-5 md:py-5 min-h-[195px] md:min-h-[228px] flex flex-col items-center text-center shadow-[0_18px_34px_rgba(0,27,73,0.12)]"
-            >
-              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[24px] border border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <b.icon className="h-8 w-8 text-white" strokeWidth={2} />
-              </div>
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-8 md:py-12">
+      <div className="mx-auto max-w-[1680px] px-3 sm:px-5 lg:px-8">
+        <h2 className="sr-only">
+          Complete AI-Driven Growth System Learn Build Grow
+        </h2>
 
-              <h3 className="mt-7 text-white text-[18px] md:text-[20px] font-semibold leading-[1.15] tracking-[-0.02em]">
-                {b.title}
-              </h3>
+        <div className="hidden overflow-hidden rounded-[32px] border border-[#DDE8F7] bg-white shadow-[0_22px_70px_rgba(15,23,42,0.07)] md:block">
+          <img
+            src="/assets/home/ai-growth-system-section/ai-growth-system-desktop.webp"
+            alt="Complete AI-Driven Growth System desktop section for AI Digital Growth Creator Program"
+            className="h-auto w-full"
+            loading="lazy"
+          />
+        </div>
 
-              <p className="mt-3 max-w-[190px] text-[14px] md:text-[15px] leading-6 text-[#D7E2F7]">
-                {b.desc}
-              </p>
-            </div>
-          ))}
+        <div className="mx-auto block max-w-[560px] overflow-hidden rounded-[30px] border border-[#DDE8F7] bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] md:hidden">
+          <img
+            src="/assets/home/ai-growth-system-section/ai-growth-system-mobile.webp"
+            alt="Complete AI-Driven Growth System mobile section for AI Digital Growth Creator Program"
+            className="h-auto w-full"
+            loading="lazy"
+          />
         </div>
       </div>
     </section>
   )
 }
+
+
 
 // ==================== SECTION 8: FRAMEWORKS GRID ====================
 const FrameworksSection = () => {
