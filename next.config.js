@@ -54,7 +54,28 @@ const nextConfig = {
   },
 
   async headers() {
+    const ogImageNoindexHeaders = [
+      // SIKHADENGE_OG_IMAGE_X_ROBOTS_V1
+      { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+    ];
+
     return [
+      {
+        source: "/opengraph-image",
+        headers: ogImageNoindexHeaders,
+      },
+      {
+        source: "/twitter-image",
+        headers: ogImageNoindexHeaders,
+      },
+      {
+        source: "/:path*/opengraph-image",
+        headers: ogImageNoindexHeaders,
+      },
+      {
+        source: "/:path*/twitter-image",
+        headers: ogImageNoindexHeaders,
+      },
       {
         source: "/((?!_next/static|_next/image|favicon.ico).*)",
         headers: [{ key: "Cache-Control", value: "no-store" }],
