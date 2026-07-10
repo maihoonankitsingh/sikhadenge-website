@@ -1004,23 +1004,23 @@ const FrameworksSection = () => {
 // ==================== SECTION 9: TOOLS USE-CASE CARDS ====================
 const ToolsUseCaseSection = () => {
   const useCases = [
-    { icon: MailIcon, title: 'Social Media Creatives', desc: 'Platform-ready visual content' },
-    { icon: ListChecks, title: 'Short-Form Video Assets', desc: 'Reels, edits and promo-style outputs' },
-    { icon: Lightbulb, title: 'AI-Generated Visual Concepts', desc: 'Creative visuals for modern digital work' },
-    { icon: FileText, title: 'Landing Page Sections', desc: 'Conversion-focused section building' },
-    { icon: FileVideo, title: 'Marketing Creatives', desc: 'Offers, ads and campaign assets' },
-    { icon: Rocket, title: 'Content Workflows', desc: 'Hooks, scripts, captions and content systems' },
-    { icon: Presentation, title: 'Brand-Style Execution', desc: 'Consistent design and communication output' },
-    { icon: Table, title: 'Portfolio-Ready Projects', desc: 'Practical work you can present confidently' },
-    { icon: Globe, title: 'Freelance-Ready Delivery', desc: 'Structured output for real client-style work' },
+    { icon: MailIcon, title: 'Brand Content Kit', desc: 'Social posts, thumbnails, ad creatives and campaign visuals.' },
+    { icon: ListChecks, title: 'Short-Form Video Pack', desc: 'Reels, shorts, scripts and edited promotional videos.' },
+    { icon: Lightbulb, title: 'Conversion Landing Page', desc: 'A responsive lead-generation or course landing page.' },
+    { icon: FileText, title: 'AI Lead Chatbot', desc: 'A website FAQ bot or WhatsApp lead qualification flow.' },
+    { icon: FileVideo, title: 'Automated Business Workflow', desc: 'A connected form, CRM, email and follow-up automation.' },
+    { icon: Rocket, title: 'Search Visibility Campaign', desc: 'An SEO, AEO and GEO-focused visibility campaign.' },
+    { icon: Presentation, title: 'No-Code Business Dashboard', desc: 'A CRM, reporting dashboard or working MVP prototype.' },
+    { icon: Table, title: 'Growth Analytics Report', desc: 'Performance insights, reporting and optimization recommendations.' },
+    { icon: Globe, title: 'Professional Portfolio Case Study', desc: 'A client-ready project presentation with measurable outcomes.' },
   ]
 
   return (
     <section className="py-20 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">SKILLS</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">What You'll Be Able To Build</h2>
+          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">PROJECT OUTCOMES</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Projects You’ll Finish</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
