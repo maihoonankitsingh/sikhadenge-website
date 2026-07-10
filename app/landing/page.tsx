@@ -846,21 +846,6 @@ const FrameworksSection = () => {
             </div>
           ))}
         </div>
-
-        <div className="mx-auto mt-7 grid max-w-5xl grid-cols-1 gap-3 rounded-[28px] border border-[#DDE8F7] bg-white/88 p-4 shadow-[0_16px_45px_rgba(15,23,42,0.055)] backdrop-blur sm:grid-cols-3 md:p-5">
-          <div className="rounded-2xl bg-[#EEF6FF] px-4 py-3 text-center">
-            <p className="text-sm font-black text-[#071533]">Learn</p>
-            <p className="mt-1 text-xs text-[#64748B]">AI tools + workflows</p>
-          </div>
-          <div className="rounded-2xl bg-[#F4F0FF] px-4 py-3 text-center">
-            <p className="text-sm font-black text-[#071533]">Build</p>
-            <p className="mt-1 text-xs text-[#64748B]">Projects + systems</p>
-          </div>
-          <div className="rounded-2xl bg-[#ECFEFF] px-4 py-3 text-center">
-            <p className="text-sm font-black text-[#071533]">Grow</p>
-            <p className="mt-1 text-xs text-[#64748B]">Portfolio + career</p>
-          </div>
-        </div>
       </div>
     </section>
   )
