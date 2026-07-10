@@ -118,7 +118,23 @@ export function getBlogUrls(): SitemapEntry[] {
 }
 
 export function getToolUrls(): SitemapEntry[] {
-  const freeTools = makeUrls(getSlugs("generated-mini-tools.json"), "/free-tools/", 0.9);
-  const programmaticSkillPages = makeUrls(getSlugs("generated-seo-merged.json"), "/", 0.8, "weekly");
-  return uniqueUrls([...freeTools, ...programmaticSkillPages]);
+  const fileName = "generated-mini-tools.json";
+  const filePath = path.join(process.cwd(), "data", fileName);
+
+  let lastModified = new Date("2026-07-10T00:00:00.000Z");
+
+  try {
+    lastModified = fs.statSync(filePath).mtime;
+  } catch {
+    // Keep a stable fallback if filesystem metadata is unavailable.
+  }
+
+  const freeTools = getSlugs(fileName).map((slug: string) => ({
+    url: `${baseUrl}/free-tools/${slug}`,
+    lastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.9,
+  }));
+
+  return uniqueUrls(freeTools);
 }
