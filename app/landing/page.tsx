@@ -1016,11 +1016,66 @@ const ToolsUseCaseSection = () => {
   ]
 
   return (
-    <section className="py-20 bg-[#F8FAFC]">
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-12 md:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-12">
-          <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">PROJECT OUTCOMES</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Projects You’ll Finish</h2>
+        <div className="relative mb-8 overflow-hidden rounded-[30px] border border-[#DCE7F6] bg-white/90 px-5 py-7 shadow-[0_20px_55px_rgba(15,23,42,0.07)] backdrop-blur sm:px-7 md:mb-10 md:px-9 md:py-9 lg:px-10">
+          <div
+            aria-hidden="true"
+            className="absolute -left-16 -top-20 h-48 w-48 rounded-full bg-[#2563EB]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-24 right-0 h-52 w-52 rounded-full bg-[#06B6D4]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.20] [background-image:linear-gradient(#DBEAFE_1px,transparent_1px),linear-gradient(90deg,#DBEAFE_1px,transparent_1px)] [background-size:32px_32px]"
+          />
+
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#D7E5FA] bg-white/95 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#2563EB] shadow-[0_8px_22px_rgba(37,99,235,0.08)] sm:text-[11px]">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3 w-3 fill-none stroke-current stroke-[2.5]"
+                  >
+                    <path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z" />
+                  </svg>
+                </span>
+                Project Outcomes
+              </div>
+
+              <h2 className="text-[34px] font-black leading-[1.03] tracking-[-0.05em] text-[#071533] sm:text-[40px] md:text-[48px] lg:text-[52px]">
+                Projects You’ll
+                <span className="ml-2 bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+                  Finish
+                </span>
+              </h2>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#52617A] sm:text-base md:leading-7">
+                Complete practical, portfolio-ready projects across content,
+                video, websites, automation, growth and analytics.
+              </p>
+            </div>
+
+            <div className="flex w-fit items-center gap-3 rounded-2xl border border-[#DCE7F6] bg-white/95 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#7C3AED] via-[#2563EB] to-[#06B6D4] text-lg font-black text-white shadow-[0_10px_24px_rgba(37,99,235,0.22)]">
+                9
+              </div>
+
+              <div>
+                <p className="text-sm font-black leading-tight text-[#071533]">
+                  Practical Builds
+                </p>
+                <p className="mt-0.5 text-xs text-[#64748B]">
+                  Portfolio-ready outcomes
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
