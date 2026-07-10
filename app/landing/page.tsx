@@ -635,41 +635,238 @@ const BenefitsSection = () => {
 // ==================== SECTION 8: FRAMEWORKS GRID ====================
 const FrameworksSection = () => {
   const frameworks = [
-    { icon: ListChecks, text: 'Design with AI Systems' },
-    { icon: BarChart3, text: 'Edit Videos with AI Production Workflow' },
-    { icon: PenTool, text: 'Create Content with AI Creation Workflow' },
-    { icon: FileText, text: 'Market with AI Creative Execution' },
-    { icon: Presentation, text: 'AI Landing Page Thinking' },
-    { icon: TrendingUp, text: 'AI Workflow & Productivity Systems' },
-    { icon: Lock, text: 'Prompt Structuring for Real Work' },
-    { icon: User, text: 'Portfolio Packaging & Output Presentation' },
-    { icon: Cpu, text: 'Multi-Skill Digital Execution' },
+    {
+      title: "AI Tools & Prompt Engineering",
+      desc: "Use ChatGPT, Claude, Gemini and research workflows with clear prompt systems.",
+      tag: "Foundation",
+      icon: "spark",
+      tone: "blue",
+    },
+    {
+      title: "AI Graphics, Video & Content",
+      desc: "Create brand visuals, reels, shorts, scripts, thumbnails and content calendars.",
+      tag: "Content",
+      icon: "video",
+      tone: "violet",
+    },
+    {
+      title: "Website & Landing Page Builder",
+      desc: "Build course pages, lead pages, thank-you pages and mobile-first sections.",
+      tag: "Website",
+      icon: "website",
+      tone: "cyan",
+    },
+    {
+      title: "No-Code App & Dashboard",
+      desc: "Create simple business apps, CRM flows, dashboards and MVP prototypes.",
+      tag: "Apps",
+      icon: "app",
+      tone: "blue",
+    },
+    {
+      title: "Chatbots & Messaging Automation",
+      desc: "Build website FAQ bots, WhatsApp lead bots and Instagram DM workflows.",
+      tag: "Chatbots",
+      icon: "chat",
+      tone: "violet",
+    },
+    {
+      title: "AI Agents & n8n Automation",
+      desc: "Connect forms, CRM, email, APIs and human approval into repeatable workflows.",
+      tag: "Agents",
+      icon: "agent",
+      tone: "cyan",
+    },
+    {
+      title: "SEO, AEO, GEO & Performance Marketing",
+      desc: "Plan keyword visibility, AI answer visibility, ads, funnels and retargeting.",
+      tag: "Growth",
+      icon: "growth",
+      tone: "orange",
+    },
+    {
+      title: "Analytics, Projects & Certification",
+      desc: "Track performance, create reports, build projects and complete certification.",
+      tag: "Proof",
+      icon: "analytics",
+      tone: "blue",
+    },
+    {
+      title: "Portfolio & Career Launch",
+      desc: "Package your work into a portfolio, case study and client-ready presentation.",
+      tag: "Career",
+      icon: "portfolio",
+      tone: "violet",
+    },
   ]
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-12">
-          <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">FRAMEWORKS</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
-            Learn Frameworks & Strategies For 10X Productivity
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-12 md:py-16 lg:py-20">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(37,99,235,0.10),transparent_28%),radial-gradient(circle_at_90%_18%,rgba(6,182,212,0.10),transparent_26%),radial-gradient(circle_at_50%_95%,rgba(124,58,237,0.08),transparent_30%)]" />
+      <div aria-hidden="true" className="absolute left-0 top-0 h-full w-full opacity-[0.28] [background-image:linear-gradient(#DDE8F7_1px,transparent_1px),linear-gradient(90deg,#DDE8F7_1px,transparent_1px)] [background-size:42px_42px]" />
+
+      <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#DDE8F7] bg-white/90 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#2563EB] shadow-[0_12px_30px_rgba(37,99,235,0.08)] backdrop-blur">
+            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]" />
+            Course & Skill Stack
+          </div>
+
+          <h2 className="text-3xl font-black leading-tight tracking-[-0.045em] text-[#071533] sm:text-4xl md:text-5xl lg:text-[58px]">
+            Learn the frameworks to become an
+            <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+              AI Digital Growth Creator
+            </span>
           </h2>
+
+          <p className="mx-auto mt-4 max-w-3xl text-sm leading-6 text-[#475569] md:text-lg md:leading-8">
+            A complete practical stack to create content, build websites, automate workflows, market smarter, track growth and launch portfolio-ready projects.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {frameworks.map((f) => (
-            <div key={f.text} className="flex items-center gap-4 bg-[#F8FAFC] rounded-xl p-4 border border-[#0F172A]/10 hover:border-[#2563EB]/30 transition-all">
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-[#0F172A]/10">
-                <f.icon className="w-6 h-6 text-[#2563EB]" />
+        <div className="mt-9 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {frameworks.map((item, index) => (
+            <div
+              key={item.title}
+              className="group relative overflow-hidden rounded-[28px] border border-[#DDE8F7] bg-white/94 p-5 shadow-[0_16px_45px_rgba(15,23,42,0.055)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-[#2563EB]/30 hover:shadow-[0_26px_70px_rgba(37,99,235,0.12)] md:p-6"
+            >
+              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${
+                item.tone === "violet"
+                  ? "bg-gradient-to-r from-[#7C3AED] to-[#2563EB]"
+                  : item.tone === "cyan"
+                    ? "bg-gradient-to-r from-[#06B6D4] to-[#2563EB]"
+                    : item.tone === "orange"
+                      ? "bg-gradient-to-r from-[#F97316] to-[#2563EB]"
+                      : "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]"
+              }`} />
+
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl border shadow-[0_12px_28px_rgba(15,23,42,0.06)] ${
+                  item.tone === "violet"
+                    ? "border-[#DDD6FE] bg-[#F4F0FF] text-[#7C3AED]"
+                    : item.tone === "cyan"
+                      ? "border-[#CFFAFE] bg-[#ECFEFF] text-[#0891B2]"
+                      : item.tone === "orange"
+                        ? "border-[#FED7AA] bg-[#FFF7ED] text-[#F97316]"
+                        : "border-[#DBEAFE] bg-[#EEF6FF] text-[#2563EB]"
+                }`}>
+                  {item.icon === "spark" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <path d="M12 2l1.7 6.2L20 10l-6.3 1.8L12 18l-1.7-6.2L4 10l6.3-1.8L12 2z" />
+                      <path d="M19 16l.8 2.7L22 19.5l-2.2.8L19 23l-.8-2.7-2.2-.8 2.2-.8L19 16z" />
+                    </svg>
+                  )}
+
+                  {item.icon === "video" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <rect x="3" y="5" width="13" height="14" rx="3" />
+                      <path d="M16 10l5-3v10l-5-3z" />
+                      <path d="M7 9h5M7 13h4" />
+                    </svg>
+                  )}
+
+                  {item.icon === "website" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <rect x="3" y="4" width="18" height="16" rx="3" />
+                      <path d="M3 9h18M8 14h4M15 14h3" />
+                    </svg>
+                  )}
+
+                  {item.icon === "app" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <rect x="5" y="3" width="14" height="18" rx="3" />
+                      <path d="M9 7h6M9 11h2M13 11h2M9 15h2M13 15h2" />
+                    </svg>
+                  )}
+
+                  {item.icon === "chat" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.6-4.5A8 8 0 1 1 21 12z" />
+                      <path d="M8 12h.01M12 12h.01M16 12h.01" />
+                    </svg>
+                  )}
+
+                  {item.icon === "agent" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <rect x="6" y="8" width="12" height="10" rx="3" />
+                      <path d="M12 8V4M9 4h6M9 13h.01M15 13h.01M8 18l-2 3M16 18l2 3" />
+                    </svg>
+                  )}
+
+                  {item.icon === "growth" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <path d="M4 18h16" />
+                      <path d="M6 16l4-4 3 3 5-7" />
+                      <path d="M17 8h1v1" />
+                    </svg>
+                  )}
+
+                  {item.icon === "analytics" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <path d="M4 19V5" />
+                      <path d="M8 17v-6M12 17V8M16 17v-4M20 17V6" />
+                      <path d="M3 19h18" />
+                    </svg>
+                  )}
+
+                  {item.icon === "portfolio" && (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
+                      <rect x="3" y="7" width="18" height="13" rx="3" />
+                      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                      <path d="M8 13h8" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <span className="rounded-full bg-[#F1F7FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#2563EB]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
+                    item.tone === "orange"
+                      ? "bg-[#FFF7ED] text-[#F97316]"
+                      : item.tone === "cyan"
+                        ? "bg-[#ECFEFF] text-[#0891B2]"
+                        : item.tone === "violet"
+                          ? "bg-[#F4F0FF] text-[#7C3AED]"
+                          : "bg-[#EEF6FF] text-[#2563EB]"
+                  }`}>
+                    {item.tag}
+                  </span>
+                </div>
               </div>
-              <span className="text-[#0F172A] font-medium">{f.text}</span>
+
+              <h3 className="text-[19px] font-black leading-snug tracking-[-0.025em] text-[#071533] md:text-[21px]">
+                {item.title}
+              </h3>
+
+              <p className="mt-2 text-sm leading-6 text-[#475569] md:text-[15px] md:leading-7">
+                {item.desc}
+              </p>
             </div>
           ))}
+        </div>
+
+        <div className="mx-auto mt-7 grid max-w-5xl grid-cols-1 gap-3 rounded-[28px] border border-[#DDE8F7] bg-white/88 p-4 shadow-[0_16px_45px_rgba(15,23,42,0.055)] backdrop-blur sm:grid-cols-3 md:p-5">
+          <div className="rounded-2xl bg-[#EEF6FF] px-4 py-3 text-center">
+            <p className="text-sm font-black text-[#071533]">Learn</p>
+            <p className="mt-1 text-xs text-[#64748B]">AI tools + workflows</p>
+          </div>
+          <div className="rounded-2xl bg-[#F4F0FF] px-4 py-3 text-center">
+            <p className="text-sm font-black text-[#071533]">Build</p>
+            <p className="mt-1 text-xs text-[#64748B]">Projects + systems</p>
+          </div>
+          <div className="rounded-2xl bg-[#ECFEFF] px-4 py-3 text-center">
+            <p className="text-sm font-black text-[#071533]">Grow</p>
+            <p className="mt-1 text-xs text-[#64748B]">Portfolio + career</p>
+          </div>
         </div>
       </div>
     </section>
   )
 }
+
+
 
 // ==================== SECTION 9: TOOLS USE-CASE CARDS ====================
 const ToolsUseCaseSection = () => {
