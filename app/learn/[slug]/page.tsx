@@ -359,6 +359,46 @@ export default function LearnPage({ params }: PageProps) {
               </p>
             </div>
 
+            {/* SIKHADENGE_LEARN_THIN_EXPANSION_V1 */}
+            <div className="rounded-[24px] bg-white p-8 shadow-sm ring-1 ring-slate-200">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-700">
+                Practical roadmap and proof checklist
+              </p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight">
+                How to turn this learning page into real output
+              </h2>
+              <p className="mt-5 text-[15px] leading-8 text-slate-700">
+                A strong learning path for {data.title} should not stop at definitions. Start with one clear problem, one tool, one expected output, and one review step. This makes the page useful for learners, easier for search engines to understand, and more helpful for AI answer systems that summarize practical workflows.
+              </p>
+              <p className="mt-4 text-[15px] leading-8 text-slate-700">
+                For {data.skill}, the most important skill is repeatable execution. Use {data.tool} to create a first draft, compare it with the goal, improve the missing parts, and save the final version as proof. That proof can become a portfolio sample, client example, study note, SOP, checklist, report, content plan, or workflow document.
+              </p>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                {[
+                  ["Step 1", `Choose one practical ${data.skill} use case instead of trying everything at once.`],
+                  ["Step 2", `Write the goal, audience, context, and output format before using ${data.tool}.`],
+                  ["Step 3", "Create a first usable output, then refine it for accuracy, clarity, and presentation."],
+                  ["Step 4", "Document what changed, what improved, and how the workflow can be repeated."],
+                ].map(([label, text]) => (
+                  <div key={label} className="rounded-[18px] bg-slate-50 p-5 ring-1 ring-slate-200">
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">{label}</div>
+                    <p className="mt-2 text-[15px] font-bold leading-7 text-slate-700">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-7 rounded-[18px] bg-emerald-50 p-6 ring-1 ring-emerald-100">
+                <h3 className="text-xl font-black text-slate-950">Sikhadenge guidance note</h3>
+                <p className="mt-3 text-[15px] leading-8 text-slate-700">
+                  Sikhadenge focuses on practical, workflow-first learning. The goal is to help students, freelancers, creators, job seekers, and teams understand not only what to learn, but also how to apply it, how to show proof, and how to connect the skill with career or business outcomes.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href="/courses" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white hover:bg-slate-800">Explore courses</a>
+                <a href="/blog" className="rounded-full bg-white px-5 py-3 text-sm font-black text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50">Read related guides</a>
+                <a href="/contact-us" className="rounded-full bg-white px-5 py-3 text-sm font-black text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50">Ask for guidance</a>
+              </div>
+            </div>
+
             <div className="rounded-[24px] bg-white p-8 shadow-sm ring-1 ring-slate-200">
               <h2 className="text-3xl font-black tracking-tight">Frequently asked questions</h2>
               <div className="mt-6 space-y-3">

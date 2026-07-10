@@ -365,6 +365,45 @@ export default function HindiAiPage({ params }: { params: { slug: string } }) {
         </div>
       </section>
 
+      {/* SIKHADENGE_HINDI_THIN_EXPANSION_V1 */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 shadow-sm">
+          <div className="inline-flex items-center rounded-full bg-orange-100 border border-orange-200 px-4 py-1.5 text-xs font-black text-orange-700 mb-5 uppercase tracking-widest">
+            Practical Hindi roadmap
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight">
+            {page.tool} ko practical kaam me kaise use karein
+          </h2>
+          <p className="mt-5 text-slate-700 leading-8 font-medium">
+            {topicLabel} seekhne ka best tareeka random prompts copy karna nahi hai. Pehle apna goal clear karo, phir context do, phir output format define karo, aur last me result ko improve karne ke liye follow-up prompt use karo. Is approach se {page.audience} ko better output, time saving, aur practical workflow clarity milti hai.
+          </p>
+          <p className="mt-4 text-slate-700 leading-8 font-medium">
+            Example ke liye, agar aap {page.tool} ka use {topicLabel} ke liye kar rahe ho, to prompt me role, audience, tone, length, examples, aur final format जरूर mention karo. AI tool tabhi useful hota hai jab input clear ho aur user output ko review karke refine kare. Ye skill students, creators, freelancers, teachers, business owners, aur beginners ke liye especially useful hai.
+          </p>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {[
+              ["Goal clear karo", `Pehle decide karo ki ${topicLabel} se aapko exactly kya output chahiye.`],
+              ["Context do", `${page.audience}, platform, level, tone, aur example clearly batao.`],
+              ["Output format maango", "Table, checklist, steps, caption, script, email, report ya plan ka format define karo."],
+              ["Refine karo", "First answer ko final mat mano; ask for improvement, examples, simplification, aur better structure."],
+            ].map(([title, desc]) => (
+              <div key={title} className="rounded-2xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 className="text-xl font-black text-slate-900">{title}</h3>
+                <p className="mt-3 text-slate-600 leading-7 font-medium">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-2xl bg-orange-50 p-6 border border-orange-100">
+            <h3 className="text-2xl font-black text-slate-900">Sikhadenge trust note</h3>
+            <p className="mt-3 text-slate-700 leading-8 font-medium">
+              Sikhadenge ka focus practical AI learning par hai: clear prompts, real workflows, output quality, aur guided execution. Ye page Hindi-Hinglish me isliye banaya gaya hai taki beginners bhi AI tools ko simple language me samajh sakein aur apne daily work, study, content, business, ya freelancing me apply kar sakein.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="py-24 px-4 bg-slate-50 border-t border-slate-200 mt-12">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">

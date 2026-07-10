@@ -102,6 +102,31 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
     } : {}),
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://sikhadenge.in",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Expert",
+        item: "https://sikhadenge.in/experts",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: cleanTitle,
+        item: `https://sikhadenge.in/expert/${pageData.slug}`,
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-200">
       <script
@@ -111,6 +136,10 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       {/* ── 1. HERO ── */}
@@ -233,6 +262,63 @@ export default function ExpertPage({ params }: { params: { slug: string } }) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* SIKHADENGE_EXPERT_THIN_EXPANSION_V1 */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div>
+            <div className="inline-block text-blue-600 font-bold mb-3 tracking-wide text-sm uppercase bg-blue-100/50 px-3 py-1 rounded-full">
+              Practical roadmap
+            </div>
+            <h2 className="text-4xl font-black text-slate-900 mb-5">
+              How to use {pageData.skill} as a practical career advantage
+            </h2>
+            <div className="space-y-5 text-lg leading-8 text-slate-600">
+              <p>
+                A useful {pageData.skill} guide should explain more than a basic promise. Learners need to understand where the skill is used, what kind of output is expected, which workflows matter first, and how to convert practice into visible proof. That is why this page connects the masterclass with execution, portfolio direction, client relevance, and career positioning.
+              </p>
+              <p>
+                Start by choosing one real use case connected to {pageData.skill}. Then map the work into a simple process: input, tool or method, execution step, quality check, and final output. When this is repeated across two or three examples, the learner starts building confidence instead of only collecting information.
+              </p>
+              <p>
+                Sikhadenge is positioned around practical learning, live guidance, and workflow clarity. This matters because most people do not fail due to lack of information; they fail because the information is scattered. A guided path helps learners decide what to learn first, what to ignore for now, and how to produce work that can be shown to a client, employer, team, or community.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
+              {[
+                ["Learn", `Understand the core ${pageData.skill} use cases and why they matter.`],
+                ["Build", "Create one practical output that proves you can execute the workflow."],
+                ["Show", "Use the result in a portfolio, freelance pitch, job discussion, or business process."],
+              ].map(([title, desc]) => (
+                <div key={title} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                  <h3 className="text-xl font-black text-slate-900">{title}</h3>
+                  <p className="mt-3 text-sm font-medium leading-7 text-slate-600">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="h-fit rounded-[28px] bg-white p-7 shadow-sm ring-1 ring-slate-200 lg:sticky lg:top-24">
+            <h3 className="text-2xl font-black text-slate-900">Quick answer</h3>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              The best way to start {pageData.skill} is to join a guided practical session, observe one real workflow, repeat it with your own context, and document the result. This creates proof faster than random tutorials.
+            </p>
+            <div className="mt-6 space-y-3">
+              {[
+                "Live practical session",
+                "WhatsApp community access",
+                "Beginner-friendly workflow direction",
+                "Execution-first Sikhadenge guidance",
+              ].map((item) => (
+                <div key={item} className="rounded-xl bg-blue-50 px-4 py-3 text-sm font-bold text-slate-700 ring-1 ring-blue-100">
+                  ✓ {item}
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
 
