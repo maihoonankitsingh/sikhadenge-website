@@ -701,7 +701,7 @@ const FrameworksSection = () => {
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-12 md:py-16 lg:py-20">
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-8 md:py-10 lg:py-12">
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(37,99,235,0.10),transparent_28%),radial-gradient(circle_at_90%_18%,rgba(6,182,212,0.10),transparent_26%),radial-gradient(circle_at_50%_95%,rgba(124,58,237,0.08),transparent_30%)]" />
       <div aria-hidden="true" className="absolute left-0 top-0 h-full w-full opacity-[0.28] [background-image:linear-gradient(#DDE8F7_1px,transparent_1px),linear-gradient(90deg,#DDE8F7_1px,transparent_1px)] [background-size:42px_42px]" />
 
@@ -712,19 +712,19 @@ const FrameworksSection = () => {
             Course & Skill Stack
           </div>
 
-          <h2 className="text-3xl font-black leading-tight tracking-[-0.045em] text-[#071533] sm:text-4xl md:text-5xl lg:text-[58px]">
-            Learn the frameworks to become an
+          <h2 className="text-3xl font-black leading-[1.05] tracking-[-0.045em] text-[#071533] sm:text-4xl md:text-[44px] lg:text-[48px]">
+            AI Digital Growth Creator
             <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
-              AI Digital Growth Creator
+              Skill Stack
             </span>
           </h2>
 
-          <p className="mx-auto mt-4 max-w-3xl text-sm leading-6 text-[#475569] md:text-lg md:leading-8">
-            A complete practical stack to create content, build websites, automate workflows, market smarter, track growth and launch portfolio-ready projects.
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#475569] md:text-base md:leading-7">
+            Learn the practical AI stack to create, build, automate, market and grow with portfolio-ready projects.
           </p>
         </div>
 
-        <div className="mt-9 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {frameworks.map((item, index) => (
             <div
               key={item.title}
