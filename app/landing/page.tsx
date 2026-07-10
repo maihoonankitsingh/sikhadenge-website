@@ -637,214 +637,378 @@ const FrameworksSection = () => {
   const frameworks = [
     {
       title: "AI Tools & Prompt Engineering",
-      desc: "Use ChatGPT, Claude, Gemini and research workflows with clear prompt systems.",
-      tag: "Foundation",
+      description:
+        "Master ChatGPT, Claude, Gemini and AI research using reusable prompt frameworks.",
+      category: "AI Foundation",
+      chips: ["Prompt Systems", "AI Research"],
+      action: "Master Prompts",
       icon: "spark",
-      tone: "blue",
+      theme: "blue",
     },
     {
       title: "AI Graphics, Video & Content",
-      desc: "Create brand visuals, reels, shorts, scripts, thumbnails and content calendars.",
-      tag: "Content",
+      description:
+        "Create brand graphics, reels, scripts, thumbnails and complete content systems.",
+      category: "Creator Studio",
+      chips: ["Graphics", "Video"],
+      action: "Create Assets",
       icon: "video",
-      tone: "violet",
+      theme: "violet",
     },
     {
       title: "Website & Landing Page Builder",
-      desc: "Build course pages, lead pages, thank-you pages and mobile-first sections.",
-      tag: "Website",
+      description:
+        "Build responsive websites, course pages, lead funnels and conversion-focused sections.",
+      category: "Web Experience",
+      chips: ["Landing Pages", "Web Copy"],
+      action: "Launch Pages",
       icon: "website",
-      tone: "cyan",
+      theme: "cyan",
     },
     {
-      title: "No-Code App & Dashboard",
-      desc: "Create simple business apps, CRM flows, dashboards and MVP prototypes.",
-      tag: "Apps",
+      title: "No-Code Apps & Dashboards",
+      description:
+        "Create CRM systems, business apps, admin dashboards and practical MVP prototypes.",
+      category: "Product Builder",
+      chips: ["No-Code Apps", "Dashboards"],
+      action: "Build Your MVP",
       icon: "app",
-      tone: "blue",
+      theme: "indigo",
     },
     {
       title: "Chatbots & Messaging Automation",
-      desc: "Build website FAQ bots, WhatsApp lead bots and Instagram DM workflows.",
-      tag: "Chatbots",
+      description:
+        "Build website bots, WhatsApp lead flows and Instagram messaging automations.",
+      category: "Conversation AI",
+      chips: ["WhatsApp Bot", "Lead Bot"],
+      action: "Deploy Chatbots",
       icon: "chat",
-      tone: "violet",
+      theme: "purple",
     },
     {
       title: "AI Agents & n8n Automation",
-      desc: "Connect forms, CRM, email, APIs and human approval into repeatable workflows.",
-      tag: "Agents",
+      description:
+        "Connect forms, CRM, email, APIs, AI agents and human approval into smart workflows.",
+      category: "Agentic Workflow",
+      chips: ["AI Agents", "n8n"],
+      action: "Automate Work",
       icon: "agent",
-      tone: "cyan",
+      theme: "teal",
     },
     {
-      title: "SEO, AEO, GEO & Performance Marketing",
-      desc: "Plan keyword visibility, AI answer visibility, ads, funnels and retargeting.",
-      tag: "Growth",
+      title: "SEO, AEO, GEO & Paid Growth",
+      description:
+        "Build search visibility, AI answer visibility, funnels, advertising and retargeting.",
+      category: "Growth Engine",
+      chips: ["SEO · AEO · GEO", "Paid Ads"],
+      action: "Grow Visibility",
       icon: "growth",
-      tone: "orange",
+      theme: "orange",
     },
     {
       title: "Analytics, Projects & Certification",
-      desc: "Track performance, create reports, build projects and complete certification.",
-      tag: "Proof",
+      description:
+        "Track performance, generate reports and prove your skills through practical projects.",
+      category: "Performance Lab",
+      chips: ["Analytics", "Certification"],
+      action: "Measure Results",
       icon: "analytics",
-      tone: "blue",
+      theme: "sky",
     },
     {
       title: "Portfolio & Career Launch",
-      desc: "Package your work into a portfolio, case study and client-ready presentation.",
-      tag: "Career",
+      description:
+        "Package your projects into a professional portfolio, case study and client presentation.",
+      category: "Career System",
+      chips: ["Portfolio", "Case Study"],
+      action: "Launch Portfolio",
       icon: "portfolio",
-      tone: "violet",
+      theme: "fuchsia",
     },
   ]
 
+  const themes: Record<
+    string,
+    {
+      surface: string
+      icon: string
+      number: string
+      category: string
+      chip: string
+      button: string
+      glow: string
+      line: string
+    }
+  > = {
+    blue: {
+      surface: "from-[#EFF6FF] via-white to-[#F8FBFF]",
+      icon: "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]",
+      number: "border-[#BFDBFE] bg-white text-[#2563EB]",
+      category: "bg-[#DBEAFE] text-[#1D4ED8]",
+      chip: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]",
+      button: "from-[#2563EB] to-[#0EA5E9]",
+      glow: "bg-[#2563EB]",
+      line: "from-[#2563EB] to-[#06B6D4]",
+    },
+    violet: {
+      surface: "from-[#F5F3FF] via-white to-[#FCFAFF]",
+      icon: "border-[#DDD6FE] bg-[#F5F3FF] text-[#7C3AED]",
+      number: "border-[#DDD6FE] bg-white text-[#7C3AED]",
+      category: "bg-[#EDE9FE] text-[#6D28D9]",
+      chip: "border-[#DDD6FE] bg-[#F5F3FF] text-[#6D28D9]",
+      button: "from-[#7C3AED] to-[#4F46E5]",
+      glow: "bg-[#7C3AED]",
+      line: "from-[#7C3AED] to-[#2563EB]",
+    },
+    cyan: {
+      surface: "from-[#ECFEFF] via-white to-[#F7FEFF]",
+      icon: "border-[#A5F3FC] bg-[#ECFEFF] text-[#0891B2]",
+      number: "border-[#A5F3FC] bg-white text-[#0891B2]",
+      category: "bg-[#CFFAFE] text-[#0E7490]",
+      chip: "border-[#A5F3FC] bg-[#ECFEFF] text-[#0E7490]",
+      button: "from-[#0891B2] to-[#06B6D4]",
+      glow: "bg-[#06B6D4]",
+      line: "from-[#06B6D4] to-[#2563EB]",
+    },
+    indigo: {
+      surface: "from-[#EEF2FF] via-white to-[#FAFBFF]",
+      icon: "border-[#C7D2FE] bg-[#EEF2FF] text-[#4F46E5]",
+      number: "border-[#C7D2FE] bg-white text-[#4F46E5]",
+      category: "bg-[#E0E7FF] text-[#4338CA]",
+      chip: "border-[#C7D2FE] bg-[#EEF2FF] text-[#4338CA]",
+      button: "from-[#4F46E5] to-[#2563EB]",
+      glow: "bg-[#4F46E5]",
+      line: "from-[#4F46E5] to-[#2563EB]",
+    },
+    purple: {
+      surface: "from-[#FAF5FF] via-white to-[#FFFBFF]",
+      icon: "border-[#E9D5FF] bg-[#FAF5FF] text-[#9333EA]",
+      number: "border-[#E9D5FF] bg-white text-[#9333EA]",
+      category: "bg-[#F3E8FF] text-[#7E22CE]",
+      chip: "border-[#E9D5FF] bg-[#FAF5FF] text-[#7E22CE]",
+      button: "from-[#9333EA] to-[#7C3AED]",
+      glow: "bg-[#9333EA]",
+      line: "from-[#9333EA] to-[#7C3AED]",
+    },
+    teal: {
+      surface: "from-[#F0FDFA] via-white to-[#F8FFFD]",
+      icon: "border-[#99F6E4] bg-[#F0FDFA] text-[#0D9488]",
+      number: "border-[#99F6E4] bg-white text-[#0D9488]",
+      category: "bg-[#CCFBF1] text-[#0F766E]",
+      chip: "border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]",
+      button: "from-[#0D9488] to-[#06B6D4]",
+      glow: "bg-[#14B8A6]",
+      line: "from-[#14B8A6] to-[#06B6D4]",
+    },
+    orange: {
+      surface: "from-[#FFF7ED] via-white to-[#FFFCF8]",
+      icon: "border-[#FED7AA] bg-[#FFF7ED] text-[#F97316]",
+      number: "border-[#FED7AA] bg-white text-[#F97316]",
+      category: "bg-[#FFEDD5] text-[#EA580C]",
+      chip: "border-[#FED7AA] bg-[#FFF7ED] text-[#EA580C]",
+      button: "from-[#F97316] to-[#F59E0B]",
+      glow: "bg-[#F97316]",
+      line: "from-[#F97316] to-[#F59E0B]",
+    },
+    sky: {
+      surface: "from-[#F0F9FF] via-white to-[#F9FDFF]",
+      icon: "border-[#BAE6FD] bg-[#F0F9FF] text-[#0284C7]",
+      number: "border-[#BAE6FD] bg-white text-[#0284C7]",
+      category: "bg-[#E0F2FE] text-[#0369A1]",
+      chip: "border-[#BAE6FD] bg-[#F0F9FF] text-[#0369A1]",
+      button: "from-[#0284C7] to-[#2563EB]",
+      glow: "bg-[#0284C7]",
+      line: "from-[#0284C7] to-[#2563EB]",
+    },
+    fuchsia: {
+      surface: "from-[#FDF4FF] via-white to-[#FFFAFF]",
+      icon: "border-[#F5D0FE] bg-[#FDF4FF] text-[#C026D3]",
+      number: "border-[#F5D0FE] bg-white text-[#C026D3]",
+      category: "bg-[#FAE8FF] text-[#A21CAF]",
+      chip: "border-[#F5D0FE] bg-[#FDF4FF] text-[#A21CAF]",
+      button: "from-[#C026D3] to-[#7C3AED]",
+      glow: "bg-[#C026D3]",
+      line: "from-[#C026D3] to-[#7C3AED]",
+    },
+  }
+
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-8 md:py-10 lg:py-12">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(37,99,235,0.10),transparent_28%),radial-gradient(circle_at_90%_18%,rgba(6,182,212,0.10),transparent_26%),radial-gradient(circle_at_50%_95%,rgba(124,58,237,0.08),transparent_30%)]" />
-      <div aria-hidden="true" className="absolute left-0 top-0 h-full w-full opacity-[0.28] [background-image:linear-gradient(#DDE8F7_1px,transparent_1px),linear-gradient(90deg,#DDE8F7_1px,transparent_1px)] [background-size:42px_42px]" />
+    <section className="relative overflow-hidden bg-[#F8FAFC] py-9 md:py-12 lg:py-14">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_8%_8%,rgba(37,99,235,0.11),transparent_25%),radial-gradient(circle_at_92%_15%,rgba(6,182,212,0.11),transparent_25%),radial-gradient(circle_at_52%_100%,rgba(124,58,237,0.08),transparent_32%)]"
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.22] [background-image:linear-gradient(#DDE8F7_1px,transparent_1px),linear-gradient(90deg,#DDE8F7_1px,transparent_1px)] [background-size:46px_46px]"
+      />
 
       <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[#DDE8F7] bg-white/90 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#2563EB] shadow-[0_12px_30px_rgba(37,99,235,0.08)] backdrop-blur">
+          <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border border-[#D7E5FA] bg-white/90 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#2563EB] shadow-[0_12px_28px_rgba(37,99,235,0.08)] backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]" />
-            Course & Skill Stack
+            Complete Course & Skill Stack
           </div>
 
-          <h2 className="text-3xl font-black leading-[1.05] tracking-[-0.045em] text-[#071533] sm:text-4xl md:text-[44px] lg:text-[48px]">
+          <h2 className="text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-[40px] md:text-[48px] lg:text-[54px]">
             AI Digital Growth Creator
             <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
-              Skill Stack
+              Practical Skill System
             </span>
           </h2>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#475569] md:text-base md:leading-7">
-            Learn the practical AI stack to create, build, automate, market and grow with portfolio-ready projects.
+            Build a complete stack across AI creation, websites, automation,
+            marketing, analytics and portfolio-ready implementation.
           </p>
         </div>
 
-        <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {frameworks.map((item, index) => (
-            <div
-              key={item.title}
-              className="group relative overflow-hidden rounded-[28px] border border-[#DDE8F7] bg-white/94 p-5 shadow-[0_16px_45px_rgba(15,23,42,0.055)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-[#2563EB]/30 hover:shadow-[0_26px_70px_rgba(37,99,235,0.12)] md:p-6"
-            >
-              <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${
-                item.tone === "violet"
-                  ? "bg-gradient-to-r from-[#7C3AED] to-[#2563EB]"
-                  : item.tone === "cyan"
-                    ? "bg-gradient-to-r from-[#06B6D4] to-[#2563EB]"
-                    : item.tone === "orange"
-                      ? "bg-gradient-to-r from-[#F97316] to-[#2563EB]"
-                      : "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]"
-              }`} />
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {frameworks.map((item, index) => {
+            const theme = themes[item.theme]
 
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl border shadow-[0_12px_28px_rgba(15,23,42,0.06)] ${
-                  item.tone === "violet"
-                    ? "border-[#DDD6FE] bg-[#F4F0FF] text-[#7C3AED]"
-                    : item.tone === "cyan"
-                      ? "border-[#CFFAFE] bg-[#ECFEFF] text-[#0891B2]"
-                      : item.tone === "orange"
-                        ? "border-[#FED7AA] bg-[#FFF7ED] text-[#F97316]"
-                        : "border-[#DBEAFE] bg-[#EEF6FF] text-[#2563EB]"
-                }`}>
-                  {item.icon === "spark" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <path d="M12 2l1.7 6.2L20 10l-6.3 1.8L12 18l-1.7-6.2L4 10l6.3-1.8L12 2z" />
-                      <path d="M19 16l.8 2.7L22 19.5l-2.2.8L19 23l-.8-2.7-2.2-.8 2.2-.8L19 16z" />
-                    </svg>
-                  )}
+            return (
+              <article
+                key={item.title}
+                className={`group relative flex h-full flex-col overflow-hidden rounded-[30px] border border-[#DCE7F6] bg-gradient-to-br ${theme.surface} p-5 shadow-[0_16px_45px_rgba(15,23,42,0.055)] transition-all duration-300 hover:-translate-y-1 hover:border-[#2563EB]/30 hover:shadow-[0_28px_75px_rgba(37,99,235,0.13)] md:p-6`}
+              >
+                <div
+                  aria-hidden="true"
+                  className={`absolute -right-10 -top-10 h-32 w-32 rounded-full ${theme.glow} opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.17]`}
+                />
 
-                  {item.icon === "video" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <rect x="3" y="5" width="13" height="14" rx="3" />
-                      <path d="M16 10l5-3v10l-5-3z" />
-                      <path d="M7 9h5M7 13h4" />
-                    </svg>
-                  )}
+                <div
+                  aria-hidden="true"
+                  className={`absolute inset-x-6 top-0 h-1 rounded-b-full bg-gradient-to-r ${theme.line}`}
+                />
 
-                  {item.icon === "website" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <rect x="3" y="4" width="18" height="16" rx="3" />
-                      <path d="M3 9h18M8 14h4M15 14h3" />
-                    </svg>
-                  )}
+                <div className="relative mb-5 flex items-start justify-between gap-4">
+                  <div
+                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl border shadow-[0_12px_28px_rgba(15,23,42,0.07)] ${theme.icon}`}
+                  >
+                    {item.icon === "spark" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <path d="M12 2l1.7 6.2L20 10l-6.3 1.8L12 18l-1.7-6.2L4 10l6.3-1.8L12 2z" />
+                        <path d="M19 16l.8 2.7 2.2.8-2.2.8L19 23l-.8-2.7-2.2-.8 2.2-.8L19 16z" />
+                      </svg>
+                    )}
 
-                  {item.icon === "app" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <rect x="5" y="3" width="14" height="18" rx="3" />
-                      <path d="M9 7h6M9 11h2M13 11h2M9 15h2M13 15h2" />
-                    </svg>
-                  )}
+                    {item.icon === "video" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <rect x="3" y="5" width="13" height="14" rx="3" />
+                        <path d="M16 10l5-3v10l-5-3z" />
+                        <path d="M7 9h5M7 13h4" />
+                      </svg>
+                    )}
 
-                  {item.icon === "chat" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.6-4.5A8 8 0 1 1 21 12z" />
-                      <path d="M8 12h.01M12 12h.01M16 12h.01" />
-                    </svg>
-                  )}
+                    {item.icon === "website" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <rect x="3" y="4" width="18" height="16" rx="3" />
+                        <path d="M3 9h18M8 14h4M15 14h3" />
+                      </svg>
+                    )}
 
-                  {item.icon === "agent" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <rect x="6" y="8" width="12" height="10" rx="3" />
-                      <path d="M12 8V4M9 4h6M9 13h.01M15 13h.01M8 18l-2 3M16 18l2 3" />
-                    </svg>
-                  )}
+                    {item.icon === "app" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <rect x="5" y="3" width="14" height="18" rx="3" />
+                        <path d="M9 7h6M9 11h2M13 11h2M9 15h2M13 15h2" />
+                      </svg>
+                    )}
 
-                  {item.icon === "growth" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <path d="M4 18h16" />
-                      <path d="M6 16l4-4 3 3 5-7" />
-                      <path d="M17 8h1v1" />
-                    </svg>
-                  )}
+                    {item.icon === "chat" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.6-4.5A8 8 0 1 1 21 12z" />
+                        <path d="M8 12h.01M12 12h.01M16 12h.01" />
+                      </svg>
+                    )}
 
-                  {item.icon === "analytics" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <path d="M4 19V5" />
-                      <path d="M8 17v-6M12 17V8M16 17v-4M20 17V6" />
-                      <path d="M3 19h18" />
-                    </svg>
-                  )}
+                    {item.icon === "agent" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <rect x="6" y="8" width="12" height="10" rx="3" />
+                        <path d="M12 8V4M9 4h6M9 13h.01M15 13h.01M8 18l-2 3M16 18l2 3" />
+                      </svg>
+                    )}
 
-                  {item.icon === "portfolio" && (
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.4]">
-                      <rect x="3" y="7" width="18" height="13" rx="3" />
-                      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                      <path d="M8 13h8" />
-                    </svg>
-                  )}
+                    {item.icon === "growth" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <path d="M4 18h16" />
+                        <path d="M6 16l4-4 3 3 5-7" />
+                        <path d="M17 8h1v1" />
+                      </svg>
+                    )}
+
+                    {item.icon === "analytics" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <path d="M4 19V5" />
+                        <path d="M8 17v-6M12 17V8M16 17v-4M20 17V6" />
+                        <path d="M3 19h18" />
+                      </svg>
+                    )}
+
+                    {item.icon === "portfolio" && (
+                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
+                        <rect x="3" y="7" width="18" height="13" rx="3" />
+                        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                        <path d="M8 13h8" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`rounded-full border px-3 py-1 text-[11px] font-black shadow-sm ${theme.number}`}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] ${theme.category}`}
+                    >
+                      {item.category}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <span className="rounded-full bg-[#F1F7FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#2563EB]">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
-                    item.tone === "orange"
-                      ? "bg-[#FFF7ED] text-[#F97316]"
-                      : item.tone === "cyan"
-                        ? "bg-[#ECFEFF] text-[#0891B2]"
-                        : item.tone === "violet"
-                          ? "bg-[#F4F0FF] text-[#7C3AED]"
-                          : "bg-[#EEF6FF] text-[#2563EB]"
-                  }`}>
-                    {item.tag}
-                  </span>
+                <div className="relative flex flex-1 flex-col">
+                  <h3 className="text-[20px] font-black leading-[1.18] tracking-[-0.025em] text-[#071533] md:text-[22px]">
+                    {item.title}
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-[#52617A] md:text-[15px] md:leading-7">
+                    {item.description}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {item.chips.map((chip) => (
+                      <span
+                        key={chip}
+                        className={`rounded-full border px-3 py-1.5 text-[11px] font-extrabold ${theme.chip}`}
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 pt-1">
+                    <div
+                      className={`flex w-full items-center justify-between rounded-2xl bg-gradient-to-r ${theme.button} px-4 py-3 text-sm font-black text-white shadow-[0_12px_28px_rgba(15,23,42,0.14)] transition-all duration-300 group-hover:shadow-[0_18px_38px_rgba(37,99,235,0.22)]`}
+                    >
+                      <span>{item.action}</span>
+
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5 fill-none stroke-current stroke-[2.5] transition-transform duration-300 group-hover:translate-x-1"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="M13 6l6 6-6 6" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <h3 className="text-[19px] font-black leading-snug tracking-[-0.025em] text-[#071533] md:text-[21px]">
-                {item.title}
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-[#475569] md:text-[15px] md:leading-7">
-                {item.desc}
-              </p>
-            </div>
-          ))}
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>
