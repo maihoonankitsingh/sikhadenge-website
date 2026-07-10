@@ -979,7 +979,7 @@ const FrameworksSection = () => {
                     {item.description}
                   </p>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {item.chips.map((chip) => (
                       <span
                         key={chip}
@@ -990,19 +990,29 @@ const FrameworksSection = () => {
                     ))}
                   </div>
 
-                  <div className="mt-5 pt-1">
+                  <div className="mt-4 border-t border-[#E5EDF8] pt-4">
                     <div
-                      className={`flex w-full items-center justify-between rounded-2xl bg-gradient-to-r ${theme.button} px-4 py-3 text-sm font-black text-white shadow-[0_12px_28px_rgba(15,23,42,0.14)] transition-all duration-300 group-hover:shadow-[0_18px_38px_rgba(37,99,235,0.22)]`}
+                      className={`inline-flex max-w-full items-center rounded-full bg-gradient-to-r ${theme.button} p-[1px] shadow-[0_8px_20px_rgba(15,23,42,0.10)] transition-all duration-300 group-hover:shadow-[0_12px_28px_rgba(37,99,235,0.16)]`}
                     >
-                      <span>{item.action}</span>
+                      <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/95 py-1.5 pl-3.5 pr-1.5">
+                        <span
+                          className={`whitespace-nowrap bg-gradient-to-r ${theme.button} bg-clip-text text-[12px] font-black text-transparent sm:text-[13px]`}
+                        >
+                          {item.action}
+                        </span>
 
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-5 w-5 fill-none stroke-current stroke-[2.5] transition-transform duration-300 group-hover:translate-x-1"
-                      >
-                        <path d="M5 12h14" />
-                        <path d="M13 6l6 6-6 6" />
-                      </svg>
+                        <span
+                          className={`grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-r ${theme.button} text-white shadow-sm`}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.7] transition-transform duration-300 group-hover:translate-x-0.5"
+                          >
+                            <path d="M5 12h14" />
+                            <path d="M13 6l6 6-6 6" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
