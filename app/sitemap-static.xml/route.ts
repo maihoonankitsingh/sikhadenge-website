@@ -9,7 +9,6 @@ ${urls
   .map(
     (item) => `<url>
   <loc>${item.url}</loc>
-  <lastmod>${new Date(item.lastModified).toISOString()}</lastmod>
   <changefreq>${item.changeFrequency}</changefreq>
   <priority>${item.priority}</priority>
 </url>`
