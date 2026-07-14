@@ -33,16 +33,28 @@ function getSlugs(fileName: string) {
     .filter(Boolean);
 }
 
+function getFileLastModified(fileName: string): Date {
+  const filePath = path.join(process.cwd(), "data", fileName);
+
+  try {
+    return fs.statSync(filePath).mtime;
+  } catch {
+    // Existing callers return no URLs when their source file is missing.
+    return new Date("2026-04-01T00:00:00.000Z");
+  }
+}
+
 function makeUrls(
-  slugs: string[],
+  fileName: string,
   prefix: string,
   priority: number,
   changeFrequency: SitemapEntry["changeFrequency"] = "weekly"
 ): SitemapEntry[] {
-  const now = new Date();
-  return slugs.map((slug) => ({
+  const lastModified = getFileLastModified(fileName);
+
+  return getSlugs(fileName).map((slug: string) => ({
     url: `${baseUrl}${prefix}${slug}`,
-    lastModified: now,
+    lastModified,
     changeFrequency,
     priority,
   }));
@@ -90,31 +102,31 @@ export function getStaticUrls(): SitemapEntry[] {
 }
 
 export function getPromptUrls(): SitemapEntry[] {
-  return makeUrls(getSlugs("generated-prompts.json"), "/prompts/", 0.8);
+  return makeUrls("generated-prompts.json", "/prompts/", 0.8);
 }
 
 export function getCompareUrls(): SitemapEntry[] {
-  return makeUrls(getSlugs("generated-vs.json"), "/compare/", 0.8);
+  return makeUrls("generated-vs.json", "/compare/", 0.8);
 }
 
 export function getExpertUrls(): SitemapEntry[] {
-  return makeUrls(getSlugs("generated-seo-merged.json"), "/expert/", 0.7);
+  return makeUrls("generated-seo-merged.json", "/expert/", 0.7);
 }
 
 
 export function getExpertUrlsChunk(chunkIndex: number, chunkSize: number = 5000): SitemapEntry[] {
-  const all = makeUrls(getSlugs("generated-seo-merged.json"), "/expert/", 0.7);
+  const all = makeUrls("generated-seo-merged.json", "/expert/", 0.7);
   const start = chunkIndex * chunkSize;
   const end = start + chunkSize;
   return all.slice(start, end);
 }
 
 export function getHindiUrls(): SitemapEntry[] {
-  return makeUrls(getSlugs("generated-hindi.json"), "/hindi/", 0.75);
+  return makeUrls("generated-hindi.json", "/hindi/", 0.75);
 }
 
 export function getBlogUrls(): SitemapEntry[] {
-  return makeUrls(getSlugs("blogs.json"), "/blog/", 0.76);
+  return makeUrls("blogs.json", "/blog/", 0.76);
 }
 
 export function getToolUrls(): SitemapEntry[] {
