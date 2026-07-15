@@ -1,120 +1,266 @@
 export const revalidate = 0;
-import { NextResponse } from "next/server";
+
 import crypto from "crypto";
+import Razorpay from "razorpay";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createAdmissionCompletionToken } from "@/lib/admission-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-
-const DEBUG_VERSION = "verify-2026-02-22-02";
-function hmac(secret: string, data: string) {
-  return crypto.createHmac("sha256", secret).update(data).digest("hex");
+function asString(value: unknown) {
+  return typeof value === "string"
+    ? value.trim()
+    : value == null
+      ? ""
+      : String(value).trim();
 }
 
-function asStr(v: any) {
-  return typeof v === "string" ? v : v == null ? "" : String(v);
+function verifySignature(
+  secret: string,
+  orderId: string,
+  paymentId: string,
+  signature: string
+) {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  try {
+    const expectedBuffer = Buffer.from(expected, "hex");
+    const receivedBuffer = Buffer.from(signature, "hex");
+
+    return (
+      expectedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+    );
+  } catch {
+    return false;
+  }
 }
 
-function asInt(v: any) {
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.floor(n) : null;
+function jsonSafe(value: unknown) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function successResponse(admissionId: string) {
+  const token = createAdmissionCompletionToken(admissionId);
+
+  const response = NextResponse.json({
+    ok: true,
+    admissionId,
+    next: "/admission/complete",
+  });
+
+  response.cookies.set("sd_admission_complete", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 2 * 60 * 60,
+  });
+
+  return response;
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, form } = body || {};
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return NextResponse.json({ ok: false, error: "Missing payment fields" }, { status: 400 });
+    const orderId = asString(body?.razorpay_order_id);
+    const paymentId = asString(body?.razorpay_payment_id);
+    const signature = asString(body?.razorpay_signature);
+
+    if (!orderId || !paymentId || !signature) {
+      return NextResponse.json(
+        { ok: false, error: "Missing payment verification fields" },
+        { status: 400 }
+      );
     }
 
-    const secret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
-    if (!secret) {
-      return NextResponse.json({ ok: false, error: "RAZORPAY_KEY_SECRET missing" }, { status: 500 });
+    const keyId = String(process.env.RAZORPAY_KEY_ID || "").trim();
+    const keySecret = String(process.env.RAZORPAY_KEY_SECRET || "").trim();
+
+    if (!keyId || !keySecret) {
+      return NextResponse.json(
+        { ok: false, error: "Payment configuration unavailable" },
+        { status: 503 }
+      );
     }
 
-    const expected = hmac(secret, `${razorpay_order_id}|${razorpay_payment_id}`);
-    if (expected !== razorpay_signature) {
-      return NextResponse.json({ ok: false, error: "Invalid signature" }, { status: 400 });
+    if (!verifySignature(keySecret, orderId, paymentId, signature)) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid payment signature" },
+        { status: 400 }
+      );
     }
 
-    // ---- DB save (best-effort; should not break checkout) ----
-    let dbSaved = false;
-    let admissionId: string | null = null;
+    const existingPayment = await prisma.payment.findUnique({
+      where: {
+        razorpayPaymentId: paymentId,
+      },
+      select: {
+        admissionId: true,
+        status: true,
+      },
+    });
+
+    if (
+      existingPayment?.status === "captured" &&
+      existingPayment.admissionId
+    ) {
+      return successResponse(existingPayment.admissionId);
+    }
+
+    const pendingPayment = await prisma.payment.findFirst({
+      where: {
+        razorpayOrderId: orderId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (
+      !pendingPayment ||
+      !pendingPayment.admissionId ||
+      pendingPayment.amount == null
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Payment order is not linked to an admission" },
+        { status: 404 }
+      );
+    }
+
+    const admission = await prisma.admission.findUnique({
+      where: {
+        id: pendingPayment.admissionId,
+      },
+      select: {
+        id: true,
+        feeTotal: true,
+        feePaid: true,
+      },
+    });
+
+    if (!admission || admission.feeTotal !== pendingPayment.amount) {
+      return NextResponse.json(
+        { ok: false, error: "Admission fee record mismatch" },
+        { status: 409 }
+      );
+    }
+
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
+    const gatewayPayment: any = await razorpay.payments.fetch(paymentId);
+
+    const gatewayOrderId = asString(gatewayPayment?.order_id);
+    const gatewayCurrency = asString(gatewayPayment?.currency).toUpperCase();
+    const gatewayStatus = asString(gatewayPayment?.status).toLowerCase();
+    const gatewayAmountPaise = Number(gatewayPayment?.amount);
+
+    if (gatewayOrderId !== orderId) {
+      return NextResponse.json(
+        { ok: false, error: "Payment order mismatch" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !Number.isFinite(gatewayAmountPaise) ||
+      gatewayAmountPaise !== pendingPayment.amount * 100
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Payment amount mismatch" },
+        { status: 400 }
+      );
+    }
+
+    if (gatewayCurrency !== "INR") {
+      return NextResponse.json(
+        { ok: false, error: "Payment currency mismatch" },
+        { status: 400 }
+      );
+    }
+
+    if (gatewayStatus !== "captured") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Payment is not captured yet (${gatewayStatus || "unknown"})`,
+        },
+        { status: 409 }
+      );
+    }
 
     try {
-      // admissionId can be passed either as top-level or inside form
-      admissionId = asStr((body && (body.admissionId ?? body?.form?.admissionId)) || "").trim() || null;
-
-      // optional fields (only used if present)
-      const amountRupees =
-        asInt(body?.amountRupees ?? body?.amountInRupees ?? body?.amount ?? body?.form?.amountRupees ?? body?.form?.amount) ?? null;
-
-      const currency = asStr(body?.currency ?? body?.form?.currency ?? "INR").trim() || "INR";
-
-      // Create/update Payment (idempotent by unique razorpayPaymentId)
-      const payment = await prisma.payment.upsert({
-        where: { razorpayPaymentId: asStr(razorpay_payment_id) },
-        create: {
-          admissionId: admissionId,
-          razorpayPaymentId: asStr(razorpay_payment_id),
-          razorpayOrderId: asStr(razorpay_order_id),
-          razorpaySignature: asStr(razorpay_signature),
-          event: "checkout.verify",
-          status: "captured", // signature verified on client flow; actual capture status can be refined via webhook later
-          amount: amountRupees,
-          currency,
-          raw: body ?? null,
-          receivedAt: new Date(),
-        },
-        update: {
-          admissionId: admissionId ?? undefined,
-          razorpayOrderId: asStr(razorpay_order_id),
-          razorpaySignature: asStr(razorpay_signature),
-          status: "captured",
-          amount: amountRupees ?? undefined,
-          currency,
-          raw: body ?? null,
-          receivedAt: new Date(),
-        },
-      });
-
-      // Update Admission feePaid if admissionId is available
-      if (admissionId) {
-        // feePaid: if amount provided, set to amount; else keep existing
-        const upd: any = { updatedAt: new Date() };
-        if (amountRupees != null) upd.feePaid = amountRupees;
-
-        await prisma.admission.update({
-          where: { id: admissionId },
-          data: upd,
+      await prisma.$transaction([
+        prisma.payment.update({
+          where: {
+            id: pendingPayment.id,
+          },
+          data: {
+            razorpayPaymentId: paymentId,
+            razorpaySignature: signature,
+            event: "checkout.verified",
+            status: "captured",
+            amount: pendingPayment.amount,
+            currency: "INR",
+            receivedAt: new Date(),
+            raw: jsonSafe({
+              callback: {
+                razorpay_order_id: orderId,
+                razorpay_payment_id: paymentId,
+                razorpay_signature: signature,
+              },
+              gatewayPayment,
+            }),
+          },
+        }),
+        prisma.admission.update({
+          where: {
+            id: admission.id,
+          },
+          data: {
+            feePaid: pendingPayment.amount,
+          },
+        }),
+      ]);
+    } catch (transactionError: any) {
+      if (transactionError?.code === "P2002") {
+        const duplicate = await prisma.payment.findUnique({
+          where: {
+            razorpayPaymentId: paymentId,
+          },
+          select: {
+            admissionId: true,
+            status: true,
+          },
         });
 
-        // Ensure payment.admissionId set if admission row exists
-        if (!payment.admissionId) {
-          await prisma.payment.update({
-            where: { id: payment.id },
-            data: { admissionId },
-          });
+        if (duplicate?.status === "captured" && duplicate.admissionId) {
+          return successResponse(duplicate.admissionId);
         }
       }
 
-      dbSaved = true;
-    } catch (e: any) {
-      console.error("ADMISSION_VERIFY_DB_ERROR", e);
-        console.log("ADMISSION_VERIFY_DB_ERROR_STR", String(((e as any)?.stack || e) ?? ""));
-// continue; do not fail payment success response
+      throw transactionError;
     }
 
-    return NextResponse.json({
-      ok: true,
-      dbSaved,
-      admissionId,
-      debugVersion: DEBUG_VERSION,
-    });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || "Server error" }, { status: 500 });
+    return successResponse(admission.id);
+  } catch (error) {
+    console.error("ADMISSION_VERIFY_ERROR", error);
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Payment verification failed. Contact support with payment ID.",
+      },
+      { status: 500 }
+    );
   }
 }

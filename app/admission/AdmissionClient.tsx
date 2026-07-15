@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 declare global {
   interface Window {
@@ -9,72 +9,125 @@ declare global {
   }
 }
 
+const CHECKOUT_SCRIPT =
+  "https://checkout.razorpay.com/v1/checkout.js";
+
 function loadRazorpay(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (typeof window === "undefined") return resolve(false);
-    if (window.Razorpay) return resolve(true);
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
 
-    const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.body.appendChild(s);
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    let settled = false;
+
+    const finish = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${CHECKOUT_SCRIPT}"]`
+    );
+
+    if (!existing) {
+      const script = document.createElement("script");
+      script.src = CHECKOUT_SCRIPT;
+      script.async = true;
+      script.onload = () => finish(Boolean(window.Razorpay));
+      script.onerror = () => finish(false);
+      document.body.appendChild(script);
+    }
+
+    const interval = window.setInterval(() => {
+      if (window.Razorpay) {
+        window.clearInterval(interval);
+        finish(true);
+      }
+    }, 100);
+
+    window.setTimeout(() => {
+      window.clearInterval(interval);
+      finish(Boolean(window.Razorpay));
+    }, 12000);
   });
+}
+
+async function readResponse(res: Response) {
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data?.ok) {
+    throw new Error(
+      data?.error || `Request failed with status ${res.status}`
+    );
+  }
+
+  return data;
 }
 
 export default function AdmissionClient() {
   const [loading, setLoading] = useState(false);
-  const [amountRupees, setAmountRupees] = useState<number>(4999);
+  const [pageError, setPageError] = useState("");
 
-  const key = useMemo(() => {
-    return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
-  }, []);
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
     if (loading) return;
 
     setLoading(true);
+    setPageError("");
+
     try {
-      const form = new FormData(e.currentTarget);
+      const formData = new FormData(event.currentTarget);
+
       const payload = {
-        name: String(form.get("name") || "").trim(),
-        fatherName: String(form.get("fatherName") || "").trim(),
-        phone: String(form.get("phone") || "").trim(),
-        email: String(form.get("email") || "").trim(),
-        gender: String(form.get("gender") || "").trim(),
-        course: String(form.get("course") || "").trim(),
-        address1: String(form.get("address1") || "").trim(),
-    
-          amountRupees: Number(form.get("amountRupees") || 4999),
-  };
+        name: String(formData.get("name") || "").trim(),
+        fatherName: String(formData.get("fatherName") || "").trim(),
+        phone: String(formData.get("phone") || "").trim(),
+        email: String(formData.get("email") || "").trim(),
+        gender: String(formData.get("gender") || "").trim(),
+        address1: String(formData.get("address1") || "").trim(),
+      };
 
-      const rzOk = await loadRazorpay();
-      if (!rzOk) throw new Error("Razorpay SDK load failed");
-      if (!key) throw new Error("NEXT_PUBLIC_RAZORPAY_KEY_ID missing");
+      const razorpayLoaded = await loadRazorpay();
 
-      const res = await fetch("/api/admission", {
+      if (!razorpayLoaded) {
+        throw new Error(
+          "Razorpay checkout could not load. Disable blocking extensions and retry."
+        );
+      }
+
+      const initResponse = await fetch("/api/admission", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const data = await res.json();
+      const data = await readResponse(initResponse);
 
-
-        // FREE flow: skip Razorpay + skip verify
-        if (data?.free) {
-          window.location.href = "/admission/complete?free=1";
-          return;
-        }
+      if (
+        !data.keyId ||
+        !data.orderId ||
+        !data.admissionId ||
+        !data.amount
+      ) {
+        throw new Error("Incomplete payment order response");
+      }
 
       const options = {
-        key,
+        key: data.keyId,
         amount: data.amount,
         currency: data.currency || "INR",
-        name: "Sikhadenge",
-        description: "Course Admission",
+        name: "SikhaDenge",
+        description: "AI Expert Program Admission",
         order_id: data.orderId,
         prefill: {
           name: payload.name,
@@ -82,178 +135,295 @@ export default function AdmissionClient() {
           contact: payload.phone,
         },
         notes: {
+          admissionId: data.admissionId,
           fatherName: payload.fatherName,
-          gender: payload.gender,
-          course: payload.course,
-          address1: payload.address1,
         },
-        handler: async (resp: any) => {
-          const vr = await fetch("/api/admission/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...resp, admissionId: data?.admissionId || null, amountRupees: data?.amountRupees ?? payload.amountRupees, currency: data?.currency || "INR", form: payload }),
-          });
-          if (vr.ok) {
-window.location.href = `/admission/complete?orderId=${resp.razorpay_order_id}&paymentId=${resp.razorpay_payment_id}&admissionId=${encodeURIComponent(String(data?.admissionId || ""))}`;
-          } else {
-            alert("Payment done but verification failed. Please WhatsApp support.");
+        handler: async (paymentResponse: any) => {
+          setLoading(true);
+          setPageError("");
+
+          try {
+            const verifyResponse = await fetch(
+              "/api/admission/verify",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(paymentResponse),
+              }
+            );
+
+            await readResponse(verifyResponse);
+
+            window.location.assign(
+              `/admission/complete?orderId=${encodeURIComponent(
+                paymentResponse.razorpay_order_id
+              )}&paymentId=${encodeURIComponent(
+                paymentResponse.razorpay_payment_id
+              )}`
+            );
+          } catch (error) {
+            setLoading(false);
+            setPageError(
+              error instanceof Error
+                ? error.message
+                : "Payment verification failed"
+            );
           }
         },
-        modal: { ondismiss: () => {} },
-        theme: { color: "#2563EB" },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          },
+        },
+        theme: {
+          color: "#2563EB",
+        },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      console.error(err);
-      alert("Payment start nahi hua. Please WhatsApp support.");
-    } finally {
+      const checkout = new window.Razorpay(options);
+
+      checkout.on("payment.failed", (response: any) => {
+        setLoading(false);
+        setPageError(
+          response?.error?.description ||
+            "Payment failed. No admission fee was confirmed."
+        );
+      });
+
+      checkout.open();
+    } catch (error) {
       setLoading(false);
+      setPageError(
+        error instanceof Error
+          ? error.message
+          : "Payment could not be started"
+      );
     }
   }
 
-  const INPUT = "w-full rounded-lg border border-[rgba(15,23,42,0.10)] bg-white px-3 py-2 text-sm text-[#0F172A] placeholder:text-[#64748B] outline-none focus:border-[#2563EB]/60 focus:ring-2 focus:ring-[#2563EB]/20";
-  const LABEL = "block text-xs font-medium text-[#0F172A] mb-1";
-  const CARD = "rounded-2xl border border-[rgba(15,23,42,0.10)] bg-[#FFF7E6] shadow-[0_12px_36px_rgba(2,6,23,0.08)]";
+  const inputClass =
+    "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
 
   return (
-    <main className="min-h-[70vh] bg-[#F8FAFC] px-4 pt-10 pb-8">
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="mb-4">
-          <h1 className="text-3xl font-semibold text-[#0F172A]">Admission</h1>
-          <p className="mt-1 text-sm text-[#64748B]">Fill details → Confirm → Pay → Seat locked</p>
+    <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8">
+          <div className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+            Secure admission checkout
+          </div>
+
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
+            Confirm your admission
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+            Complete your student details, pay the fixed program fee and
+            submit documents through the protected admission flow.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
-          {/* LEFT: FORM */}
-          <div className={`${CARD} p-4 md:p-5`}>
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-[#0F172A]">Student details</h2>
-              <p className="mt-1 text-sm text-[#64748B]">
-                Details submit karte hi payment window open ho jayega.
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          {[
+            ["01", "Student details"],
+            ["02", "Secure payment"],
+            ["03", "Document verification"],
+          ].map(([number, title]) => (
+            <div
+              key={number}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
+            >
+              <div className="text-xs font-bold text-blue-600">
+                {number}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">
+                {title}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-7 lg:grid-cols-[1fr_390px]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div>
+              <h2 className="text-xl font-bold text-slate-950">
+                Student information
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Enter the information that should appear in the
+                admission record.
               </p>
             </div>
 
-            <form className="space-y-3" onSubmit={onSubmit}>
-              <div>
-                <label className={LABEL}>Name *</label>
-                <input required placeholder="Full name" className={INPUT} name="name" />
-              </div>
-
-              <div>
-                <label className={LABEL}>Father Name *</label>
-                <input required placeholder="Father name" className={INPUT} name="fatherName" />
-              </div>
-
-              <div>
-                <label className={LABEL}>WhatsApp Number *</label>
-                <input required inputMode="numeric" placeholder="10 digit number" className={INPUT} name="phone" />
-              </div>
-
-              <div>
-                <label className={LABEL}>Email (optional)</label>
-                <input type="email" placeholder="email@example.com" className={INPUT} name="email" />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-</div>
-
-              <div>
-                <label className={LABEL}>Gender (optional)</label>
-                <select name="gender" className={INPUT} defaultValue="">
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={LABEL}>Program</label>
-                <select name="course" className={INPUT} defaultValue="AI Expert Program">
-                  <option value="AI Expert Program">AI Expert Program</option>
-                </select>
-                <p className="mt-2 text-xs text-[#64748B]">
-                  Tools: Ps, Ai, Id, Pr, Ae + AI tools (projects + certificate).
-                </p>
-              </div>
-
-                <div>
-                  <label className={LABEL}>Pay Amount (₹)</label>
+            <form className="mt-7 space-y-5" onSubmit={onSubmit}>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-sm font-medium text-slate-800">
+                  Student name <span className="text-red-500">*</span>
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    step={1}
-                    name="amountRupees"
-                    defaultValue={4999}
-                    className={INPUT}
-                    placeholder="e.g., 4999"
+                    className={inputClass}
+                    name="name"
+                    placeholder="Full name"
+                    autoComplete="name"
+                    required
                   />
-                  <p className="mt-1 text-xs text-[#64748B]">Enter amount in INR (minimum ₹1).</p>
+                </label>
+
+                <label className="text-sm font-medium text-slate-800">
+                  Father name <span className="text-red-500">*</span>
+                  <input
+                    className={inputClass}
+                    name="fatherName"
+                    placeholder="Father name"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-sm font-medium text-slate-800">
+                  WhatsApp number <span className="text-red-500">*</span>
+                  <input
+                    className={inputClass}
+                    name="phone"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="10-digit mobile number"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
+                    required
+                  />
+                </label>
+
+                <label className="text-sm font-medium text-slate-800">
+                  Email address
+                  <input
+                    className={inputClass}
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    placeholder="email@example.com"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-sm font-medium text-slate-800">
+                  Gender
+                  <select
+                    className={inputClass}
+                    name="gender"
+                    defaultValue=""
+                  >
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label className="text-sm font-medium text-slate-800">
+                  Program
+                  <input
+                    className={`${inputClass} bg-slate-50`}
+                    value="AI Expert Program"
+                    readOnly
+                  />
+                </label>
+              </div>
+
+              <label className="block text-sm font-medium text-slate-800">
+                Address
+                <textarea
+                  className={`${inputClass} min-h-24 resize-y`}
+                  name="address1"
+                  placeholder="Current address"
+                />
+              </label>
+
+              {pageError ? (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
+                >
+                  {pageError}
                 </div>
-<button
+              ) : null}
+
+              <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full rounded-xl bg-[#2563EB] px-4 py-3 font-semibold text-white shadow-[0_14px_40px_rgba(37,99,235,0.22)] hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 disabled:opacity-60"
+                className="w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Please wait..." : "Proceed to payment"}
+                {loading
+                  ? "Preparing secure payment..."
+                  : "Pay ₹4,999 securely"}
               </button>
 
-              <p className="text-xs text-[#64748B]">
-                By continuing you agree to our{" "}
-                <Link className="underline" href="/terms">
+              <p className="text-xs leading-5 text-slate-500">
+                By continuing, you agree to the{" "}
+                <Link
+                  href="/terms"
+                  className="font-medium underline"
+                >
                   Terms
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy-policy"
+                  className="font-medium underline"
+                >
+                  Privacy Policy
                 </Link>
                 .
               </p>
             </form>
-          </div>
+          </section>
 
-          {/* RIGHT: ORDER SUMMARY (sticky) */}
-          <aside className="lg:sticky lg:top-28">
-            <div className={`${CARD} p-6`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#0F172A]">Your order</h3>
-                  <p className="mt-1 text-sm text-[#64748B]">Admission checkout summary</p>
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-3xl bg-slate-950 p-6 text-white shadow-xl">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">
+                Order summary
+              </div>
+
+              <h2 className="mt-3 text-2xl font-bold">
+                AI Expert Program
+              </h2>
+
+              <div className="mt-6 space-y-4 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Duration</span>
+                  <span className="font-semibold">8 weeks</span>
                 </div>
-                <span className="rounded-full bg-[#F5B301]/20 px-3 py-1 text-xs font-semibold text-[#0F172A] border border-[rgba(15,23,42,0.10)]">
-                  Limited seats
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Mode</span>
+                  <span className="font-semibold">Live online</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Program fee</span>
+                  <span className="font-semibold">₹4,999</span>
+                </div>
+              </div>
+
+              <div className="my-6 h-px bg-white/10" />
+
+              <div className="flex items-end justify-between">
+                <span className="text-sm text-slate-400">
+                  Amount payable
                 </span>
+                <span className="text-3xl font-bold">₹4,999</span>
               </div>
+            </div>
 
-              <div className="mt-5 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#334155]">Program</span>
-                  <span className="text-[#0F172A] font-medium">AI Expert Program</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#334155]">Duration</span>
-                  <span className="text-[#0F172A] font-medium">8 weeks</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#334155]">Mode</span>
-                  <span className="text-[#0F172A] font-medium">Live online</span>
-                </div>
-              </div>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-bold text-slate-950">
+                Payment protection
+              </h3>
 
-              <div className="my-5 h-px bg-[rgba(15,23,42,0.10)]" />
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#334155]">Fee</span>
-                  <span className="text-[#0F172A] font-semibold">Shown in payment</span>
-                </div>
-                <p className="text-xs text-[#64748B]">
-                  Exact amount Razorpay payment window me show hoga. Payment ke baad seat confirm hoti hai.
-                </p>
-              </div>
-
-              <div className="mt-5 rounded-xl border border-[rgba(15,23,42,0.10)] bg-white p-4">
-                <p className="text-sm font-semibold text-[#0F172A]">Need help?</p>
-                <p className="mt-1 text-xs text-[#64748B]">Payment issue / verification — support team se connect karein.</p>
+              <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+                <p>Fee is fixed securely on the server.</p>
+                <p>Payment amount and status are verified with Razorpay.</p>
+                <p>Documents are stored outside the public website folder.</p>
               </div>
             </div>
           </aside>

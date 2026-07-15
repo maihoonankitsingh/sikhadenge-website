@@ -58,3 +58,12 @@ backups/
 tsconfig.tsbuildinfo
 *.broken_*
 *.disabled_*
+
+# SIKHADENGE_PRIVATE_ADMISSION_DATA_V1
+# Private admission/KYC files must never enter Git.
+data/private/
+public/uploads/admission/
+
+# Local backups and failed build artifacts.
+_safe_backups/
+.next.phase2b-failed-*/

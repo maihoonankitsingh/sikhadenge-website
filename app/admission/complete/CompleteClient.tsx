@@ -3,210 +3,240 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
-function pick(qs: URLSearchParams, key: string) {
-  const v = (qs.get(key) || "").trim();
-  return v || "";
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function queryValue(params: URLSearchParams, key: string) {
+  return String(params.get(key) || "").trim();
 }
 
 export default function CompleteClient() {
   const [loading, setLoading] = useState(false);
-  const qs = useMemo(() => new URLSearchParams(typeof window !== "undefined" ? window.location.search : ""), []);
-  const orderId = pick(qs, "orderId");
-  const paymentId = pick(qs, "paymentId");
+  const [pageError, setPageError] = useState("");
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const query = useMemo(
+    () =>
+      new URLSearchParams(
+        typeof window !== "undefined" ? window.location.search : ""
+      ),
+    []
+  );
+
+  const orderId = queryValue(query, "orderId");
+  const paymentId = queryValue(query, "paymentId");
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     if (loading) return;
 
     setLoading(true);
+    setPageError("");
+
     try {
-      const form = new FormData(e.currentTarget);
+      const formData = new FormData(event.currentTarget);
+      const aadhaar = String(formData.get("aadhaar") || "").replace(
+        /\D/g,
+        ""
+      );
 
-      // UI-only for now: no API save. We just simulate success redirect.
-      // Wired: store Aadhaar(last4) + document URLs in DB via /api/admission/complete
-      try {
-        const formEl = document.querySelector("form") as HTMLFormElement | null;
-        const fd = formEl ? new FormData(formEl) : new FormData();
-
-
-// admissionId: read from URL (?admissionId=... OR ?id=...)
-const sp = new URLSearchParams(window.location.search);
-const aid = (sp.get("admissionId") || sp.get("id") || "").trim();
-if (aid) fd.set("admissionId", aid);
-
-// Map existing form field names -> API expected field names
-fd.set("aadhaar", String(fd.get("aadharNumber") || ""));
-fd.set("highestQualification", String(fd.get("qualification") || ""));
-fd.set("aadhaarFront", fd.get("aadharFront") as any);
-fd.set("aadhaarBack", fd.get("aadharBack") as any);
-fd.set("qualificationDoc", fd.get("qualificationCert") as any);
-
-        const admissionId = String(fd.get("admissionId") || "").trim();
-        if (!admissionId) return alert("admissionId missing (cannot save documents)");
-
-        const res = await fetch("/api/admission/complete", { method: "POST", body: fd });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok || !j?.ok) return alert(j?.error || "Upload failed");
-      } catch (e: any) {
-        return alert(e?.message || "Upload failed");
+      if (aadhaar.length !== 12) {
+        throw new Error("Enter a valid 12-digit Aadhaar number");
       }
 
-      const payload = {
-        orderId,
-        paymentId,
-        aadharNumber: String(form.get("aadharNumber") || "").trim(),
-        qualification: String(form.get("qualification") || "").trim(),
-      };
+      for (const field of [
+        "aadhaarFront",
+        "aadhaarBack",
+        "qualificationDoc",
+      ]) {
+        const file = formData.get(field);
 
-      // basic validation
-      if (!payload.aadharNumber || payload.aadharNumber.length < 8) {
-        alert("Aadhaar number required");
-        return;
+        if (!(file instanceof File) || !file.name) {
+          throw new Error("Select all required documents");
+        }
+
+        if (file.size > MAX_FILE_BYTES) {
+          throw new Error("Each document must be 5 MB or smaller");
+        }
       }
-      if (!payload.qualification) {
-        alert("Highest qualification required");
-        return;
+
+      const response = await fetch("/api/admission/complete", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(
+          data?.error || "Admission completion failed"
+        );
       }
 
-      // ensure files selected
-      const af = form.get("aadharFront");
-      const ab = form.get("aadharBack");
-      const qc = form.get("qualificationCert");
-      if (!(af instanceof File) || !af.name) return alert("Aadhaar front required");
-      if (!(ab instanceof File) || !ab.name) return alert("Aadhaar back required");
-      if (!(qc instanceof File) || !qc.name) return alert("Qualification certificate required");
-
-      // redirect to welcome (UI)
-      window.location.href = "/admission/welcome";
+      window.location.assign("/admission/welcome");
+    } catch (error) {
+      setPageError(
+        error instanceof Error
+          ? error.message
+          : "Admission completion failed"
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  const inputClass =
+    "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+
   return (
-    <main className="min-h-[70vh] bg-[#F8FAFC] px-4 pt-16 pb-12">
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-[#0F172A]">Complete Your Admission</h1>
-          <p className="mt-2 text-sm text-[#64748B]">
-            Payment done. Ab documents + details submit karke admission complete karein.
+    <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8">
+          <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+            Payment verified
+          </div>
+
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+            Complete document verification
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+            Aadhaar number ka sirf last four digits database me store
+            hoga. Uploaded documents private server storage me save
+            honge.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Form */}
-          <div className="lg:col-span-7 rounded-2xl border border-[rgba(15,23,42,0.10)] bg-white p-6 md:p-8 shadow-sm">
-            <form className="space-y-5" onSubmit={onSubmit}>
-              <input type="hidden" name="admissionId" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Aadhaar Number *</label>
+        <div className="grid gap-7 lg:grid-cols-[1fr_340px]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <form className="space-y-6" onSubmit={onSubmit}>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-sm font-medium text-slate-800">
+                  Aadhaar number <span className="text-red-500">*</span>
                   <input
-                    required
+                    className={inputClass}
+                    name="aadhaar"
                     inputMode="numeric"
-                    name="aadharNumber"
+                    pattern="[0-9]{12}"
+                    maxLength={12}
                     placeholder="12-digit Aadhaar"
-                    className="w-full rounded-xl border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Highest Qualification *</label>
-                  <select
                     required
-                    name="qualification"
+                  />
+                </label>
+
+                <label className="text-sm font-medium text-slate-800">
+                  Highest qualification{" "}
+                  <span className="text-red-500">*</span>
+                  <select
+                    className={inputClass}
+                    name="highestQualification"
                     defaultValue=""
-                    className="w-full rounded-xl border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/25"
+                    required
                   >
                     <option value="" disabled>
-                      Select
+                      Select qualification
                     </option>
                     <option value="10th">10th</option>
                     <option value="12th">12th</option>
                     <option value="Graduation">Graduation</option>
-                    <option value="Post Graduation">Post Graduation</option>
+                    <option value="Post Graduation">
+                      Post Graduation
+                    </option>
                     <option value="Other">Other</option>
                   </select>
+                </label>
+              </div>
+
+              {[
+                ["aadhaarFront", "Aadhaar front"],
+                ["aadhaarBack", "Aadhaar back"],
+                ["qualificationDoc", "Qualification certificate"],
+              ].map(([name, title]) => (
+                <label
+                  key={name}
+                  className="block rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-medium text-slate-800"
+                >
+                  {title} <span className="text-red-500">*</span>
+                  <input
+                    className="mt-3 block w-full text-sm text-slate-600"
+                    type="file"
+                    name={name}
+                    accept="image/jpeg,image/png,application/pdf"
+                    required
+                  />
+                  <span className="mt-2 block text-xs font-normal text-slate-500">
+                    Genuine JPG, PNG or PDF. Maximum 5 MB.
+                  </span>
+                </label>
+              ))}
+
+              {pageError ? (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
+                >
+                  {pageError}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#0F172A] mb-2">Aadhaar Front Image *</label>
-                <input
-                  required
-                  type="file"
-                  accept="image/*,application/pdf"
-                  name="aadharFront"
-                  className="block w-full text-sm text-[#334155]"
-                />
-                <p className="mt-1 text-xs text-[#64748B]">JPG/PNG/PDF. Clear photo upload karein.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#0F172A] mb-2">Aadhaar Back Image *</label>
-                <input
-                  required
-                  type="file"
-                  accept="image/*,application/pdf"
-                  name="aadharBack"
-                  className="block w-full text-sm text-[#334155]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#0F172A] mb-2">Qualification Certificate / Marksheet *</label>
-                <input
-                  required
-                  type="file"
-                  accept="image/*,application/pdf"
-                  name="qualificationCert"
-                  className="block w-full text-sm text-[#334155]"
-                />
-              </div>
+              ) : null}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#2563EB] px-4 py-3 font-semibold text-white shadow-[0_14px_40px_rgba(37,99,235,0.18)] hover:bg-[#1D4ED8] disabled:opacity-60"
+                className="w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Please wait..." : "Submit & Complete Admission"}
+                {loading
+                  ? "Uploading securely..."
+                  : "Submit and complete admission"}
               </button>
 
-              <p className="text-xs text-[#64748B]">
-                By submitting you agree to our{" "}
-                <Link className="underline" href="/terms">
+              <p className="text-xs leading-5 text-slate-500">
+                Submission is subject to the{" "}
+                <Link href="/terms" className="underline">
                   Terms
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy-policy" className="underline">
+                  Privacy Policy
                 </Link>
                 .
               </p>
             </form>
-          </div>
+          </section>
 
-          {/* Right: Summary */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="rounded-2xl border border-[rgba(15,23,42,0.10)] bg-[#FFF7E6] p-6 shadow-sm">
-              <div className="text-sm font-semibold text-[#0F172A]">Payment Confirmed</div>
-              <div className="mt-2 text-sm text-[#334155]">
-                <div className="flex items-center justify-between">
-                  <span>Order ID</span>
-                  <span className="font-mono text-xs">{orderId || "-"}</span>
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+              <h2 className="font-bold text-emerald-950">
+                Payment confirmed
+              </h2>
+
+              <div className="mt-4 space-y-3 text-xs text-emerald-900">
+                <div>
+                  <div className="text-emerald-700">Order ID</div>
+                  <div className="mt-1 break-all font-mono">
+                    {orderId || "Verified"}
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span>Payment ID</span>
-                  <span className="font-mono text-xs">{paymentId || "-"}</span>
+
+                <div>
+                  <div className="text-emerald-700">Payment ID</div>
+                  <div className="mt-1 break-all font-mono">
+                    {paymentId || "Verified"}
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 text-xs text-[#64748B]">
-                Next: documents submit → admission complete → welcome screen.
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[rgba(15,23,42,0.10)] bg-white p-6 shadow-sm">
-              <div className="text-sm font-semibold text-[#0F172A]">Need help?</div>
-              <p className="mt-2 text-sm text-[#64748B]">
-                Agar upload me issue ho, support team se WhatsApp par connect karein.
-              </p>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-bold text-slate-950">
+                Document security
+              </h3>
+
+              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+                <li>Private, non-public file storage</li>
+                <li>Protected payment completion session</li>
+                <li>File-size and genuine file-format validation</li>
+              </ul>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </main>

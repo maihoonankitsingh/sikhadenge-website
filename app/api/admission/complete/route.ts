@@ -1,90 +1,245 @@
 export const revalidate = 0;
+
+import crypto from "crypto";
+import path from "path";
+import { mkdir, rm, writeFile } from "fs/promises";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
+import { verifyAdmissionCompletionToken } from "@/lib/admission-token";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function safeExt(name: string) {
-  const base = name.toLowerCase();
-  if (base.endsWith(".jpg") || base.endsWith(".jpeg")) return ".jpg";
-  if (base.endsWith(".png")) return ".png";
-  if (base.endsWith(".pdf")) return ".pdf";
-  return "";
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+type ValidatedUpload = {
+  key: string;
+  extension: ".jpg" | ".png" | ".pdf";
+  buffer: Buffer;
+};
+
+function detectExtension(
+  mime: string,
+  buffer: Buffer
+): ".jpg" | ".png" | ".pdf" | null {
+  const isJpeg =
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff;
+
+  const isPng =
+    buffer.length >= 8 &&
+    buffer.subarray(0, 8).equals(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    );
+
+  const isPdf =
+    buffer.length >= 5 &&
+    buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+
+  if (mime === "image/jpeg" && isJpeg) return ".jpg";
+  if (mime === "image/png" && isPng) return ".png";
+  if (mime === "application/pdf" && isPdf) return ".pdf";
+
+  return null;
 }
 
-async function saveUpload(admissionId: string, key: string, file: File) {
-  const ext = safeExt(file.name);
-  if (!ext) throw new Error(`Invalid file type for ${key}. Use JPG/PNG/PDF only.`);
+async function validateUpload(
+  value: FormDataEntryValue | null,
+  key: string
+): Promise<ValidatedUpload> {
+  if (!(value instanceof File) || !value.name) {
+    throw new Error(`${key} required`);
+  }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  if (!bytes.length) throw new Error(`${key} file empty`);
+  if (value.size <= 0) {
+    throw new Error(`${key} file is empty`);
+  }
 
-  const rand = crypto.randomBytes(8).toString("hex");
-  const fileName = `${key}_${rand}${ext}`;
+  if (value.size > MAX_FILE_BYTES) {
+    throw new Error(`${key} must be 5 MB or smaller`);
+  }
 
-  const dir = path.join(process.cwd(), "public", "uploads", "admission", admissionId);
-  await mkdir(dir, { recursive: true });
+  const buffer = Buffer.from(await value.arrayBuffer());
+  const extension = detectExtension(value.type, buffer);
 
-  const abs = path.join(dir, fileName);
-  await writeFile(abs, bytes);
+  if (!extension) {
+    throw new Error(`${key} must be a genuine JPG, PNG or PDF file`);
+  }
 
-  return `/uploads/admission/${admissionId}/${fileName}`;
+  return {
+    key,
+    extension,
+    buffer,
+  };
 }
 
 export async function POST(req: Request) {
+  const writtenPaths: string[] = [];
+
   try {
-    const fd = await req.formData();
+    const token = cookies().get("sd_admission_complete")?.value || "";
+    const tokenPayload = verifyAdmissionCompletionToken(token);
 
-    const admissionId = String(fd.get("admissionId") || "").trim();
-    if (!admissionId) {
-      return NextResponse.json({ ok: false, error: "admissionId required" }, { status: 400 });
+    if (!tokenPayload) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Admission completion session expired. Verify payment again.",
+        },
+        { status: 401 }
+      );
     }
 
-    const aadhaar = String(fd.get("aadhaar") || "").replace(/\D/g, "");
-    if (aadhaar.length !== 12) {
-      return NextResponse.json({ ok: false, error: "Valid 12-digit Aadhaar required" }, { status: 400 });
-    }
-    const aadhaarLast4 = aadhaar.slice(-4);
+    const admissionId = tokenPayload.admissionId;
 
-    const highestQualification = String(fd.get("highestQualification") || "").trim() || null;
-
-    const af = fd.get("aadhaarFront");
-    const ab = fd.get("aadhaarBack");
-    const qc = fd.get("qualificationDoc");
-
-    if (!(af instanceof File) || !af.name) {
-      return NextResponse.json({ ok: false, error: "aadhaarFront required" }, { status: 400 });
-    }
-    if (!(ab instanceof File) || !ab.name) {
-      return NextResponse.json({ ok: false, error: "aadhaarBack required" }, { status: 400 });
-    }
-    if (!(qc instanceof File) || !qc.name) {
-      return NextResponse.json({ ok: false, error: "qualificationDoc required" }, { status: 400 });
+    if (!/^[A-Za-z0-9_-]{10,64}$/.test(admissionId)) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid admission session" },
+        { status: 400 }
+      );
     }
 
-    const aadhaarFrontUrl = await saveUpload(admissionId, "aadhaar_front", af);
-    const aadhaarBackUrl = await saveUpload(admissionId, "aadhaar_back", ab);
-    const qualificationDocUrl = await saveUpload(admissionId, "qualification", qc);
-
-    await prisma.admission.update({
-      where: { id: admissionId },
-      data: {
-        aadhaarLast4,
-        highestQualification,
-        aadhaarFrontUrl,
-        aadhaarBackUrl,
-        qualificationDocUrl,
+    const admission = await prisma.admission.findUnique({
+      where: {
+        id: admissionId,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        feeTotal: true,
+        feePaid: true,
+      },
     });
 
-    return NextResponse.json({ ok: true, admissionId });
-  } catch (e: any) {
+    if (!admission) {
+      return NextResponse.json(
+        { ok: false, error: "Admission record not found" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      admission.feeTotal == null ||
+      admission.feePaid == null ||
+      admission.feePaid < admission.feeTotal
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Captured payment is required" },
+        { status: 403 }
+      );
+    }
+
+    const formData = await req.formData();
+
+    const aadhaar = String(formData.get("aadhaar") || "").replace(/\D/g, "");
+
+    if (aadhaar.length !== 12) {
+      return NextResponse.json(
+        { ok: false, error: "Valid 12-digit Aadhaar required" },
+        { status: 400 }
+      );
+    }
+
+    const highestQualification = String(
+      formData.get("highestQualification") || ""
+    ).trim();
+
+    if (!highestQualification) {
+      return NextResponse.json(
+        { ok: false, error: "Highest qualification required" },
+        { status: 400 }
+      );
+    }
+
+    const uploads = await Promise.all([
+      validateUpload(formData.get("aadhaarFront"), "Aadhaar front"),
+      validateUpload(formData.get("aadhaarBack"), "Aadhaar back"),
+      validateUpload(
+        formData.get("qualificationDoc"),
+        "Qualification document"
+      ),
+    ]);
+
+    const privateDirectory = path.join(
+      process.cwd(),
+      "data",
+      "private",
+      "admission",
+      admission.id
+    );
+
+    await mkdir(privateDirectory, {
+      recursive: true,
+      mode: 0o700,
+    });
+
+    const storedReferences: Record<string, string> = {};
+
+    for (const upload of uploads) {
+      const fileName = `${upload.key
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")}_${crypto
+        .randomBytes(12)
+        .toString("hex")}${upload.extension}`;
+
+      const absolutePath = path.join(privateDirectory, fileName);
+
+      await writeFile(absolutePath, upload.buffer, {
+        mode: 0o600,
+        flag: "wx",
+      });
+
+      writtenPaths.push(absolutePath);
+      storedReferences[upload.key] =
+        `private://admission/${admission.id}/${fileName}`;
+    }
+
+    await prisma.admission.update({
+      where: {
+        id: admission.id,
+      },
+      data: {
+        aadhaarLast4: aadhaar.slice(-4),
+        highestQualification,
+        aadhaarFrontUrl: storedReferences["Aadhaar front"],
+        aadhaarBackUrl: storedReferences["Aadhaar back"],
+        qualificationDocUrl:
+          storedReferences["Qualification document"],
+      },
+    });
+
+    const response = NextResponse.json({
+      ok: true,
+      admissionId: admission.id,
+    });
+
+    response.cookies.set("sd_admission_complete", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+
+    return response;
+  } catch (error: any) {
+    await Promise.all(
+      writtenPaths.map((filePath) =>
+        rm(filePath, {
+          force: true,
+        }).catch(() => undefined)
+      )
+    );
+
+    console.error("ADMISSION_COMPLETE_ERROR", error);
+
     return NextResponse.json(
-      { ok: false, error: e?.message || "Server error" },
+      {
+        ok: false,
+        error: error?.message || "Admission completion failed",
+      },
       { status: 500 }
     );
   }
