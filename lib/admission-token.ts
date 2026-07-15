@@ -6,25 +6,88 @@ type AdmissionCompletionPayload = {
   purpose: "admission-complete";
 };
 
-function getSecret() {
-  const secret = String(
-    process.env.ADMISSION_COMPLETION_SECRET ||
-      process.env.RAZORPAY_KEY_SECRET ||
-      ""
+function getSecrets() {
+  const currentSecret = String(
+    process.env.ADMISSION_COMPLETION_SECRET || ""
   ).trim();
 
-  if (!secret) {
-    throw new Error("Admission completion secret missing");
+  const previousSecret = String(
+    process.env.ADMISSION_COMPLETION_SECRET_PREVIOUS || ""
+  ).trim();
+
+  if (!currentSecret) {
+    throw new Error(
+      "Admission completion secret missing"
+    );
   }
 
-  return secret;
+  return [
+    currentSecret,
+    ...(previousSecret &&
+    previousSecret !== currentSecret
+      ? [previousSecret]
+      : []),
+  ];
+}
+
+function signWithSecret(
+  encodedPayload: string,
+  secret: string
+) {
+  return crypto
+    .createHmac("sha256", secret)
+    .update(encodedPayload)
+    .digest("hex");
 }
 
 function sign(encodedPayload: string) {
-  return crypto
-    .createHmac("sha256", getSecret())
-    .update(encodedPayload)
-    .digest("hex");
+  const [currentSecret] = getSecrets();
+
+  return signWithSecret(
+    encodedPayload,
+    currentSecret
+  );
+}
+
+function hasValidSignature(
+  encodedPayload: string,
+  receivedSignature: string
+) {
+  const receivedBuffer = Buffer.from(
+    receivedSignature,
+    "hex"
+  );
+
+  if (receivedBuffer.length !== 32) {
+    return false;
+  }
+
+  let valid = false;
+
+  for (const secret of getSecrets()) {
+    const expectedSignature =
+      signWithSecret(
+        encodedPayload,
+        secret
+      );
+
+    const expectedBuffer = Buffer.from(
+      expectedSignature,
+      "hex"
+    );
+
+    const matches =
+      expectedBuffer.length ===
+        receivedBuffer.length &&
+      crypto.timingSafeEqual(
+        expectedBuffer,
+        receivedBuffer
+      );
+
+    valid = valid || matches;
+  }
+
+  return valid;
 }
 
 export function createAdmissionCompletionToken(
@@ -33,7 +96,9 @@ export function createAdmissionCompletionToken(
 ) {
   const payload: AdmissionCompletionPayload = {
     admissionId,
-    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+    exp:
+      Math.floor(Date.now() / 1000) +
+      ttlSeconds,
     purpose: "admission-complete",
   };
 
@@ -42,39 +107,52 @@ export function createAdmissionCompletionToken(
     "utf8"
   ).toString("base64url");
 
-  return `${encodedPayload}.${sign(encodedPayload)}`;
+  return `${
+    encodedPayload
+  }.${sign(encodedPayload)}`;
 }
 
 export function verifyAdmissionCompletionToken(
   token: string
 ): AdmissionCompletionPayload | null {
   try {
-    const [encodedPayload, receivedSignature] = String(token || "").split(".");
+    const [
+      encodedPayload,
+      receivedSignature,
+      extraPart,
+    ] = String(token || "").split(".");
 
-    if (!encodedPayload || !receivedSignature) {
+    if (
+      !encodedPayload ||
+      !receivedSignature ||
+      extraPart !== undefined
+    ) {
       return null;
     }
 
-    const expectedSignature = sign(encodedPayload);
-    const expectedBuffer = Buffer.from(expectedSignature, "hex");
-    const receivedBuffer = Buffer.from(receivedSignature, "hex");
-
     if (
-      expectedBuffer.length !== receivedBuffer.length ||
-      !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+      !hasValidSignature(
+        encodedPayload,
+        receivedSignature
+      )
     ) {
       return null;
     }
 
     const payload = JSON.parse(
-      Buffer.from(encodedPayload, "base64url").toString("utf8")
+      Buffer.from(
+        encodedPayload,
+        "base64url"
+      ).toString("utf8")
     ) as AdmissionCompletionPayload;
 
     if (
-      payload.purpose !== "admission-complete" ||
+      payload.purpose !==
+        "admission-complete" ||
       !payload.admissionId ||
       !Number.isFinite(payload.exp) ||
-      payload.exp < Math.floor(Date.now() / 1000)
+      payload.exp <
+        Math.floor(Date.now() / 1000)
     ) {
       return null;
     }
