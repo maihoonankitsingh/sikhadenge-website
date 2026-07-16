@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 import React, { useMemo, useState } from "react";
+import { trackMetaEvent } from "@/lib/metaPixel";
 
 const BRAND = {
   base: "#0B1220",
@@ -70,7 +71,6 @@ export default function CounsellingPage() {
     setErr(null);
     setDone(null);
 
-      ;(window as any).fbq?.("track","Lead");
     if (!form.course) return setErr("Course required");
     if (!form.fullName || form.fullName.trim().length < 2) return setErr("Full name required");
     if (!form.phone || form.phone.replace(/[^\d]/g, "").length < 10) return setErr("Valid phone required");
@@ -98,6 +98,7 @@ export default function CounsellingPage() {
         throw new Error(j?.error || "Submit failed");
       }
 
+      trackMetaEvent("Lead");
       setDone("Submitted. Team will call you for 1:1 counselling.");
       setForm({ course: "", fullName: "", phone: "", iam: "", specialization: "" });
     } catch (e: any) {

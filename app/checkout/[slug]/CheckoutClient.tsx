@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { trackMetaEvent } from "@/lib/metaPixel";
+import { trackGoogleEvent } from "@/lib/analytics";
 import {
   ShieldCheck,
   Lock,
@@ -18,8 +20,6 @@ import {
 declare global {
   interface Window {
     Razorpay: any;
-    fbq?: (...args: any[]) => void;
-    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -169,34 +169,26 @@ export default function CheckoutClient({ product }: Props) {
     if (viewedRef.current) return;
     viewedRef.current = true;
 
-    try {
-      if (typeof window !== "undefined" && typeof window.fbq === "function") {
-        window.fbq("track", "ViewContent", {
-          content_name: product.title,
-          content_ids: [product.slug],
-          content_type: "product",
-          value: total,
-          currency: "INR",
-        });
-      }
-    } catch {}
+      trackMetaEvent("ViewContent", {
+        content_name: product.title,
+        content_ids: [product.slug],
+        content_type: "product",
+        value: total,
+        currency: "INR",
+      });
 
-    try {
-      if (typeof window !== "undefined" && typeof window.gtag === "function") {
-        window.gtag("event", "view_item", {
-          currency: "INR",
-          value: total,
-          items: [
-            {
-              item_name: product.title,
-              item_id: product.slug,
-              price: baseAmount,
-              quantity: 1,
-            },
-          ],
-        });
-      }
-    } catch {}
+      trackGoogleEvent("view_item", {
+        currency: "INR",
+        value: total,
+        items: [
+          {
+            item_name: product.title,
+            item_id: product.slug,
+            price: baseAmount,
+            quantity: 1,
+          },
+        ],
+      });
   }, [product.title, product.slug, baseAmount, total]);
 
   useEffect(() => {
@@ -204,44 +196,36 @@ export default function CheckoutClient({ product }: Props) {
     if (checkoutRef.current) return;
     checkoutRef.current = true;
 
-    try {
-      if (typeof window !== "undefined" && typeof window.fbq === "function") {
-        window.fbq("track", "InitiateCheckout", {
-          content_name: product.title,
-          content_ids: [product.slug],
-          content_type: "product",
-          value: total,
-          currency: "INR",
-        });
-      }
-    } catch {}
+    trackMetaEvent("InitiateCheckout", {
+      content_name: product.title,
+      content_ids: [product.slug],
+      content_type: "product",
+      value: total,
+      currency: "INR",
+    });
 
-    try {
-      if (typeof window !== "undefined" && typeof window.gtag === "function") {
-        window.gtag("event", "begin_checkout", {
-          currency: "INR",
-          value: total,
-          items: [
-            {
-              item_name: product.title,
-              item_id: product.slug,
-              price: baseAmount,
-              quantity: 1,
-            },
-            ...(includeBump
-              ? [
-                  {
-                    item_name: "Masterclass Upgrade Toolkit",
-                    item_id: bumpSlug,
-                    price: bumpPrice,
-                    quantity: 1,
-                  },
-                ]
-              : []),
-          ],
-        });
-      }
-    } catch {}
+    trackGoogleEvent("begin_checkout", {
+      currency: "INR",
+      value: total,
+      items: [
+        {
+          item_name: product.title,
+          item_id: product.slug,
+          price: baseAmount,
+          quantity: 1,
+        },
+        ...(includeBump
+          ? [
+              {
+                item_name: "Masterclass Upgrade Toolkit",
+                item_id: bumpSlug,
+                price: bumpPrice,
+                quantity: 1,
+              },
+            ]
+          : []),
+      ],
+    });
   }, [step, product.title, product.slug, total, baseAmount, includeBump]);
 
   function validateStepOne() {
@@ -278,44 +262,36 @@ export default function CheckoutClient({ product }: Props) {
       if (!addPaymentRef.current) {
         addPaymentRef.current = true;
 
-        try {
-          if (typeof window !== "undefined" && typeof window.fbq === "function") {
-            window.fbq("track", "AddPaymentInfo", {
-              content_name: product.title,
-              content_ids: [product.slug],
-              content_type: "product",
-              value: total,
-              currency: "INR",
-            });
-          }
-        } catch {}
+        trackMetaEvent("AddPaymentInfo", {
+          content_name: product.title,
+          content_ids: [product.slug],
+          content_type: "product",
+          value: total,
+          currency: "INR",
+        });
 
-        try {
-          if (typeof window !== "undefined" && typeof window.gtag === "function") {
-            window.gtag("event", "add_payment_info", {
-              currency: "INR",
-              value: total,
-              items: [
-                {
-                  item_name: product.title,
-                  item_id: product.slug,
-                  price: baseAmount,
-                  quantity: 1,
-                },
-                ...(includeBump
-                  ? [
-                      {
-                        item_name: "Masterclass Upgrade Toolkit",
-                        item_id: bumpSlug,
-                        price: bumpPrice,
-                        quantity: 1,
-                      },
-                    ]
-                  : []),
-              ],
-            });
-          }
-        } catch {}
+        trackGoogleEvent("add_payment_info", {
+          currency: "INR",
+          value: total,
+          items: [
+            {
+              item_name: product.title,
+              item_id: product.slug,
+              price: baseAmount,
+              quantity: 1,
+            },
+            ...(includeBump
+              ? [
+                  {
+                    item_name: "Masterclass Upgrade Toolkit",
+                    item_id: bumpSlug,
+                    price: bumpPrice,
+                    quantity: 1,
+                  },
+                ]
+              : []),
+          ],
+        });
       }
 
       setLoading(true);

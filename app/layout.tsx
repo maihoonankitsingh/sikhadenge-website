@@ -3,10 +3,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 
-import MetaPixel from "./_components/MetaPixel";
 import JsonLd from "./_components/JsonLd";
-import MicrosoftClarity from "./MicrosoftClarity";
-import ClarityEvents from "./ClarityEvents";
+import { ConsentProvider } from "@/components/consent/ConsentProvider";
+import { ConsentManager } from "@/components/consent/ConsentManager";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -108,14 +107,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=whitebg-folder-final" />
       </head>
       <body className={inter.className}>
-        <MicrosoftClarity />
-        <ClarityEvents />
-        <MetaPixel />
+        <ConsentProvider>
+          <ConsentManager />
         <JsonLd />
         <Header />
         <div className="sd-header-spacer" aria-hidden="true" />
         {children}
         <Footer />
+        </ConsentProvider>
       </body>
     </html>
   );

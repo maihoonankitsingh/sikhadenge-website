@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "../../../../lib/prisma";
+import { CONSENT_COOKIE_NAME, parseConsentState } from "../../../../lib/consent";
 
 const NEODOVE_REALTIME_ENDPOINT = "https://d20b0ff5-e234-4652-8def-6d7f3d5f5e8d.neodove.com/integration/custom/2878f1fd-6d9b-4520-add8-c8a500aabae0/leads";
 
@@ -62,6 +63,21 @@ async function pushToNeodoveRealtime(input: {
 
 function sha256(value: string) {
   return crypto.createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
+}
+
+function readAdvertisingConsentFromRequest(req: NextRequest) {
+  const rawCookie = req.cookies.get(CONSENT_COOKIE_NAME)?.value;
+  if (!rawCookie) return "denied" as const;
+
+  try {
+    const decoded = decodeURIComponent(rawCookie);
+    const state = parseConsentState(decoded);
+    return state?.advertising === "granted"
+      ? "granted" as const
+      : "denied" as const;
+  } catch {
+    return "denied" as const;
+  }
 }
 
 async function sendMetaLeadEvent(args: {
@@ -358,6 +374,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const cookieAdvertisingConsent = readAdvertisingConsentFromRequest(req);
+    if (
+      raw?.advertisingConsent === "granted" &&
+      cookieAdvertisingConsent === "granted"
+    ) {
     try {
       await sendMetaLeadEvent({
         req,
@@ -371,6 +392,12 @@ export async function POST(req: NextRequest) {
       });
     } catch (metaError) {
       console.error("META_CAPI_LEAD_THROWN", metaError);
+    }
+    } else {
+      console.log("META_CAPI_LEAD_SKIPPED_NO_AD_CONSENT", {
+        leadId: created?.id ?? null,
+        page,
+      });
     }
 
     const accept = req.headers.get("accept") || "";

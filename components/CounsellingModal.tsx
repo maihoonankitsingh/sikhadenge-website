@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import styles from "../styles/counselling.module.css";
+import { trackMetaEvent } from "@/lib/metaPixel";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -44,7 +45,6 @@ export default function CounsellingModal({ open, onClose }: Props) {
     setErr(null);
     setDone(null);
 
-      ;(window as any).fbq?.("track","Lead");
     if (!form.course) return setErr("Course required");
     if (!form.fullName || form.fullName.trim().length < 2) return setErr("Full name required");
     if (!form.phone || form.phone.replace(/[^\d]/g, "").length < 10) return setErr("Valid phone required");
@@ -73,6 +73,7 @@ export default function CounsellingModal({ open, onClose }: Props) {
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j?.ok) throw new Error(j?.error || "Submit failed");
 
+      trackMetaEvent("Lead");
       setDone("Thanks! Your request is submitted. Our team will connect with you within 1 hour.");
       setForm({ course: "", fullName: "", phone: "", iam: "", specialization: "" });
       setPromoCode("");

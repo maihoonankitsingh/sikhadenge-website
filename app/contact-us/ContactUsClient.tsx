@@ -11,6 +11,7 @@ const SD_GLOW_LINE = "pointer-events-none absolute left-0 top-0 h-[2px] w-full b
 
 // pages/contact.tsx
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { trackMetaEvent } from "@/lib/metaPixel";
 
 type FormState = {
   name: string;
@@ -339,7 +340,7 @@ export default function ContactPage() {
 
                     <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <a
-                        onClick={() => { ;(window as any).fbq?.("track","Contact"); }} href={`tel:${primaryPhone.replace(/\s/g, "")}`}
+                        onClick={() => trackMetaEvent("Contact")} href={`tel:${primaryPhone.replace(/\s/g, "")}`}
                         className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white px-5 py-4 transition hover:bg-black/5"
                       >
                         <span className="relative grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white">

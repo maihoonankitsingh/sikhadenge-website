@@ -1,6 +1,8 @@
+import { hasAnalyticsConsent } from "./consent";
+
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -12,6 +14,17 @@ type TrackEventParams = {
   page_path?: string;
 };
 
+export function trackGoogleEvent(
+  eventName: string,
+  params: Record<string, unknown> = {}
+) {
+  if (typeof window === "undefined") return;
+  if (!hasAnalyticsConsent()) return;
+  if (typeof window.gtag !== "function") return;
+
+  window.gtag("event", eventName, params);
+}
+
 export function trackEvent({
   action,
   category = "engagement",
@@ -19,10 +32,7 @@ export function trackEvent({
   value,
   page_path,
 }: TrackEventParams) {
-  if (typeof window === "undefined") return;
-  if (typeof window.gtag !== "function") return;
-
-  window.gtag("event", action, {
+  trackGoogleEvent(action, {
     event_category: category,
     event_label: label,
     value,

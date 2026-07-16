@@ -47,20 +47,7 @@ function PageShell({
         </div>
       </section>
     
-      <section>
-        <h2>Microsoft Clarity Analytics</h2>
-        <p>
-          We use Microsoft Clarity to understand how visitors interact with our website,
-          improve page experience, identify usability issues, and measure conversion journeys.
-          Clarity may collect interaction data such as clicks, scroll depth, page visits,
-          device/browser information, and session behavior. Sensitive fields such as forms,
-          contact details, OTP, payment, and login inputs are masked or excluded from recording.
-        </p>
-        <p>
-          By using this website, you agree that we and Microsoft can collect and use this
-          analytics data to improve our services and website performance.
-        </p>
-      </section>
+
 
     </main>
   );
@@ -118,7 +105,7 @@ function renderPolicyBlocks(raw: string) {
 export default function PrivacyPolicyPage() {
   const content = `Privacy Policy
 
-Effective date: 2026-02-15
+Effective date: 2026-07-16
 
 1) Who we are
 
@@ -131,7 +118,7 @@ ThinkGrow Pvt. Ltd., Varanasi, Uttar Pradesh 221008, India.
 
 - Contact details: name, phone number, email, city/state (when you submit a form, register, or contact us).
 - Course interest details: selected course, experience level, preferences.
-- Usage data: basic analytics such as pages visited, device/browser, approximate location, referral/UTM parameters.
+- Usage and attribution data: pages visited, clicks and scrolling, device/browser information, approximate location, referrer, UTM parameters and campaign identifiers such as fbclid, gclid or msclkid where available.
 - Communication data: messages/calls/WhatsApp conversations and support history for counselling/admissions/support.
 - Transaction data (if you pay): payment status/receipt details. We do not store full card/banking credentials; payments are processed via authorized payment gateways.
 
@@ -140,12 +127,23 @@ ThinkGrow Pvt. Ltd., Varanasi, Uttar Pradesh 221008, India.
 - To respond to enquiries and provide counselling/admissions support.
 - To send operational updates related to your enquiry/enrolment (utility communication).
 - To deliver classes/services you enroll in, and to provide support.
-- To improve website, content, and user experience via analytics.
+- To improve website, content, and user experience through analytics when analytics consent is granted.
+- To measure advertising and campaign conversions when advertising consent is granted.
 - To comply with legal obligations and prevent fraud/abuse.
 
-4) Cookies and tracking
+4) Cookies, consent and tracking technologies
 
-We may use cookies and similar technologies for website functionality and analytics. If we use ad/analytics pixels (for example, conversion tracking), they may collect device and usage information. You can control cookies through your browser settings.
+Essential storage is used to operate the website, maintain security and remember your privacy choices. Essential storage remains enabled because the website cannot provide these functions without it.
+
+Optional analytics and advertising technologies are disabled unless you grant the relevant consent through our privacy controls.
+
+Analytics technologies: When analytics consent is granted, we may use Microsoft Clarity to understand page visits, clicks, scrolling, device/browser information, referrers, campaign attribution and session-level website interactions. We do not intentionally use Clarity to collect form-field values, OTPs, payment credentials or login credentials.
+
+Advertising technologies: When advertising consent is granted, we may use Meta Pixel and the Meta Conversions API to measure page views, content views, checkout steps and successful lead or conversion events. Depending on the event, Meta measurement may process page URL, referrer, IP address, browser user-agent, campaign identifiers, Meta browser identifiers such as fbp or fbc where available, and hashed contact identifiers submitted with a successful lead.
+
+We store your consent decision in browser local storage and in a first-party cookie named sd_consent_v1 for up to 180 days. The stored choice may be reset sooner if you clear browser data, change your preferences, or we introduce a new consent-policy version.
+
+You can accept all optional technologies, reject non-essential technologies, or make separate choices for analytics and advertising. You can later change or withdraw these choices using the persistent “Privacy settings” button available on the website. A changed choice applies to future optional tracking.
 
 5) Sharing of information
 
@@ -165,9 +163,11 @@ We retain information only as long as necessary for the purposes described, or a
 
 8) Your choices and rights
 
-- You can request access, correction, or deletion of your data (subject to legal constraints).
-- You can withdraw consent for non-essential communication.
-To make a request, email us from your registered email address at privacy@sikhadenge.in or support@sikhadenge.in with subject “Privacy Request”.
+- You can request access, correction, or deletion of your data, subject to applicable legal requirements.
+- You can change or withdraw consent for optional analytics and advertising at any time through the website’s “Privacy settings” control.
+- You can withdraw consent for non-essential communications.
+- Withdrawing a tracking choice affects future optional processing and does not automatically delete records that must be retained for legal, security, fraud-prevention or dispute-resolution purposes.
+To make a data request, email us from your registered email address at privacy@sikhadenge.in or support@sikhadenge.in with subject “Privacy Request”.
 
 9) Children’s privacy
 
@@ -197,7 +197,7 @@ WhatsApp: +91 88085 05575
 `;
 
   return (
-    <PageShell title="Privacy Policy" updated="Effective date: 2026-02-15">
+    <PageShell title="Privacy Policy" updated="Effective date: 2026-07-16">
       {renderPolicyBlocks(content)}
     </PageShell>
   );

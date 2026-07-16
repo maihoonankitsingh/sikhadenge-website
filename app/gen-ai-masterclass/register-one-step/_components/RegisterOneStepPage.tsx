@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { trackLead } from '@/lib/metaPixel'
+import { readStoredConsentState } from '@/lib/consent'
 
 type FormState = {
   name: string
@@ -130,6 +131,7 @@ export default function RegisterOneStepPage() {
 
     setSubmitState('loading')
 
+    const advertisingConsent = readStoredConsentState()?.advertising === 'granted' ? 'granted' : 'denied'
     const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
@@ -139,6 +141,7 @@ export default function RegisterOneStepPage() {
       laptop: form.laptop === 'true',
       source: tracking.source,
       page: tracking.page,
+        advertisingConsent,
       utm_source: tracking.utm_source || null,
       utm_medium: tracking.utm_medium || null,
       utm_campaign: tracking.utm_campaign || null,

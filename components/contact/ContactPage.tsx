@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import styles from "./contact.module.css";
+import { trackMetaEvent } from "@/lib/metaPixel";
 import {
   Phone,
   Mail,
@@ -130,7 +131,7 @@ export default function ContactPage() {
               </p>
 
               <div className={styles.contactTiles}>
-                <a className={styles.tile} onClick={() => { ;(window as any).fbq?.("track","Contact"); }} href="tel:+918808505575">
+                <a className={styles.tile} onClick={() => trackMetaEvent("Contact")} href="tel:+918808505575">
                   <div className={styles.tileIcon}>
                     <Phone size={18} />
                   </div>
@@ -292,7 +293,7 @@ export default function ContactPage() {
 
                 <div className={styles.legal}>
                   By submitting, you agree to Sikhadenge’s{" "}
-                  <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
+                  <a href="/terms">Terms</a> and <a href="/privacy-policy">Privacy Policy</a>.
                 </div>
 
                 {status === "success" ? (
