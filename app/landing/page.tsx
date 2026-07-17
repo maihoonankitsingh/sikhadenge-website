@@ -276,7 +276,7 @@ const LearnersSection = () => {
   const trustStats = [
     { value: "150,000+", label: "Students", desc: "Practical AI learners", icon: "users", tone: "blue" },
     { value: "4.9/5", label: "Rating", desc: "Learner trust score", icon: "star", tone: "violet" },
-    { value: "214", label: "Verified Visits", desc: "1–16 Jul 2026", icon: "video", tone: "cyan" },
+    { value: "Live", label: "Sessions", desc: "Guided class flow", icon: "video", tone: "cyan" },
     { value: "Structured", label: "Assignments", desc: "Practice-first tasks", icon: "clipboard", tone: "blue" },
   ]
 
