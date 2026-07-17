@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 
 declare global {
@@ -337,47 +338,102 @@ export default function AdmissionClient() {
       <div className="pointer-events-none absolute -right-40 top-72 h-96 w-96 rounded-full bg-indigo-200/40 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
-        <header className="relative overflow-hidden rounded-[30px] bg-slate-950 text-white shadow-[0_28px_90px_-40px_rgba(15,23,42,0.85)]">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/35 via-transparent to-indigo-500/20" />
+        <header
+          data-admission-security-hero="v3"
+          className="relative min-h-[430px] overflow-hidden rounded-[30px] border border-white/10 bg-[#061333] text-white shadow-[0_28px_90px_-40px_rgba(15,23,42,0.9)] sm:min-h-[450px] lg:min-h-[420px]"
+        >
+          {/* ADMISSION_SECURITY_SHIELD_HERO_V3 */}
 
-          <div className="relative grid gap-8 px-6 py-8 sm:px-9 sm:py-10 lg:grid-cols-[1fr_auto] lg:items-end lg:px-12">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100 backdrop-blur">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(37,99,235,0.34),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(14,165,233,0.18),transparent_34%),linear-gradient(115deg,#071a40_0%,#050d25_52%,#07143b_100%)]"
+          />
+
+          <div className="absolute inset-0 lg:left-auto lg:w-[58%]">
+            <Image
+              src="/images/admission/security-shield.png"
+              alt="Secure SikhaDenge admission payment shield"
+              fill
+              priority
+              sizes="(min-width: 1024px) 58vw, 100vw"
+              className="object-cover object-center opacity-25 lg:opacity-100"
+            />
+
+            <div className="absolute inset-0 bg-[#061333]/75 lg:bg-gradient-to-r lg:from-[#061333] lg:via-[#061333]/30 lg:to-transparent" />
+          </div>
+
+          <div className="relative z-10 grid min-h-[430px] items-center gap-8 px-6 py-9 sm:min-h-[450px] sm:px-9 sm:py-10 lg:min-h-[420px] lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)] lg:px-12 lg:py-12">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/25 bg-sky-400/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100 backdrop-blur">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.9)]" />
                 Secure admission checkout
               </div>
 
-              <h1 className="mt-5 max-w-3xl text-3xl font-bold tracking-[-0.04em] sm:text-4xl lg:text-5xl">
-                Complete your admission with confidence
+              <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.05] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.35rem]">
+                Complete your admission with confidence.
+                <span className="mt-2 block text-sky-400">
+                  Pay securely.
+                </span>
               </h1>
 
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
                 Add the student details, enter the approved payment
                 amount and continue through Razorpay&apos;s protected
                 checkout.
               </p>
+
+              <div className="mt-7 grid max-w-xl grid-cols-3 gap-2 sm:gap-3">
+                {[
+                  ["01", "Details", "Student information"],
+                  ["02", "Payment", "Secure checkout"],
+                  ["03", "KYC", "Document verification"],
+                ].map(
+                  (
+                    [number, title, description],
+                    index
+                  ) => (
+                    <div
+                      key={number}
+                      className={`rounded-2xl border px-3 py-3 backdrop-blur sm:px-4 ${
+                        index === 0
+                          ? "border-sky-400/50 bg-blue-600/30"
+                          : "border-white/10 bg-white/[0.07]"
+                      }`}
+                    >
+                      <div className="text-[10px] font-bold text-blue-300">
+                        {number}
+                      </div>
+
+                      <div className="mt-1 text-xs font-semibold text-white sm:text-sm">
+                        {title}
+                      </div>
+
+                      <div className="mt-1 hidden text-[10px] leading-4 text-slate-400 sm:block">
+                        {description}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm text-slate-200 backdrop-blur">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 font-bold text-sky-300">
+                  ✓
+                </span>
+
+                <span>
+                  Trusted by{" "}
+                  <strong className="font-extrabold text-white">
+                    150,000+ learners
+                  </strong>
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:min-w-[390px]">
-              {[
-                ["01", "Details"],
-                ["02", "Payment"],
-                ["03", "KYC"],
-              ].map(([number, title]) => (
-                <div
-                  key={number}
-                  className="rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-3 backdrop-blur sm:px-4"
-                >
-                  <div className="text-[10px] font-bold text-blue-300">
-                    {number}
-                  </div>
-
-                  <div className="mt-1 text-xs font-semibold text-white sm:text-sm">
-                    {title}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div
+              aria-hidden="true"
+              className="hidden min-h-[300px] lg:block"
+            />
           </div>
         </header>
 
