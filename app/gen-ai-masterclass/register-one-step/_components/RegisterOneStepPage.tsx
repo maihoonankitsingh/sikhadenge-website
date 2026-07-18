@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { trackLead } from '@/lib/metaPixel'
+import { trackEvent } from '@/lib/analytics'
 import { readStoredConsentState } from '@/lib/consent'
 
 type FormState = {
@@ -178,6 +179,12 @@ export default function RegisterOneStepPage() {
       }
 
       trackLead({ content_name: 'Gen AI Masterclass Registration', status: 'completed' })
+      trackEvent({
+        action: 'generate_lead',
+        category: 'lead',
+        label: 'gen-ai-masterclass-register-one-step',
+        page_path: '/gen-ai-masterclass/register-one-step',
+      })
       setSubmitState('success')
 
       const qs = new URLSearchParams()
