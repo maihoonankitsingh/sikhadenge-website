@@ -339,59 +339,33 @@ export default function AdmissionClient() {
 
       <div className="relative mx-auto max-w-7xl">
         <header
-          data-admission-security-hero="v6"
+          data-admission-security-hero="v7"
           className="relative min-h-[270px] overflow-hidden rounded-[30px] border border-white/10 bg-[#061333] text-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.85)] sm:min-h-[280px] lg:min-h-[285px]"
         >
-          {/* ADMISSION_SECURITY_SHIELD_HERO_V6 */}
+          {/* ADMISSION_SINGLE_PNG_HERO_V7 */}
 
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(circle_at_14%_20%,rgba(37,99,235,0.25),transparent_32%),radial-gradient(circle_at_84%_20%,rgba(14,165,233,0.16),transparent_30%),linear-gradient(115deg,#071a40_0%,#050d25_54%,#07143b_100%)]"
-          />
-
-          <div className="absolute inset-0 lg:hidden">
+                    <div className="absolute inset-0 overflow-hidden">
             <Image
-              src="/images/admission/security-shield.png"
+              src="/images/admission/admission-hero-background.png"
               alt=""
               fill
               priority
               sizes="100vw"
-              className="object-cover object-center opacity-20"
+              className="object-cover object-center"
             />
 
-            <div className="absolute inset-0 bg-[#061333]/78" />
-          </div>
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[#061333]/35 lg:bg-transparent"
+            />
 
-          <div
-            className="absolute inset-y-0 right-3 hidden w-[56%] overflow-hidden lg:block"
-            style={{
-              WebkitMaskImage:
-                "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 12%, black 38%, black 100%)",
-              maskImage:
-                "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 12%, black 38%, black 100%)",
-            }}
-          >
-            <Image
-              src="/images/admission/security-shield.png"
-              alt="Secure SikhaDenge admission payment shield"
-              fill
-              priority
-              sizes="56vw"
-              className="scale-[1.03] object-contain object-right opacity-95"
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,18,47,0.42)_0%,rgba(5,18,47,0.24)_34%,rgba(5,18,47,0.08)_55%,transparent_76%)]"
             />
           </div>
 
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,26,64,0.98)_0%,rgba(7,26,64,0.94)_34%,rgba(7,26,64,0.68)_49%,rgba(7,26,64,0.20)_66%,transparent_82%)] lg:block"
-          />
-
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(circle_at_76%_52%,rgba(37,99,235,0.12),transparent_32%)]"
-          />
-
-          <div className="relative z-10 grid min-h-[270px] items-center gap-5 px-6 py-6 sm:min-h-[280px] sm:px-8 sm:py-7 lg:min-h-[285px] lg:grid-cols-[minmax(0,1.18fr)_minmax(260px,0.72fr)] lg:px-10 lg:py-7">
+<div className="relative z-10 grid min-h-[270px] items-center gap-5 px-6 py-6 sm:min-h-[280px] sm:px-8 sm:py-7 lg:min-h-[285px] lg:grid-cols-[minmax(0,1.18fr)_minmax(260px,0.72fr)] lg:px-10 lg:py-7">
             <div className="max-w-[680px]">
               <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-100 backdrop-blur">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
