@@ -339,27 +339,35 @@ export default function AdmissionClient() {
 
       <div className="relative mx-auto max-w-7xl">
         <header
-          data-admission-security-hero="v4"
+          data-admission-security-hero="v5"
           className="relative min-h-[270px] overflow-hidden rounded-[30px] border border-white/10 bg-[#061333] text-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.85)] sm:min-h-[280px] lg:min-h-[285px]"
         >
-          {/* ADMISSION_SECURITY_SHIELD_HERO_V4 */}
+          {/* ADMISSION_SECURITY_SHIELD_HERO_V5 */}
 
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-[radial-gradient(circle_at_14%_20%,rgba(37,99,235,0.25),transparent_32%),radial-gradient(circle_at_84%_20%,rgba(14,165,233,0.16),transparent_30%),linear-gradient(115deg,#071a40_0%,#050d25_54%,#07143b_100%)]"
           />
 
-          <div className="absolute inset-0 lg:left-auto lg:right-3 lg:w-[46%]">
+          <div className="absolute inset-0 overflow-hidden">
             <Image
               src="/images/admission/security-shield.png"
               alt="Secure SikhaDenge admission payment shield"
               fill
               priority
-              sizes="(min-width: 1024px) 46vw, 100vw"
-              className="object-contain object-center opacity-20 lg:object-right lg:opacity-90"
+              sizes="100vw"
+              className="scale-[1.015] object-cover object-center opacity-35 sm:opacity-45 lg:object-right lg:opacity-100"
             />
 
-            <div className="absolute inset-0 bg-[#061333]/78 lg:bg-gradient-to-r lg:from-[#061333] lg:via-[#061333]/20 lg:to-transparent" />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,26,64,0.99)_0%,rgba(7,26,64,0.97)_30%,rgba(7,26,64,0.88)_42%,rgba(7,26,64,0.68)_53%,rgba(7,26,64,0.32)_68%,rgba(7,26,64,0.08)_100%)]"
+            />
+
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_73%_54%,rgba(37,99,235,0.10),transparent_34%)]"
+            />
           </div>
 
           <div className="relative z-10 grid min-h-[270px] items-center gap-5 px-6 py-6 sm:min-h-[280px] sm:px-8 sm:py-7 lg:min-h-[285px] lg:grid-cols-[minmax(0,1.18fr)_minmax(260px,0.72fr)] lg:px-10 lg:py-7">
