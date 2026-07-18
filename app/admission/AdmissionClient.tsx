@@ -581,10 +581,7 @@ export default function AdmissionClient() {
                       Enter the amount you want to pay
                     </h3>
 
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                      The default amount is ₹6,999. You can edit it
-                      between ₹1,000 and ₹1,00,000.
-                    </p>
+                    {/* PAYMENT_RANGE_DESCRIPTION_REMOVED_V2 */}
                   </div>
 
                   <div className="shrink-0 rounded-2xl border border-white bg-white px-4 py-3 shadow-sm">
