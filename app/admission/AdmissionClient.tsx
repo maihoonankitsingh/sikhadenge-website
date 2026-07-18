@@ -571,8 +571,9 @@ export default function AdmissionClient() {
               </label>
 
               <div className="rounded-[26px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 sm:p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
+                {/* PAYMENT_CARD_SPACING_LITERAL_V3 */}
+                <div className="relative">
+                  <div className="pr-0 sm:pr-36">
                     <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
                       Editable payment amount
                     </div>
@@ -584,7 +585,7 @@ export default function AdmissionClient() {
                     {/* PAYMENT_RANGE_DESCRIPTION_REMOVED_V2 */}
                   </div>
 
-                  <div className="shrink-0 rounded-2xl border border-white bg-white px-4 py-3 shadow-sm">
+                  <div className="mt-4 w-fit rounded-2xl border border-white bg-white px-4 py-3 shadow-sm sm:absolute sm:right-0 sm:top-0 sm:mt-0">
                     <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
                       Default
                     </div>
@@ -595,7 +596,7 @@ export default function AdmissionClient() {
                   </div>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-4">
                   <label className={labelClass}>
                     Payment amount
 
