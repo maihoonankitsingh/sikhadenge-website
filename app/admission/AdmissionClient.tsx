@@ -562,8 +562,10 @@ export default function AdmissionClient() {
               <label className={labelClass}>
                 Current address
 
-                <textarea
-                  className="mt-2 min-h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] font-medium text-slate-950 outline-none transition placeholder:font-normal placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                {/* ADMISSION_ADDRESS_SINGLE_LINE_V2 */}
+<input
+                  className={inputClass}
+                    type="text"
                   name="address1"
                   placeholder="House, street, city and state"
                   maxLength={500}
