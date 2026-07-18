@@ -639,38 +639,7 @@ export default function AdmissionClient() {
                     </div>
                   </label>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {[
-                      1000,
-                      6999,
-                      10000,
-                      25000,
-                      50000,
-                      100000,
-                    ].map((amount) => (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => {
-                          setPaymentAmount(
-                            String(amount)
-                          );
-
-                          setPageError("");
-                        }}
-                        className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                          paymentAmountNumber ===
-                          amount
-                            ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
-                        }`}
-                      >
-                        {formatRupees(
-                          amount
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                    {/* PAYMENT_PRESET_BUTTONS_REMOVED_V1 */}
 
                   <p
                     className={`mt-3 text-xs font-semibold ${
