@@ -20,7 +20,6 @@ declare global {
 const CHECKOUT_SCRIPT =
   "https://checkout.razorpay.com/v1/checkout.js";
 
-const DEFAULT_PAYMENT_RUPEES = 6999;
 const MIN_PAYMENT_RUPEES = 1000;
 const MAX_PAYMENT_RUPEES = 100000;
 
@@ -110,9 +109,7 @@ export default function AdmissionClient() {
     useState("");
 
   const [paymentAmount, setPaymentAmount] =
-    useState(
-      String(DEFAULT_PAYMENT_RUPEES)
-    );
+    useState("");
 
   const paymentAmountNumber =
     Number(paymentAmount);
@@ -856,13 +853,14 @@ export default function AdmissionClient() {
                     {/* PAYMENT_RANGE_DESCRIPTION_REMOVED_V2 */}
                   </div>
 
+                  {/* ADMISSION_FLEXIBLE_PAYMENT_UI_V1 */}
                   <div className="mt-4 w-fit rounded-2xl border border-white bg-white px-4 py-3 shadow-sm sm:absolute sm:right-0 sm:top-0 sm:mt-0">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                      Default
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-600">
+                      Flexible
                     </div>
 
-                    <div className="mt-1 text-lg font-bold text-slate-950">
-                      ₹6,999
+                    <div className="mt-1 whitespace-nowrap text-sm font-bold text-slate-950">
+                      Full / installment
                     </div>
                   </div>
                 </div>
@@ -878,6 +876,7 @@ export default function AdmissionClient() {
 
                       <input
                         className={`h-14 w-full rounded-2xl border bg-white pl-17 pr-4 text-xl font-bold text-slate-950 outline-none transition focus:ring-4 ${
+                          paymentAmount === "" ||
                           paymentAmountIsValid
                             ? "border-blue-200 focus:border-blue-500 focus:ring-blue-100"
                             : "border-red-300 focus:border-red-500 focus:ring-red-100"
@@ -887,6 +886,7 @@ export default function AdmissionClient() {
                         }}
                         type="text"
                         inputMode="numeric"
+                        placeholder="Enter amount"
                         value={paymentAmount}
                         onChange={(event) => {
                           const digits =
@@ -901,6 +901,7 @@ export default function AdmissionClient() {
                           setPageError("");
                         }}
                         aria-invalid={
+                          paymentAmount !== "" &&
                           !paymentAmountIsValid
                         }
                         required
@@ -910,7 +911,8 @@ export default function AdmissionClient() {
 
                     {/* PAYMENT_PRESET_BUTTONS_REMOVED_V1 */}
 
-                  {!paymentAmountIsValid ? (
+                  {paymentAmount !== "" &&
+                  !paymentAmountIsValid ? (
                     <p className="mt-3 text-xs font-semibold text-red-600">
                       Enter a whole amount from ₹1,000 to ₹1,00,000.
                     </p>
@@ -938,9 +940,11 @@ export default function AdmissionClient() {
               >
                 {loading
                   ? "Preparing secure checkout..."
-                  : `Pay ${formatRupees(
-                      paymentAmountNumber
-                    )} securely`}
+                  : paymentAmountIsValid
+                    ? `Pay ${formatRupees(
+                        paymentAmountNumber
+                      )} securely`
+                    : "Enter payment amount"}
 
                 {!loading ? (
                   <span className="text-lg transition group-hover:translate-x-1">
@@ -1006,10 +1010,10 @@ export default function AdmissionClient() {
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-slate-400">
-                      Default amount
+                      Payment option
                     </span>
                     <span className="font-semibold">
-                      ₹6,999
+                      Full or installment
                     </span>
                   </div>
                 </div>
@@ -1028,9 +1032,11 @@ export default function AdmissionClient() {
                   </div>
 
                   <div className="text-right text-3xl font-bold tracking-tight">
-                    {formatRupees(
-                      paymentAmountNumber
-                    )}
+                    {paymentAmountIsValid
+                      ? formatRupees(
+                          paymentAmountNumber
+                        )
+                      : "—"}
                   </div>
                 </div>
               </div>
