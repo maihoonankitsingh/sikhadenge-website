@@ -432,25 +432,144 @@ export default function AdmissionClient() {
         </header>
 
         <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_400px]">
-          <section className="overflow-hidden rounded-[30px] border border-white bg-white/95 shadow-[0_26px_80px_-48px_rgba(15,23,42,0.6)] backdrop-blur">
-            <div className="border-b border-slate-100 px-6 py-6 sm:px-8">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-base font-bold text-blue-700">
-                  01
-                </div>
+          <section className="overflow-hidden rounded-[32px] border border-blue-100/80 bg-white shadow-[0_34px_100px_-48px_rgba(15,23,42,0.62)] ring-1 ring-white">
+              <div
+                className="relative overflow-hidden border-b border-blue-100/80 bg-gradient-to-br from-white via-blue-50/80 to-indigo-50/90 px-6 py-6 sm:px-8 sm:py-7"
+                data-admission-student-header="premium-v3"
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-blue-300/30 blur-3xl"
+                />
 
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-950">
-                    Student information
-                  </h2>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-28 left-20 h-48 w-48 rounded-full bg-indigo-300/25 blur-3xl"
+                />
 
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Enter accurate information for the admission and
-                    verification record.
-                  </p>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-white to-transparent"
+                />
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-400/60 to-transparent"
+                />
+
+                <div className="relative flex items-start gap-5">
+                  <div className="relative h-[68px] w-[68px] shrink-0">
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-x-2 -bottom-2 h-5 rounded-full bg-blue-950/30 blur-lg"
+                    />
+
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 translate-y-1.5 rounded-[23px] bg-gradient-to-br from-blue-700 via-indigo-800 to-slate-950"
+                    />
+
+                    <div className="relative flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-[23px] border border-white/70 bg-gradient-to-br from-sky-300 via-blue-600 to-indigo-900 shadow-[0_20px_38px_-12px_rgba(37,99,235,0.95),inset_0_2px_0_rgba(255,255,255,0.8),inset_0_-14px_25px_rgba(30,27,75,0.48)] ring-1 ring-blue-500/30">
+                      <span
+                        aria-hidden="true"
+                        className="absolute -left-5 -top-7 h-16 w-24 rotate-[-22deg] rounded-full bg-white/35 blur-md"
+                      />
+
+                      <span
+                        aria-hidden="true"
+                        className="absolute bottom-2 right-2 h-6 w-6 rounded-full bg-indigo-950/30 blur-sm"
+                      />
+
+                      <svg
+                        aria-hidden="true"
+                        className="relative h-9 w-9 text-white drop-shadow-[0_4px_4px_rgba(15,23,42,0.48)]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Z"
+                          fill="currentColor"
+                        />
+
+                        <path
+                          d="M4.8 20c.55-3.45 3.25-5.55 7.2-5.55s6.65 2.1 7.2 5.55"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeWidth="2.25"
+                        />
+                      </svg>
+
+                      <span
+                        aria-hidden="true"
+                        className="absolute bottom-2 h-1 w-9 rounded-full bg-white/20"
+                      />
+                    </div>
+
+                    <div className="absolute -bottom-2 -right-2 flex h-8 min-w-8 items-center justify-center rounded-[13px] border-2 border-white bg-gradient-to-br from-amber-300 via-orange-400 to-orange-600 px-1.5 text-[10px] font-black text-slate-950 shadow-[0_9px_18px_-6px_rgba(234,88,12,0.9),inset_0_1px_0_rgba(255,255,255,0.85)]">
+                      01
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-blue-200/80 bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur">
+                        Admission details
+                      </span>
+
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/95 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700 shadow-sm">
+                        <svg
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M12 3 5.5 5.8v5.5c0 4.1 2.7 7.8 6.5 9.2 3.8-1.4 6.5-5.1 6.5-9.2V5.8L12 3Z"
+                            fill="currentColor"
+                            fillOpacity="0.14"
+                            stroke="currentColor"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                          />
+
+                          <path
+                            d="m9 12 2 2 4-4"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                          />
+                        </svg>
+
+                        Secure verification
+                      </span>
+                    </div>
+
+                    <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-slate-950 sm:text-2xl">
+                      Student information
+                    </h2>
+
+                    <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-600">
+                      Enter accurate information for the admission and
+                      verification record.
+                    </p>
+                  </div>
+
+                  <div className="hidden shrink-0 sm:block">
+                    <div className="rounded-2xl border border-white/90 bg-white/80 px-3.5 py-2.5 text-right shadow-[0_14px_30px_-19px_rgba(30,64,175,0.75)] backdrop-blur">
+                      <div className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
+                        Application
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-end gap-1.5 text-xs font-bold text-blue-700">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
+
+                        In progress
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
             <form
               className="space-y-7 px-6 py-7 sm:px-8 sm:py-8"
