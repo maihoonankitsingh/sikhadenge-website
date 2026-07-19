@@ -385,39 +385,112 @@ export default function AdmissionClient() {
                 checkout.
               </p>
 
-              <div className="mt-4 grid max-w-[520px] grid-cols-3 gap-2">
-                {[
-                  ["01", "Details"],
-                  ["02", "Payment"],
-                  ["03", "KYC"],
-                ].map(([number, title], index) => (
-                  <div
-                    key={number}
-                    className={`rounded-xl border px-3 py-2 ${
-                      index === 0
-                        ? "border-sky-400/45 bg-blue-600/25"
-                        : "border-white/10 bg-white/[0.06]"
-                    }`}
-                  >
-                    <div className="text-[9px] font-semibold text-blue-300">
-                      {number}
+                            <div
+                className="mt-5 grid max-w-2xl grid-cols-3 gap-2.5 sm:gap-3"
+                data-admission-hero-steps="premium-v1"
+              >
+                <div className="relative min-h-[62px] overflow-hidden rounded-[18px] border border-sky-300/70 bg-gradient-to-br from-blue-500/35 via-blue-500/20 to-indigo-500/20 px-3.5 py-3 shadow-[0_16px_34px_-22px_rgba(56,189,248,0.95),inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-sky-400/10 sm:min-h-[68px]">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-sky-200 to-transparent"
+                  />
+
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-6 -top-8 h-16 w-16 rounded-full bg-sky-400/20 blur-2xl"
+                  />
+
+                  <div className="relative">
+                    <div className="text-[10px] font-extrabold tracking-[0.09em] text-sky-200">
+                      01
                     </div>
 
-                    <div className="mt-0.5 text-[11px] font-semibold text-white sm:text-xs">
-                      {title}
+                    <div className="mt-1 text-sm font-extrabold tracking-tight text-white">
+                      Details
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="relative min-h-[62px] overflow-hidden rounded-[18px] border border-blue-200/15 bg-gradient-to-br from-white/10 via-white/[0.07] to-blue-500/10 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-white/5 sm:min-h-[68px]">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  />
+
+                  <div className="relative">
+                    <div className="text-[10px] font-extrabold tracking-[0.09em] text-blue-200/90">
+                      02
+                    </div>
+
+                    <div className="mt-1 text-sm font-extrabold tracking-tight text-white">
+                      Payment
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative min-h-[62px] overflow-hidden rounded-[18px] border border-blue-200/15 bg-gradient-to-br from-white/10 via-white/[0.07] to-indigo-500/10 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-white/5 sm:min-h-[68px]">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  />
+
+                  <div className="relative">
+                    <div className="text-[10px] font-extrabold tracking-[0.09em] text-blue-200/90">
+                      03
+                    </div>
+
+                    <div className="mt-1 text-sm font-extrabold tracking-tight text-white">
+                      KYC
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-slate-200 backdrop-blur">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20 font-semibold text-sky-300">
-                  ✓
+                            <div
+                className="mt-3.5 inline-flex items-center gap-3 rounded-[18px] border border-blue-200/15 bg-gradient-to-r from-white/10 via-blue-400/[0.08] to-white/[0.06] px-3 py-2.5 shadow-[0_14px_34px_-24px_rgba(56,189,248,0.8),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl"
+                data-admission-trust-badge="premium-v1"
+              >
+                <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-1 rounded-full bg-sky-400/50 blur-md"
+                  />
+
+                  <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-sky-200/70 bg-gradient-to-br from-sky-300 via-blue-600 to-indigo-900 text-white shadow-[0_9px_20px_-7px_rgba(56,189,248,0.95),inset_0_2px_0_rgba(255,255,255,0.75),inset_0_-7px_13px_rgba(30,27,75,0.58)] ring-1 ring-blue-300/30">
+                    <span
+                      aria-hidden="true"
+                      className="absolute -left-2 -top-3 h-6 w-10 rotate-[-20deg] rounded-full bg-white/40 blur-sm"
+                    />
+
+                    <svg
+                      aria-hidden="true"
+                      className="relative h-5 w-5 drop-shadow-[0_2px_2px_rgba(15,23,42,0.5)]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 3 5.5 5.8v5.5c0 4.1 2.7 7.8 6.5 9.2 3.8-1.4 6.5-5.1 6.5-9.2V5.8L12 3Z"
+                        fill="currentColor"
+                        fillOpacity="0.18"
+                        stroke="currentColor"
+                        strokeLinejoin="round"
+                        strokeWidth="1.7"
+                      />
+
+                      <path
+                        d="m8.8 12.1 2.1 2.1 4.5-4.7"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.3"
+                      />
+                    </svg>
+                  </span>
                 </span>
 
-                <span>
+                <span className="text-sm font-medium text-slate-200">
                   Trusted by{" "}
-                  <strong className="font-semibold text-white">
+                  <strong className="font-extrabold text-white">
                     150,000+ learners
                   </strong>
                 </span>
