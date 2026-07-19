@@ -3,6 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
+import {
+  hasAdvertisingConsent,
+} from "@/lib/consent";
+import {
+  readMetaBrowserIdentifiers,
+  trackMetaEvent,
+} from "@/lib/metaPixel";
 
 declare global {
   interface Window {
@@ -165,6 +172,11 @@ export default function AdmissionClient() {
 
         amountRupees:
           paymentAmountNumber,
+        advertisingConsent:
+          hasAdvertisingConsent()
+            ? "granted"
+            : "denied",
+        ...readMetaBrowserIdentifiers(),
       };
 
       const razorpayLoaded =
@@ -213,6 +225,34 @@ export default function AdmissionClient() {
         );
       }
 
+      if (
+        data.registrationEventId
+      ) {
+        trackMetaEvent(
+          "CompleteRegistration",
+          {
+            content_name:
+              data.course ||
+              "AI Expert Program",
+            content_type:
+              "product",
+            status:
+              "registered",
+            currency:
+              data.currency ||
+              "INR",
+            value:
+              Number(
+                data.amountRupees
+              ) ||
+              paymentAmountNumber,
+          },
+          String(
+            data.registrationEventId
+          )
+        );
+      }
+
       const options = {
         key: data.keyId,
         amount: data.amount,
@@ -257,15 +297,52 @@ export default function AdmissionClient() {
                     "Content-Type":
                       "application/json",
                   },
-                  body: JSON.stringify(
-                    paymentResponse
-                  ),
+                  body: JSON.stringify({
+                    ...paymentResponse,
+                    advertisingConsent:
+                      hasAdvertisingConsent()
+                        ? "granted"
+                        : "denied",
+                    ...readMetaBrowserIdentifiers(),
+                  }),
                 }
               );
 
-            await readResponse(
-              verifyResponse
-            );
+            const verifyData =
+              await readResponse(
+                verifyResponse
+              );
+
+            if (
+              verifyData.purchaseEventId
+            ) {
+              trackMetaEvent(
+                "Purchase",
+                {
+                  content_name:
+                    data.course ||
+                    "AI Expert Program",
+                  content_type:
+                    "product",
+                  currency:
+                    verifyData.currency ||
+                    "INR",
+                  value:
+                    Number(
+                      verifyData
+                        .amountRupees
+                    ) ||
+                    paymentAmountNumber,
+                  order_id:
+                    paymentResponse
+                      .razorpay_order_id,
+                },
+                String(
+                  verifyData
+                    .purchaseEventId
+                )
+              );
+            }
 
             window.location.assign(
               `/admission/complete?orderId=${encodeURIComponent(

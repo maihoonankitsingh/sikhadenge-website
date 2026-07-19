@@ -1,8 +1,14 @@
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
+import {
+  sendMetaConversionEvent,
+} from "@/lib/metaConversions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +59,7 @@ function parsePaymentAmount(
   return Number(text);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   let createdAdmissionId:
     | string
     | null = null;
@@ -79,6 +85,26 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+
+    const advertisingConsent =
+      String(
+        body?.advertisingConsent ||
+        ""
+      ).trim();
+
+    const metaBrowser = {
+      fbp:
+        String(
+          body?.fbp || ""
+        ).trim() ||
+        undefined,
+      fbc:
+        String(
+          body?.fbc || ""
+        ).trim() ||
+        undefined,
+    };
+
 
     const name = String(
       body?.name || ""
@@ -333,10 +359,56 @@ export async function POST(req: Request) {
       },
     });
 
+    const registrationEventId =
+      `sd_admission_registration_${admission.id}`;
+
+    await sendMetaConversionEvent({
+      req,
+      eventName:
+        "CompleteRegistration",
+      eventId:
+        registrationEventId,
+      advertisingConsent,
+      eventSourceUrl:
+        "https://sikhadenge.in/admission",
+      user: {
+        email,
+        phone,
+        firstName:
+          name.split(/\s+/)[0],
+        lastName:
+          name
+            .split(/\s+/)
+            .slice(1)
+            .join(" "),
+        fbp:
+          metaBrowser.fbp,
+        fbc:
+          metaBrowser.fbc,
+      },
+      customData: {
+        content_name:
+          COURSE_NAME,
+        content_type:
+          "product",
+        status:
+          "registered",
+        currency:
+          "INR",
+        value:
+          paymentAmountRupees,
+        admission_id:
+          admission.id,
+        order_id:
+          order.id,
+      },
+    });
+
     return NextResponse.json({
       ok: true,
       keyId,
       admissionId: admission.id,
+      registrationEventId,
       orderId: order.id,
       amount: Number(order.amount),
       amountRupees:
