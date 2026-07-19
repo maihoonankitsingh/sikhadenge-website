@@ -388,6 +388,48 @@ export default function CheckoutClient({ product }: Props) {
               razorpay_signature: response?.razorpay_signature || "",
             });
 
+            const transactionId =
+              verifyData?.storeOrderId ||
+              response?.razorpay_payment_id ||
+              response?.razorpay_order_id ||
+              "";
+
+            trackMetaEvent("Purchase", {
+              content_name: includeBump
+                ? `${product.title} + Masterclass Upgrade Toolkit`
+                : product.title,
+              content_ids: includeBump
+                ? [product.slug, bumpSlug]
+                : [product.slug],
+              content_type: "product",
+              value: total,
+              currency: "INR",
+            });
+
+            trackGoogleEvent("purchase", {
+              transaction_id: transactionId,
+              currency: "INR",
+              value: total,
+              items: [
+                {
+                  item_name: product.title,
+                  item_id: product.slug,
+                  price: baseAmount,
+                  quantity: 1,
+                },
+                ...(includeBump
+                  ? [
+                      {
+                        item_name: "Masterclass Upgrade Toolkit",
+                        item_id: bumpSlug,
+                        price: bumpPrice,
+                        quantity: 1,
+                      },
+                    ]
+                  : []),
+              ],
+            });
+
             const redirectUrl = verifyData?.storeOrderId
               ? `/checkout/welcome?storeOrderId=${verifyData.storeOrderId}`
               : "/checkout/welcome";
