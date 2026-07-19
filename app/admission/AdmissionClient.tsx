@@ -833,17 +833,11 @@ export default function AdmissionClient() {
 
                     {/* PAYMENT_PRESET_BUTTONS_REMOVED_V1 */}
 
-                  <p
-                    className={`mt-3 text-xs font-semibold ${
-                      paymentAmountIsValid
-                        ? "text-slate-500"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {paymentAmountIsValid
-                      ? "The server and Razorpay will verify this exact amount."
-                      : "Enter a whole amount from ₹1,000 to ₹1,00,000."}
-                  </p>
+                  {!paymentAmountIsValid ? (
+                    <p className="mt-3 text-xs font-semibold text-red-600">
+                      Enter a whole amount from ₹1,000 to ₹1,00,000.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
