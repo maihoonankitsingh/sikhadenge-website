@@ -840,27 +840,102 @@ export default function AdmissionClient() {
 
               <div className="rounded-[26px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 sm:p-6">
                 {/* PAYMENT_CARD_SPACING_LITERAL_V3 */}
-                <div className="relative">
-                  <div className="pr-0 sm:pr-36">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
-                      Editable payment amount
+                <div
+                  className="relative overflow-hidden rounded-[26px] border border-blue-100/90 bg-gradient-to-r from-white via-blue-50/80 to-indigo-50/80 px-4 py-4 shadow-[0_24px_65px_-42px_rgba(37,99,235,0.65)] ring-1 ring-white sm:px-5 sm:py-5"
+                  data-admission-payment-header="premium-v2"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-12 -top-16 h-40 w-40 rounded-full bg-blue-200/45 blur-3xl"
+                  />
+
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-12 -top-16 h-40 w-40 rounded-full bg-indigo-200/40 blur-3xl"
+                  />
+
+                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="relative shrink-0">
+                        <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] border border-sky-200 bg-gradient-to-br from-sky-300 via-blue-600 to-indigo-900 text-[27px] font-black text-white shadow-[0_18px_34px_-14px_rgba(37,99,235,0.95),inset_0_2px_0_rgba(255,255,255,0.7),inset_0_-10px_18px_rgba(30,27,75,0.55)] ring-1 ring-blue-300/40">
+                          <span
+                            aria-hidden="true"
+                            className="absolute -left-3 -top-4 h-8 w-14 rotate-[-20deg] rounded-full bg-white/35 blur-sm"
+                          />
+
+                          <span className="relative drop-shadow-[0_3px_3px_rgba(15,23,42,0.45)]">
+                            ₹
+                          </span>
+                        </div>
+
+                        <span className="absolute -bottom-2 -right-2 flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-amber-300 via-orange-400 to-orange-600 px-1 text-[11px] font-black text-slate-950 shadow-[0_10px_20px_-8px_rgba(234,88,12,0.9)]">
+                          02
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 pt-0.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-blue-200 bg-white/90 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em] text-blue-700 shadow-sm">
+                            Payment details
+                          </span>
+
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/90 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.13em] text-emerald-700 shadow-sm">
+                            <svg
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M12 3 5.5 5.8v5.5c0 4.1 2.7 7.8 6.5 9.2 3.8-1.4 6.5-5.1 6.5-9.2V5.8L12 3Z"
+                                stroke="currentColor"
+                                strokeLinejoin="round"
+                                strokeWidth="1.8"
+                              />
+
+                              <path
+                                d="m8.8 12.1 2.1 2.1 4.5-4.7"
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                              />
+                            </svg>
+
+                            Secure checkout
+                          </span>
+                        </div>
+
+                        <div className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-blue-700 sm:hidden">
+                          Editable payment amount
+                        </div>
+
+                        <h3 className="mt-2 text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl">
+                          Enter the amount you want to pay
+                        </h3>
+
+                        {/* PAYMENT_RANGE_DESCRIPTION_REMOVED_V2 */}
+                      </div>
                     </div>
 
-                    <h3 className="mt-2 text-lg font-bold text-slate-950">
-                      Enter the amount you want to pay
-                    </h3>
+                    {/* ADMISSION_FLEXIBLE_PAYMENT_UI_V1 */}
+                    <div className="w-fit shrink-0 rounded-[18px] border border-white/90 bg-white/90 px-4 py-3 shadow-[0_16px_35px_-24px_rgba(37,99,235,0.7)] backdrop-blur-sm sm:self-start">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
+                        Payment
+                      </div>
 
-                    {/* PAYMENT_RANGE_DESCRIPTION_REMOVED_V2 */}
-                  </div>
+                      <div className="mt-1 flex items-center gap-2 text-sm font-extrabold text-blue-700">
+                        <span className="relative flex h-3 w-3 items-center justify-center">
+                          <span className="absolute h-3 w-3 rounded-full bg-emerald-300/60 blur-[2px]" />
+                          <span className="relative h-2 w-2 rounded-full bg-emerald-500" />
+                        </span>
 
-                  {/* ADMISSION_FLEXIBLE_PAYMENT_UI_V1 */}
-                  <div className="mt-4 w-fit rounded-2xl border border-white bg-white px-4 py-3 shadow-sm sm:absolute sm:right-0 sm:top-0 sm:mt-0">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-600">
-                      Flexible
-                    </div>
+                        Flexible
+                      </div>
 
-                    <div className="mt-1 whitespace-nowrap text-sm font-bold text-slate-950">
-                      Full / installment
+                      <div className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-slate-500">
+                        Full / installment
+                      </div>
                     </div>
                   </div>
                 </div>
