@@ -175,7 +175,7 @@ const HeroSection = () => {
 
   return (
     <section className="pt-3 md:pt-8 pb-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="relative overflow-hidden rounded-3xl bg-[#0B1220] border border-white/10 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
           <div
             aria-hidden="true"
@@ -274,126 +274,176 @@ const HeroSection = () => {
   // ==================== SECTION 3: LEARNERS + COMPANIES ====================
 const LearnersSection = () => {
   const trustStats = [
-    { value: "150,000+", label: "Students", desc: "Practical AI learners", icon: "users", tone: "blue" },
-    { value: "4.9/5", label: "Rating", desc: "Learner trust score", icon: "star", tone: "violet" },
-    { value: "Live", label: "Sessions", desc: "Guided class flow", icon: "video", tone: "cyan" },
-    { value: "Structured", label: "Assignments", desc: "Practice-first tasks", icon: "clipboard", tone: "blue" },
+    {
+      value: "150,000+",
+      label: "Students",
+      note: "Practical AI learners",
+      icon: Users,
+      iconWrap: "bg-[#EAF2FF]",
+      iconColor: "text-[#2563EB]",
+      bar: "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]",
+    },
+    {
+      value: "4.9/5",
+      label: "Rating",
+      note: "Learner trust score",
+      icon: Star,
+      iconWrap: "bg-[#F3EDFF]",
+      iconColor: "text-[#7C3AED]",
+      bar: "bg-gradient-to-r from-[#7C3AED] to-[#4F46E5]",
+    },
+    {
+      value: "Live",
+      label: "Sessions",
+      note: "Guided class flow",
+      icon: FileVideo,
+      iconWrap: "bg-[#E8FBFD]",
+      iconColor: "text-[#0891B2]",
+      bar: "bg-gradient-to-r from-[#06B6D4] to-[#2563EB]",
+    },
+    {
+      value: "Structured",
+      label: "Assignments",
+      note: "Practice-first tasks",
+      icon: ListChecks,
+      iconWrap: "bg-[#EDF5FF]",
+      iconColor: "text-[#2563EB]",
+      bar: "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]",
+    },
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-5 md:py-7">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(37,99,235,0.08),transparent_24%),radial-gradient(circle_at_90%_12%,rgba(6,182,212,0.08),transparent_24%),linear-gradient(180deg,#F8FAFC_0%,#F1F7FF_100%)]" />
+    <section className="bg-white py-3 md:py-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[28px] border border-[#D8E5F6] bg-[linear-gradient(135deg,#F9FBFF_0%,#F3F7FF_52%,#EDF9FF_100%)] p-4 shadow-[0_16px_45px_rgba(15,23,42,0.07)] md:p-5">
 
-      <div className="relative mx-auto max-w-[1420px] px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[26px] border border-[#DDE8F7] bg-white/92 px-4 py-5 shadow-[0_16px_44px_rgba(15,23,42,0.055)] backdrop-blur md:px-7 md:py-6 lg:px-9">
-          <div className="mx-auto mb-3 flex max-w-3xl flex-col items-center justify-center gap-2 sm:flex-row">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#F2C55C] bg-white px-3 py-1.5 shadow-[0_8px_20px_rgba(245,179,1,0.10)]">
-              <div className="flex items-center gap-1 text-[#F5B301]" aria-hidden="true">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
-                    <path d="M12 2.4l2.95 5.98 6.6.96-4.77 4.65 1.13 6.57L12 17.46l-5.91 3.1 1.13-6.57-4.77-4.65 6.6-.96L12 2.4z" />
-                  </svg>
-                ))}
+          <div
+            aria-hidden="true"
+            className="absolute -left-16 -top-20 h-52 w-52 rounded-full bg-[#2563EB]/10 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 -top-16 h-56 w-56 rounded-full bg-[#06B6D4]/10 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#2563EB]/35 to-transparent"
+          />
+
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-1 items-start gap-4 md:items-center md:gap-5">
+
+              <div className="relative shrink-0">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-x-2 -bottom-2 h-6 rounded-full bg-[#1D4ED8]/25 blur-lg"
+                />
+
+                <div className="relative grid h-[78px] w-[78px] place-items-center overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(145deg,#8FC7FF_0%,#3B82F6_38%,#1E40AF_100%)] shadow-[inset_0_2px_0_rgba(255,255,255,0.72),inset_0_-10px_18px_rgba(15,42,120,0.30),0_14px_28px_rgba(37,99,235,0.32)] md:h-[86px] md:w-[86px] md:rounded-[26px]">
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-2 right-2 top-2 h-7 rounded-full bg-white/25 blur-sm"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute -bottom-5 -right-4 h-14 w-14 rounded-full bg-[#172554]/35 blur-lg"
+                  />
+
+                  <Users
+                    className="relative z-10 h-9 w-9 text-white drop-shadow-[0_4px_4px_rgba(15,23,42,0.35)] md:h-10 md:w-10"
+                    strokeWidth={2.4}
+                  />
+                </div>
+
+                <div className="absolute -bottom-1.5 -right-2 grid h-9 min-w-9 place-items-center rounded-[13px] border-2 border-white bg-[linear-gradient(145deg,#FFB020,#F97316)] px-2 text-[11px] font-black text-white shadow-[0_8px_16px_rgba(249,115,22,0.35)]">
+                  01
+                </div>
               </div>
-              <span className="h-4 w-px bg-[#E5E7EB]" />
-              <span className="text-xs font-black text-[#071533]">4.9/5 rating</span>
-            </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#DDE8F7] bg-white px-3 py-1.5 shadow-[0_8px_20px_rgba(37,99,235,0.07)]">
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#EEF6FF] text-[#2563EB]" aria-hidden="true">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.4]">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                  <circle cx="9.5" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </span>
-              <span className="text-xs font-bold text-[#334155]">Trusted by learners across India</span>
-            </div>
-          </div>
-
-          <div className="mx-auto max-w-4xl text-center">
-            <p className="mb-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-[#7C3AED] md:text-[11px]">
-              Skill today. Succeed tomorrow.
-            </p>
-
-            <h2 className="text-[34px] font-black leading-[0.96] tracking-[-0.06em] text-[#071533] sm:text-5xl md:text-[56px] lg:text-[66px]">
-              <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
-                150,000+
-              </span>{" "}
-              Students
-            </h2>
-
-            <p className="mx-auto mt-2.5 max-w-2xl text-sm leading-6 text-[#475569] md:text-base md:leading-7">
-              are building practical digital skills through live sessions, structured assignments and guided learning.
-            </p>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {trustStats.map((item) => (
-              <div key={item.label} className="group relative overflow-hidden rounded-[24px] border border-[#DDE8F7] bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2563EB]/25 hover:shadow-[0_18px_42px_rgba(37,99,235,0.10)] md:p-5">
-                <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${
-                  item.tone === "violet"
-                    ? "bg-gradient-to-r from-[#7C3AED] to-[#2563EB]"
-                    : item.tone === "cyan"
-                      ? "bg-gradient-to-r from-[#06B6D4] to-[#2563EB]"
-                      : "bg-gradient-to-r from-[#2563EB] to-[#06B6D4]"
-                }`} />
-
-                <div className="flex items-center gap-3">
-                  <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl shadow-[0_10px_24px_rgba(15,23,42,0.06)] ${
-                    item.tone === "violet"
-                      ? "bg-[#F4F0FF] text-[#7C3AED]"
-                      : item.tone === "cyan"
-                        ? "bg-[#ECFEFF] text-[#0891B2]"
-                        : "bg-[#EEF6FF] text-[#2563EB]"
-                  }`}>
-                    {item.icon === "users" && (
-                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                        <circle cx="9.5" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                    )}
-
-                    {item.icon === "star" && (
-                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
-                        <path d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02l-5.3 2.79 1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />
-                      </svg>
-                    )}
-
-                    {item.icon === "video" && (
-                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
-                        <rect x="3" y="6" width="13" height="12" rx="3" />
-                        <path d="M16 10l5-3v10l-5-3z" />
-                      </svg>
-                    )}
-
-                    {item.icon === "clipboard" && (
-                      <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[2.5]">
-                        <path d="M9 4h6l1 2h3v15H5V6h3l1-2z" />
-                        <path d="M9 11h6" />
-                        <path d="M9 15h4" />
-                      </svg>
-                    )}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center rounded-full border border-[#BFDBFE] bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#1D4ED8] shadow-[0_5px_14px_rgba(37,99,235,0.08)] md:text-[11px]">
+                    Learner Trust
                   </div>
 
-                  <div className="min-w-0">
-                    <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#071533] md:text-[28px]">
-                      {item.value}
-                    </p>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#64748B] md:text-[11px]">
-                      {item.label}
-                    </p>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#047857] shadow-[0_5px_14px_rgba(5,150,105,0.07)] md:text-[11px]">
+                    <Lock className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    Guided Learning
                   </div>
                 </div>
 
-                <p className="mt-3 hidden text-xs font-semibold leading-5 text-[#64748B] sm:block">
-                  {item.desc}
+                <h2 className="mt-2.5 text-[27px] font-black leading-[1.02] tracking-[-0.045em] text-[#071533] sm:text-[32px] md:text-[38px]">
+                  <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
+                    150,000+
+                  </span>{" "}
+                  Students
+                </h2>
+
+                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#52637A] md:text-[15px]">
+                  Building practical digital skills through live sessions,
+                  structured assignments and guided execution.
                 </p>
               </div>
-            ))}
+            </div>
+
+            <div className="w-full rounded-[20px] border border-white/90 bg-white/80 px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.07)] backdrop-blur-sm sm:w-auto sm:min-w-[190px]">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
+                Learning Model
+              </p>
+
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-35" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+                </span>
+
+                <span className="text-sm font-black text-[#1D4ED8]">
+                  Live &amp; guided
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            {trustStats.map((item) => {
+              const Icon = item.icon
+
+              return (
+                <div
+                  key={item.label}
+                  className="group relative overflow-hidden rounded-[20px] border border-[#DCE7F5] bg-white/95 p-3 shadow-[0_8px_20px_rgba(15,23,42,0.045)] transition duration-300 hover:-translate-y-0.5 hover:border-[#2563EB]/25 hover:shadow-[0_14px_28px_rgba(37,99,235,0.09)] md:p-3.5"
+                >
+                  <div
+                    aria-hidden="true"
+                    className={`absolute inset-x-0 top-0 h-[3px] ${item.bar}`}
+                  />
+
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] ${item.iconWrap} shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_6px_14px_rgba(15,23,42,0.05)]`}
+                    >
+                      <Icon
+                        className={`h-5 w-5 ${item.iconColor}`}
+                        strokeWidth={2.4}
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-[20px] font-black leading-none tracking-[-0.035em] text-[#071533] md:text-[22px]">
+                        {item.value}
+                      </p>
+                      <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.13em] text-[#64748B] md:text-[10px]">
+                        {item.label}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mt-2 hidden truncate text-[11px] font-semibold text-[#718096] sm:block">
+                    {item.note}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -403,11 +453,13 @@ const LearnersSection = () => {
 
 
 
+
+
 // ==================== SECTION 4: REAL PRACTITIONERS BANNER ====================
 const RealPractitionersBanner = () => {
   return (
     <section className="bg-white py-6 md:py-8">
-      <div className="mx-auto max-w-[1640px] px-3 sm:px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2 className="sr-only">
           AI job market shift 2025-26: AI is changing jobs fast and skills move careers ahead
         </h2>
@@ -440,7 +492,7 @@ const RealPractitionersBanner = () => {
 const ProcessSection = () => {
   return (
     <section className="pt-4 pb-10 md:pt-6 md:pb-14 bg-[#F8FAFC]">
-      <div className="mx-auto max-w-[1500px] px-3 sm:px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-[30px] border border-[#E6ECF5] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           <img
             src="/assets/home/process-section/process-section-ai-digital-growth-mobile.png"
@@ -603,7 +655,7 @@ const QuoteTestimonial = () => {
 const BenefitsSection = () => {
   return (
     <section className="relative overflow-hidden bg-[#F8FAFC] py-8 md:py-12">
-      <div className="mx-auto max-w-[1680px] px-3 sm:px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2 className="sr-only">
           Complete AI-Driven Growth System Learn Build Grow
         </h2>
@@ -634,365 +686,349 @@ const BenefitsSection = () => {
 
 // ==================== SECTION 8: FRAMEWORKS GRID ====================
 const FrameworksSection = () => {
-  const frameworks = [
+  const skillSystems = [
     {
+      number: "01",
+      category: "AI Foundation",
       title: "AI Tools & Prompt Engineering",
       description:
-        "Master ChatGPT, Claude, Gemini and AI research using reusable prompt frameworks.",
-      category: "AI Foundation",
-      chips: ["Prompt Systems", "AI Research"],
-      action: "Master Prompts",
-      icon: "spark",
-      theme: "blue",
+        "Master ChatGPT, Claude, Gemini and AI research through reusable prompt systems.",
+      tags: ["Prompt Systems", "AI Research"],
+      icon: Sparkles,
+      accent: "#2563EB",
+      gradient:
+        "linear-gradient(145deg, #60A5FA 0%, #2563EB 50%, #1D4ED8 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(239,246,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(37,99,235,0.24)",
     },
     {
+      number: "02",
+      category: "Creator Studio",
       title: "AI Graphics, Video & Content",
       description:
         "Create brand graphics, reels, scripts, thumbnails and complete content systems.",
-      category: "Creator Studio",
-      chips: ["Graphics", "Video"],
-      action: "Create Assets",
-      icon: "video",
-      theme: "violet",
+      tags: ["Graphics", "Video"],
+      icon: FileVideo,
+      accent: "#7C3AED",
+      gradient:
+        "linear-gradient(145deg, #C4B5FD 0%, #8B5CF6 50%, #6D28D9 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(245,243,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(124,58,237,0.24)",
     },
     {
+      number: "03",
+      category: "Web Experience",
       title: "Website & Landing Page Builder",
       description:
         "Build responsive websites, course pages, lead funnels and conversion-focused sections.",
-      category: "Web Experience",
-      chips: ["Landing Pages", "Web Copy"],
-      action: "Launch Pages",
-      icon: "website",
-      theme: "cyan",
+      tags: ["Landing Pages", "Web Copy"],
+      icon: Globe,
+      accent: "#0891B2",
+      gradient:
+        "linear-gradient(145deg, #67E8F9 0%, #06B6D4 48%, #0891B2 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(236,254,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(8,145,178,0.24)",
     },
     {
+      number: "04",
+      category: "Product Builder",
       title: "No-Code Apps & Dashboards",
       description:
         "Create CRM systems, business apps, admin dashboards and practical MVP prototypes.",
-      category: "Product Builder",
-      chips: ["No-Code Apps", "Dashboards"],
-      action: "Build Your MVP",
-      icon: "app",
-      theme: "indigo",
+      tags: ["No-Code Apps", "Dashboards"],
+      icon: Table,
+      accent: "#4F46E5",
+      gradient:
+        "linear-gradient(145deg, #A5B4FC 0%, #6366F1 48%, #4338CA 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(238,242,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(79,70,229,0.24)",
     },
     {
+      number: "05",
+      category: "Conversation AI",
       title: "Chatbots & Messaging Automation",
       description:
         "Build website bots, WhatsApp lead flows and Instagram messaging automations.",
-      category: "Conversation AI",
-      chips: ["WhatsApp Bot", "Lead Bot"],
-      action: "Deploy Chatbots",
-      icon: "chat",
-      theme: "purple",
+      tags: ["WhatsApp Bot", "Lead Bot"],
+      icon: MailIcon,
+      accent: "#9333EA",
+      gradient:
+        "linear-gradient(145deg, #E879F9 0%, #A855F7 48%, #7E22CE 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(250,245,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(147,51,234,0.24)",
     },
     {
+      number: "06",
+      category: "Agentic Workflow",
       title: "AI Agents & n8n Automation",
       description:
         "Connect forms, CRM, email, APIs, AI agents and human approval into smart workflows.",
-      category: "Agentic Workflow",
-      chips: ["AI Agents", "n8n"],
-      action: "Automate Work",
-      icon: "agent",
-      theme: "teal",
+      tags: ["AI Agents", "n8n"],
+      icon: Cpu,
+      accent: "#0F9F86",
+      gradient:
+        "linear-gradient(145deg, #6EE7B7 0%, #10B981 48%, #047857 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(236,253,245,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(5,150,105,0.24)",
     },
     {
-      title: "SEO, AEO, GEO & Paid Growth",
-      description:
-        "Build search visibility, AI answer visibility, funnels, advertising and retargeting.",
+      number: "07",
       category: "Growth Engine",
-      chips: ["SEO · AEO · GEO", "Paid Ads"],
-      action: "Grow Visibility",
-      icon: "growth",
-      theme: "orange",
+      title: "AI Marketing & Search Growth",
+      description:
+        "Build campaigns across content strategy, SEO, AEO, GEO and digital distribution.",
+      tags: ["Marketing", "SEO + AEO"],
+      icon: TrendingUp,
+      accent: "#EA580C",
+      gradient:
+        "linear-gradient(145deg, #FDBA74 0%, #F97316 48%, #EA580C 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(255,247,237,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(249,115,22,0.24)",
     },
     {
-      title: "Analytics, Projects & Certification",
-      description:
-        "Track performance, generate reports and prove your skills through practical projects.",
+      number: "08",
       category: "Performance Lab",
-      chips: ["Analytics", "Certification"],
-      action: "Measure Results",
-      icon: "analytics",
-      theme: "sky",
+      title: "Analytics & Conversion Systems",
+      description:
+        "Track user behaviour, campaign performance and conversion-focused growth insights.",
+      tags: ["Analytics", "Conversion"],
+      icon: BarChart3,
+      accent: "#0284C7",
+      gradient:
+        "linear-gradient(145deg, #7DD3FC 0%, #0EA5E9 48%, #0369A1 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(240,249,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(2,132,199,0.24)",
     },
     {
-      title: "Portfolio & Career Launch",
-      description:
-        "Package your projects into a professional portfolio, case study and client presentation.",
+      number: "09",
       category: "Career System",
-      chips: ["Portfolio", "Case Study"],
-      action: "Launch Portfolio",
-      icon: "portfolio",
-      theme: "fuchsia",
+      title: "Portfolio, Freelancing & Client Work",
+      description:
+        "Turn practical output into case studies, service offers and client-ready portfolio work.",
+      tags: ["Portfolio", "Freelancing"],
+      icon: Briefcase,
+      accent: "#C026D3",
+      gradient:
+        "linear-gradient(145deg, #F0ABFC 0%, #D946EF 48%, #A21CAF 100%)",
+      surface:
+        "linear-gradient(145deg, rgba(253,244,255,0.96), rgba(255,255,255,0.99))",
+      glow: "rgba(192,38,211,0.24)",
     },
   ]
 
-  const themes: Record<
-    string,
-    {
-      surface: string
-      icon: string
-      number: string
-      category: string
-      chip: string
-      button: string
-      glow: string
-      line: string
-    }
-  > = {
-    blue: {
-      surface: "from-[#EFF6FF] via-white to-[#F8FBFF]",
-      icon: "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]",
-      number: "border-[#BFDBFE] bg-white text-[#2563EB]",
-      category: "bg-[#DBEAFE] text-[#1D4ED8]",
-      chip: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]",
-      button: "from-[#2563EB] to-[#0EA5E9]",
-      glow: "bg-[#2563EB]",
-      line: "from-[#2563EB] to-[#06B6D4]",
-    },
-    violet: {
-      surface: "from-[#F5F3FF] via-white to-[#FCFAFF]",
-      icon: "border-[#DDD6FE] bg-[#F5F3FF] text-[#7C3AED]",
-      number: "border-[#DDD6FE] bg-white text-[#7C3AED]",
-      category: "bg-[#EDE9FE] text-[#6D28D9]",
-      chip: "border-[#DDD6FE] bg-[#F5F3FF] text-[#6D28D9]",
-      button: "from-[#7C3AED] to-[#4F46E5]",
-      glow: "bg-[#7C3AED]",
-      line: "from-[#7C3AED] to-[#2563EB]",
-    },
-    cyan: {
-      surface: "from-[#ECFEFF] via-white to-[#F7FEFF]",
-      icon: "border-[#A5F3FC] bg-[#ECFEFF] text-[#0891B2]",
-      number: "border-[#A5F3FC] bg-white text-[#0891B2]",
-      category: "bg-[#CFFAFE] text-[#0E7490]",
-      chip: "border-[#A5F3FC] bg-[#ECFEFF] text-[#0E7490]",
-      button: "from-[#0891B2] to-[#06B6D4]",
-      glow: "bg-[#06B6D4]",
-      line: "from-[#06B6D4] to-[#2563EB]",
-    },
-    indigo: {
-      surface: "from-[#EEF2FF] via-white to-[#FAFBFF]",
-      icon: "border-[#C7D2FE] bg-[#EEF2FF] text-[#4F46E5]",
-      number: "border-[#C7D2FE] bg-white text-[#4F46E5]",
-      category: "bg-[#E0E7FF] text-[#4338CA]",
-      chip: "border-[#C7D2FE] bg-[#EEF2FF] text-[#4338CA]",
-      button: "from-[#4F46E5] to-[#2563EB]",
-      glow: "bg-[#4F46E5]",
-      line: "from-[#4F46E5] to-[#2563EB]",
-    },
-    purple: {
-      surface: "from-[#FAF5FF] via-white to-[#FFFBFF]",
-      icon: "border-[#E9D5FF] bg-[#FAF5FF] text-[#9333EA]",
-      number: "border-[#E9D5FF] bg-white text-[#9333EA]",
-      category: "bg-[#F3E8FF] text-[#7E22CE]",
-      chip: "border-[#E9D5FF] bg-[#FAF5FF] text-[#7E22CE]",
-      button: "from-[#9333EA] to-[#7C3AED]",
-      glow: "bg-[#9333EA]",
-      line: "from-[#9333EA] to-[#7C3AED]",
-    },
-    teal: {
-      surface: "from-[#F0FDFA] via-white to-[#F8FFFD]",
-      icon: "border-[#99F6E4] bg-[#F0FDFA] text-[#0D9488]",
-      number: "border-[#99F6E4] bg-white text-[#0D9488]",
-      category: "bg-[#CCFBF1] text-[#0F766E]",
-      chip: "border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]",
-      button: "from-[#0D9488] to-[#06B6D4]",
-      glow: "bg-[#14B8A6]",
-      line: "from-[#14B8A6] to-[#06B6D4]",
-    },
-    orange: {
-      surface: "from-[#FFF7ED] via-white to-[#FFFCF8]",
-      icon: "border-[#FED7AA] bg-[#FFF7ED] text-[#F97316]",
-      number: "border-[#FED7AA] bg-white text-[#F97316]",
-      category: "bg-[#FFEDD5] text-[#EA580C]",
-      chip: "border-[#FED7AA] bg-[#FFF7ED] text-[#EA580C]",
-      button: "from-[#F97316] to-[#F59E0B]",
-      glow: "bg-[#F97316]",
-      line: "from-[#F97316] to-[#F59E0B]",
-    },
-    sky: {
-      surface: "from-[#F0F9FF] via-white to-[#F9FDFF]",
-      icon: "border-[#BAE6FD] bg-[#F0F9FF] text-[#0284C7]",
-      number: "border-[#BAE6FD] bg-white text-[#0284C7]",
-      category: "bg-[#E0F2FE] text-[#0369A1]",
-      chip: "border-[#BAE6FD] bg-[#F0F9FF] text-[#0369A1]",
-      button: "from-[#0284C7] to-[#2563EB]",
-      glow: "bg-[#0284C7]",
-      line: "from-[#0284C7] to-[#2563EB]",
-    },
-    fuchsia: {
-      surface: "from-[#FDF4FF] via-white to-[#FFFAFF]",
-      icon: "border-[#F5D0FE] bg-[#FDF4FF] text-[#C026D3]",
-      number: "border-[#F5D0FE] bg-white text-[#C026D3]",
-      category: "bg-[#FAE8FF] text-[#A21CAF]",
-      chip: "border-[#F5D0FE] bg-[#FDF4FF] text-[#A21CAF]",
-      button: "from-[#C026D3] to-[#7C3AED]",
-      glow: "bg-[#C026D3]",
-      line: "from-[#C026D3] to-[#7C3AED]",
-    },
-  }
-
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-9 md:py-12 lg:py-14">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_8%_8%,rgba(37,99,235,0.11),transparent_25%),radial-gradient(circle_at_92%_15%,rgba(6,182,212,0.11),transparent_25%),radial-gradient(circle_at_52%_100%,rgba(124,58,237,0.08),transparent_32%)]"
-      />
+    <section className="bg-[#F8FAFC] py-8 md:py-12" id="courses">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div
+          data-home-skill-system-premium="v3"
+          className="relative overflow-hidden rounded-[34px] border border-[#DCE7F5] bg-[linear-gradient(135deg,#F8FBFF_0%,#F6F7FF_48%,#EFFCFF_100%)] p-4 shadow-[0_26px_70px_rgba(15,23,42,0.09)] sm:p-6 md:p-8"
+        >
+          <div
+            aria-hidden="true"
+            className="absolute -left-28 -top-28 h-80 w-80 rounded-full bg-[#2563EB]/10 blur-3xl"
+          />
 
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.22] [background-image:linear-gradient(#DDE8F7_1px,transparent_1px),linear-gradient(90deg,#DDE8F7_1px,transparent_1px)] [background-size:46px_46px]"
-      />
+          <div
+            aria-hidden="true"
+            className="absolute -right-24 top-16 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-3xl"
+          />
 
-      <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border border-[#D7E5FA] bg-white/90 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#2563EB] shadow-[0_12px_28px_rgba(37,99,235,0.08)] backdrop-blur">
-            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]" />
-            Complete Course & Skill Stack
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-[42%] h-60 w-60 rounded-full bg-[#06B6D4]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.28]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(37,99,235,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.10) 1px, transparent 1px)",
+              backgroundSize: "46px 46px",
+              maskImage:
+                "linear-gradient(to bottom, black, transparent 52%)",
+            }}
+          />
+
+          <div className="relative mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E4FF] bg-white/85 px-4 py-2 shadow-[0_8px_24px_rgba(37,99,235,0.08)] backdrop-blur">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(145deg,#60A5FA,#7C3AED)] text-white shadow-[0_5px_12px_rgba(99,102,241,0.30)]">
+                <Layers className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+
+              <span className="text-[10px] font-black uppercase tracking-[0.17em] text-[#4F46E5] sm:text-[11px]">
+                Complete Course &amp; Skill Stack
+              </span>
+            </div>
+
+            <h2 className="mt-4 text-[34px] font-black leading-[1.01] tracking-[-0.055em] text-[#071533] sm:text-4xl md:text-[50px] lg:text-[56px]">
+              AI Digital Growth Creator
+              <span className="mt-1 block bg-gradient-to-r from-[#4F46E5] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+                Practical Skill System
+              </span>
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-3xl text-sm font-medium leading-6 text-[#52637A] sm:text-base sm:leading-7 md:text-[17px]">
+              Build a complete stack across AI creation, websites,
+              automation, marketing, analytics and portfolio-ready
+              implementation.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              {[
+                "9 Skill Systems",
+                "Practical Projects",
+                "Guided Execution",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/90 bg-white/75 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#64748B] shadow-[0_5px_14px_rgba(15,23,42,0.05)] backdrop-blur"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#2563EB] to-[#7C3AED]" />
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <h2 className="text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-[40px] md:text-[48px] lg:text-[54px]">
-            AI Digital Growth Creator
-            <span className="block bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
-              Practical Skill System
-            </span>
-          </h2>
+          <div className="relative mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {skillSystems.map((item) => {
+              const Icon = item.icon
 
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#475569] md:text-base md:leading-7">
-            Build a complete stack across AI creation, websites, automation,
-            marketing, analytics and portfolio-ready implementation.
-          </p>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {frameworks.map((item, index) => {
-            const theme = themes[item.theme]
-
-            return (
-              <article
-                key={item.title}
-                className={`group relative flex h-full flex-col overflow-hidden rounded-[30px] border border-[#DCE7F6] bg-gradient-to-br ${theme.surface} p-5 shadow-[0_16px_45px_rgba(15,23,42,0.055)] transition-all duration-300 hover:-translate-y-1 hover:border-[#2563EB]/30 hover:shadow-[0_28px_75px_rgba(37,99,235,0.13)] md:p-6`}
-              >
-                <div
-                  aria-hidden="true"
-                  className={`absolute -right-10 -top-10 h-32 w-32 rounded-full ${theme.glow} opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.17]`}
-                />
-
-                <div
-                  aria-hidden="true"
-                  className={`absolute inset-x-6 top-0 h-1 rounded-b-full bg-gradient-to-r ${theme.line}`}
-                />
-
-                <div className="relative mb-5 flex items-start justify-between gap-4">
+              return (
+                <article
+                  key={item.number}
+                  className="group relative min-h-[248px] overflow-hidden rounded-[26px] border border-white/95 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-[#CDD9F0] hover:shadow-[0_22px_48px_rgba(37,99,235,0.13)] md:p-5"
+                  style={{
+                    background: item.surface,
+                    boxShadow:
+                      "0 12px 32px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
+                  }}
+                >
                   <div
-                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl border shadow-[0_12px_28px_rgba(15,23,42,0.07)] ${theme.icon}`}
-                  >
-                    {item.icon === "spark" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <path d="M12 2l1.7 6.2L20 10l-6.3 1.8L12 18l-1.7-6.2L4 10l6.3-1.8L12 2z" />
-                        <path d="M19 16l.8 2.7 2.2.8-2.2.8L19 23l-.8-2.7-2.2-.8 2.2-.8L19 16z" />
-                      </svg>
-                    )}
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-[3px]"
+                    style={{ background: item.gradient }}
+                  />
 
-                    {item.icon === "video" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <rect x="3" y="5" width="13" height="14" rx="3" />
-                        <path d="M16 10l5-3v10l-5-3z" />
-                        <path d="M7 9h5M7 13h4" />
-                      </svg>
-                    )}
+                  <div
+                    aria-hidden="true"
+                    className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-20"
+                    style={{ background: item.accent }}
+                  />
 
-                    {item.icon === "website" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <rect x="3" y="4" width="18" height="16" rx="3" />
-                        <path d="M3 9h18M8 14h4M15 14h3" />
-                      </svg>
-                    )}
+                  <div className="relative flex items-start justify-between gap-3">
+                    <div
+                      className="relative grid h-13 w-13 shrink-0 place-items-center overflow-hidden rounded-[18px] border border-white/80 text-white transition-transform duration-300 group-hover:scale-105"
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        background: item.gradient,
+                        boxShadow:
+                          `inset 0 1px 0 rgba(255,255,255,0.46), ` +
+                          `inset 0 -8px 15px rgba(15,23,42,0.17), ` +
+                          `0 10px 22px ${item.glow}`,
+                      }}
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="absolute left-1.5 right-1.5 top-1 h-5 rounded-full bg-white/25 blur-[2px]"
+                      />
 
-                    {item.icon === "app" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <rect x="5" y="3" width="14" height="18" rx="3" />
-                        <path d="M9 7h6M9 11h2M13 11h2M9 15h2M13 15h2" />
-                      </svg>
-                    )}
+                      <Icon
+                        className="relative z-10 h-5.5 w-5.5 drop-shadow-[0_3px_3px_rgba(15,23,42,0.27)]"
+                        strokeWidth={2.3}
+                      />
+                    </div>
 
-                    {item.icon === "chat" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.6-4.5A8 8 0 1 1 21 12z" />
-                        <path d="M8 12h.01M12 12h.01M16 12h.01" />
-                      </svg>
-                    )}
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className="rounded-full border border-white/90 bg-white/80 px-2.5 py-1 text-[9px] font-black tracking-[0.14em] shadow-[0_4px_12px_rgba(15,23,42,0.05)]"
+                        style={{ color: item.accent }}
+                      >
+                        {item.number}
+                      </span>
 
-                    {item.icon === "agent" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <rect x="6" y="8" width="12" height="10" rx="3" />
-                        <path d="M12 8V4M9 4h6M9 13h.01M15 13h.01M8 18l-2 3M16 18l2 3" />
-                      </svg>
-                    )}
-
-                    {item.icon === "growth" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <path d="M4 18h16" />
-                        <path d="M6 16l4-4 3 3 5-7" />
-                        <path d="M17 8h1v1" />
-                      </svg>
-                    )}
-
-                    {item.icon === "analytics" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <path d="M4 19V5" />
-                        <path d="M8 17v-6M12 17V8M16 17v-4M20 17V6" />
-                        <path d="M3 19h18" />
-                      </svg>
-                    )}
-
-                    {item.icon === "portfolio" && (
-                      <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current stroke-[2.35]">
-                        <rect x="3" y="7" width="18" height="13" rx="3" />
-                        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                        <path d="M8 13h8" />
-                      </svg>
-                    )}
+                      <span
+                        className="rounded-full border border-white/90 bg-white/70 px-3 py-1 text-[8px] font-black uppercase tracking-[0.13em] shadow-[0_4px_12px_rgba(15,23,42,0.04)] sm:text-[9px]"
+                        style={{ color: item.accent }}
+                      >
+                        {item.category}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-[11px] font-black shadow-sm ${theme.number}`}
-                    >
+                  <div className="relative mt-5">
+                    <h3 className="text-[18px] font-black leading-snug tracking-[-0.035em] text-[#071533] md:text-[19px]">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-2.5 text-sm font-medium leading-6 text-[#5B6B82]">
+                      {item.description}
+                    </p>
+
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {item.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border bg-white/80 px-3 py-1.5 text-[9px] font-black shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                          style={{
+                            color: item.accent,
+                            borderColor: `${item.accent}30`,
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+
+          <div className="relative mt-7 rounded-[24px] border border-white/90 bg-white/72 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.055)] backdrop-blur md:p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-black text-[#071533]">
+                  One connected practical learning system
+                </p>
+
+                <p className="mt-1 text-xs font-semibold leading-5 text-[#64748B] sm:text-sm">
+                  Learn individual skills and combine them into complete
+                  digital workflows.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Create",
+                  "Build",
+                  "Automate",
+                  "Measure",
+                  "Present",
+                ].map((stage, index) => (
+                  <span
+                    key={stage}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE6F5] bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.11em] text-[#475569] shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                  >
+                    <span className="text-[#2563EB]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-
-                    <span
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] ${theme.category}`}
-                    >
-                      {item.category}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="relative flex flex-1 flex-col">
-                  <h3 className="text-[20px] font-black leading-[1.18] tracking-[-0.025em] text-[#071533] md:text-[22px]">
-                    {item.title}
-                  </h3>
-
-                  <p className="mt-2 text-sm leading-6 text-[#52617A] md:text-[15px] md:leading-7">
-                    {item.description}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {item.chips.map((chip) => (
-                      <span
-                        key={chip}
-                        className={`rounded-full border px-3 py-1.5 text-[11px] font-extrabold ${theme.chip}`}
-                      >
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </article>
-            )
-          })}
+                    {stage}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1000,137 +1036,610 @@ const FrameworksSection = () => {
 }
 
 
-
 // ==================== SECTION 9: TOOLS USE-CASE CARDS ====================
 const ToolsUseCaseSection = () => {
-  const useCases = [
-    { icon: MailIcon, title: 'Brand Content Kit', desc: 'Social posts, thumbnails, ad creatives and campaign visuals.' },
-    { icon: ListChecks, title: 'Short-Form Video Pack', desc: 'Reels, shorts, scripts and edited promotional videos.' },
-    { icon: Lightbulb, title: 'Conversion Landing Page', desc: 'A responsive lead-generation or course landing page.' },
-    { icon: FileText, title: 'AI Lead Chatbot', desc: 'A website FAQ bot or WhatsApp lead qualification flow.' },
-    { icon: FileVideo, title: 'Automated Business Workflow', desc: 'A connected form, CRM, email and follow-up automation.' },
-    { icon: Rocket, title: 'Search Visibility Campaign', desc: 'An SEO, AEO and GEO-focused visibility campaign.' },
-    { icon: Presentation, title: 'No-Code Business Dashboard', desc: 'A CRM, reporting dashboard or working MVP prototype.' },
-    { icon: Table, title: 'Growth Analytics Report', desc: 'Performance insights, reporting and optimization recommendations.' },
-    { icon: Globe, title: 'Professional Portfolio Case Study', desc: 'A client-ready project presentation with measurable outcomes.' },
+  const projectOutcomes = [
+    {
+      number: "01",
+      title: "Brand Content Kit",
+      description:
+        "Social posts, thumbnails, ad creatives and campaign-ready brand visuals.",
+      category: "Content",
+      icon: MailIcon,
+      accent: "#2563EB",
+      gradient:
+        "linear-gradient(145deg, #60A5FA 0%, #2563EB 48%, #1D4ED8 100%)",
+      card:
+        "linear-gradient(145deg, rgba(239,246,255,0.88), rgba(255,255,255,0.98))",
+      glow: "rgba(37,99,235,0.24)",
+    },
+    {
+      number: "02",
+      title: "Short-Form Video Pack",
+      description:
+        "Reels, shorts, scripts and polished promotional video assets.",
+      category: "Video",
+      icon: FileVideo,
+      accent: "#7C3AED",
+      gradient:
+        "linear-gradient(145deg, #C4B5FD 0%, #8B5CF6 48%, #6D28D9 100%)",
+      card:
+        "linear-gradient(145deg, rgba(245,243,255,0.92), rgba(255,255,255,0.98))",
+      glow: "rgba(124,58,237,0.23)",
+    },
+    {
+      number: "03",
+      title: "Conversion Landing Page",
+      description:
+        "A responsive lead-generation or course landing page built for action.",
+      category: "Website",
+      icon: Lightbulb,
+      accent: "#D97706",
+      gradient:
+        "linear-gradient(145deg, #FDE68A 0%, #F59E0B 48%, #EA580C 100%)",
+      card:
+        "linear-gradient(145deg, rgba(255,251,235,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(245,158,11,0.23)",
+    },
+    {
+      number: "04",
+      title: "AI Lead Chatbot",
+      description:
+        "A website FAQ assistant or WhatsApp lead-qualification workflow.",
+      category: "AI System",
+      icon: Cpu,
+      accent: "#0891B2",
+      gradient:
+        "linear-gradient(145deg, #67E8F9 0%, #06B6D4 48%, #0891B2 100%)",
+      card:
+        "linear-gradient(145deg, rgba(236,254,255,0.92), rgba(255,255,255,0.98))",
+      glow: "rgba(8,145,178,0.23)",
+    },
+    {
+      number: "05",
+      title: "Automated Business Workflow",
+      description:
+        "A connected form, CRM, email and follow-up automation system.",
+      category: "Automation",
+      icon: Zap,
+      accent: "#EA580C",
+      gradient:
+        "linear-gradient(145deg, #FDBA74 0%, #F97316 48%, #EA580C 100%)",
+      card:
+        "linear-gradient(145deg, rgba(255,247,237,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(249,115,22,0.23)",
+    },
+    {
+      number: "06",
+      title: "Search Visibility Campaign",
+      description:
+        "An SEO, AEO and GEO-focused campaign for stronger search visibility.",
+      category: "Growth",
+      icon: Rocket,
+      accent: "#059669",
+      gradient:
+        "linear-gradient(145deg, #6EE7B7 0%, #10B981 48%, #047857 100%)",
+      card:
+        "linear-gradient(145deg, rgba(236,253,245,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(5,150,105,0.23)",
+    },
+    {
+      number: "07",
+      title: "No-Code Business Dashboard",
+      description:
+        "A CRM, reporting dashboard or working MVP prototype.",
+      category: "No-Code",
+      icon: Presentation,
+      accent: "#4F46E5",
+      gradient:
+        "linear-gradient(145deg, #A5B4FC 0%, #6366F1 48%, #4338CA 100%)",
+      card:
+        "linear-gradient(145deg, rgba(238,242,255,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(79,70,229,0.23)",
+    },
+    {
+      number: "08",
+      title: "Growth Analytics Report",
+      description:
+        "Performance insights, reporting and practical optimization recommendations.",
+      category: "Analytics",
+      icon: BarChart3,
+      accent: "#0284C7",
+      gradient:
+        "linear-gradient(145deg, #7DD3FC 0%, #0EA5E9 48%, #0369A1 100%)",
+      card:
+        "linear-gradient(145deg, rgba(240,249,255,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(2,132,199,0.23)",
+    },
+    {
+      number: "09",
+      title: "Professional Portfolio Case Study",
+      description:
+        "A client-ready presentation with clear process and measurable outcomes.",
+      category: "Portfolio",
+      icon: Briefcase,
+      accent: "#9333EA",
+      gradient:
+        "linear-gradient(145deg, #E879F9 0%, #A855F7 48%, #7E22CE 100%)",
+      card:
+        "linear-gradient(145deg, rgba(250,245,255,0.94), rgba(255,255,255,0.98))",
+      glow: "rgba(147,51,234,0.23)",
+    },
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#F8FAFC] py-12 md:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative mb-8 overflow-hidden rounded-[30px] border border-[#DCE7F6] bg-white/90 px-5 py-7 shadow-[0_20px_55px_rgba(15,23,42,0.07)] backdrop-blur sm:px-7 md:mb-10 md:px-9 md:py-9 lg:px-10">
+    <section className="bg-[#F8FAFC] py-8 md:py-12" id="projects">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div
+          data-home-project-outcomes-premium="v2"
+          className="relative overflow-hidden rounded-[32px] border border-[#DCE7F5] bg-[linear-gradient(135deg,#F8FBFF_0%,#F5F7FF_52%,#F0FDFF_100%)] p-4 shadow-[0_24px_65px_rgba(15,23,42,0.08)] sm:p-6 md:p-8"
+        >
           <div
             aria-hidden="true"
-            className="absolute -left-16 -top-20 h-48 w-48 rounded-full bg-[#2563EB]/10 blur-3xl"
+            className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#2563EB]/10 blur-3xl"
           />
 
           <div
             aria-hidden="true"
-            className="absolute -bottom-24 right-0 h-52 w-52 rounded-full bg-[#06B6D4]/10 blur-3xl"
+            className="absolute -right-24 -top-16 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-3xl"
           />
 
           <div
             aria-hidden="true"
-            className="absolute inset-0 opacity-[0.20] [background-image:linear-gradient(#DBEAFE_1px,transparent_1px),linear-gradient(90deg,#DBEAFE_1px,transparent_1px)] [background-size:32px_32px]"
+            className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[#06B6D4]/10 blur-3xl"
           />
 
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.28]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(37,99,235,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.10) 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+              maskImage:
+                "linear-gradient(to bottom, black, transparent 48%)",
+            }}
+          />
+
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#D7E5FA] bg-white/95 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#2563EB] shadow-[0_8px_22px_rgba(37,99,235,0.08)] sm:text-[11px]">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-3 w-3 fill-none stroke-current stroke-[2.5]"
-                  >
-                    <path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z" />
-                  </svg>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E4FF] bg-white/85 px-4 py-2 shadow-[0_8px_22px_rgba(37,99,235,0.08)] backdrop-blur">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(145deg,#60A5FA,#7C3AED)] text-white shadow-[0_5px_12px_rgba(99,102,241,0.28)]">
+                  <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </span>
-                Project Outcomes
+
+                <span className="text-[11px] font-black uppercase tracking-[0.17em] text-[#4F46E5] md:text-xs">
+                  Project Outcomes
+                </span>
               </div>
 
-              <h2 className="text-[34px] font-black leading-[1.03] tracking-[-0.05em] text-[#071533] sm:text-[40px] md:text-[48px] lg:text-[52px]">
-                Projects You’ll
-                <span className="ml-2 bg-gradient-to-r from-[#7C3AED] via-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent">
+              <h2 className="mt-4 text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-4xl md:text-[48px] lg:text-[54px]">
+                Projects You&apos;ll{" "}
+                <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
                   Finish
                 </span>
               </h2>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#52617A] sm:text-base md:leading-7">
+              <p className="mt-4 max-w-3xl text-sm font-medium leading-6 text-[#52637A] sm:text-base sm:leading-7 md:text-[17px]">
                 Complete practical, portfolio-ready projects across content,
                 video, websites, automation, growth and analytics.
               </p>
             </div>
 
-            <div className="flex w-fit items-center gap-3 rounded-2xl border border-[#DCE7F6] bg-white/95 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#7C3AED] via-[#2563EB] to-[#06B6D4] text-lg font-black text-white shadow-[0_10px_24px_rgba(37,99,235,0.22)]">
-                9
+            <div className="flex w-full items-center gap-3 rounded-[22px] border border-white/90 bg-white/80 p-3 shadow-[0_14px_35px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:min-w-[235px]">
+              <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[18px] bg-[linear-gradient(145deg,#7C3AED_0%,#2563EB_55%,#06B6D4_100%)] text-xl font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-8px_14px_rgba(15,23,42,0.18),0_10px_24px_rgba(37,99,235,0.28)]">
+                <div
+                  aria-hidden="true"
+                  className="absolute left-2 right-2 top-1.5 h-5 rounded-full bg-white/25 blur-[2px]"
+                />
+                <span className="relative z-10">9</span>
               </div>
 
               <div>
-                <p className="text-sm font-black leading-tight text-[#071533]">
+                <p className="text-sm font-black text-[#071533]">
                   Practical Builds
                 </p>
-                <p className="mt-0.5 text-xs text-[#64748B]">
+                <p className="mt-0.5 text-xs font-semibold text-[#64748B]">
                   Portfolio-ready outcomes
                 </p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {useCases.map((u) => (
-            <div key={u.title} className="bg-white rounded-xl p-5 border border-[#0F172A]/10 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-[#F5B301]/10 rounded-lg flex items-center justify-center mb-3">
-                <u.icon className="w-6 h-6 text-[#F5B301]" />
-              </div>
-              <h3 className="text-[#0F172A] font-bold mb-1">{u.title}</h3>
-              <p className="text-[#475569] text-sm">{u.desc}</p>
-            </div>
-          ))}
+          <div className="relative mt-7 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {projectOutcomes.map((item) => {
+              const Icon = item.icon
+
+              return (
+                <article
+                  key={item.number}
+                  className="group relative min-h-[190px] overflow-hidden rounded-[24px] border border-white/95 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.055)] transition-all duration-300 hover:-translate-y-1 hover:border-[#CCD9F1] hover:shadow-[0_20px_44px_rgba(37,99,235,0.12)] md:p-5"
+                  style={{
+                    background: item.card,
+                    boxShadow:
+                      "0 12px 30px rgba(15,23,42,0.055), inset 0 1px 0 rgba(255,255,255,0.9)",
+                  }}
+                >
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-[3px]"
+                    style={{ background: item.gradient }}
+                  />
+
+                  <div
+                    aria-hidden="true"
+                    className="absolute -bottom-10 -right-10 h-28 w-28 rounded-full opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-20"
+                    style={{ background: item.accent }}
+                  />
+
+                  <div className="relative flex items-start justify-between gap-3">
+                    <div
+                      className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[16px] border border-white/80 text-white transition-transform duration-300 group-hover:scale-105"
+                      style={{
+                        background: item.gradient,
+                        boxShadow:
+                          `inset 0 1px 0 rgba(255,255,255,0.45), ` +
+                          `inset 0 -7px 13px rgba(15,23,42,0.17), ` +
+                          `0 9px 20px ${item.glow}`,
+                      }}
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="absolute left-1.5 right-1.5 top-1 h-4 rounded-full bg-white/25 blur-[2px]"
+                      />
+
+                      <Icon
+                        className="relative z-10 h-5.5 w-5.5 drop-shadow-[0_3px_3px_rgba(15,23,42,0.25)]"
+                        strokeWidth={2.25}
+                      />
+                    </div>
+
+                    <span
+                      className="rounded-full border border-white/90 bg-white/75 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.13em] shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                      style={{ color: item.accent }}
+                    >
+                      {item.category}
+                    </span>
+                  </div>
+
+                  <div className="relative mt-5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[10px] font-black tracking-[0.18em]"
+                        style={{ color: item.accent }}
+                      >
+                        PROJECT {item.number}
+                      </span>
+
+                      <span
+                        className="h-px flex-1 opacity-20"
+                        style={{ background: item.accent }}
+                      />
+                    </div>
+
+                    <h3 className="mt-2 text-[17px] font-black leading-snug tracking-[-0.025em] text-[#071533] md:text-lg">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-2 text-sm font-medium leading-6 text-[#5B6B82]">
+                      {item.description}
+                    </p>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+
+          <div className="relative mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-[#64748B]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#2563EB]" />
+              Practical execution
+            </span>
+
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#7C3AED]" />
+              Guided reviews
+            </span>
+
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#06B6D4]" />
+              Portfolio-ready output
+            </span>
+          </div>
         </div>
       </div>
     </section>
   )
 }
 
-// ==================== SECTION 10: TOOLS LOGOS GRID ====================
-const ToolsLogosSection = () => (
-  <section className="py-16 md:py-20 bg-white">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mb-10 md:mb-12">
-        <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">
-          TOOLS ECOSYSTEM
-        </p>
-        <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
-          25+ AI Tools You Will Master
-        </h2>
-        <p className="mt-4 max-w-3xl text-base md:text-lg leading-8 text-[#475569]">
-          Modern creators combine these tools into practical workflows. You’ll learn how to use them together for design, video, content, automation and digital execution.
-        </p>
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-        {aiTools.map((tool) => (
+// ==================== SECTION 10: TOOLS LOGOS GRID ====================
+const ToolsLogosSection = () => {
+  const toolVisuals = {
+    ChatGPT: {
+      icon: Cpu,
+      gradient: "linear-gradient(145deg, #10B981 0%, #059669 45%, #0D9488 100%)",
+      glow: "rgba(16,185,129,0.28)",
+      accent: "#059669",
+    },
+    Claude: {
+      icon: Sparkles,
+      gradient: "linear-gradient(145deg, #FDBA74 0%, #F97316 48%, #EA580C 100%)",
+      glow: "rgba(249,115,22,0.26)",
+      accent: "#EA580C",
+    },
+    Gemini: {
+      icon: Sparkles,
+      gradient: "linear-gradient(145deg, #60A5FA 0%, #6366F1 50%, #8B5CF6 100%)",
+      glow: "rgba(99,102,241,0.28)",
+      accent: "#4F46E5",
+    },
+    DeepSeek: {
+      icon: Globe,
+      gradient: "linear-gradient(145deg, #38BDF8 0%, #2563EB 52%, #1D4ED8 100%)",
+      glow: "rgba(37,99,235,0.28)",
+      accent: "#2563EB",
+    },
+    Perplexity: {
+      icon: Globe,
+      gradient: "linear-gradient(145deg, #22D3EE 0%, #0891B2 50%, #0F766E 100%)",
+      glow: "rgba(8,145,178,0.26)",
+      accent: "#0891B2",
+    },
+    Midjourney: {
+      icon: PenTool,
+      gradient: "linear-gradient(145deg, #C084FC 0%, #8B5CF6 48%, #6366F1 100%)",
+      glow: "rgba(139,92,246,0.27)",
+      accent: "#7C3AED",
+    },
+    Ideogram: {
+      icon: Lightbulb,
+      gradient: "linear-gradient(145deg, #FDE68A 0%, #F59E0B 48%, #EA580C 100%)",
+      glow: "rgba(245,158,11,0.27)",
+      accent: "#D97706",
+    },
+    Runway: {
+      icon: FileVideo,
+      gradient: "linear-gradient(145deg, #A78BFA 0%, #7C3AED 48%, #4F46E5 100%)",
+      glow: "rgba(124,58,237,0.28)",
+      accent: "#7C3AED",
+    },
+    Pika: {
+      icon: Sparkles,
+      gradient: "linear-gradient(145deg, #FDA4AF 0%, #EC4899 50%, #DB2777 100%)",
+      glow: "rgba(236,72,153,0.27)",
+      accent: "#DB2777",
+    },
+    Veo: {
+      icon: Play,
+      gradient: "linear-gradient(145deg, #67E8F9 0%, #0EA5E9 50%, #2563EB 100%)",
+      glow: "rgba(14,165,233,0.27)",
+      accent: "#0284C7",
+    },
+    "Luma AI": {
+      icon: Layers,
+      gradient: "linear-gradient(145deg, #818CF8 0%, #6366F1 48%, #7C3AED 100%)",
+      glow: "rgba(99,102,241,0.27)",
+      accent: "#4F46E5",
+    },
+    ElevenLabs: {
+      icon: BarChart3,
+      gradient: "linear-gradient(145deg, #C4B5FD 0%, #8B5CF6 48%, #6D28D9 100%)",
+      glow: "rgba(139,92,246,0.27)",
+      accent: "#7C3AED",
+    },
+    HeyGen: {
+      icon: User,
+      gradient: "linear-gradient(145deg, #22D3EE 0%, #6366F1 52%, #A855F7 100%)",
+      glow: "rgba(99,102,241,0.27)",
+      accent: "#6366F1",
+    },
+    Descript: {
+      icon: FileText,
+      gradient: "linear-gradient(145deg, #93C5FD 0%, #3B82F6 50%, #2563EB 100%)",
+      glow: "rgba(59,130,246,0.27)",
+      accent: "#2563EB",
+    },
+    "Notion AI": {
+      icon: FileText,
+      gradient: "linear-gradient(145deg, #64748B 0%, #1E293B 50%, #020617 100%)",
+      glow: "rgba(15,23,42,0.24)",
+      accent: "#0F172A",
+    },
+    Zapier: {
+      icon: Zap,
+      gradient: "linear-gradient(145deg, #FDBA74 0%, #F97316 48%, #EA580C 100%)",
+      glow: "rgba(249,115,22,0.27)",
+      accent: "#EA580C",
+    },
+    Make: {
+      icon: Layers,
+      gradient: "linear-gradient(145deg, #D8B4FE 0%, #9333EA 50%, #6D28D9 100%)",
+      glow: "rgba(147,51,234,0.27)",
+      accent: "#7E22CE",
+    },
+    n8n: {
+      icon: Rocket,
+      gradient: "linear-gradient(145deg, #FDA4AF 0%, #F43F5E 48%, #E11D48 100%)",
+      glow: "rgba(244,63,94,0.26)",
+      accent: "#E11D48",
+    },
+    "Webflow AI": {
+      icon: Globe,
+      gradient: "linear-gradient(145deg, #60A5FA 0%, #2563EB 48%, #1D4ED8 100%)",
+      glow: "rgba(37,99,235,0.27)",
+      accent: "#2563EB",
+    },
+    "Gamma AI": {
+      icon: Presentation,
+      gradient: "linear-gradient(145deg, #F0ABFC 0%, #A855F7 48%, #6366F1 100%)",
+      glow: "rgba(168,85,247,0.27)",
+      accent: "#9333EA",
+    },
+  }
+
+  return (
+    <section className="bg-white py-8 md:py-12" id="tools">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div
+          data-home-tools-premium="v1"
+          className="relative overflow-hidden rounded-[32px] border border-[#DCE6F5] bg-[linear-gradient(135deg,#F8FBFF_0%,#F5F3FF_48%,#F0FDFF_100%)] px-4 py-8 shadow-[0_24px_65px_rgba(15,23,42,0.09)] sm:px-6 md:px-8 md:py-10 lg:px-10"
+        >
           <div
-            key={tool.name}
-            className="flex h-[68px] items-center gap-3 rounded-2xl border border-[#0F172A]/10 bg-[#F8FAFC] px-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all hover:border-[#2563EB]/25 hover:bg-white"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[19px] leading-none shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
-              {tool.icon}
-            </span>
-            <div className="min-w-0">
-              <div className="truncate text-[#0F172A] font-semibold text-[16px] md:text-[17px] leading-none">
-                {tool.name}
-              </div>
+            aria-hidden="true"
+            className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#2563EB]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#A855F7]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-[#06B6D4]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.32]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(37,99,235,0.14) 1px, transparent 0)",
+              backgroundSize: "28px 28px",
+              maskImage:
+                "linear-gradient(to bottom, black, transparent 45%)",
+            }}
+          />
+
+          <div className="relative mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E5FF] bg-white/85 px-4 py-2 shadow-[0_8px_24px_rgba(37,99,235,0.08)] backdrop-blur">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(145deg,#60A5FA,#7C3AED)] text-white shadow-[0_5px_12px_rgba(99,102,241,0.28)]">
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+
+              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#4F46E5] md:text-xs">
+                Tools Ecosystem
+              </span>
+            </div>
+
+            <h2 className="mt-4 text-[34px] font-black leading-[1.02] tracking-[-0.055em] text-[#071533] sm:text-4xl md:text-[48px] lg:text-[56px]">
+              <span className="bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
+                25+
+              </span>{" "}
+              AI Tools You Will Master
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-3xl text-sm font-medium leading-6 text-[#52637A] sm:text-base sm:leading-7 md:text-[17px]">
+              Modern creators combine these tools into practical workflows.
+              You&apos;ll learn how to use them together for design, video,
+              content, automation and digital execution.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              {["Design", "Video", "Content", "Automation"].map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full border border-white/90 bg-white/75 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#64748B] shadow-[0_5px_14px_rgba(15,23,42,0.05)] backdrop-blur"
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  </section>
 
-  );
+          <div className="relative mt-7 grid grid-cols-2 gap-2.5 md:grid-cols-3 md:gap-3 lg:grid-cols-4">
+            {aiTools.map((tool) => {
+              const visual =
+                toolVisuals[tool.name as keyof typeof toolVisuals] ??
+                toolVisuals.ChatGPT
+
+              const Icon = visual.icon
+
+              return (
+                <div
+                  key={tool.name}
+                  className="group relative flex min-h-[78px] items-center gap-3 overflow-hidden rounded-[20px] border border-white/90 bg-white/75 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.055)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-[#C7D7F5] hover:bg-white hover:shadow-[0_18px_40px_rgba(37,99,235,0.13)] md:min-h-[84px] md:p-3.5"
+                  style={{
+                    boxShadow:
+                      "0 10px 26px rgba(15,23,42,0.055), inset 0 1px 0 rgba(255,255,255,0.85)",
+                  }}
+                >
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-[2px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{
+                      background:
+                        `linear-gradient(90deg, transparent, ${visual.accent}, transparent)`,
+                    }}
+                  />
+
+                  <div
+                    className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[15px] border border-white/80 text-white transition-transform duration-300 group-hover:scale-105 md:h-12 md:w-12"
+                    style={{
+                      background: visual.gradient,
+                      boxShadow:
+                        `inset 0 1px 0 rgba(255,255,255,0.45), ` +
+                        `inset 0 -7px 14px rgba(15,23,42,0.16), ` +
+                        `0 8px 20px ${visual.glow}`,
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-1.5 right-1.5 top-1 h-4 rounded-full bg-white/25 blur-[2px]"
+                    />
+
+                    <Icon
+                      className="relative z-10 h-5 w-5 drop-shadow-[0_3px_3px_rgba(15,23,42,0.28)] md:h-5.5 md:w-5.5"
+                      strokeWidth={2.35}
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-black leading-tight tracking-[-0.02em] text-[#071533] sm:text-[15px] md:text-base">
+                      {tool.name}
+                    </p>
+
+                    <p
+                      className="mt-1 hidden truncate text-[9px] font-black uppercase tracking-[0.13em] sm:block"
+                      style={{ color: visual.accent }}
+                    >
+                      {tool.category}
+                    </p>
+                  </div>
+
+                  <div
+                    aria-hidden="true"
+                    className="absolute -bottom-8 -right-8 h-20 w-20 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20"
+                    style={{ background: visual.accent }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="relative mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-[#64748B]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#2563EB]" />
+              Practical workflows
+            </span>
+
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#7C3AED]" />
+              Guided execution
+            </span>
+
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#06B6D4]" />
+              Portfolio-ready output
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 
 // ==================== SECTION 11: VIDEO TESTIMONIALS ====================
   const VideoTestimonialsSection = () => {
@@ -1228,7 +1737,7 @@ const ToolsLogosSection = () => (
 
     return (
       <section className="py-20 bg-[#F8FAFC]" id="reviews">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
           <div className="text-center mb-12">
             <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">VIDEO TESTIMONIALS</p>
             <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Success Stories From Real Learners</h2>
@@ -1335,7 +1844,7 @@ const TextReviewsSection = () => {
 
   return (
     <section className="py-20 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="text-center mb-12">
           <p className="text-[#2563EB] font-medium uppercase tracking-wider text-sm mb-2">LEARNER FEEDBACK</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">What Our Learners Say</h2>
@@ -1410,7 +1919,7 @@ const WhoIsThisForSection = () => {
 
   return (
     <section className="py-20 bg-[#F8FAFC]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Who Is This Program For?</h2>
           <p className="text-[#475569] mt-2 max-w-2xl mx-auto">
@@ -1434,7 +1943,7 @@ const WhoIsThisForSection = () => {
 // ========14: MENTOR SECTION ====================
 const MentorSection = () => (
   <section className="py-20 bg-white">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Meet Your Mentor</h2>
       </div>
@@ -1617,7 +2126,7 @@ const FAQSection = () => {
 
   return (
     <section className="py-10 md:py-12 bg-[#F8FAFC]" id="faq">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="mb-10 md:mb-12">
           <div className="inline-flex items-center rounded-full border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2 text-sm font-medium text-[#2563EB]">
             FAQs
@@ -1678,47 +2187,214 @@ const FAQSection = () => {
 
 // ==================== SECTION 16: FINAL CTA ====================
 const FinalCTASection = () => (
-  <section className="py-20 bg-[#2563EB]" id="register">
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
-        <span className="text-text font-medium">Limited Seats Available</span>
+  <section className="bg-[#F8FAFC] py-8 md:py-12" id="register">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        data-home-final-cta-premium="v5"
+        className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,#071533_0%,#0B1F4A_50%,#0C4A6E_100%)] px-5 py-8 shadow-[0_26px_70px_rgba(15,23,42,0.20)] sm:px-7 md:px-10 md:py-10 lg:px-12"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute -left-24 -top-28 h-80 w-80 rounded-full bg-[#2563EB]/30 blur-3xl"
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#06B6D4]/20 blur-3xl"
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute bottom-[-140px] left-[38%] h-72 w-72 rounded-full bg-[#7C3AED]/20 blur-3xl"
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.20]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage:
+              "linear-gradient(to bottom, black, transparent 78%)",
+          }}
+        />
+
+        <div className="relative grid gap-7 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(145deg,#60A5FA,#7C3AED)] text-white shadow-[0_5px_12px_rgba(99,102,241,0.35)]">
+                  <Sparkles
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.5}
+                  />
+                </span>
+
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white/85 sm:text-[11px]">
+                  Admission Guidance
+                </span>
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200 backdrop-blur sm:text-[11px]">
+                <Lock className="h-3.5 w-3.5" strokeWidth={2.4} />
+                Direct Support
+              </div>
+            </div>
+
+            <h2 className="mt-5 max-w-3xl text-[36px] font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-4xl md:text-[50px] lg:text-[56px]">
+              Get your personalised
+              <span className="mt-1 block bg-gradient-to-r from-[#F5B301] via-[#FBBF24] to-[#67E8F9] bg-clip-text text-transparent">
+                AI learning roadmap
+              </span>
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/70 sm:text-base sm:leading-7 md:text-[17px]">
+              WhatsApp par apni details share karein. Team aapko active
+              batch, course fee, class timing aur practical learning
+              roadmap ki complete information degi.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {[
+                "Batch Details",
+                "Fee Guidance",
+                "Class Timing",
+                "Course Roadmap",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[10px] font-bold text-white/75 backdrop-blur"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#F5B301]" />
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative w-full overflow-hidden rounded-[28px] border border-white/15 bg-white/[0.09] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_20px_45px_rgba(2,6,23,0.18)] backdrop-blur-xl sm:p-5 lg:max-w-[500px] lg:justify-self-end">
+            <div
+              aria-hidden="true"
+              className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#F5B301]/15 blur-2xl"
+            />
+
+            <div className="relative">
+              <div className="flex items-center gap-3">
+                <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[18px] border border-white/20 bg-[linear-gradient(145deg,#60A5FA_0%,#2563EB_52%,#1E3A8A_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-8px_15px_rgba(15,23,42,0.22),0_10px_24px_rgba(37,99,235,0.38)]">
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-2 right-2 top-1.5 h-5 rounded-full bg-white/25 blur-[2px]"
+                  />
+
+                  <Users
+                    className="relative z-10 h-6 w-6"
+                    strokeWidth={2.3}
+                  />
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/50">
+                    Free Guidance
+                  </p>
+
+                  <p className="mt-1 text-lg font-black text-white">
+                    Talk to our team
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <a
+                  href={CONFIG.contact.whatsapp}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Get course details on WhatsApp"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#F5B301_0%,#FBBF24_100%)] px-4 py-4 text-center text-sm font-black leading-5 text-[#071533] shadow-[0_13px_30px_rgba(245,179,1,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(245,179,1,0.38)] sm:px-5 sm:text-base"
+                >
+                  <span className="whitespace-normal">
+                    Get course details on WhatsApp
+                  </span>
+
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
+                </a>
+
+                <a
+                  href="/gen-ai-masterclass/register-one-step"
+                  aria-label="Open complete registration form"
+                  className="group grid w-full grid-cols-[40px_minmax(0,1fr)_18px] items-center gap-3 rounded-[18px] border border-white/15 bg-white/[0.08] p-3.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.12]"
+                >
+                  <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-[13px] border border-white/15 bg-[linear-gradient(145deg,#A78BFA_0%,#6366F1_52%,#2563EB_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.40),inset_0_-6px_12px_rgba(15,23,42,0.20),0_8px_18px_rgba(99,102,241,0.30)]">
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1.5 right-1.5 top-1 h-3 rounded-full bg-white/20 blur-[1px]"
+                    />
+
+                    <ListChecks
+                      className="relative z-10 h-5 w-5 text-white"
+                      strokeWidth={2.3}
+                      aria-hidden="true"
+                    />
+                  </span>
+
+                  <span className="min-w-0 text-left">
+                    <span className="block text-[9px] font-black uppercase tracking-[0.13em] text-white/50">
+                      Registration form
+                    </span>
+
+                    <span className="mt-0.5 block whitespace-normal break-words text-[13px] font-black leading-[1.25] text-white sm:text-sm">
+                      Complete your registration
+                    </span>
+                  </span>
+
+                  <ArrowRight className="h-4 w-4 shrink-0 text-white/60 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-white" />
+                </a>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/40">
+                    Support
+                  </p>
+
+                  <p className="mt-1 text-xs font-semibold text-white/75">
+                    support@sikhadenge.in
+                  </p>
+                </div>
+
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  </span>
+
+                  <span className="text-[10px] font-black text-emerald-200">
+                    Admission support
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative mt-7 flex flex-col gap-3 border-t border-white/10 pt-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Sikhadenge · ThinkGrow Pvt. Ltd.
+          </p>
+
+          <p>
+            Practical AI learning · Guided execution
+          </p>
+        </div>
       </div>
-
-      <h2 className="text-3xl md:text-5xl font-bold text-text mb-4">
-        Free Counselling + Roadmap
-      </h2>
-      <p className="text-text/80 text-lg mb-8">
-        WhatsApp पर details भेजो — team आपको batch, fee, timing और roadmap share करेगी.
-      </p>
-
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href={CONFIG.contact.whatsapp}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#d69e01] text-text font-bold text-lg px-8 py-4 rounded-full transition-all"
- >
-          Get course details
-          <ArrowRight className="w-5 h-5" />
-        </a>
-        <a
-          href="tel:+918808505575"
-          className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/20 text-text font-semibold px-8 py-4 rounded-full border border-white/20 transition-all"
- >
-          Call Now
-        </a>
-      </div>
-
-      <p className="text-text/60 text-sm mt-6">
-        {CONFIG.company.name} • {CONFIG.company.parent}
-      </p>
     </div>
   </section>
 )
 
+
 export default function LandingPage() {
   return (
-    <div className="bg-[#F8FAFC]">
+    <div className="bg-[#F8FAFC] home-typography-bricolage-v1">
         <HeroSection />
       <LearnersSection />
       <RealPractitionersBanner />

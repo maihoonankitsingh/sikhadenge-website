@@ -327,3 +327,16 @@ html, body { overflow-x: hidden; }
     height: 54px;
   }
 }
+
+/* SIKHADENGE_HOME_BRICOLAGE_TYPOGRAPHY_V1_START */
+
+/*
+ * Homepage heading typography only.
+ * Existing colors, sizes, weights and spacing remain unchanged.
+ */
+.home-typography-bricolage-v1 :is(h1, h2, h3, h4, h5, h6),
+.home-typography-bricolage-v1 :is(h1, h2) + p {
+  font-family: var(--font-bricolage), sans-serif;
+}
+
+/* SIKHADENGE_HOME_BRICOLAGE_TYPOGRAPHY_V1_END */
