@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { trackGoogleEvent } from "@/lib/analytics";
 
 declare global {
   interface Window {
@@ -295,6 +296,12 @@ export default function ClarityEvents() {
 
       if (/wa\.me|whatsapp|api\.whatsapp\.com/.test(combined)) {
         sendEvent("whatsapp_click");
+
+        trackGoogleEvent("whatsapp_click", {
+          event_category: "lead_intent",
+          event_label: "whatsapp",
+          page_path: window.location.pathname,
+        });
         setTag("lead_intent", "whatsapp");
         setTag("last_click_type", "whatsapp");
         bumpLeadScore(40, "whatsapp_click");
@@ -303,6 +310,12 @@ export default function ClarityEvents() {
 
       if (href.startsWith("tel:")) {
         sendEvent("phone_click");
+
+        trackGoogleEvent("phone_click", {
+          event_category: "lead_intent",
+          event_label: "phone",
+          page_path: window.location.pathname,
+        });
         setTag("lead_intent", "phone");
         setTag("last_click_type", "phone");
         bumpLeadScore(40, "phone_click");
