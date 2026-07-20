@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { trackLead } from '@/lib/metaPixel'
+import { trackLead, trackMetaEvent } from '@/lib/metaPixel'
 import { trackEvent } from '@/lib/analytics'
 import { readStoredConsentState } from '@/lib/consent'
 
@@ -179,6 +179,10 @@ export default function RegisterOneStepPage() {
       }
 
       trackLead({ content_name: 'Gen AI Masterclass Registration', status: 'completed' })
+      trackMetaEvent('CompleteRegistration', {
+        content_name: 'Gen AI Masterclass Registration',
+        status: 'completed',
+      })
       trackEvent({
         action: 'generate_lead',
         category: 'lead',
