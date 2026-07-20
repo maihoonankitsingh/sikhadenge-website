@@ -12,6 +12,7 @@ const SD_GLOW_LINE = "pointer-events-none absolute left-0 top-0 h-[2px] w-full b
 // pages/contact.tsx
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { trackMetaEvent } from "@/lib/metaPixel";
+import { trackEvent } from "@/lib/analytics";
 
 type FormState = {
   name: string;
@@ -277,8 +278,25 @@ export default function ContactPage() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Request failed");
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Request failed");
+      }
+
+      if (data?.created === true) {
+        trackMetaEvent("Lead", {
+          content_name: "Contact Us Form",
+          content_category: "contact",
+          status: "submitted",
+        });
+
+        trackEvent({
+          action: "generate_lead",
+          category: "lead",
+          label: "contact-us-form",
+          page_path: "/contact-us",
+        });
       }
 
       setStatus({ ok: true, msg: "Submitted. Our team will respond within 24 hours." });

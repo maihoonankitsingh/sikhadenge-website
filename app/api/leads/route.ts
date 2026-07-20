@@ -29,7 +29,7 @@ if (!phone) {
       where: { phone, createdAt: { gte: since } },
       orderBy: { createdAt: "desc" },
     });
-    if (existing) return NextResponse.json({ ok: true, lead: existing });
+    if (existing) return NextResponse.json({ ok: true, lead: existing, created: false });
 
     const ua = req.headers.get("user-agent") || null;
     const ip =
@@ -101,7 +101,7 @@ if (!phone) {
         }),
     }).catch((e) => console.error("NEODOVE_PUSH_FAIL", e));
 
-    return NextResponse.json({ ok: true, lead });
+    return NextResponse.json({ ok: true, lead, created: true });
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: String(e?.message || "Server error") },
