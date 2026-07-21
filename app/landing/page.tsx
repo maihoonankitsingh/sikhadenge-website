@@ -13,13 +13,13 @@ import {
 // ==================== CONFIG DATA (EASY TO EDIT) ====================
 const CONFIG = {
   hero: {
-    headline: "Become an AI Expert",
+    headline: "Become an AI Expert with Practical AI Skills",
     subheadline:
-      "Join 150,000+ learners who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
+      "Join 150,000+ students who are building practical AI skills, working faster, automating repetitive tasks, and future-proofing their careers.",
     duration: "8 WEEKS",
     batchDate: "NEXT BATCH SOON",
     timing: "3 HRS/DAY",
-    learnerCount: "5000+",
+    learnerCount: "150,000+",
   },
   contact: {
     phone: "+91 8808505575",
@@ -277,7 +277,7 @@ const LearnersSection = () => {
     {
       value: "150,000+",
       label: "Students",
-      note: "Practical AI learners",
+      note: "Practical AI students",
       icon: Users,
       iconWrap: "bg-[#EAF2FF]",
       iconColor: "text-[#2563EB]",
@@ -569,7 +569,7 @@ const QuoteTestimonial = () => {
             </p>
 
             <div className="mt-5 grid grid-cols-3 gap-2">
-              {["4.9/5", "150K+", "Practical"].map((item, i) => (
+              {["4.9/5", "150,000+", "Practical"].map((item, i) => (
                 <div key={item} className="rounded-2xl border border-[#E2EAF6] bg-white p-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                   <p className="text-base font-black text-[#071533]">{item}</p>
                   <p className="mt-1 text-[11px] font-bold text-[#64748B]">
@@ -2204,7 +2204,7 @@ const MentorSection = () => (
                 <p className="text-[#475569] text-xs">Instagram</p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
-                <p className="text-2xl font-bold text-[#2563EB]">35000+</p>
+                <p className="text-2xl font-bold text-[#2563EB]">150,000+</p>
                 <p className="text-[#475569] text-xs">Students</p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
