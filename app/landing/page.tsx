@@ -2208,7 +2208,7 @@ const MentorSection = () => (
                 <p className="text-[#475569] text-xs">Students</p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-[#0F172A]/10">
-                <p className="text-2xl font-bold text-[#F5B301]">4.8★</p>
+                <p className="text-2xl font-bold text-[#F5B301]">4.9★</p>
                 <p className="text-[#475569] text-xs">Rating</p>
               </div>
             </div>

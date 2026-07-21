@@ -706,42 +706,43 @@ export default function ContactPage() {
       <section
         aria-labelledby="contact-faq-heading"
         data-contact-faq-style="home-light"
-        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-16 sm:px-6 md:py-20 lg:px-8"
+        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-10 sm:px-6 md:py-12 lg:px-8"
       >
         {/* CONTACT_HOME_STYLE_FAQ_V1 */}
+        {/* CONTACT_FAQ_COMPACT_LAYOUT_V2 */}
         <div className="mx-auto max-w-7xl">
           <div className="max-w-4xl">
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-bold text-blue-700">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-700">
               FAQs
             </span>
 
             <h2
               id="contact-faq-heading"
-              className="mt-6 text-4xl font-black tracking-[-0.035em] text-slate-950 sm:text-5xl"
+              className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl"
             >
               Frequently asked questions
             </h2>
 
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               Find clear answers about contacting Sikhadenge, course counselling, learner support, partnerships, and the form-to-WhatsApp workflow.
             </p>
           </div>
 
-          <div className="mt-12 space-y-4">
+          <div className="mt-8 space-y-3">
             {FAQS.map((faq) => (
               <details
                 key={faq.question}
-                className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
+                className="group overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_4px_14px_rgba(15,23,42,0.03)] transition open:border-blue-200 open:shadow-[0_8px_22px_rgba(37,99,235,0.07)]"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-6 text-left text-base font-extrabold text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold leading-6 text-slate-900 outline-none sm:px-6 sm:py-5 sm:text-base [&::-webkit-details-marker]:hidden">
                   <span>{faq.question}</span>
 
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
                     <svg
                       aria-hidden="true"
                       viewBox="0 0 24 24"
                       fill="none"
-                      className="h-5 w-5"
+                      className="h-4 w-4"
                     >
                       <path
                         d="m7 10 5 5 5-5"
@@ -754,7 +755,7 @@ export default function ContactPage() {
                   </span>
                 </summary>
 
-                <div className="border-t border-slate-100 px-6 pb-7 pt-5 text-sm leading-7 text-slate-600 sm:px-8 sm:text-base sm:leading-8">
+                <div className="border-t border-slate-100 px-5 pb-5 pt-4 text-sm leading-6 text-slate-600 sm:px-6 sm:pb-6 sm:text-[15px] sm:leading-7">
                   {faq.answer}
                 </div>
               </details>
