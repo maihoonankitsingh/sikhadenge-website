@@ -16,6 +16,12 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // SIKHADENGE_LANDING_TO_ROOT_PERMANENT_REDIRECT_V1
+      {
+        source: "/landing",
+        destination: "/",
+        permanent: true,
+      },
       { source: "/blogs", destination: "/blog", permanent: true },
       { source: "/blogs/:path*", destination: "/blog/:path*", permanent: true },
       { source: "/blog/index", destination: "/blog", permanent: true },
