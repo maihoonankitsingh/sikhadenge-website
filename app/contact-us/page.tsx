@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Client from "./ContactUsClient";
+import { CONTACT_FAQS } from "./contactFaqs";
 import { absoluteUrl, siteConfig } from "@/lib/seo";
 
 const pageUrl = `${siteConfig.url}/contact-us`;
@@ -62,28 +63,7 @@ export const metadata: Metadata = {
   },
 };
 
-const contactFaqs = [
-  {
-    question: "How can I contact Sikhadenge?",
-    answer:
-      "Submit the official contact form on this page to save your enquiry and continue automatically on WhatsApp. You can also call +91 8808505575 or email support@sikhadenge.in.",
-  },
-  {
-    question: "What can I ask the Sikhadenge team?",
-    answer:
-      "You can ask about admissions, course details, learner support, corporate training, partnerships, billing, careers, or another Sikhadenge-related query.",
-  },
-  {
-    question: "How will Sikhadenge respond to my query?",
-    answer:
-      "After a successful form submission, WhatsApp opens with your enquiry details pre-filled. The Sikhadenge team can then continue the conversation through WhatsApp, phone, or email.",
-  },
-  {
-    question: "Is this the official Sikhadenge contact page?",
-    answer:
-      "Yes. This page is hosted on sikhadenge.in and provides the official support details for Sikhadenge, a ThinkGrow Pvt. Ltd. initiative.",
-  },
-];
+const contactFaqs = CONTACT_FAQS;
 
 const contactPageSchema = {
   "@context": "https://schema.org",

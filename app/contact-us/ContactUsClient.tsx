@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { trackMetaEvent } from "@/lib/metaPixel";
 
 import { trackEvent } from "@/lib/analytics";
+import { CONTACT_FAQS } from "./contactFaqs";
 type FormState = {
   name: string;
   email: string;
@@ -54,28 +55,7 @@ const CATEGORIES = [
   "Other",
 ];
 
-const FAQS = [
-  {
-    question: "How can I contact Sikhadenge?",
-    answer:
-      "Submit the official contact form on this page to save your enquiry and continue automatically on WhatsApp. You can also call +91 8808505575 or email support@sikhadenge.in.",
-  },
-  {
-    question: "What can I ask the Sikhadenge team?",
-    answer:
-      "You can ask about admissions, course details, learner support, corporate training, partnerships, billing, careers, or another Sikhadenge-related query.",
-  },
-  {
-    question: "How will Sikhadenge respond to my query?",
-    answer:
-      "After a successful form submission, WhatsApp opens with your enquiry details pre-filled. The Sikhadenge team can then continue the conversation through WhatsApp, phone, or email.",
-  },
-  {
-    question: "Is this the official Sikhadenge contact page?",
-    answer:
-      "Yes. This page is hosted on sikhadenge.in and provides the official support details for Sikhadenge, a ThinkGrow Pvt. Ltd. initiative.",
-  },
-];
+const FAQS = CONTACT_FAQS;
 
 const EMPTY_FORM: FormState = {
   name: "",
@@ -723,29 +703,60 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section aria-labelledby="contact-faq-heading" className="bg-[#0B1220] px-4 py-16 text-white sm:px-6 md:py-20 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 xl:grid-cols-[0.72fr_1.28fr]">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#F5B301]">Quick answers</p>
-            <h2 id="contact-faq-heading" className="mt-3 text-3xl font-black tracking-[-0.025em] sm:text-4xl">
-              Contact Sikhadenge: common questions
+      <section
+        aria-labelledby="contact-faq-heading"
+        data-contact-faq-style="home-light"
+        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-16 sm:px-6 md:py-20 lg:px-8"
+      >
+        {/* CONTACT_HOME_STYLE_FAQ_V1 */}
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-4xl">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-bold text-blue-700">
+              FAQs
+            </span>
+
+            <h2
+              id="contact-faq-heading"
+              className="mt-6 text-4xl font-black tracking-[-0.035em] text-slate-950 sm:text-5xl"
+            >
+              Frequently asked questions
             </h2>
-            <p className="mt-4 leading-7 text-slate-300">
-              These answers summarize the official ways to contact Sikhadenge and the types of queries accepted on this page.
+
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+              Find clear answers about contacting Sikhadenge, course counselling, learner support, partnerships, and the form-to-WhatsApp workflow.
             </p>
           </div>
 
-          <div className="space-y-4">
-            {FAQS.map((faq, index) => (
-              <details key={faq.question} className="group rounded-[24px] border border-white/10 bg-white/[0.06] p-5 open:bg-white/[0.09]">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-extrabold">
-                  <span className="flex items-center gap-4">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-500/20 text-sm text-blue-200">{index + 1}</span>
-                    {faq.question}
+          <div className="mt-12 space-y-4">
+            {FAQS.map((faq) => (
+              <details
+                key={faq.question}
+                className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-6 text-left text-base font-extrabold text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
+                  <span>{faq.question}</span>
+
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        d="m7 10 5 5 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </span>
-                  <span className="text-2xl font-light text-slate-400 transition group-open:rotate-45">+</span>
                 </summary>
-                <p className="mt-4 max-w-3xl pl-[52px] text-sm leading-7 text-slate-300">{faq.answer}</p>
+
+                <div className="border-t border-slate-100 px-6 pb-7 pt-5 text-sm leading-7 text-slate-600 sm:px-8 sm:text-base sm:leading-8">
+                  {faq.answer}
+                </div>
               </details>
             ))}
           </div>
