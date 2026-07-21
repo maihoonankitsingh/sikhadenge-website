@@ -635,39 +635,174 @@ export default function ContactPage() {
           </form>
 
           {/* CONTACT_FULL_WIDTH_NEXT_STEPS_V1 */}
-          <div data-contact-next-steps="full-width" className="relative overflow-hidden rounded-[30px] bg-[#0B1220] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:p-7 xl:col-span-2">
-            <div aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-500/25 blur-3xl" />
-            <div className="relative">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#F5B301]">What happens next</p>
-              <h3 className="mt-2 text-2xl font-black tracking-[-0.02em]">One form. Clear handoff.</h3>
+          <div
+            data-contact-next-steps="full-width"
+            data-contact-next-steps-style="premium-light-flow-v3"
+            className="relative overflow-hidden rounded-[32px] border border-blue-100 bg-[linear-gradient(115deg,#EEF4FF_0%,#F8FAFF_58%,#EAFBFF_100%)] shadow-[0_24px_70px_rgba(37,99,235,0.12)] xl:col-span-2"
+          >
+            {/* CONTACT_NEXT_STEPS_PREMIUM_LIGHT_FLOW_V3 */}
 
-              <div className="mt-6 space-y-5">
-                {[
-                  ["1", "Enquiry saved", "Your details are first submitted to Sikhadenge's official lead workflow."],
-                  ["2", "WhatsApp opens", "The same enquiry is prepared as a pre-filled WhatsApp message."],
-                  ["3", "Conversation continues", "Review the message, send it, and continue with the team in WhatsApp."],
-                ].map(([step, title, text]) => (
-                  <div key={step} className="flex gap-4">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-sm font-black text-blue-200 ring-1 ring-white/10">
-                      {step}
-                    </span>
-                    <div>
-                      <p className="font-extrabold">{title}</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-300">{text}</p>
-                    </div>
+            <div aria-hidden="true" className="absolute -left-24 -top-28 h-72 w-72 rounded-full bg-blue-300/20 blur-3xl" />
+            <div aria-hidden="true" className="absolute -bottom-28 right-0 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
+
+            <div className="relative p-5 sm:p-7 lg:p-8">
+              <div className="grid gap-6 lg:grid-cols-[108px_minmax(0,1fr)_250px] lg:items-center">
+                <div className="relative mx-auto lg:mx-0">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(145deg,#66A7FF_0%,#1D4ED8_72%)] text-white shadow-[0_18px_36px_rgba(37,99,235,0.32)]">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 64 64"
+                      className="h-14 w-14"
+                      fill="none"
+                    >
+                      <path
+                        d="M18 21.5C18 15.7 22.7 11 28.5 11S39 15.7 39 21.5 34.3 32 28.5 32 18 27.3 18 21.5Z"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                      />
+                      <path
+                        d="M11 51c0-8.8 7.1-15.9 15.9-15.9h3.2C38.9 35.1 46 42.2 46 51"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M43 17.5c4.4.8 7.8 4.7 7.8 9.4 0 4.8-3.5 8.8-8.1 9.5"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M47 39.5c4.5 2.7 7.5 7.6 7.5 13.2"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
                   </div>
-                ))}
+
+                  <span className="absolute -bottom-2 -right-2 flex h-11 min-w-11 items-center justify-center rounded-2xl border-[3px] border-white bg-orange-500 px-2 text-sm font-extrabold text-white shadow-lg">
+                    01
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.15em] text-blue-700 shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-blue-600" />
+                      Official workflow
+                    </span>
+
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4"
+                        fill="none"
+                      >
+                        <path
+                          d="M7 10V7a5 5 0 0 1 10 0v3"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                        <rect
+                          x="5"
+                          y="10"
+                          width="14"
+                          height="10"
+                          rx="2.5"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                      Guided support
+                    </span>
+                  </div>
+
+                  <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">
+                    What happens next
+                  </p>
+
+                  <h2 className="mt-2 text-3xl font-extrabold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-[42px] lg:leading-[1.08]">
+                    One form.
+                    <span className="text-blue-600"> Clear handoff.</span>
+                  </h2>
+
+                  <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-600 sm:text-base">
+                    Your enquiry follows one structured workflow from secure submission to a ready-to-review WhatsApp conversation.
+                  </p>
+                </div>
+
+                <div className="rounded-[24px] border border-white/90 bg-white/80 p-5 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">
+                    Support hours
+                  </p>
+
+                  <p className="mt-2 text-xl font-extrabold text-slate-950">
+                    10:00 AM – 7:00 PM
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-2 border-t border-slate-200 pt-4">
+                    <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_16px_rgba(16,185,129,0.55)]" />
+                    <span className="font-bold text-emerald-700">
+                      Official workflow
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-6 flex flex-col gap-3 rounded-[22px] border border-white/10 bg-white/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Support hours</p>
-                  <p className="mt-1 font-extrabold">10:00 AM – 7:00 PM</p>
+              <div className="mt-7 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[22px] border border-white/90 bg-white/75 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_16px_34px_rgba(37,99,235,0.12)] sm:p-5">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(37,99,235,0.25)]">
+                      01
+                    </span>
+
+                    <div>
+                      <p className="text-base font-extrabold text-slate-950">
+                        Enquiry saved
+                      </p>
+                      <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                        Your details are submitted to Sikhadenge&apos;s official lead workflow.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-300">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,.8)]" />
-                  Official workflow
-                </span>
+
+                <div className="rounded-[22px] border border-white/90 bg-white/75 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_16px_34px_rgba(16,185,129,0.12)] sm:p-5">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(16,185,129,0.22)]">
+                      02
+                    </span>
+
+                    <div>
+                      <p className="text-base font-extrabold text-slate-950">
+                        WhatsApp opens
+                      </p>
+                      <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                        The same enquiry is prepared as a pre-filled WhatsApp message.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[22px] border border-white/90 bg-white/75 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_16px_34px_rgba(249,115,22,0.12)] sm:p-5">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(249,115,22,0.22)]">
+                      03
+                    </span>
+
+                    <div>
+                      <p className="text-base font-extrabold text-slate-950">
+                        Conversation continues
+                      </p>
+                      <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                        Review, send, and continue directly with the Sikhadenge team.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
