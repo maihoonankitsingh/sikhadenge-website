@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { ChevronDown } from "lucide-react";
 import { trackMetaEvent } from "@/lib/metaPixel";
 
 import { trackEvent } from "@/lib/analytics";
@@ -264,6 +265,7 @@ function buildWhatsAppUrl(form: FormState) {
 }
 
 export default function ContactPage() {
+  const [openContactFaqIndex, setOpenContactFaqIndex] = useState<number | null>(0);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<null | { ok: boolean; message: string }>(null);
@@ -618,9 +620,6 @@ export default function ContactPage() {
               </label>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-950">
-              Your enquiry is saved first. After successful submission, WhatsApp opens automatically with the same details pre-filled for you to review and send.
-            </div>
 
             <button
               type="submit"
@@ -706,60 +705,76 @@ export default function ContactPage() {
       <section
         aria-labelledby="contact-faq-heading"
         data-contact-faq-style="home-light"
-        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-10 sm:px-6 md:py-12 lg:px-8"
+        data-contact-faq-home-parity="landing-v1"
+        className="bg-[#F8FAFC] pt-5 pb-8 md:pt-6 md:pb-10"
       >
         {/* CONTACT_HOME_STYLE_FAQ_V1 */}
-        {/* CONTACT_FAQ_COMPACT_LAYOUT_V2 */}
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-4xl">
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-700">
+        {/* CONTACT_FAQ_EXACT_LANDING_PARITY_V1 */}
+        <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
+          <div className="mb-10 md:mb-12">
+            <div className="inline-flex items-center rounded-full border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2 text-sm font-medium text-[#2563EB]">
               FAQs
-            </span>
+            </div>
 
             <h2
               id="contact-faq-heading"
-              className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl"
+              className="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-[#0F172A]"
             >
               Frequently asked questions
             </h2>
 
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+            <p className="mt-3 max-w-2xl text-base md:text-[17px] leading-7 text-[#475569]">
               Find clear answers about contacting Sikhadenge, course counselling, learner support, partnerships, and the form-to-WhatsApp workflow.
             </p>
           </div>
 
-          <div className="mt-8 space-y-3">
-            {FAQS.map((faq) => (
-              <details
-                key={faq.question}
-                className="group overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_4px_14px_rgba(15,23,42,0.03)] transition open:border-blue-200 open:shadow-[0_8px_22px_rgba(37,99,235,0.07)]"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold leading-6 text-slate-900 outline-none sm:px-6 sm:py-5 sm:text-base [&::-webkit-details-marker]:hidden">
-                  <span>{faq.question}</span>
+          <div className="space-y-3">
+            {FAQS.map((faq, index) => {
+              const isOpen = openContactFaqIndex === index;
 
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        d="m7 10 5 5 5-5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+              return (
+                <div
+                  key={faq.question}
+                  className="overflow-hidden rounded-[24px] border border-[#0F172A]/10 bg-white"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenContactFaqIndex(isOpen ? null : index)
+                    }
+                    className="flex w-full items-center justify-between gap-4 px-5 md:px-6 py-4 md:py-5 text-left"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="text-[#0F172A] text-[17px] md:text-[18px] font-semibold leading-snug">
+                      {faq.question}
+                    </span>
+
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#0F172A]/10 bg-[#F8FAFC]">
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={`h-5 w-5 text-[#2563EB] transition-transform duration-300 ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
                       />
-                    </svg>
-                  </span>
-                </summary>
+                    </span>
+                  </button>
 
-                <div className="border-t border-slate-100 px-5 pb-5 pt-4 text-sm leading-6 text-slate-600 sm:px-6 sm:pb-6 sm:text-[15px] sm:leading-7">
-                  {faq.answer}
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      isOpen
+                        ? "grid-rows-[1fr]"
+                        : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-5 md:px-6 pb-5 md:pb-6 max-w-4xl text-[#475569] text-[15px] leading-7">
+                        {faq.answer}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </details>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
