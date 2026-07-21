@@ -363,11 +363,6 @@ export default function ContactPage() {
 
       <section className="relative px-4 pb-14 pt-8 sm:px-6 md:pb-20 md:pt-12 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <nav aria-label="Breadcrumb" className="mb-5 text-sm font-semibold text-slate-500">
-            <a href="/" className="transition hover:text-blue-700">Home</a>
-            <span className="mx-2" aria-hidden="true">/</span>
-            <span aria-current="page" className="text-slate-800">Contact us</span>
-          </nav>
 
           <div className="relative overflow-hidden rounded-[34px] border border-white/80 bg-[#0B1220] shadow-[0_30px_90px_rgba(15,23,42,0.22)]">
             <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(37,99,235,0.45),transparent_28%),radial-gradient(circle_at_92%_82%,rgba(245,179,1,0.25),transparent_25%)]" />
