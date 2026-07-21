@@ -1642,193 +1642,390 @@ const ToolsLogosSection = () => {
 
 
 // ==================== SECTION 11: VIDEO TESTIMONIALS ====================
-  const VideoTestimonialsSection = () => {
-    const scrollerRef = useRef<HTMLDivElement | null>(null)
-    const rafRef = useRef<number | null>(null)
+const VideoTestimonialsSection = () => {
+  const scrollerRef = useRef<HTMLDivElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const interactionTimerRef = useRef<number | null>(null)
+  const autoPausedRef = useRef(false)
 
-    const draggingRef = useRef(false)
-    const movedRef = useRef(false)
-    const startXRef = useRef(0)
-    const startScrollLeftRef = useRef(0)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
-    const [paused, setPaused] = useState(false)
-    const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const testimonials = useMemo(
+    () =>
+      videoTestimonials.map((testimonial, index) => ({
+        ...testimonial,
+        poster: `/images/testimonials/t${index + 1}.webp`,
+        videoUrl: `/reviews/videos/t${index + 1}.mp4`,
+      })),
+    []
+  )
 
-    // duplicate for seamless loop
-    const items = useMemo(() => [...videoTestimonials, ...videoTestimonials], [])
+  const pauseAutoScroll = (resumeAfter = 0) => {
+    autoPausedRef.current = true
 
-    const stopDrag = () => {
-      draggingRef.current = false
-      // reset "moved" shortly after release (prevents accidental click)
-      window.setTimeout(() => (movedRef.current = false), 0)
+    if (interactionTimerRef.current !== null) {
+      window.clearTimeout(interactionTimerRef.current)
+      interactionTimerRef.current = null
     }
 
-    const onMouseDown = (e: React.MouseEvent) => {
-      const el = scrollerRef.current
-      if (!el) return
-      draggingRef.current = true
-      movedRef.current = false
-      startXRef.current = e.pageX
-      startScrollLeftRef.current = el.scrollLeft
+    if (resumeAfter > 0) {
+      interactionTimerRef.current = window.setTimeout(() => {
+        autoPausedRef.current = false
+        interactionTimerRef.current = null
+      }, resumeAfter)
     }
-
-    const onMouseMove = (e: React.MouseEvent) => {
-      const el = scrollerRef.current
-      if (!el || !draggingRef.current) return
-      e.preventDefault()
-      const dx = e.pageX - startXRef.current
-      if (Math.abs(dx) > 3) movedRef.current = true
-      el.scrollLeft = startScrollLeftRef.current - dx
-    }
-
-    const onTouchStart = (e: React.TouchEvent) => {
-      const el = scrollerRef.current
-      if (!el) return
-      draggingRef.current = true
-      movedRef.current = false
-      startXRef.current = e.touches[0].pageX
-      startScrollLeftRef.current = el.scrollLeft
-    }
-
-    const onTouchMove = (e: React.TouchEvent) => {
-      const el = scrollerRef.current
-      if (!el || !draggingRef.current) return
-      const dx = e.touches[0].pageX - startXRef.current
-      if (Math.abs(dx) > 3) movedRef.current = true
-      el.scrollLeft = startScrollLeftRef.current - dx
-    }
-
-    const onCardClick = (i: number) => {
-      // if user dragged, ignore click
-      if (movedRef.current) return
-      setOpenIndex(i)
-      setPaused(true)
-    }
-
-    // autoscroll (seamless because items are duplicated)
-    useEffect(() => {
-      const el = scrollerRef.current
-      if (!el) return
-
-      let last = performance.now()
-      const pxPerMs = 0.035 // ~35px/sec
-
-      const tick = (t: number) => {
-        const node = scrollerRef.current
-        if (!node) return
-
-        const dt = t - last
-        last = t
-
-        if (!paused && !draggingRef.current) {
-          node.scrollLeft += dt * pxPerMs
-          const half = node.scrollWidth / 2
-          if (half > 0 && node.scrollLeft >= half) node.scrollLeft = node.scrollLeft - half
-        }
-
-        rafRef.current = requestAnimationFrame(tick)
-      }
-
-      rafRef.current = requestAnimationFrame(tick)
-      return () => {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      }
-    }, [paused])
-
-    return (
-      <section className="py-20 bg-[#F8FAFC]" id="reviews">
-        <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-[#F5B301] font-medium uppercase tracking-wider text-sm mb-2">VIDEO TESTIMONIALS</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Success Stories From Real Learners</h2>
-          </div>
-
-          {/* Horizontal reel slider (shows ~3 on desktop, swipe/drag supported) */}
-          <div
-            ref={scrollerRef}
-            className="relative overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar cursor-grab active:cursor-grabbing touch-pan-x"
-            style={{ WebkitOverflowScrolling: "touch" }}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => { stopDrag(); if (openIndex === null) setPaused(false) }}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={stopDrag}
-            
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={stopDrag}
- >
-            <div className="flex gap-4 pr-6">
-              {items.map((v, i) => (
-                <button
-                  key={`${v.name}-${i}`}
-                  type="button"
-                  onClick={() => onCardClick(i)}
-                  className="relative group flex-shrink-0 rounded-2xl overflow-hidden bg-[#0F172A] border border-white/10 shadow-lg
-                             w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px]
-                             aspect-[9/16]"
-                  aria-label={`Play ${v.name} testimonial`}
- >
-                  <video className="absolute inset-0 w-full h-full object-cover" src={v.videoUrl} muted playsInline onContextMenu={(e)=>e.preventDefault()} preload="metadata" poster={v.poster} />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-transparent" />
-
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-14 h-14 bg-[#F5B301] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                      <Play className="w-6 h-6 text-text ml-1" fill="black" />
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-4 left-4 right-4 text-left">
-                    <p className="text-text font-semibold text-base">{v.name}</p>
-                    <p className="text-text/70 text-sm">{v.location}</p>
-                  </div>
-
-                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                    <p className="text-text text-xs font-medium">▶ Reel</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Modal player (same page) */}
-          {openIndex !== null && (
-            <div
-              className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-              onClick={() => { setOpenIndex(null); setPaused(false) }}
-              role="dialog"
-              aria-modal="true"
- >
-              <div
-                className="relative w-full max-w-[420px] aspect-[9/16] bg-black rounded-2xl overflow-hidden border border-white/10"
-                onClick={(e) => e.stopPropagation()}
- >
-                <button
-                  type="button"
-                  className="absolute top-3 right-3 z-10 bg-white/15 hover:bg-white/25 backdrop-blur px-2 py-2 rounded-full"
-                  onClick={() => { setOpenIndex(null); setPaused(false) }}
-                  aria-label="Close"
- >
-                  <X className="w-5 h-5 text-white" />
-                </button>
-
-                <video
-                  className="absolute inset-0 w-full h-full object-cover"
-                  src={items[openIndex].videoUrl}
-                  controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture
-                  autoPlay
-                  playsInline onContextMenu={(e)=>e.preventDefault()}
-                  preload="metadata"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-    )
   }
 
-  // ==================== SECTION 12: TEXT REVIEWS ====================
+  const resumeAutoScroll = () => {
+    if (interactionTimerRef.current !== null) {
+      window.clearTimeout(interactionTimerRef.current)
+      interactionTimerRef.current = null
+    }
+
+    autoPausedRef.current = false
+  }
+
+  const getCardStep = () => {
+    const scroller = scrollerRef.current
+
+    if (!scroller) return 280
+
+    const firstCard = scroller.querySelector<HTMLElement>(
+      "[data-testimonial-card]"
+    )
+
+    if (!firstCard) {
+      return Math.max(
+        Math.round(scroller.clientWidth * 0.82),
+        280
+      )
+    }
+
+    const styles = window.getComputedStyle(scroller)
+    const parsedGap = Number.parseFloat(
+      styles.columnGap || styles.gap || "16"
+    )
+
+    const gap = Number.isFinite(parsedGap)
+      ? parsedGap
+      : 16
+
+    return firstCard.offsetWidth + gap
+  }
+
+  const stopInlineVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.pause()
+      videoRef.current.currentTime = 0
+    }
+
+    setActiveIndex(null)
+    resumeAutoScroll()
+  }
+
+  const activateInlineVideo = (index: number) => {
+    pauseAutoScroll()
+    setActiveIndex(index)
+  }
+
+  useEffect(() => {
+    const scroller = scrollerRef.current
+
+    if (!scroller) return
+
+    const handleWheel = (event: WheelEvent) => {
+      const maxScroll =
+        scroller.scrollWidth - scroller.clientWidth
+
+      if (maxScroll <= 1) return
+
+      const movement =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.deltaY
+
+      if (movement === 0) return
+
+      const atStart = scroller.scrollLeft <= 1
+      const atEnd =
+        scroller.scrollLeft >= maxScroll - 1
+
+      if (
+        (movement < 0 && atStart) ||
+        (movement > 0 && atEnd)
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      pauseAutoScroll(2800)
+
+      scroller.scrollBy({
+        left: movement,
+        behavior: "auto",
+      })
+    }
+
+    scroller.addEventListener("wheel", handleWheel, {
+      passive: false,
+    })
+
+    return () => {
+      scroller.removeEventListener("wheel", handleWheel)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeIndex !== null) return
+
+    const intervalId = window.setInterval(() => {
+      const scroller = scrollerRef.current
+
+      if (
+        !scroller ||
+        autoPausedRef.current ||
+        document.hidden
+      ) {
+        return
+      }
+
+      const maxScroll =
+        scroller.scrollWidth - scroller.clientWidth
+
+      if (maxScroll <= 1) return
+
+      const step = getCardStep()
+      const nextPosition = scroller.scrollLeft + step
+      const nearEnd =
+        nextPosition >= maxScroll - step * 0.35
+
+      if (nearEnd) {
+        scroller.scrollTo({
+          left: 0,
+          behavior: "smooth",
+        })
+      } else {
+        scroller.scrollBy({
+          left: step,
+          behavior: "smooth",
+        })
+      }
+    }, 3600)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [activeIndex])
+
+  useEffect(() => {
+    if (activeIndex === null) return
+
+    pauseAutoScroll()
+
+    const playTimer = window.setTimeout(() => {
+      const player = videoRef.current
+
+      if (!player) return
+
+      player.load()
+
+      void player.play().catch(() => {
+        // Native video controls remain available.
+      })
+    }, 60)
+
+    return () => {
+      window.clearTimeout(playTimer)
+
+      if (videoRef.current) {
+        videoRef.current.pause()
+      }
+    }
+  }, [activeIndex])
+
+  useEffect(() => {
+    return () => {
+      if (interactionTimerRef.current !== null) {
+        window.clearTimeout(interactionTimerRef.current)
+      }
+
+      if (videoRef.current) {
+        videoRef.current.pause()
+      }
+    }
+  }, [])
+
+  return (
+    <section
+      className="bg-[#F8FAFC] py-8 md:py-12"
+      id="reviews"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div
+          data-home-video-testimonials-premium="v4"
+          className="relative overflow-hidden rounded-[32px] border border-[#DCE7F5] bg-[linear-gradient(135deg,#F8FBFF_0%,#F6F5FF_48%,#EFFCFF_100%)] px-4 py-7 shadow-[0_24px_65px_rgba(15,23,42,0.08)] sm:px-6 md:px-8 md:py-9"
+        >
+          <div
+            aria-hidden="true"
+            className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#2563EB]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute -right-24 top-8 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute bottom-[-120px] left-[38%] h-64 w-64 rounded-full bg-[#06B6D4]/10 blur-3xl"
+          />
+
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.24]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(37,99,235,0.16) 1px, transparent 0)",
+              backgroundSize: "30px 30px",
+              maskImage:
+                "linear-gradient(to bottom, black, transparent 48%)",
+            }}
+          />
+
+          <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E4FF] bg-white/85 px-4 py-2 shadow-[0_8px_22px_rgba(37,99,235,0.08)] backdrop-blur">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(145deg,#60A5FA,#7C3AED)] text-white shadow-[0_5px_12px_rgba(99,102,241,0.30)]">
+                <Play
+                  className="h-3.5 w-3.5 translate-x-[1px]"
+                  fill="currentColor"
+                  strokeWidth={2.2}
+                />
+              </span>
+
+              <span className="text-[10px] font-black uppercase tracking-[0.17em] text-[#4F46E5] sm:text-[11px]">
+                Real Learner Stories
+              </span>
+            </div>
+
+            <h2 className="mt-4 text-[34px] font-black leading-[1.02] tracking-[-0.05em] text-[#071533] sm:text-4xl md:text-[48px]">
+              Success stories from
+              <span className="ml-2 bg-gradient-to-r from-[#2563EB] via-[#4F46E5] to-[#06B6D4] bg-clip-text text-transparent">
+                real learners
+              </span>
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-6 text-[#52637A] sm:text-base sm:leading-7">
+              Watch learners share their practical experience,
+              learning journey and results from the program.
+            </p>
+          </div>
+
+          <div
+            ref={scrollerRef}
+            onMouseEnter={() => pauseAutoScroll()}
+            onMouseLeave={() => {
+              if (activeIndex === null) {
+                resumeAutoScroll()
+              }
+            }}
+            onFocusCapture={() => pauseAutoScroll()}
+            onBlurCapture={() => {
+              if (activeIndex === null) {
+                resumeAutoScroll()
+              }
+            }}
+            onPointerDown={() => pauseAutoScroll(3200)}
+            onTouchStart={() => pauseAutoScroll(3200)}
+            className="no-scrollbar relative mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 touch-pan-x sm:gap-4"
+            aria-label="Learner video testimonials"
+          >
+            {testimonials.map((testimonial, index) => {
+              const isActive = activeIndex === index
+
+              return (
+                <article
+                  key={testimonial.name}
+                  data-testimonial-card
+                  className="group relative aspect-[9/16] w-[205px] shrink-0 snap-center overflow-hidden rounded-[24px] border border-white/90 bg-[#071533] shadow-[0_16px_36px_rgba(15,23,42,0.14)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(37,99,235,0.20)] sm:w-[225px] md:w-[240px] lg:w-[250px]"
+                >
+                  {isActive ? (
+                    <div className="absolute inset-0 bg-black">
+                      <video
+                        ref={videoRef}
+                        key={testimonial.videoUrl}
+                        src={testimonial.videoUrl}
+                        poster={testimonial.poster}
+                        className="h-full w-full object-contain"
+                        controls
+                        autoPlay
+                        playsInline
+                        preload="metadata"
+                        onEnded={stopInlineVideo}
+                        onPlay={() => pauseAutoScroll()}
+                        onContextMenu={(event) =>
+                          event.preventDefault()
+                        }
+                      >
+                        Your browser does not support video playback.
+                      </video>
+
+                      <button
+                        type="button"
+                        onClick={stopInlineVideo}
+                        className="absolute right-2.5 top-2.5 z-20 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/55 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur transition hover:bg-black/75"
+                        aria-label="Close video"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        activateInlineVideo(index)
+                      }
+                      className="absolute inset-0 block h-full w-full overflow-hidden text-left"
+                      aria-label={`Play ${testimonial.name} learner story`}
+                    >
+                      <img
+                        src={testimonial.poster}
+                        alt={`${testimonial.name} learner testimonial`}
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+                      />
+
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/20" />
+
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-full border border-white/30 bg-[linear-gradient(145deg,#FDE047_0%,#F5B301_55%,#F97316_100%)] text-[#071533] shadow-[inset_0_1px_0_rgba(255,255,255,0.50),inset_0_-7px_14px_rgba(180,83,9,0.20),0_12px_28px_rgba(245,179,1,0.38)] transition-transform duration-300 group-hover:scale-110">
+                          <span
+                            aria-hidden="true"
+                            className="absolute left-2 right-2 top-1 h-5 rounded-full bg-white/30 blur-[2px]"
+                          />
+
+                          <Play
+                            className="relative z-10 h-6 w-6 translate-x-[2px]"
+                            fill="currentColor"
+                            strokeWidth={2}
+                          />
+                        </span>
+                      </span>
+                    </button>
+                  )}
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
+// ==================== SECTION 12: TEXT REVIEWS ====================
 
 const TextReviewsSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -1942,7 +2139,7 @@ const WhoIsThisForSection = () => {
 
 // ========14: MENTOR SECTION ====================
 const MentorSection = () => (
-  <section className="py-20 bg-white">
+  <section className="bg-white pt-8 pb-2 md:pt-10 md:pb-3">
     <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold text-[#0F172A]">Meet Your Mentor</h2>
@@ -2125,7 +2322,7 @@ const FAQSection = () => {
   ]
 
   return (
-    <section className="py-10 md:py-12 bg-[#F8FAFC]" id="faq">
+    <section data-home-mentor-faq-gap-fix="v1" className="bg-[#F8FAFC] pt-5 pb-8 md:pt-6 md:pb-10" id="faq">
       <div className="max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="mb-10 md:mb-12">
           <div className="inline-flex items-center rounded-full border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2 text-sm font-medium text-[#2563EB]">
