@@ -998,3 +998,35 @@ model StoreOrder {
   @@index([phone])
   @@index([email])
 }
+
+// PHASE03_ANALYTICS_EVENT_MODEL_V1
+model AnalyticsEvent {
+  id              String   @id @default(cuid())
+  eventId         String   @unique @db.VarChar(128)
+  contractVersion String   @db.VarChar(16)
+  eventName       String   @db.VarChar(64)
+  occurredAt      DateTime
+  receivedAt      DateTime @default(now())
+  anonymousId     String   @db.VarChar(128)
+  sessionId       String   @db.VarChar(128)
+  environment     String   @db.VarChar(32)
+  source          String   @db.VarChar(32)
+  pagePath        String   @db.VarChar(2048)
+  requestId       String?  @db.VarChar(128)
+
+  identity   Json
+  page       Json
+  campaign   Json
+  device     Json
+  geo        Json
+  properties Json
+  consent    Json
+  context    Json
+  payload    Json
+
+  @@index([eventName, occurredAt])
+  @@index([anonymousId, occurredAt])
+  @@index([sessionId, occurredAt])
+  @@index([occurredAt])
+  @@index([receivedAt])
+}
