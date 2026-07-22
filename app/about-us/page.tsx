@@ -330,149 +330,175 @@ export default function AboutUsPage() {
       />
 
       <main className="bg-[#F6F8FC] pt-8 text-[#0F172A] md:pt-10">
-        <section className="px-4 pb-8 pt-8 sm:px-6 md:pb-12 lg:px-8">
-          <div className="mx-auto max-w-7xl rounded-[34px] border border-[#DCE7F8] bg-[linear-gradient(118deg,#F8FBFF_0%,#F5F9FF_50%,#EAF9FF_100%)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8 lg:p-10 xl:p-12">
-            <div
-              data-about-hero-style="phase11n-brand-3d-faq"
-              className="grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
-            >
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  <SectionEyebrow>India-focused learning platform</SectionEyebrow>
-                  <SectionEyebrow>AI-first capability</SectionEyebrow>
-                </div>
+        <section
+        data-about-hero-style="phase11n-brand-3d-faq"
+        data-about-hero-layout="balanced-contact-home-v1"
+        className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8"
+      >
+        {/* ABOUT_BALANCED_HERO_V1 */}
+        <div className="overflow-hidden rounded-[32px] border border-[#DCE7F5] bg-[linear-gradient(135deg,#F8FBFF_0%,#EEF6FF_54%,#ECF9FF_100%)] shadow-[0_28px_80px_rgba(15,23,42,0.07)]">
+          <div className="grid gap-10 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12 lg:px-12 lg:py-12">
+            <div className="max-w-[620px]">
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex rounded-full border border-blue-200 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-blue-700 shadow-sm">
+                  India-focused learning platform
+                </span>
 
-                <h1 className="mt-6 max-w-[12ch] text-4xl font-black tracking-[-0.04em] text-[#0F172A] sm:text-5xl lg:text-6xl">
-                  About Sikhadenge.
-                  <span className="mt-2 block text-[#2F65F5]">
-                    Practical AI capability for modern digital work.
-                  </span>
-                </h1>
+                <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700 shadow-sm">
+                  AI-first capability
+                </span>
+              </div>
 
-                <p className="mt-5 max-w-2xl text-[15px] leading-7 text-slate-600 sm:text-base">
-                  Sikhadenge is an India-focused AI and skill learning platform
-                  built for students, freshers, freelancers, creators, working
-                  professionals, and career switchers who want structured
+              <h1 className="mt-6 max-w-[590px] text-[2.65rem] font-black leading-[0.98] tracking-[-0.05em] text-slate-950 sm:text-[3.25rem] lg:text-[3.55rem]">
+                About Sikhadenge.
+                <span className="mt-2 block text-[#2F65F5]">
+                  Practical AI capability for modern digital work.
+                </span>
+              </h1>
+
+              <div className="mt-6 max-w-[590px] space-y-4 text-[15px] leading-7 text-slate-600 sm:text-base">
+                <p>
+                  Sikhadenge is an India-focused AI and skill learning platform built for students,
+                  freshers, freelancers, creators, and working professionals who want structured
                   learning, practical execution, and real digital output.
                 </p>
 
-                <p className="mt-4 max-w-2xl text-[15px] leading-7 text-slate-600 sm:text-base">
-                  We connect professional tools, guided workflows,
-                  project-backed implementation, and review-led improvement so
-                  learners build capability that remains useful as modern work
-                  evolves.
+                <p>
+                  We connect professional tools, guided workflows, project-based implementation,
+                  and review-led improvement so learners build capability that remains useful as
+                  modern work evolves.
                 </p>
-
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {[
-                    'Students & freshers',
-                    'Freelancers & creators',
-                    'Working professionals',
-                    'Career switchers',
-                  ].map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-[#DDE6F6] bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center justify-center rounded-full bg-[#2F65F5] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_30px_rgba(47,101,245,0.28)] transition hover:-translate-y-0.5 hover:bg-[#2453F6]"
-                  >
-                    Explore learning paths
-                  </Link>
-                  <Link
-                    href="/contact-us"
-                    className="inline-flex items-center justify-center rounded-full border border-[#D6E3FA] bg-white px-5 py-3 text-sm font-bold text-[#0F172A] shadow-sm transition hover:-translate-y-0.5 hover:border-[#BFD3FA]"
-                  >
-                    Talk to our team
-                  </Link>
-                </div>
-
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[22px] border border-[#DFE8F8] bg-white p-4 shadow-sm">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Learning approach
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-[#0F172A]">
-                      Structured, practical and output-focused
-                    </p>
-                  </div>
-
-                  <div className="rounded-[22px] border border-[#DFE8F8] bg-white p-4 shadow-sm">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Capability coverage
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-[#0F172A]">
-                      Design, video, content, marketing and workflows
-                    </p>
-                  </div>
-                </div>
               </div>
 
-              <div className="relative">
-                <div className="absolute -left-3 top-8 hidden h-24 w-24 rounded-full bg-[#79A2FF]/20 blur-3xl md:block" />
-                <div className="absolute -right-4 bottom-4 hidden h-28 w-28 rounded-full bg-[#7AE0D0]/20 blur-3xl md:block" />
+              <div className="mt-6 flex flex-wrap gap-2">
+                {[
+                  'Students & freshers',
+                  'Freelancers & creators',
+                  'Working professionals',
+                  'Career switchers',
+                ].map((audience) => (
+                  <span
+                    key={audience}
+                    className="rounded-full border border-slate-200 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
+                  >
+                    {audience}
+                  </span>
+                ))}
+              </div>
 
-                <div className="relative rounded-[30px] border border-white/70 bg-white/70 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur">
-                  <div className="relative overflow-hidden rounded-[24px] border border-white/60 bg-[#EEF5FF]">
-                    <div className="relative aspect-[16/11]">
-                      <Image
-                        src="/images/about/about-hero-desk.webp"
-                        alt="Sikhadenge practical digital learning environment"
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    </div>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/courses"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#2F65F5] px-6 text-sm font-extrabold text-white shadow-[0_14px_30px_rgba(47,101,245,0.25)] transition hover:-translate-y-0.5 hover:bg-[#2458E8]"
+                >
+                  Explore learning paths
+                </Link>
 
-                    <div className="absolute inset-x-5 bottom-5 rounded-[22px] border border-white/15 bg-[#0B1635]/82 p-4 text-white shadow-[0_24px_40px_rgba(11,22,53,0.28)] backdrop-blur">
-                      <div className="flex items-start gap-3">
-                        <GlowIcon label="AI" tone="blue" />
-                        <div>
-                          <p className="text-sm font-extrabold">
-                            AI-first digital capability
-                          </p>
-                          <p className="mt-1 text-xs leading-5 text-slate-300">
-                            Structured learning built around professional
-                            workflows, practical execution, guided review, and
-                            visible output.
-                          </p>
-                        </div>
+                <Link
+                  href="/contact-us"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-extrabold text-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-blue-200"
+                >
+                  Talk to our team
+                </Link>
+              </div>
+            </div>
+
+            <div className="mx-auto w-full max-w-[560px]">
+              <div className="rounded-[28px] border border-white/90 bg-white/90 p-3.5 shadow-[0_28px_65px_rgba(15,23,42,0.12)] backdrop-blur sm:p-4">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] border border-slate-200 bg-slate-100">
+                  <Image
+                    src="/images/about/about-hero-desk.webp"
+                    alt="Sikhadenge practical AI learning and digital capability"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 560px"
+                    className="object-cover"
+                  />
+
+                  <div className="absolute inset-x-4 bottom-4 rounded-[20px] border border-white/15 bg-slate-950/88 p-4 text-white shadow-[0_18px_35px_rgba(15,23,42,0.24)] backdrop-blur-md sm:inset-x-5 sm:bottom-5">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2F65F5,#7CA8FF)] text-xs font-black text-white shadow-[0_12px_24px_rgba(47,101,245,0.32)]">
+                        AI
+                      </span>
+
+                      <div>
+                        <p className="text-sm font-extrabold">
+                          AI-first digital capability
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-200 sm:text-[13px]">
+                          Structured learning, practical execution, guided review,
+                          and visible learner output.
+                        </p>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    {heroHighlights.map((item, index) => (
-                      <div
-                        key={item.title}
-                        className="rounded-[20px] border border-[#DFE8F8] bg-white px-3 py-3 shadow-sm"
-                      >
-                        <div className="flex items-center gap-3">
-                          <GlowIcon
-                            label={`0${index + 1}`}
-                            tone={item.tone as 'blue' | 'green' | 'amber'}
-                          />
-                          <p className="text-xs font-bold leading-5 text-[#0F172A]">
-                            {item.title}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[18px] border border-blue-100 bg-blue-50/70 px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-500">
+                      Step 01
+                    </p>
+                    <p className="mt-1 text-sm font-extrabold text-slate-900">
+                      Learn clearly
+                    </p>
+                  </div>
+
+                  <div className="rounded-[18px] border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-600">
+                      Step 02
+                    </p>
+                    <p className="mt-1 text-sm font-extrabold text-slate-900">
+                      Build practically
+                    </p>
+                  </div>
+
+                  <div className="rounded-[18px] border border-amber-100 bg-amber-50/70 px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-600">
+                      Step 03
+                    </p>
+                    <p className="mt-1 text-sm font-extrabold text-slate-900">
+                      Improve through review
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
 
-        <section className="px-4 py-4 sm:px-6 lg:px-8">
+          <div className="grid border-t border-[#DCE7F5] bg-white/55 sm:grid-cols-3">
+            <div className="border-b border-[#DCE7F5] px-6 py-5 sm:border-b-0 sm:border-r lg:px-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-600">
+                Structured learning
+              </p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                Clear learning paths, guided sessions, and practical milestones.
+              </p>
+            </div>
+
+            <div className="border-b border-[#DCE7F5] px-6 py-5 sm:border-b-0 sm:border-r lg:px-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600">
+                Real output
+              </p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                Assignments and workflows designed around visible digital work.
+              </p>
+            </div>
+
+            <div className="px-6 py-5 lg:px-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-600">
+                Guided improvement
+              </p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                Review, feedback, and execution standards that improve capability.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
