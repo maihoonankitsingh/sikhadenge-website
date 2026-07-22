@@ -115,130 +115,289 @@ export default function AboutUsPage() {
       {/* header is fixed -> give page top padding */}
       <div className="pt-20 pb-20">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          {/* HERO TITLE */}
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-[40px]">
-              About Sikhadenge
-            </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--sd-text-2)] sm:text-base">
-              Sikhadenge is an India-focused AI and skill learning platform built for students, freshers, freelancers, creators, working professionals, and career switchers who want to build practical digital capability for the modern work economy.
-            </p>
-          </div>
+            {/* ABOUT_HERO_PREMIUM_LIGHT_V2 */}
+            <section
+              data-about-hero-style="premium-light-v2"
+              aria-labelledby="about-hero-heading"
+              className="relative overflow-hidden rounded-[36px] border border-blue-100/90 bg-[linear-gradient(120deg,#EEF4FF_0%,#F9FBFF_54%,#EAFBFF_100%)] shadow-[0_30px_90px_rgba(37,99,235,0.13)]"
+            >
+              <div
+                aria-hidden="true"
+                className="absolute -left-24 -top-28 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl"
+              />
 
-          {/* HERO MAIN CARD */}
-          <Card className="mt-10 p-4 sm:p-6">
-            <div className="grid items-stretch gap-6 lg:grid-cols-2">
-              {/* left image card */}
-              <div className="relative h-full overflow-hidden rounded-2xl border border-[var(--sd-border)] bg-white flex flex-col">
-                <div className="absolute left-4 top-4 z-10">
-                  <Pill>ABOUT SIKHADENGE</Pill>
+              <div
+                aria-hidden="true"
+                className="absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-cyan-300/20 blur-3xl"
+              />
+
+              <div className="relative grid gap-8 p-5 sm:p-7 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:p-10">
+                <div className="py-2 lg:py-5">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/85 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.15em] text-blue-700 shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-blue-600" />
+                      India-focused learning platform
+                    </span>
+
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/85 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">
+                      <Sparkles className="h-4 w-4" />
+                      AI-first capability
+                    </span>
+                  </div>
+
+                  <h1
+                    id="about-hero-heading"
+                    className="mt-6 max-w-3xl text-4xl font-extrabold tracking-[-0.045em] text-slate-950 sm:text-5xl lg:text-[58px] lg:leading-[1.04]"
+                  >
+                    About Sikhadenge.
+                    <span className="mt-2 block text-blue-600">
+                      Practical AI capability for modern digital work.
+                    </span>
+                  </h1>
+
+                  <p className="mt-5 max-w-2xl text-[15px] leading-7 text-slate-600 sm:text-lg sm:leading-8">
+                    Sikhadenge is an India-focused AI and skill learning platform built for students, freshers, freelancers, creators, working professionals, and career switchers who want structured learning, practical execution, and real digital output.
+                  </p>
+
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                    Sikhadenge, operated by ThinkGrow Pvt. Ltd., connects professional tools, guided workflows, project-based implementation, and review-led improvement so learners build capability that remains useful as modern work evolves.
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {[
+                      "Students & freshers",
+                      "Freelancers & creators",
+                      "Working professionals",
+                      "Career switchers",
+                    ].map((audience) => (
+                      <span
+                        key={audience}
+                        className="rounded-full border border-white/90 bg-white/75 px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur"
+                      >
+                        {audience}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <a
+                      href="/courses"
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-700"
+                    >
+                      Explore learning paths
+                      <ChevronRight className="h-4 w-4" />
+                    </a>
+
+                    <a
+                      href="/contact-us"
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-700"
+                    >
+                      Talk to our team
+                    </a>
+                  </div>
+
+                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[22px] border border-white/90 bg-white/70 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+                      <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+                        Learning approach
+                      </p>
+                      <p className="mt-2 font-bold text-slate-950">
+                        Structured, practical and output-focused
+                      </p>
+                    </div>
+
+                    <div className="rounded-[22px] border border-white/90 bg-white/70 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+                      <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+                        Capability coverage
+                      </p>
+                      <p className="mt-2 font-bold text-slate-950">
+                        Design, video, content, marketing and workflows
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="relative aspect-[16/11] w-full shrink-0">
-                  <Image
-                    src="/images/about/about-hero-desk.webp"
-                    alt="About Sikhadenge"
-                    fill
-                    priority
-                    className="object-cover object-center"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                  />
-                </div>
+                <div className="relative">
+                  <div className="relative overflow-hidden rounded-[30px] border border-white/90 bg-white p-2 shadow-[0_28px_65px_rgba(15,23,42,0.16)]">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[24px]">
+                      <Image
+                        src="/images/about/about-hero-desk.webp"
+                        alt="Sikhadenge practical AI and digital learning environment"
+                        fill
+                        priority
+                        className="object-cover object-center"
+                        sizes="(max-width: 1024px) 100vw, 48vw"
+                      />
 
-                {/* small overlay feature */}
-                <div className="mt-auto p-4">
-                  <div className="rounded-2xl border border-[var(--sd-border)] bg-[var(--sd-card)] p-4">
-                    <div className="flex items-start gap-3">
-                      <IconBadge tone="blue">
-                        <Target className="h-5 w-5 text-[#2563EB]" />
-                      </IconBadge>
-                      <div>
-                        <div className="text-sm font-semibold">AI-first digital capability</div>
-                        <div className="mt-1 text-xs leading-5 text-[var(--sd-text-2)]">
-                          Structured learning designed around modern digital workflows, practical execution, and real output.
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-[linear-gradient(180deg,transparent_42%,rgba(2,6,23,0.72)_100%)]"
+                      />
+
+                      <div className="absolute inset-x-4 bottom-4 rounded-[22px] border border-white/15 bg-slate-950/75 p-4 text-white shadow-xl backdrop-blur-md sm:inset-x-5 sm:bottom-5 sm:p-5">
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-200 ring-1 ring-blue-300/25">
+                            <Target className="h-5 w-5" />
+                          </span>
+
+                          <div>
+                            <p className="font-bold">
+                              AI-first digital capability
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-300">
+                              Structured learning built around professional workflows, practical execution, guided review, and visible output.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* right text card */}
-              <div className="h-full rounded-2xl border border-[var(--sd-border)] bg-white p-5 sm:p-7 flex flex-col justify-center">
-                <div className="inline-flex">
-                  <Pill>About us</Pill>
-                </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:absolute lg:-bottom-7 lg:-left-7 lg:mt-0 lg:w-[calc(100%+3.5rem)]">
+                    {[
+                      ["01", "Learn with structure"],
+                      ["02", "Build real output"],
+                      ["03", "Improve with review"],
+                    ].map(([step, label], index) => (
+                      <div
+                        key={step}
+                        className="rounded-[20px] border border-white/90 bg-white/90 p-3.5 shadow-[0_14px_32px_rgba(15,23,42,0.10)] backdrop-blur"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={[
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-white",
+                              index === 0
+                                ? "bg-blue-600"
+                                : index === 1
+                                ? "bg-emerald-500"
+                                : "bg-orange-500",
+                            ].join(" ")}
+                          >
+                            {step}
+                          </span>
 
-                <h2 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl">
-                  We help learners build practical, modern digital capability with AI.
-                </h2>
-
-                <p className="mt-4 text-sm leading-7 text-[var(--sd-text-2)] sm:text-base">
-                  Sikhadenge (ThinkGrow Pvt. Ltd.) builds practical, future-ready learning that develops real, industry-relevant
-                  skills in design and creative technologies — with professional tools and real workflows.
-                </p>
-
-                <p className="mt-4 text-sm leading-7 text-[var(--sd-text-2)] sm:text-base">
-                  Less theory, more capability. We focus on applied projects, structured execution, and continuous improvement so
-                  learners stay ready for evolving roles.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* HERO BOTTOM 4 CARDS (SEPARATE CONTAINER) */}
-          <Card className="mt-6 p-4 sm:p-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  title: "Structured learning",
-                  desc: "Clear progression, guided sessions, and practical implementation built for serious learners.",
-                  icon: GraduationCap,
-                  tone: "blue" as const,
-                },
-                {
-                  title: "Real output",
-                  desc: "Assignments and workflows designed to build visible digital work and practical confidence.",
-                  icon: BadgeCheck,
-                  tone: "gold" as const,
-                },
-                {
-                  title: "Future-ready relevance",
-                  desc: "Capability built around how modern digital work is actually evolving.",
-                  icon: Users,
-                  tone: "blue" as const,
-                },
-                {
-                  title: "Execution standards",
-                  desc: "Guided review and quality checkpoints so progress stays consistent and measurable.",
-                  icon: Sparkles,
-                  tone: "gold" as const,
-                },
-              ].map((c) => (
-                <div
-                  key={c.title}
-                  className="min-h-[110px] rounded-2xl border border-white/10 bg-[var(--sd-card)] p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <IconBadge tone={c.tone}>
-                      <c.icon
-                        className={[
-                          "h-5 w-5",
-                          c.tone === "gold" ? "text-[#F5B301]" : "text-[#2563EB]",
-                        ].join(" ")}
-                      />
-                    </IconBadge>
-                    <div>
-                      <div className="text-sm font-semibold">{c.title}</div>
-                      <div className="mt-1 text-xs leading-5 text-white/72">
-                        {c.desc}
+                          <span className="text-xs font-bold leading-5 text-slate-800 sm:text-sm">
+                            {label}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            </section>
+
+            {/* ABOUT_FOUNDATION_CARDS_PREMIUM_V2 */}
+            <section
+              data-about-foundation-style="premium-cards-v2"
+              aria-label="Sikhadenge learning foundations"
+              className="mt-12"
+            >
+              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">
+                    How we build capability
+                  </p>
+                  <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.025em] text-slate-950 sm:text-3xl">
+                    Four foundations behind practical learning
+                  </h2>
+                </div>
+
+                <p className="max-w-xl text-sm leading-6 text-slate-500 sm:text-right">
+                  A connected learning system designed to move learners from direction to execution, visible output, and consistent improvement.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[
+                  {
+                    number: "01",
+                    title: "Structured learning",
+                    desc: "Clear progression, guided sessions, and practical implementation built for serious learners.",
+                    icon: GraduationCap,
+                    tone: "blue" as const,
+                  },
+                  {
+                    number: "02",
+                    title: "Real output",
+                    desc: "Assignments and workflows designed to build visible digital work and practical confidence.",
+                    icon: BadgeCheck,
+                    tone: "gold" as const,
+                  },
+                  {
+                    number: "03",
+                    title: "Future-ready relevance",
+                    desc: "Capability built around how AI-assisted digital work, roles, and expectations are actually evolving.",
+                    icon: Users,
+                    tone: "blue" as const,
+                  },
+                  {
+                    number: "04",
+                    title: "Execution standards",
+                    desc: "Guided review and quality checkpoints so progress stays consistent, useful, and measurable.",
+                    icon: Sparkles,
+                    tone: "gold" as const,
+                  },
+                ].map((foundation) => (
+                  <article
+                    key={foundation.title}
+                    className="group relative min-h-[220px] overflow-hidden rounded-[26px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_38px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_22px_48px_rgba(37,99,235,0.12)]"
+                  >
+                    <div
+                      aria-hidden="true"
+                      className={[
+                        "absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl transition group-hover:scale-110",
+                        foundation.tone === "gold"
+                          ? "bg-amber-200/35"
+                          : "bg-blue-200/40",
+                      ].join(" ")}
+                    />
+
+                    <div className="relative flex h-full flex-col">
+                      <div className="flex items-center justify-between gap-3">
+                        <span
+                          className={[
+                            "flex h-12 w-12 items-center justify-center rounded-2xl ring-1",
+                            foundation.tone === "gold"
+                              ? "bg-amber-50 text-amber-700 ring-amber-100"
+                              : "bg-blue-50 text-blue-700 ring-blue-100",
+                          ].join(" ")}
+                        >
+                          <foundation.icon className="h-5 w-5" />
+                        </span>
+
+                        <span className="text-sm font-extrabold tracking-[0.12em] text-slate-300">
+                          {foundation.number}
+                        </span>
+                      </div>
+
+                      <h3 className="mt-6 text-lg font-extrabold text-slate-950">
+                        {foundation.title}
+                      </h3>
+
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {foundation.desc}
+                      </p>
+
+                      <div className="mt-auto pt-5">
+                        <span
+                          className={[
+                            "inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.12em]",
+                            foundation.tone === "gold"
+                              ? "text-amber-700"
+                              : "text-blue-700",
+                          ].join(" ")}
+                        >
+                          Practical capability
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
 
           {/* STATS BAR (icons on top + animated numbers) */}
           <div className="mt-10 overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,#01265B_0%,#001B44_100%)] shadow-[0_0_18px_rgba(37,99,235,0.35)]">
