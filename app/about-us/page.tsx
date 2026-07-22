@@ -77,6 +77,26 @@ const faqItems = [
       'Yes. Practical execution is one of the core foundations of Sikhadenge. We aim to help learners produce visible work, not just consume theory.',
   },
   {
+    question: 'Does Sikhadenge include AI-assisted workflows?',
+    answer:
+      'Yes. Sikhadenge includes modern AI-assisted workflows alongside practical digital skills so learners can understand how AI supports design, video, content, marketing, websites, and productivity-focused work.',
+  },
+  {
+    question: 'Will I work on assignments and practical projects?',
+    answer:
+      'Yes. The learning approach includes assignments, workflow-based practice, implementation checkpoints, and practical output so learners can apply what they learn instead of only consuming theory.',
+  },
+  {
+    question: 'How does Sikhadenge help learners improve their work?',
+    answer:
+      'Learners improve through guided review, feedback, checkpoints, iteration, and execution standards designed to strengthen clarity, consistency, and practical output quality.',
+  },
+  {
+    question: 'Can I build capability across multiple digital domains?',
+    answer:
+      'Yes. Sikhadenge connects areas such as design, video editing, AI content creation, marketing, websites, and digital workflows so learners can develop broader modern-work capability.',
+  },
+  {
     question: 'How can I contact Sikhadenge?',
     answer:
       'You can use the Contact page to submit your enquiry or connect with the team for learner support, admissions, and business-related discussions.',
@@ -112,7 +132,7 @@ const foundations = [
 
 const stats = [
   { value: '10+', label: 'Structured programs' },
-  { value: '35K+', label: 'Trained learners' },
+  { value: '150,000+', label: 'Trained learners' },
   { value: '95%', label: 'Learner satisfaction' },
   { value: '20+', label: 'Mentors & trainers' },
 ]
@@ -551,8 +571,8 @@ export default function AboutUsPage() {
             <div className="grid divide-y divide-white/10 md:grid-cols-4 md:divide-x md:divide-y-0">
               {stats.map((stat) => (
                 <div key={stat.label} className="px-6 py-7 text-center text-white">
-                  <p className="text-3xl font-black tracking-tight">{stat.value}</p>
-                  <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100/80">
+                  <p className="text-3xl font-normal tracking-tight">{stat.value}</p>
+                  <p className="mt-2 text-[11px] font-normal uppercase tracking-[0.18em] text-blue-100/80">
                     {stat.label}
                   </p>
                 </div>
@@ -787,13 +807,13 @@ export default function AboutUsPage() {
         {/* ABOUT_CONTACT_STYLE_FAQ_V1 */}
         <div className="mx-auto max-w-7xl">
           <div className="max-w-4xl">
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-bold text-blue-700">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-normal text-blue-700">
               FAQs
             </span>
 
             <h2
               id="about-faq-heading"
-              className="mt-6 text-4xl font-black tracking-[-0.035em] text-slate-950 sm:text-5xl"
+              className="mt-6 text-4xl font-normal tracking-[-0.015em] text-slate-950 sm:text-5xl"
             >
               Frequently asked questions
             </h2>
@@ -809,7 +829,7 @@ export default function AboutUsPage() {
                 key={faq.question}
                 className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition duration-300 open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-5 text-left text-base font-extrabold text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-5 text-left text-base font-normal text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
                   <span>{faq.question}</span>
 
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50 sm:h-12 sm:w-12">
