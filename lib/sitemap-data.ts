@@ -85,7 +85,7 @@ export function getStaticUrls(): SitemapEntry[] {
     "/blog",
     "/site-map",
   ].map((route) => ({
-    url: `${baseUrl}${route}`,
+    url: route === "" ? `${baseUrl}/` : `${baseUrl}${route}`,
     lastModified: now,
     changeFrequency: "daily" as const,
     priority: route === "" ? 1.0 : 0.9,
