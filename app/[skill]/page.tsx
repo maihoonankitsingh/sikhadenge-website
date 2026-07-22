@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   ArrowRight,
   Award,
@@ -230,6 +231,11 @@ export async function generateStaticParams() {
 export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
   const skillInfo = skillsData.find((item) => item.slug === params.skill);
   const entry = findEntry(params.skill);
+
+  if (!skillInfo && !entry) {
+    notFound();
+  }
+
   const fallbackSkill = toTitle(params.skill);
   const title = entry
     ? uniqueTitle(entry, skillInfo)
@@ -267,6 +273,11 @@ export function generateMetadata({ params }: { params: { skill: string } }): Met
 export default function SkillPage({ params }: { params: { skill: string } }) {
   const skillInfo = skillsData.find((item) => item.slug === params.skill);
   const entry = findEntry(params.skill);
+
+  if (!skillInfo && !entry) {
+    notFound();
+  }
+
   const fallbackSkill = toTitle(params.skill);
 
   const city = entry ? entryCity(entry) : "Online";
