@@ -329,12 +329,12 @@ export default function AboutUsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <main className="bg-[#F6F8FC] pt-20 text-[#0F172A]">
+      <main className="bg-[#F6F8FC] pt-8 text-[#0F172A] md:pt-10">
         <section className="px-4 pb-8 pt-8 sm:px-6 md:pb-12 lg:px-8">
           <div className="mx-auto max-w-7xl rounded-[34px] border border-[#DCE7F8] bg-[linear-gradient(118deg,#F8FBFF_0%,#F5F9FF_50%,#EAF9FF_100%)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8 lg:p-10 xl:p-12">
             <div
               data-about-hero-style="phase11n-brand-3d-faq"
-              className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
+              className="grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
             >
               <div>
                 <div className="flex flex-wrap gap-2">
@@ -492,7 +492,7 @@ export default function AboutUsPage() {
 
             <div
               data-about-foundation-style="phase11n-brand-3d-cards"
-              className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+              className="mt-8 grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4"
             >
               {foundations.map((item) => (
                 <div
@@ -685,7 +685,7 @@ export default function AboutUsPage() {
 
         <section className="px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl overflow-hidden rounded-[30px] border border-[#E5ECFA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
-            <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid items-start gap-0 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="p-6 sm:p-8 lg:p-10">
                 <h2 className="text-3xl font-black tracking-[-0.03em] text-[#0F172A]">
                   What do we do?
@@ -753,42 +753,65 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        <section className="px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="text-center">
-              <SectionEyebrow>FAQs</SectionEyebrow>
-              <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] text-[#0F172A]">
-                Frequently asked questions
-              </h2>
-              <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-                Clear answers about Sikhadenge, our learning approach,
-                capability focus, and guided digital skill development.
-              </p>
-            </div>
+        <section
+        aria-labelledby="about-faq-heading"
+        data-about-faq-style="contact-home-light-v1"
+        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-14 sm:px-6 md:py-16 lg:px-8"
+      >
+        {/* ABOUT_CONTACT_STYLE_FAQ_V1 */}
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-4xl">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-bold text-blue-700">
+              FAQs
+            </span>
 
-            <div className="mt-8 space-y-4">
-              {faqItems.map((item, index) => (
-                <details
-                  key={item.question}
-                  open={index === 0}
-                  className="group rounded-[24px] border border-[#E3EAF8] bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-                    <span className="text-left text-lg font-extrabold tracking-tight text-[#0F172A]">
-                      {item.question}
-                    </span>
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#DCE6FA] bg-[#F8FBFF] text-[#2F65F5] transition group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600">
-                    {item.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
+            <h2
+              id="about-faq-heading"
+              className="mt-6 text-4xl font-black tracking-[-0.035em] text-slate-950 sm:text-5xl"
+            >
+              Frequently asked questions
+            </h2>
+
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+              Clear answers about Sikhadenge, practical learning, guided support, skill development, and learner outcomes.
+            </p>
           </div>
-        </section>
+
+          <div className="mt-10 space-y-4 md:mt-12">
+            {faqItems.map((faq) => (
+              <details
+                key={faq.question}
+                className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition duration-300 open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-5 text-left text-base font-extrabold text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
+                  <span>{faq.question}</span>
+
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50 sm:h-12 sm:w-12">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        d="m7 10 5 5 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </summary>
+
+                <div className="border-t border-slate-100 px-6 pb-7 pt-5 text-sm leading-7 text-slate-600 sm:px-8 sm:text-base sm:leading-8">
+                  {faq.answer}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
 
         <section className="px-4 pb-14 pt-2 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl rounded-[30px] border border-[#E6E0D1] bg-[linear-gradient(90deg,#F9FBFF_0%,#FFFBEF_100%)] px-6 py-8 shadow-[0_14px_34px_rgba(15,23,42,0.04)] sm:px-8">
