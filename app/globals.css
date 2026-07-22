@@ -340,3 +340,16 @@ html, body { overflow-x: hidden; }
 }
 
 /* SIKHADENGE_HOME_BRICOLAGE_TYPOGRAPHY_V1_END */
+
+/* SIKHADENGE_GLOBAL_BRICOLAGE_FONT_V1 */
+/*
+ * Keep the homepage typography consistent across routes that use
+ * Tailwind's font-sans utility or native form controls.
+ */
+.font-sans,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-bricolage), sans-serif;
+}

@@ -349,7 +349,7 @@ export default function AboutUsPage() {
                 </span>
               </div>
 
-              <h1 className="mt-6 max-w-[590px] text-[2.65rem] font-black leading-[0.98] tracking-[-0.05em] text-slate-950 sm:text-[3.25rem] lg:text-[3.55rem]">
+              <h1 className="mt-6 max-w-[590px] text-[2.1rem] font-bold leading-[1.04] tracking-[-0.035em] text-slate-950 sm:text-[2.45rem] lg:text-[2.8rem]">
                 About Sikhadenge.
                 <span className="mt-2 block text-[#2F65F5]">
                   Practical AI capability for modern digital work.

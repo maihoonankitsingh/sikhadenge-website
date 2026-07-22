@@ -1,13 +1,11 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import { Inter, Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import dynamic from "next/dynamic";
 
 import JsonLd from "./_components/JsonLd";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { ConsentManager } from "@/components/consent/ConsentManager";
-
-const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -113,7 +111,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico?v=whitebg-folder-final" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=whitebg-folder-final" />
       </head>
-      <body className={`${inter.className} ${bricolage.variable}`}>
+      <body className={`${bricolage.className} ${bricolage.variable}`}>
         <ConsentProvider>
           <ConsentManager />
         <JsonLd />
