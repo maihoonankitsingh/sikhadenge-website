@@ -43,6 +43,69 @@ export const metadata: Metadata = {
   },
 };
 
+const BLOG_FAQS = [
+  {
+    question: "What can I learn from the Sikhadenge AI Blog?",
+    answer:
+      "The Sikhadenge AI Blog covers practical guides on ChatGPT, Gemini, Claude, AI tools, prompts, content creation, design, video, marketing, automation, careers, freelancing, business workflows, SEO, AEO, and GEO.",
+  },
+  {
+    question: "Is the Sikhadenge AI Blog suitable for beginners?",
+    answer:
+      "Yes. Many guides are designed for beginners who want clear explanations, practical steps, useful tool guidance, and structured workflows without needing advanced technical knowledge.",
+  },
+  {
+    question: "Which AI tools and platforms are covered in the Blog?",
+    answer:
+      "The Blog includes guides related to ChatGPT, Gemini, Claude, AI image tools, content tools, design tools, video tools, marketing tools, productivity platforms, and other modern AI-assisted workflows.",
+  },
+  {
+    question: "Does the Blog include practical workflows or only theory?",
+    answer:
+      "The Blog focuses on practical discovery and execution. Articles connect tools and concepts with workflows, use cases, implementation steps, project ideas, productivity systems, and real work outcomes.",
+  },
+  {
+    question: "Can students use these guides for learning and career growth?",
+    answer:
+      "Yes. Students can explore AI tools, study workflows, career paths, job-ready skills, portfolio ideas, productivity methods, and practical project guidance through the Blog.",
+  },
+  {
+    question: "Are there AI guides for freelancers and content creators?",
+    answer:
+      "Yes. The Blog includes topics for freelancers, writers, designers, video editors, marketers, creators, social media professionals, and people building client-ready digital services.",
+  },
+  {
+    question: "Does the Blog cover AI careers and job-ready skills?",
+    answer:
+      "Yes. Readers can explore AI career paths, future-ready skills, beginner roadmaps, freelancing opportunities, portfolio development, client workflows, and practical digital capability.",
+  },
+  {
+    question: "Can I learn about SEO, AEO, and GEO from the Blog?",
+    answer:
+      "Yes. The knowledge hub includes content related to search visibility, SEO workflows, answer-engine optimisation, generative-engine optimisation, content structure, internal linking, and topical authority.",
+  },
+  {
+    question: "How can I find the right article quickly?",
+    answer:
+      "Start with the Featured Guides section, browse the Explore by Topic cards, or use the category labels to move toward articles related to your learning goal, tool, career path, or workflow.",
+  },
+  {
+    question: "Why are Blog articles organised into topic categories?",
+    answer:
+      "Topic categories create clearer learning paths and make it easier to discover related guides. They also help readers move from a broad question to deeper and more focused practical content.",
+  },
+  {
+    question: "How large is the Sikhadenge Blog library?",
+    answer:
+      "The Blog hub displays its article count dynamically. It currently contains more than 120,000 practical AI pages organised across 51 topic categories.",
+  },
+  {
+    question: "What should I do after reading a Blog guide?",
+    answer:
+      "Apply the workflow through practice, explore related articles, join the free AI masterclass, or continue with Sikhadenge courses for structured learning, mentor support, and practical project execution.",
+  },
+] as const;
+
 function getCategoryStats(posts: BlogItem[]) {
   const counts = new Map<string, number>();
 
@@ -186,6 +249,19 @@ export default function BlogHubPage() {
       })),
   };
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: BLOG_FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
   if (!featuredPost) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-20 text-slate-950">
@@ -212,6 +288,15 @@ export default function BlogHubPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             collectionJsonLd,
+          ),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            faqJsonLd,
           ),
         }}
       />
@@ -681,6 +766,67 @@ export default function BlogHubPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="blog-faq-heading"
+        data-blog-faq-style="home-light-v1"
+        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-16 sm:px-6 md:py-20 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-4xl">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-medium text-blue-700">
+              FAQs
+            </span>
+
+            <h2
+              id="blog-faq-heading"
+              className="mt-6 text-4xl font-medium tracking-[-0.035em] text-slate-950 sm:text-5xl"
+            >
+              Frequently asked questions
+            </h2>
+
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+              Clear answers about the Sikhadenge AI Blog,
+              practical guides, topic discovery, AI tools,
+              careers, workflows, and structured learning.
+            </p>
+          </div>
+
+          <div className="mt-12 space-y-4">
+            {BLOG_FAQS.map((faq) => (
+              <details
+                key={faq.question}
+                className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-6 text-left text-base font-medium text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
+                  <span>{faq.question}</span>
+
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        d="m7 10 5 5 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </summary>
+
+                <div className="border-t border-slate-100 px-6 pb-7 pt-5 text-sm leading-7 text-slate-600 sm:px-8 sm:text-base sm:leading-8">
+                  {faq.answer}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </section>
