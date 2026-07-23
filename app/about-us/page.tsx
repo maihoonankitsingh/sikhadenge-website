@@ -390,7 +390,10 @@ export default function AboutUsPage() {
                 </p>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div
+                data-about-audience-style="compact-single-row-v1"
+                className="mt-5 grid max-w-[590px] grid-cols-2 gap-2 sm:grid-cols-4"
+              >
                 {[
                   'Students & freshers',
                   'Freelancers & creators',
@@ -399,8 +402,12 @@ export default function AboutUsPage() {
                 ].map((audience) => (
                   <span
                     key={audience}
-                    className="rounded-full border border-slate-200 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
+                    className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-blue-100 bg-white/90 px-2 py-1.5 text-[10px] font-normal leading-none tracking-[-0.01em] text-slate-600 shadow-[0_6px_16px_rgba(15,23,42,0.035)]"
                   >
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2F65F5]"
+                    />
                     {audience}
                   </span>
                 ))}
