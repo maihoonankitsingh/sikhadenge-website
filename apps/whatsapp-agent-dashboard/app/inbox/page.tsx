@@ -1,11 +1,19 @@
-import DashboardShell from "../../components/DashboardShell";
+import InboxDashboard from "../../components/inbox/InboxDashboard";
 import LogoutButton from "../../components/auth/LogoutButton";
 import { requireDashboardUser } from "../../lib/auth/session";
+import {
+  getInboxConversation,
+  listInboxConversations,
+} from "../../lib/inbox/conversation-repository";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
   const user = await requireDashboardUser();
+  const conversations = await listInboxConversations();
+  const initialConversation = conversations[0]
+    ? await getInboxConversation(conversations[0].id)
+    : null;
 
   return (
     <>
@@ -16,7 +24,10 @@ export default async function InboxPage() {
         </span>
         <LogoutButton />
       </div>
-      <DashboardShell />
+      <InboxDashboard
+        initialConversations={conversations}
+        initialConversation={initialConversation}
+      />
     </>
   );
 }
