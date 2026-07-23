@@ -808,64 +808,71 @@ export default function CoursesPage() {
       </section>
 
       <section
-        data-courses-stats="large-program-metrics-v4"
+        data-courses-stats="compact-generated-3d-metrics-v5"
         className="px-4 py-8 sm:px-6 lg:px-8"
       >
-        <div className="mx-auto grid max-w-[1240px] gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
             {
-              icon: <Clock3 className="h-6 w-6" />,
+              image:
+                "/images/courses/stats/courses-stat-8-weeks.webp",
               value: "8 Weeks",
-              label:
-                "Structured and guided learning journey",
+              label: "Guided learning",
             },
             {
-              icon: <Blocks className="h-6 w-6" />,
+              image:
+                "/images/courses/stats/courses-stat-7-modules.webp",
               value: "7 Modules",
-              label:
-                "Connected AI and digital capabilities",
+              label: "Connected skills",
             },
             {
-              icon: <MonitorPlay className="h-6 w-6" />,
-              value: "Live Learning",
-              label:
-                "Practical classes with demonstrations",
+              image:
+                "/images/courses/stats/courses-stat-live.webp",
+              value: "Live",
+              label: "Practical classes",
             },
             {
-              icon: <Languages className="h-6 w-6" />,
-              value: "Hindi Friendly",
-              label:
-                "Clear explanations and learning support",
+              image:
+                "/images/courses/stats/courses-stat-hindi.webp",
+              value: "Hindi",
+              label: "Friendly support",
             },
             {
-              icon: (
-                <CheckCircle2 className="h-6 w-6" />
-              ),
-              value: "Real Projects",
-              label:
-                "Portfolio-oriented practical outputs",
+              image:
+                "/images/courses/stats/courses-stat-projects.webp",
+              value: "Projects",
+              label: "Hands-on work",
             },
             {
-              icon: <Rocket className="h-6 w-6" />,
-              value: "Career Ready",
-              label:
-                "Skills for jobs, freelance, and business",
+              image:
+                "/images/courses/stats/courses-stat-career.webp",
+              value: "Career Boost",
+              label: "Outcome focused",
             },
           ].map((item) => (
             <article
               key={item.value}
-              className="flex min-h-[126px] items-center gap-4 rounded-[25px] border border-blue-100 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-blue-300"
+              className="flex min-h-[126px] flex-col items-start gap-3 rounded-[22px] border border-blue-100 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-blue-300 sm:min-h-[112px] sm:flex-row sm:items-center"
             >
-              <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px] bg-[linear-gradient(145deg,#EDF4FF,#F1EDFF)] text-blue-700 shadow-[0_10px_24px_rgba(37,99,235,0.12)]">
-                {item.icon}
+              <span
+                data-course-stat-icon="generated-3d-webp-v1"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-blue-100/80 bg-[linear-gradient(145deg,#F8FAFF,#F3F0FF)] shadow-[0_9px_22px_rgba(37,99,235,0.1)]"
+              >
+                <Image
+                  src={item.image}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-12 w-12 object-contain"
+                />
               </span>
 
-              <div>
-                <p className="text-[20px] font-medium tracking-[-0.02em] text-slate-950">
+              <div className="min-w-0">
+                <p className="text-[15px] font-medium tracking-[-0.015em] text-slate-950 sm:text-[16px]">
                   {item.value}
                 </p>
 
-                <p className="mt-1.5 text-[13px] leading-6 text-slate-500">
+                <p className="mt-1 text-[10px] leading-4 text-slate-500 sm:text-[11px]">
                   {item.label}
                 </p>
               </div>
