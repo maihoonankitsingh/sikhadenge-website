@@ -808,44 +808,44 @@ export default function CoursesPage() {
       </section>
 
       <section
-        data-courses-stats="compact-generated-3d-metrics-v5"
+        data-courses-stats="compact-contact-premium-3d-metrics-v6"
         className="px-4 py-8 sm:px-6 lg:px-8"
       >
         <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
             {
               image:
-                "/images/courses/stats/courses-stat-8-weeks.webp",
+                "/images/courses/stats/courses-stat-8-weeks-contact-v2.webp",
               value: "8 Weeks",
               label: "Guided learning",
             },
             {
               image:
-                "/images/courses/stats/courses-stat-7-modules.webp",
+                "/images/courses/stats/courses-stat-7-modules-contact-v2.webp",
               value: "7 Modules",
               label: "Connected skills",
             },
             {
               image:
-                "/images/courses/stats/courses-stat-live.webp",
+                "/images/courses/stats/courses-stat-live-contact-v2.webp",
               value: "Live",
               label: "Practical classes",
             },
             {
               image:
-                "/images/courses/stats/courses-stat-hindi.webp",
+                "/images/courses/stats/courses-stat-hindi-contact-v2.webp",
               value: "Hindi",
               label: "Friendly support",
             },
             {
               image:
-                "/images/courses/stats/courses-stat-projects.webp",
+                "/images/courses/stats/courses-stat-projects-contact-v2.webp",
               value: "Projects",
               label: "Hands-on work",
             },
             {
               image:
-                "/images/courses/stats/courses-stat-career.webp",
+                "/images/courses/stats/courses-stat-career-contact-v2.webp",
               value: "Career Boost",
               label: "Outcome focused",
             },
@@ -855,7 +855,7 @@ export default function CoursesPage() {
               className="flex min-h-[126px] flex-col items-start gap-3 rounded-[22px] border border-blue-100 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-blue-300 sm:min-h-[112px] sm:flex-row sm:items-center"
             >
               <span
-                data-course-stat-icon="generated-3d-webp-v1"
+                data-course-stat-icon="contact-premium-3d-webp-v2"
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-blue-100/80 bg-[linear-gradient(145deg,#F8FAFF,#F3F0FF)] shadow-[0_9px_22px_rgba(37,99,235,0.1)]"
               >
                 <Image
