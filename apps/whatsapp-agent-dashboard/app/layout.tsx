@@ -6,15 +6,18 @@ import "./branding.css";
 import "./premium-dashboard.css";
 import "./premium-icons.css";
 import "./premium-fixes.css";
+import "./compact-header.css";
+
+const APP_MARK = "/sikhadenge-app-mark-v3.svg";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
   description: "SikhaDenge-owned WhatsApp inbox, AI agent and lead dashboard.",
   robots: { index: false, follow: false },
   icons: {
-    icon: "/sikhadenge-mark.svg",
-    shortcut: "/sikhadenge-mark.svg",
-    apple: "/sikhadenge-mark.svg",
+    icon: [{ url: APP_MARK, type: "image/svg+xml" }],
+    shortcut: APP_MARK,
+    apple: APP_MARK,
   },
 };
 
