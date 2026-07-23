@@ -5,21 +5,16 @@ import "./inbox.css";
 import "./branding.css";
 import "./premium-dashboard.css";
 import "./premium-icons.css";
-
-const OFFICIAL_LOGO =
-  "https://sikhadenge.in/brand/sikhadenge-header-safe-320.png?v=headersafe1";
+import "./premium-fixes.css";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
   description: "SikhaDenge-owned WhatsApp inbox, AI agent and lead dashboard.",
   robots: { index: false, follow: false },
   icons: {
-    icon: [
-      { url: "https://sikhadenge.in/favicon.ico", type: "image/x-icon" },
-      { url: OFFICIAL_LOGO, type: "image/png" },
-    ],
-    shortcut: "https://sikhadenge.in/favicon.ico",
-    apple: OFFICIAL_LOGO,
+    icon: "/sikhadenge-mark.svg",
+    shortcut: "/sikhadenge-mark.svg",
+    apple: "/sikhadenge-mark.svg",
   },
 };
 
