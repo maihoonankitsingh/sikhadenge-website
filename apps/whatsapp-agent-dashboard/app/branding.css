@@ -1,5 +1,7 @@
 .brand-mark {
   position: relative;
+  width: 60px;
+  height: 58px;
   overflow: visible;
   background: transparent;
   box-shadow: none;
@@ -10,25 +12,16 @@
 .brand-mark::before {
   content: "";
   display: block;
-  width: 48px;
-  height: 48px;
-  background: url("/sikhadenge-mark.svg") center / contain no-repeat;
-  filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.28));
+  width: 60px;
+  height: 58px;
+  background: url("https://sikhadenge.in/brand/sikhadenge-header-safe-320.png?v=headersafe1") center / contain no-repeat;
+  filter: drop-shadow(0 10px 20px rgba(37, 99, 235, 0.24));
 }
 
 .brand-mark::after {
-  content: "SikhaDenge";
-  position: absolute;
-  left: 50%;
-  top: 53px;
-  transform: translateX(-50%);
-  color: #cbd5e1;
-  font-size: 7px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  content: "";
 }
 
 .rail nav {
-  margin-top: 48px;
+  margin-top: 50px;
 }
