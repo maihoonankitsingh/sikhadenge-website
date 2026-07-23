@@ -1,9 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, BookOpen, FolderKanban, Search, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  FolderKanban,
+  Search,
+  Sparkles,
+} from "lucide-react";
+
 import { getBlogs, type BlogItem } from "@/lib/blogs";
 
 const BASE_URL = "https://sikhadenge.in";
+
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
@@ -20,14 +28,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: `${BASE_URL}/blog`,
-    title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
+    title:
+      "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
     description:
       "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
     siteName: "Sikhadenge",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
+    title:
+      "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
     description:
       "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
   },
@@ -53,10 +63,17 @@ function getRepresentativePosts(posts: BlogItem[]) {
 
   for (const post of posts) {
     const category = post.category || "AI Guides";
-    if (seen.has(category)) continue;
+
+    if (seen.has(category)) {
+      continue;
+    }
+
     seen.add(category);
     picked.push(post);
-    if (picked.length >= 12) break;
+
+    if (picked.length >= 12) {
+      break;
+    }
   }
 
   return picked;
@@ -78,9 +95,12 @@ function getPriorityPosts(posts: BlogItem[]) {
 
   const scored = posts
     .map((post) => {
-      const haystack = `${post.slug} ${post.title} ${post.category || ""}`.toLowerCase();
+      const haystack =
+        `${post.slug} ${post.title} ${post.category || ""}`.toLowerCase();
+
       const score = priorityTerms.reduce(
-        (total, term) => total + (haystack.includes(term) ? 1 : 0),
+        (total, term) =>
+          total + (haystack.includes(term) ? 1 : 0),
         0,
       );
 
@@ -92,20 +112,58 @@ function getPriorityPosts(posts: BlogItem[]) {
   const picked: BlogItem[] = [];
 
   for (const item of scored) {
-    if (unique.has(item.post.slug)) continue;
+    if (unique.has(item.post.slug)) {
+      continue;
+    }
+
     unique.add(item.post.slug);
     picked.push(item.post);
-    if (picked.length >= 9) break;
+
+    if (picked.length >= 9) {
+      break;
+    }
   }
 
   return picked;
 }
 
+function getPostSummary(post: BlogItem, limit = 175) {
+  const source =
+    post.excerpt ||
+    "Practical AI guide with clear tools, useful workflows, and execution-focused learning support.";
+
+  if (source.length <= limit) {
+    return source;
+  }
+
+  return `${source.slice(0, limit).trim()}…`;
+}
+
 export default function BlogHubPage() {
   const posts = getBlogs();
   const categoryStats = getCategoryStats(posts);
-  const representativePosts = getRepresentativePosts(posts);
+  const representativePosts =
+    getRepresentativePosts(posts);
   const priorityPosts = getPriorityPosts(posts);
+
+  const featuredPost =
+    priorityPosts[0] || posts[0];
+
+  const supportingPosts =
+    priorityPosts.slice(1, 4);
+
+  const popularPosts =
+    priorityPosts.slice(0, 6);
+
+  const discoveryPosts =
+    posts.slice(0, 6);
+
+  const totalCategoryCount = new Set(
+    posts.map(
+      (post) => post.category || "AI Guides",
+    ),
+  ).size;
+
   const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -118,255 +176,552 @@ export default function BlogHubPage() {
       name: "Sikhadenge",
       url: BASE_URL,
     },
-    hasPart: priorityPosts.slice(0, 6).map((post, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      url: `${BASE_URL}/blog/${post.slug}`,
-      name: post.title,
-    })),
+    hasPart: priorityPosts
+      .slice(0, 6)
+      .map((post, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${BASE_URL}/blog/${post.slug}`,
+        name: post.title,
+      })),
   };
 
+  if (!featuredPost) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-20 text-slate-950">
+        <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-8 text-center">
+          <BookOpen className="mx-auto h-8 w-8 text-blue-600" />
+          <h1 className="mt-4 text-3xl font-medium">
+            Sikhadenge AI Blog
+          </h1>
+          <p className="mt-3 text-slate-600">
+            Practical AI guides are being prepared.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main
+      data-blog-hub-design="brand-editorial-v1"
+      className="min-h-screen bg-[linear-gradient(180deg,#F8FBFF_0%,#F8FAFC_30%,#F8FAFC_100%)] text-slate-950"
+    >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            collectionJsonLd,
+          ),
+        }}
       />
-      <section className="bg-[linear-gradient(135deg,#13204f_0%,#1f3f9e_100%)] px-4 pb-16 pt-24 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/80">
-            Sikhadenge AI Blog
-          </div>
 
-          <h1 className="mt-6 max-w-5xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
-            Practical AI guides built for search, answers, ranking signals, and leads
-          </h1>
+      <section className="relative overflow-hidden px-4 pb-14 pt-10 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
+        <div
+          aria-hidden="true"
+          className="absolute left-[-180px] top-[-180px] h-[420px] w-[420px] rounded-full bg-blue-200/45 blur-3xl"
+        />
 
-          <p className="mt-5 max-w-3xl text-base leading-8 text-blue-50/85 sm:text-lg">
-            Explore real blog coverage across ChatGPT, Gemini, Claude, AI tools,
-            prompts, careers, freelancing, business execution, SEO, AEO, GEO,
-            and digital growth systems.
-          </p>
+        <div
+          aria-hidden="true"
+          className="absolute right-[-160px] top-[40px] h-[360px] w-[360px] rounded-full bg-violet-200/35 blur-3xl"
+        />
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/gen-ai-masterclass/register-one-step"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-blue-800 shadow-[0_12px_30px_rgba(15,23,42,0.22)] transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Join Free AI Masterclass <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/courses"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20"
-            >
-              Explore AI Courses
-            </Link>
-          </div>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
-                Total Blog Pages
-              </div>
-              <div className="mt-3 text-3xl font-black">{posts.length.toLocaleString()}</div>
+        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[11px] font-normal uppercase tracking-[0.18em] text-blue-700 shadow-[0_8px_25px_rgba(37,99,235,0.08)] backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" />
+              Sikhadenge AI Knowledge Hub
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
-                Topic Clusters
-              </div>
-              <div className="mt-3 text-3xl font-black">{categoryStats.length}+</div>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-100/70">
-                Search Focus
-              </div>
-              <div className="mt-3 text-lg font-bold">SEO + AEO + GEO + internal linking</div>
-            </div>
-          </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            {["ChatGPT", "Gemini", "Claude", "AI Tools", "Freelancing", "AI Career"].map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white/85"
+            <h1 className="mt-6 max-w-4xl text-[34px] font-medium leading-[1.04] tracking-[-0.035em] text-slate-950 sm:text-[44px] lg:text-[54px]">
+              Practical AI knowledge for modern work,
+              learning, and growth
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              Discover practical guides across AI tools,
+              ChatGPT, careers, freelancing, content,
+              design, marketing, automation, and
+              future-ready digital workflows.
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                href="#featured-guides"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
-                {item}
+                Explore featured guides
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href="#topic-clusters"
+                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700"
+              >
+                Browse AI topics
+              </Link>
+            </div>
+
+            <div className="mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur">
+                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
+                  Total Blog Pages
+                </p>
+                <p className="mt-2 text-2xl font-medium text-slate-950">
+                  {posts.length.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur">
+                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
+                  Topic Categories
+                </p>
+                <p className="mt-2 text-2xl font-medium text-slate-950">
+                  {totalCategoryCount}
+                </p>
+              </div>
+
+              <div className="col-span-2 rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur sm:col-span-1">
+                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
+                  Knowledge Focus
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-800">
+                  Learn · Apply · Grow
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {popularPosts.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="rounded-full border border-blue-100 bg-white/80 px-3 py-1.5 text-xs font-normal text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+                >
+                  {post.category || "AI Guides"}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-[570px]">
+            <div
+              data-blog-hero-visual="ai-knowledge-map-v1"
+              className="relative overflow-hidden rounded-[34px] border border-blue-100 bg-[linear-gradient(145deg,#07152F_0%,#123D8D_58%,#7557D7_100%)] p-5 shadow-[0_30px_75px_rgba(30,64,175,0.2)] sm:p-6"
+            >
+              <div
+                aria-hidden="true"
+                className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-cyan-300/25 blur-3xl"
+              />
+
+              <div
+                aria-hidden="true"
+                className="absolute -bottom-24 -left-12 h-64 w-64 rounded-full bg-violet-300/20 blur-3xl"
+              />
+
+              <div className="relative rounded-[26px] border border-white/15 bg-white/10 p-5 backdrop-blur-xl sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-blue-100/80">
+                      AI knowledge map
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-medium tracking-[-0.025em] text-white">
+                      One hub. Multiple practical paths.
+                    </h2>
+                  </div>
+
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white">
+                    <Search className="h-5 w-5" />
+                  </span>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {[
+                    "AI tools & prompts",
+                    "Careers & freelancing",
+                    "Content & marketing",
+                    "Design & video",
+                    "Automation workflows",
+                    "SEO · AEO · GEO",
+                  ].map((item, index) => (
+                    <div
+                      key={item}
+                      className="rounded-[18px] border border-white/12 bg-white/10 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/12 text-xs font-medium text-blue-100">
+                          {String(index + 1).padStart(
+                            2,
+                            "0",
+                          )}
+                        </span>
+
+                        <span className="text-sm font-normal text-white/90">
+                          {item}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 rounded-[20px] border border-cyan-200/20 bg-slate-950/25 p-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-cyan-200" />
+
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        Built for practical discovery
+                      </p>
+
+                      <p className="mt-1 text-xs leading-6 text-blue-100/75">
+                        Find a useful guide, understand the
+                        workflow, and move directly toward a
+                        real learning or work outcome.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="featured-guides"
+        className="px-4 py-12 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
+              Featured guides
+            </p>
+
+            <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
+              Start with practical AI topics readers
+              explore first
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+              Clear guides designed to help learners,
+              creators, freelancers, and professionals
+              understand tools and apply them in real work.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+            <Link
+              href={`/blog/${featuredPost.slug}`}
+              className="group relative overflow-hidden rounded-[30px] border border-blue-100 bg-[linear-gradient(145deg,#0A1734_0%,#184CA6_68%,#5A55D9_100%)] p-7 text-white shadow-[0_24px_60px_rgba(30,64,175,0.18)] transition hover:-translate-y-1 sm:p-9"
+            >
+              <div
+                aria-hidden="true"
+                className="absolute right-[-100px] top-[-100px] h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl"
+              />
+
+              <div className="relative">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-normal uppercase tracking-[0.18em] text-blue-100">
+                  {featuredPost.category || "AI Guides"}
+                </span>
+
+                <h3 className="mt-5 max-w-2xl text-3xl font-medium leading-tight tracking-[-0.025em] sm:text-4xl">
+                  {featuredPost.title}
+                </h3>
+
+                <p className="mt-5 max-w-xl text-sm leading-7 text-blue-50/80 sm:text-base">
+                  {getPostSummary(
+                    featuredPost,
+                    235,
+                  )}
+                </p>
+
+                <div className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-white">
+                  Read featured guide
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Link>
+
+            <div className="grid gap-4">
+              {supportingPosts.map(
+                (post, index) => (
+                  <Link
+                    key={post.slug}
+                    href={`/blog/${post.slug}`}
+                    className="group rounded-[24px] border border-blue-100 bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:border-blue-300"
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-xs font-medium text-blue-700">
+                        {String(index + 1).padStart(
+                          2,
+                          "0",
+                        )}
+                      </span>
+
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
+                          {post.category || "AI Guides"}
+                        </p>
+
+                        <h3 className="mt-2 text-lg font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
+                          {post.title}
+                        </h3>
+
+                        <div className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-blue-700">
+                          Read guide
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ),
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="topic-clusters"
+        className="px-4 py-12 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
+                Explore by topic
+              </p>
+
+              <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
+                Discover focused AI learning paths
+              </h2>
+
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                Browse representative guides across the
+                strongest topic categories in the
+                Sikhadenge knowledge library.
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+              <FolderKanban className="h-4 w-4 text-blue-600" />
+              {totalCategoryCount} categories
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {representativePosts.map(
+              (post, index) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="group rounded-[24px] border border-blue-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_18px_42px_rgba(37,99,235,0.1)]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#EAF2FF,#F1EEFF)] text-xs font-medium text-blue-700">
+                      {String(index + 1).padStart(
+                        2,
+                        "0",
+                      )}
+                    </span>
+
+                    <BookOpen className="h-4 w-4 text-slate-300 transition group-hover:text-blue-500" />
+                  </div>
+
+                  <p className="mt-5 text-[10px] font-normal uppercase tracking-[0.17em] text-blue-600">
+                    {post.category || "AI Guides"}
+                  </p>
+
+                  <h3 className="mt-2 text-lg font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
+                    {post.title}
+                  </h3>
+                </Link>
+              ),
+            )}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-2">
+            {categoryStats.map((item) => (
+              <span
+                key={item.label}
+                className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-xs font-normal text-slate-600"
+              >
+                {item.label} ·{" "}
+                {item.count.toLocaleString()}
               </span>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 rounded-[28px] border border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#eff6ff_100%)] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <div className="grid gap-5 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                High Intent Learning Path
-              </p>
-              <h2 className="mt-3 text-2xl font-black text-slate-900">
-                ChatGPT, Canva AI, Claude, AI images, reels, and lead-generation topics ko practical training se connect karo.
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Blog reader ko next step clear milna chahiye: guide padho, workflow samjho, free masterclass join karo, aur real project output banao.
-              </p>
-            </div>
-            <Link
-              href="/gen-ai-masterclass/register-one-step"
-              className="inline-flex justify-center rounded-full bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-blue-800"
-            >
-              Register Free Now
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-3">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-            <Search className="h-8 w-8 text-blue-700" />
-            <h2 className="mt-4 text-xl font-black text-slate-900">Search-ready structure</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              Blog hub internal links, category discovery, and representative articles
-              help search engines and AI tools understand topical depth.
+      <section
+        id="priority-guides"
+        className="px-4 py-12 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
+              More practical guides
             </p>
-          </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-            <Sparkles className="h-8 w-8 text-blue-700" />
-            <h2 className="mt-4 text-xl font-black text-slate-900">Answer-first content</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              High-intent topics like ChatGPT, AI tools, careers, prompts, and
-              execution workflows stay easy to discover and easier to recommend.
-            </p>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-            <FolderKanban className="h-8 w-8 text-blue-700" />
-            <h2 className="mt-4 text-xl font-black text-slate-900">Authority clusters</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              Category-led article discovery improves crawl depth, reduces orphan pages,
-              and helps stronger topical authority build over time.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-              Priority Articles
-            </p>
-            <h2 className="mt-2 text-3xl font-black text-slate-900">
-              High-intent AI topics readers search for first
+            <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
+              Continue exploring useful AI workflows
             </h2>
           </div>
-        </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {priorityPosts.map((post) => (
-            <Link
-              key={post.slug}
-              href={`/blog/${post.slug}`}
-              className="group rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
-            >
-              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
-                {post.category || "AI Guides"}
-              </span>
-              <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900 transition group-hover:text-blue-700">
-                {post.title}
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                {post.excerpt ||
-                  "Practical AI guide with tools, workflow clarity, and real execution support."}
-              </p>
-              <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700">
-                Read article <ArrowRight className="h-4 w-4" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {discoveryPosts.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="group flex h-full flex-col rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)] transition hover:-translate-y-1 hover:border-blue-300"
+              >
+                <p className="text-[10px] font-normal uppercase tracking-[0.17em] text-blue-600">
+                  {post.category || "AI Guides"}
+                </p>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-                Crawl Signals
-              </p>
-              <h2 className="mt-2 text-2xl font-black text-slate-900">
-                Stronger discovery for search engines and AI answer systems
-              </h2>
-            </div>
-            <Link
-              href="/sitemap.xml"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
-            >
-              Open sitemap <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-5">
-              <div className="text-sm font-black text-slate-900">Canonical-first URLs</div>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Flat blog URLs, deduped slugs, and redirect-safe blog routing reduce crawl confusion.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-5">
-              <div className="text-sm font-black text-slate-900">Internal linking depth</div>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Priority articles and cluster cards help bots and readers reach deeper content faster.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-5">
-              <div className="text-sm font-black text-slate-900">Answer-engine alignment</div>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Topic grouping and article structure make recommendations easier for AI search products.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+                <h3 className="mt-3 text-xl font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
+                  {post.title}
+                </h3>
 
-      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-          Topic Clusters
-        </p>
-        <h2 className="mt-2 text-3xl font-black text-slate-900">
-          Explore blog categories with strong topical depth
-        </h2>
+                <p className="mt-4 flex-1 text-sm leading-7 text-slate-600">
+                  {getPostSummary(post)}
+                </p>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {representativePosts.map((post) => (
-            <Link
-              key={post.slug}
-              href={`/blog/${post.slug}`}
-              className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:border-blue-300 hover:shadow-lg"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
-                    {post.category || "AI Guides"}
-                  </div>
-                  <h3 className="mt-3 text-lg font-black leading-snug text-slate-900">
-                    {post.title}
-                  </h3>
+                <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-blue-700">
+                  Read article
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </div>
-                <BookOpen className="h-5 w-5 flex-shrink-0 text-slate-400" />
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          {categoryStats.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-            >
-              {item.label} ({item.count})
+      <section className="px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-5 md:grid-cols-3">
+            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                <Search className="h-5 w-5" />
+              </span>
+
+              <h2 className="mt-5 text-xl font-medium text-slate-950">
+                Search-ready structure
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Clear internal links, topic discovery,
+                and representative articles help readers
+                and search systems understand the depth
+                of each subject.
+              </p>
+            </article>
+
+            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                <Sparkles className="h-5 w-5" />
+              </span>
+
+              <h2 className="mt-5 text-xl font-medium text-slate-950">
+                Answer-first content
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                High-intent AI topics remain easy to
+                discover, understand, recommend, and
+                connect with practical execution.
+              </p>
+            </article>
+
+            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                <FolderKanban className="h-5 w-5" />
+              </span>
+
+              <h2 className="mt-5 text-xl font-medium text-slate-950">
+                Authority clusters
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Category-led content supports stronger
+                topical depth, lower orphan-page risk,
+                and clearer learning journeys.
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 rounded-[30px] border border-blue-100 bg-[linear-gradient(135deg,#F3F8FF_0%,#F6F2FF_100%)] p-6 shadow-[0_16px_42px_rgba(37,99,235,0.06)] sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-[10px] font-normal uppercase tracking-[0.18em] text-blue-600">
+                  Crawl Signals
+                </p>
+
+                <h2 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-slate-950">
+                  Strong discovery without exposing
+                  technical complexity to readers
+                </h2>
+
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+                  Canonical URLs, internal linking depth,
+                  topic grouping, and structured data
+                  remain preserved behind a cleaner,
+                  visitor-first Blog experience.
+                </p>
+              </div>
+
+              <Link
+                href="/sitemap.xml"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-blue-200 bg-white px-5 py-3 text-sm font-medium text-blue-700 transition hover:-translate-y-0.5 hover:border-blue-400"
+              >
+                Open sitemap
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-          ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 lg:px-8">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[34px] border border-blue-100 bg-[linear-gradient(135deg,#07152F_0%,#174899_60%,#6255D8_100%)] px-6 py-10 text-white shadow-[0_28px_70px_rgba(30,64,175,0.2)] sm:px-10 sm:py-12">
+          <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="max-w-3xl">
+              <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-blue-100/75">
+                Learn beyond the article
+              </p>
+
+              <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] sm:text-4xl">
+                Turn practical AI knowledge into
+                real project capability
+              </h2>
+
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-50/80 sm:text-base">
+                Continue from useful guides to structured
+                learning, mentor support, practical
+                workflows, and visible output.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/gen-ai-masterclass/register-one-step"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-blue-800 transition hover:-translate-y-0.5 hover:bg-blue-50"
+              >
+                Join Free AI Masterclass
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href="/courses"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-white/15"
+              >
+                Explore courses
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </main>
