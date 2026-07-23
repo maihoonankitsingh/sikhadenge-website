@@ -55,7 +55,7 @@ export const metadata: Metadata = {
       "Build practical AI-powered digital capability through live, guided, execution-first learning across content, design, video, marketing, pages, and workflows.",
     siteName: "Sikhadenge",
     images: [
-      `${BASE_URL}/images/courses/ai-mastery.webp`,
+      `${BASE_URL}/images/courses/courses-hero-ai-workspace.webp`,
     ],
   },
   twitter: {
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     description:
       "Build practical AI-powered capability through an eight-week guided and execution-first learning structure.",
     images: [
-      `${BASE_URL}/images/courses/ai-mastery.webp`,
+      `${BASE_URL}/images/courses/courses-hero-ai-workspace.webp`,
     ],
   },
 };
@@ -759,7 +759,7 @@ export default function CoursesPage() {
               <div className="relative overflow-hidden rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] border border-white/15 bg-slate-950/25">
                   <Image
-                    src="/images/courses/ai-mastery.webp"
+                    src="/images/courses/courses-hero-ai-workspace.webp"
                     alt="AI Expert Professional Program visual"
                     fill
                     priority
