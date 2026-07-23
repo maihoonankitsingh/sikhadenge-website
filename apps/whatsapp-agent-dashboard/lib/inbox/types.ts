@@ -4,6 +4,8 @@ export type InboxConversationSummary = {
     id: string;
     name: string;
     phone: string;
+    city: string | null;
+    email: string | null;
   };
   status: string;
   agentMode: string;
@@ -19,7 +21,15 @@ export type InboxConversationSummary = {
     stage: string;
     temperature: string;
     score: number;
+    occupation: string | null;
+    experienceLevel: string | null;
+    goal: string | null;
     interestedCourse: string | null;
+    joiningTimeline: string | null;
+    classAvailability: string | null;
+    feeUnderstood: boolean;
+    counselorRequested: boolean;
+    nextFollowUpAt: string | null;
   } | null;
   assignee: {
     id: string;
