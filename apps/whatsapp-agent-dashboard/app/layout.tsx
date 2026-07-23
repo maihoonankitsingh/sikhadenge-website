@@ -2,11 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
+import "./branding.css";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
   description: "SikhaDenge-owned WhatsApp inbox, AI agent and lead dashboard.",
   robots: { index: false, follow: false },
+  icons: {
+    icon: "/sikhadenge-mark.svg",
+    shortcut: "/sikhadenge-mark.svg",
+    apple: "/sikhadenge-mark.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
