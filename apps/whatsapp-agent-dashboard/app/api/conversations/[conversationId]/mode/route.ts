@@ -12,6 +12,17 @@ const ALLOWED_ROLES = new Set<DashboardRole>([
   DashboardRole.COUNSELOR,
 ]);
 
+const USER_SETTABLE_MODES = new Set<string>([
+  AgentMode.AI,
+  AgentMode.HUMAN,
+  AgentMode.PAUSED,
+]);
+
+type UserSettableAgentMode =
+  | typeof AgentMode.AI
+  | typeof AgentMode.HUMAN
+  | typeof AgentMode.PAUSED;
+
 function getRequestIp(request: Request): string | null {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -40,10 +51,11 @@ export async function POST(
   }
 
   const mode = typeof payload.mode === "string" ? payload.mode.toUpperCase() : "";
-  if (![AgentMode.AI, AgentMode.HUMAN, AgentMode.PAUSED].includes(mode as AgentMode)) {
+  if (!USER_SETTABLE_MODES.has(mode)) {
     return NextResponse.json({ error: "Unsupported conversation mode." }, { status: 400 });
   }
 
+  const nextMode = mode as UserSettableAgentMode;
   const reason =
     typeof payload.reason === "string" && payload.reason.trim()
       ? payload.reason.trim().slice(0, 500)
@@ -58,7 +70,6 @@ export async function POST(
     return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
   }
 
-  const nextMode = mode as AgentMode;
   const updated = await prisma.$transaction(async (transaction) => {
     const conversation = await transaction.whatsAppConversation.update({
       where: { id: existing.id },
