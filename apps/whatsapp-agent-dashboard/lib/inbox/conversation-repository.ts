@@ -12,6 +12,38 @@ function contactName(contact: {
   return contact.displayName || contact.profileName || contact.phone;
 }
 
+function mapLead(lead: {
+  stage: string;
+  temperature: string;
+  score: number;
+  occupation: string | null;
+  experienceLevel: string | null;
+  goal: string | null;
+  interestedCourse: string | null;
+  joiningTimeline: string | null;
+  classAvailability: string | null;
+  feeUnderstood: boolean;
+  counselorRequested: boolean;
+  nextFollowUpAt: Date | null;
+} | null): InboxConversationSummary["lead"] {
+  if (!lead) return null;
+
+  return {
+    stage: lead.stage,
+    temperature: lead.temperature,
+    score: lead.score,
+    occupation: lead.occupation,
+    experienceLevel: lead.experienceLevel,
+    goal: lead.goal,
+    interestedCourse: lead.interestedCourse,
+    joiningTimeline: lead.joiningTimeline,
+    classAvailability: lead.classAvailability,
+    feeUnderstood: lead.feeUnderstood,
+    counselorRequested: lead.counselorRequested,
+    nextFollowUpAt: lead.nextFollowUpAt?.toISOString() ?? null,
+  };
+}
+
 export async function listInboxConversations(
   limit = 50,
 ): Promise<InboxConversationSummary[]> {
@@ -46,6 +78,8 @@ export async function listInboxConversations(
         id: conversation.contact.id,
         name: contactName(conversation.contact),
         phone: conversation.contact.phone,
+        city: conversation.contact.city,
+        email: conversation.contact.email,
       },
       status: conversation.status,
       agentMode: conversation.agentMode,
@@ -59,14 +93,7 @@ export async function listInboxConversations(
             timestamp: lastMessage.messageTimestamp.toISOString(),
           }
         : null,
-      lead: conversation.lead
-        ? {
-            stage: conversation.lead.stage,
-            temperature: conversation.lead.temperature,
-            score: conversation.lead.score,
-            interestedCourse: conversation.lead.interestedCourse,
-          }
-        : null,
+      lead: mapLead(conversation.lead),
       assignee: conversation.assignedTo,
     };
   });
@@ -115,6 +142,8 @@ export async function getInboxConversation(
       id: conversation.contact.id,
       name: contactName(conversation.contact),
       phone: conversation.contact.phone,
+      city: conversation.contact.city,
+      email: conversation.contact.email,
     },
     status: conversation.status,
     agentMode: conversation.agentMode,
@@ -128,14 +157,7 @@ export async function getInboxConversation(
           timestamp: latestMessage.messageTimestamp.toISOString(),
         }
       : null,
-    lead: conversation.lead
-      ? {
-          stage: conversation.lead.stage,
-          temperature: conversation.lead.temperature,
-          score: conversation.lead.score,
-          interestedCourse: conversation.lead.interestedCourse,
-        }
-      : null,
+    lead: mapLead(conversation.lead),
     assignee: conversation.assignedTo,
     source: conversation.source,
     campaign: conversation.campaign,
