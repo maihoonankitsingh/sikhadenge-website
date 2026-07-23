@@ -4,6 +4,7 @@ import "./auth.css";
 import "./inbox.css";
 import "./branding.css";
 import "./premium-dashboard.css";
+import "./premium-icons.css";
 
 const OFFICIAL_LOGO =
   "https://sikhadenge.in/brand/sikhadenge-header-safe-320.png?v=headersafe1";
