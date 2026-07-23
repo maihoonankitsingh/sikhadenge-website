@@ -432,17 +432,20 @@ export default function AboutUsPage() {
 
             <div className="mx-auto w-full max-w-[560px]">
               <div className="rounded-[28px] border border-white/90 bg-white/90 p-3.5 shadow-[0_28px_65px_rgba(15,23,42,0.12)] backdrop-blur sm:p-4">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] border border-slate-200 bg-slate-100">
+                <div
+                  data-about-hero-media="robotic-ai-future-v1"
+                  className="relative aspect-[4/3] overflow-hidden rounded-[22px] border border-blue-100 bg-slate-950"
+                >
                   <Image
-                    src="/images/about/about-hero-desk.webp"
-                    alt="Sikhadenge practical AI learning and digital capability"
+                    src="/images/about/about-hero-ai-robot.webp"
+                    alt="Futuristic AI robot supporting modern digital capability"
                     fill
                     priority
                     sizes="(max-width: 1024px) 100vw, 560px"
-                    className="object-cover"
+                    className="object-cover object-center"
                   />
 
-                  <div className="absolute inset-x-4 bottom-4 rounded-[20px] border border-white/15 bg-slate-950/88 p-4 text-white shadow-[0_18px_35px_rgba(15,23,42,0.24)] backdrop-blur-md sm:inset-x-5 sm:bottom-5">
+                  <div className="absolute inset-x-4 bottom-4 rounded-[20px] border border-blue-200/20 bg-[linear-gradient(135deg,rgba(3,15,45,0.94),rgba(27,70,164,0.88))] p-4 text-white shadow-[0_20px_42px_rgba(15,42,105,0.34)] backdrop-blur-md sm:inset-x-5 sm:bottom-5">
                     <div className="flex items-start gap-3">
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2F65F5,#7CA8FF)] text-xs font-black text-white shadow-[0_12px_24px_rgba(47,101,245,0.32)]">
                         AI
@@ -588,93 +591,150 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        <section className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="overflow-hidden rounded-[28px] border border-[#E6DCC8] bg-[#FBF7EF] shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
-                <div className="grid gap-0 md:grid-cols-[1.05fr_0.95fr]">
-                  <div className="relative min-h-[280px]">
-                    <Image
-                      src="/images/about/about-mission-class.webp"
-                      alt="Sikhadenge mission learning environment"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-6 sm:p-7">
-                    <div className="flex items-center gap-3">
-                      <GlowIcon label="M" tone="blue" />
-                      <h3 className="text-2xl font-black tracking-tight text-[#0F172A]">
+        <section
+          data-about-mission-vision-style="ai-future-image-cards-v1"
+          className="px-4 py-8 sm:px-6 lg:px-8"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
+                Purpose and direction
+              </p>
+
+              <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
+                Our mission and vision for practical AI capability
+              </h2>
+
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                We combine guided learning, practical execution, and
+                future-ready AI workflows so learners can build capability
+                that remains useful as modern digital work evolves.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              <article className="overflow-hidden rounded-[30px] border border-blue-100 bg-[linear-gradient(145deg,#F8FBFF_0%,#EDF5FF_100%)] shadow-[0_20px_55px_rgba(37,99,235,0.09)]">
+                <div className="relative aspect-[16/10] overflow-hidden border-b border-blue-100 bg-slate-100">
+                  <Image
+                    src="/images/about/about-mission-ai-collaboration.webp"
+                    alt="Learners collaborating through practical AI-enabled workflows"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover object-center"
+                  />
+
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-[linear-gradient(180deg,transparent_52%,rgba(4,26,74,0.25)_100%)]"
+                  />
+                </div>
+
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <GlowIcon label="Mission" tone="blue" />
+
+                    <div>
+                      <p className="text-[10px] font-normal uppercase tracking-[0.18em] text-blue-600">
+                        Practical learning
+                      </p>
+
+                      <h3 className="mt-1 text-2xl font-medium tracking-[-0.02em] text-slate-950">
                         Our Mission
                       </h3>
                     </div>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">
-                      We are building a modern learning platform that helps
-                      serious learners move from scattered learning to
-                      structured, practical, AI-powered digital capability.
-                    </p>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">
-                      By focusing on real understanding, project-backed
-                      implementation, guided workflows, and visible output, we
-                      help learners develop capability that remains useful in
-                      fast-changing digital work.
-                    </p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {['Practical learning', 'Industry workflows', 'Future-ready skills'].map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-[#E4DED0] bg-white/80 px-3 py-1 text-xs font-semibold text-slate-500"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                  </div>
+
+                  <p className="mt-5 text-sm leading-7 text-slate-600 sm:text-base">
+                    We help learners move from scattered learning to
+                    structured, practical AI-powered capability through
+                    guided workflows, project-based implementation, and
+                    review-led improvement.
+                  </p>
+
+                  <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
+                    Every learning experience is designed to turn
+                    understanding into visible output, stronger execution,
+                    and confidence for modern digital work.
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {[
+                      'Guided execution',
+                      'Project-based learning',
+                      'Visible output',
+                    ].map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-blue-100 bg-white/80 px-3 py-1.5 text-xs font-normal text-slate-600"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              </div>
+              </article>
 
-              <div className="overflow-hidden rounded-[28px] border border-[#E6DCC8] bg-[#FBF7EF] shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
-                <div className="grid gap-0 md:grid-cols-[0.95fr_1.05fr]">
-                  <div className="p-6 sm:p-7">
-                    <div className="flex items-center gap-3">
-                      <GlowIcon label="G" tone="amber" />
-                      <h3 className="text-2xl font-black tracking-tight text-[#0F172A]">
-                        Our Goal
+              <article className="overflow-hidden rounded-[30px] border border-violet-100 bg-[linear-gradient(145deg,#FAFBFF_0%,#F1F0FF_100%)] shadow-[0_20px_55px_rgba(91,75,255,0.09)]">
+                <div className="relative aspect-[16/10] overflow-hidden border-b border-violet-100 bg-slate-950">
+                  <Image
+                    src="/images/about/about-vision-future-lab.webp"
+                    alt="Human and robotic collaboration in a future-ready AI innovation lab"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover object-center"
+                  />
+
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-[linear-gradient(180deg,transparent_48%,rgba(11,22,74,0.3)_100%)]"
+                  />
+                </div>
+
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <GlowIcon label="Vision" tone="purple" />
+
+                    <div>
+                      <p className="text-[10px] font-normal uppercase tracking-[0.18em] text-violet-600">
+                        Future-ready direction
+                      </p>
+
+                      <h3 className="mt-1 text-2xl font-medium tracking-[-0.02em] text-slate-950">
+                        Our Vision
                       </h3>
                     </div>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">
-                      Our goal is to build a high-trust AI-first learning
-                      ecosystem that prepares learners for the next era of
-                      digital work across creation, content, marketing,
-                      websites, and execution-focused roles.
-                    </p>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">
-                      We want Sikhadenge to become a platform where learners do
-                      not just consume information, but build real capability
-                      that stays relevant as technology, workflows, and industry
-                      expectations continue to evolve.
-                    </p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {['AI-first ecosystem', 'Future of work', 'Practical relevance'].map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-[#E4DED0] bg-white/80 px-3 py-1 text-xs font-semibold text-slate-500"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
                   </div>
-                  <div className="relative min-h-[280px]">
-                    <Image
-                      src="/images/about/about-goal-portfolio.webp"
-                      alt="Sikhadenge goal and execution outcome"
-                      fill
-                      className="object-cover"
-                    />
+
+                  <p className="mt-5 text-sm leading-7 text-slate-600 sm:text-base">
+                    We envision an AI-first learning ecosystem where
+                    students, freelancers, creators, and professionals
+                    continuously build future-ready capability as tools and
+                    modern work evolve.
+                  </p>
+
+                  <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
+                    Sikhadenge aims to make practical AI learning
+                    accessible, trustworthy, and connected across design,
+                    video, content, marketing, websites, and digital
+                    workflows.
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {[
+                      'AI-first ecosystem',
+                      'Future of work',
+                      'Connected capability',
+                    ].map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-violet-100 bg-white/80 px-3 py-1.5 text-xs font-normal text-slate-600"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              </div>
+              </article>
             </div>
           </div>
         </section>
