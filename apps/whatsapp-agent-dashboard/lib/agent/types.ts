@@ -101,6 +101,18 @@ export type AgentLeadUpdates = {
   counselorRequested?: boolean;
 };
 
+export type AgentTelemetry = {
+  source: "rule" | "fallback" | "model";
+  totalLatencyMs: number;
+  modelLatencyMs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  estimatedCostUsd: number | null;
+  fallbackModelUsed: boolean;
+  requestId: string | null;
+};
+
 export type AgentDecision = {
   shouldReply: boolean;
   reply: string;
@@ -117,6 +129,7 @@ export type AgentDecision = {
   >;
   safety: AgentSafetyResult;
   model: string | null;
+  telemetry?: AgentTelemetry;
 };
 
 export type RuleClassification = {
