@@ -10,6 +10,7 @@ import "./premium-fixes.css";
 import "./compact-header.css";
 import "./final-ui.css";
 import "./png-icons.css";
+import "./balanced-ui.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
