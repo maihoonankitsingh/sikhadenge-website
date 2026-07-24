@@ -7,6 +7,7 @@ import "./premium-dashboard.css";
 import "./premium-icons.css";
 import "./premium-fixes.css";
 import "./compact-header.css";
+import "./final-ui.css";
 
 const APP_MARK = "/sikhadenge-app-mark-v3.svg";
 
