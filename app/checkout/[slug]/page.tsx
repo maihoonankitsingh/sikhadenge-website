@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CheckoutClient from "./CheckoutClient";
@@ -8,25 +9,32 @@ type PageProps = {
   };
 };
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const product = await prisma.storeProduct.findUnique({
     where: { slug: params.slug },
     select: {
       title: true,
       shortDescription: true,
+      status: true,
     },
   });
 
-  if (!product) {
+  if (!product || product.status !== "ACTIVE") {
     return {
-      title: "Checkout | Sikhadenge Store",
+      title: "Checkout",
+      robots: { index: false, follow: false },
     };
   }
 
   return {
-    title: `Checkout - ${product.title} | Sikhadenge Store`,
-    description:
-      product.shortDescription || "Complete your order on Sikhadenge Store.",
+    title: `Checkout - ${product.title}`,
+    description: product.shortDescription || "Complete your order securely on Sikhadenge Store.",
+    alternates: { canonical: `https://sikhadenge.in/store/${params.slug}` },
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: { index: false, follow: false, noarchive: true },
+    },
   };
 }
 
