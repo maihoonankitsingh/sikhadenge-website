@@ -120,11 +120,28 @@ All write responses include `outboundSent: false`. Queue filters support `assign
 
 ## Phase 5 — Controlled learning
 
-- Low-confidence and corrected-answer capture.
-- PII redaction before review.
-- Admin/manager approve, reject or merge workflow.
-- Approved corrections become versioned knowledge.
-- No self-training from raw customer messages.
+Status: implemented on `feature/whatsapp-ai-agent-roadmap`.
+
+- Automatic pending-candidate capture only for low-confidence, missing-approved-knowledge and model-unavailable decisions.
+- Manual counselor correction capture with admin/manager review.
+- OTP, payment number, phone, email, Aadhaar and secret redaction before storage.
+- Raw customer content is not stored in learning metadata.
+- Auto-captured candidates require a reviewed corrected answer before approval.
+- Pending-suggestion and approved-knowledge duplicate protection.
+- Approved corrections become versioned `HUMAN_APPROVED_LEARNING` knowledge.
+- Earlier approved versions in the same reviewed-learning category are archived.
+- Complete create, reject, approve and merge audit events.
+- No outbound WhatsApp message is sent by this phase.
+
+Learning endpoints:
+
+```text
+GET  /api/learning
+POST /api/learning
+POST /api/learning/{suggestionId}/review
+```
+
+Counselors may create redacted pending suggestions. Only managers and admins may list the review queue or approve/reject suggestions. Approval responses include `outboundSent: false`.
 
 ## Phase 6 — WhatsApp outbound delivery
 
