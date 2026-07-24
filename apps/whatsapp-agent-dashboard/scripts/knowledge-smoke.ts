@@ -37,6 +37,19 @@ assert.deepEqual(
   chunks.map((_, index) => index),
 );
 
+const reconstructedContent = chunks.map((chunk) => chunk.content).join("\n");
+assert.ok(reconstructedContent.includes("Duration: 10 weeks."));
+assert.ok(
+  reconstructedContent.includes(
+    "The approved fee must be published by the SikhaDenge team.",
+  ),
+);
+assert.ok(
+  reconstructedContent.includes(
+    "Certificate details must come from approved knowledge only.",
+  ),
+);
+
 const longText = `Course Details\n\n${"This is an approved knowledge paragraph. ".repeat(80)}`;
 const longChunks = prepareKnowledgeChunks(longText, {
   maxChars: 600,
@@ -45,4 +58,4 @@ const longChunks = prepareKnowledgeChunks(longText, {
 assert.ok(longChunks.length > 1);
 assert.ok(longChunks.every((chunk) => chunk.content.length <= 600));
 
-console.log(`KNOWLEDGE_SMOKE_PASS=${chunks.length + longChunks.length + 7}`);
+console.log(`KNOWLEDGE_SMOKE_PASS=${chunks.length + longChunks.length + 10}`);
