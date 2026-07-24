@@ -1,3 +1,4 @@
+import { getAgentRuntimePolicy } from "../observability/runtime-policy";
 import { retrieveApprovedKnowledge } from "./knowledge";
 import { requestModelDecision } from "./openai-responses";
 import {
@@ -13,6 +14,7 @@ import type {
   AgentIntent,
   AgentKnowledgeReference,
   AgentLanguage,
+  AgentTelemetry,
   HandoffReason,
 } from "./types";
 
@@ -100,6 +102,24 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
   return language === "en" ? english[intent] : hinglish[intent];
 }
 
+function runtimeTelemetry(
+  source: AgentTelemetry["source"],
+  startedAt: number,
+  model?: Omit<AgentTelemetry, "source" | "totalLatencyMs">,
+): AgentTelemetry {
+  return {
+    source,
+    totalLatencyMs: Math.max(0, Date.now() - startedAt),
+    modelLatencyMs: model?.modelLatencyMs ?? null,
+    inputTokens: model?.inputTokens ?? null,
+    outputTokens: model?.outputTokens ?? null,
+    totalTokens: model?.totalTokens ?? null,
+    estimatedCostUsd: model?.estimatedCostUsd ?? null,
+    fallbackModelUsed: model?.fallbackModelUsed ?? false,
+    requestId: model?.requestId ?? null,
+  };
+}
+
 function buildDecision(input: {
   reply: string;
   language: AgentLanguage;
@@ -113,6 +133,7 @@ function buildDecision(input: {
   safety: AgentDecision["safety"];
   model?: string | null;
   leadUpdates?: AgentDecision["leadUpdates"];
+  telemetry?: AgentTelemetry;
 }): AgentDecision {
   return {
     shouldReply: true,
@@ -128,20 +149,39 @@ function buildDecision(input: {
     knowledgeReferences: referencesForDecision(input.knowledge ?? []),
     safety: input.safety,
     model: input.model ?? null,
+    telemetry: input.telemetry,
   };
 }
 
 export async function generateAgentDecision(
   input: AgentInput,
 ): Promise<AgentDecision> {
+  const startedAt = Date.now();
   const message = input.customerMessage.trim();
   if (!message) {
     throw new Error("Customer message is required.");
   }
 
   const policy = getAgentPolicy();
+  const runtimePolicy = getAgentRuntimePolicy();
   const classification = classifyMessage(message, input.languageHint);
   const safety = inspectAgentSafety(message);
+
+  if (!runtimePolicy.enabled) {
+    return buildDecision({
+      reply: safeHandoffReply(classification.language, "general"),
+      language: classification.language,
+      intent: classification.intent,
+      confidence: 1,
+      decisionSummary: runtimePolicy.killSwitchActive
+        ? "Agent kill switch is active; conversation requires human handling."
+        : "Agent runtime is disabled; conversation requires human handling.",
+      requiresHuman: true,
+      handoffReason: "AGENT_UNAVAILABLE",
+      safety,
+      telemetry: runtimeTelemetry("fallback", startedAt),
+    });
+  }
 
   if (!safety.safe) {
     return buildDecision({
@@ -153,6 +193,7 @@ export async function generateAgentDecision(
       requiresHuman: true,
       handoffReason: "PROMPT_INJECTION",
       safety,
+      telemetry: runtimeTelemetry("rule", startedAt),
     });
   }
 
@@ -166,6 +207,7 @@ export async function generateAgentDecision(
       requiresHuman: false,
       handoffReason: null,
       safety,
+      telemetry: runtimeTelemetry("rule", startedAt),
     });
   }
 
@@ -190,6 +232,7 @@ export async function generateAgentDecision(
         classification.intent === "COUNSELOR_REQUEST"
           ? { counselorRequested: true }
           : {},
+      telemetry: runtimeTelemetry("rule", startedAt),
     });
   }
 
@@ -206,6 +249,7 @@ export async function generateAgentDecision(
       requiresHuman: true,
       handoffReason: "MISSING_APPROVED_KNOWLEDGE",
       safety,
+      telemetry: runtimeTelemetry("rule", startedAt),
     });
   }
 
@@ -225,11 +269,12 @@ export async function generateAgentDecision(
         language: classification.language,
         intent: classification.intent,
         confidence: Math.min(classification.confidence, 0.7),
-        decisionSummary: "Model credentials are not configured; safe deterministic fallback used.",
+        decisionSummary: "Model calls are unavailable; safe deterministic fallback used.",
         requiresHuman: factualIntent,
         handoffReason: factualIntent ? "AGENT_UNAVAILABLE" : null,
         knowledge,
         safety,
+        telemetry: runtimeTelemetry("fallback", startedAt),
       });
     }
 
@@ -257,6 +302,7 @@ export async function generateAgentDecision(
       knowledge,
       safety,
       model: modelResult.model,
+      telemetry: runtimeTelemetry("model", startedAt, modelResult.telemetry),
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown model error.";
@@ -270,6 +316,7 @@ export async function generateAgentDecision(
       handoffReason: "AGENT_UNAVAILABLE",
       knowledge,
       safety,
+      telemetry: runtimeTelemetry("fallback", startedAt),
     });
   }
 }
