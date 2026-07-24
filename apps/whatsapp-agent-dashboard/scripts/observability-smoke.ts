@@ -73,12 +73,17 @@ const sanitized = sanitizeOperationalValue({
   accessToken: "top-secret-token",
   nested: {
     payment: "4111 1111 1111 1111",
+    paymentWithText: "Card 4111-1111-1111-1111 failed",
   },
 }) as Record<string, unknown>;
 assert.equal(sanitized.email, "[REDACTED_EMAIL]");
 assert.equal(sanitized.phone, "[REDACTED_PHONE]");
 assert.equal(sanitized.accessToken, "[REDACTED_SECRET]");
-assert.deepEqual(sanitized.nested, { payment: "[REDACTED_NUMBER]" });
+assert.deepEqual(sanitized.nested, {
+  payment: "[REDACTED_NUMBER]",
+  paymentWithText: "Card [REDACTED_NUMBER] failed",
+});
+assert.ok(!JSON.stringify(sanitized).includes("4111"));
 
 const compacted = compactOperationalError(
   new Error("Failed for ankit@example.com and +91 9876543210"),
@@ -88,4 +93,4 @@ assert.ok(!compacted.includes("9876543210"));
 assert.ok(compacted.includes("[REDACTED_PHONE]"));
 assert.ok(!compacted.includes("+[REDACTED_NUMBER]"));
 
-console.log("OBSERVABILITY_SMOKE_PASS=20");
+console.log("OBSERVABILITY_SMOKE_PASS=23");
