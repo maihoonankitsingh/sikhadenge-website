@@ -29,7 +29,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `Checkout - ${product.title}`,
     description: product.shortDescription || "Complete your order securely on Sikhadenge Store.",
-    alternates: { canonical: `https://sikhadenge.in/store/${params.slug}` },
     robots: {
       index: false,
       follow: false,
