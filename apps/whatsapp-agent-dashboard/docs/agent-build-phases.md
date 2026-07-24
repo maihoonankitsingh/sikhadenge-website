@@ -170,12 +170,37 @@ The first endpoint queues a counselor text/template request with an idempotency 
 
 ## Phase 7 — Evaluation, observability and cost control
 
-- Golden conversation test suite.
-- Intent, retrieval, grounding, handoff and safety metrics.
-- Latency and token-usage tracking.
-- Model fallback and budget limits.
-- Structured redacted logs and operational alerts.
-- Regression gate before deployment.
+Status: implemented on `feature/whatsapp-ai-agent-roadmap`.
+
+- Golden Hindi, English and Hinglish routing/safety regression suite.
+- Agent decision source tracking for rule, fallback and model paths.
+- Total latency, model latency, token usage and optional estimated-cost telemetry.
+- Configurable primary/fallback models with bounded output tokens.
+- Runtime agent kill switch and independent model-call switch.
+- Redacted structured operational audit values and compact errors.
+- Handoff, confidence, latency, safety, knowledge, learning and outbound metrics.
+- Admin/manager/analyst observability endpoint with no raw customer message content.
+- Regression smoke gates for evaluation, runtime controls, cost estimation and PII redaction.
+
+Observability endpoint:
+
+```text
+GET /api/observability/agent?days=7
+```
+
+Optional runtime controls:
+
+```text
+AGENT_ENABLED=true
+AGENT_KILL_SWITCH=off
+AGENT_MODEL_CALLS_ENABLED=true
+OPENAI_FALLBACK_MODEL=<optional-model>
+OPENAI_MAX_OUTPUT_TOKENS=1200
+OPENAI_INPUT_COST_PER_1M_USD=0
+OPENAI_OUTPUT_COST_PER_1M_USD=0
+```
+
+Cost rates default to zero so the application does not invent pricing. Set rates from the active provider contract when cost estimates are required.
 
 ## Phase 8 — Final Meta/AiSensy cutover
 
