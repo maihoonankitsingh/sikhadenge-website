@@ -145,12 +145,28 @@ Counselors may create redacted pending suggestions. Only managers and admins may
 
 ## Phase 6 — WhatsApp outbound delivery
 
-- Meta text/media/template sender.
-- 24-hour service-window enforcement.
-- Approved-template selection outside the service window.
-- Idempotency, queueing, retry and dead-letter handling.
-- Sent/delivered/read/failed status reconciliation.
-- Rate limits, circuit breaker and global kill switch.
+Status: guarded delivery foundation implemented on `feature/whatsapp-ai-agent-roadmap`; live sending remains disabled.
+
+- Durable outbound queue using existing message and webhook-event records.
+- Idempotency reservation before queue creation.
+- Free-form text allowed only inside the stored service window.
+- Approved templates required outside the service window.
+- Opt-out, paused, closed, spam and invalid AI-mode protections.
+- Meta Cloud API text and template payload builder.
+- Sent, failed, delivered and read reconciliation through existing message status records and webhooks.
+- Retriable failure handling with capped attempts.
+- `disabled`, `dry_run` and dual-confirmation `live` modes.
+- Independent live-send acknowledgement and global kill switch.
+- Queueing does not change customer-visible conversation state until Meta accepts the message.
+
+Outbound endpoints:
+
+```text
+POST /api/conversations/{conversationId}/send
+POST /api/outbound/dispatch
+```
+
+The first endpoint queues a counselor text/template request with an idempotency key. The second is manager/admin-only. In the current default configuration it cannot send a live WhatsApp message.
 
 ## Phase 7 — Evaluation, observability and cost control
 
