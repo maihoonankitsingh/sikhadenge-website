@@ -346,6 +346,256 @@ function buildFaqs(post: BlogItem, parsed: ParsedSlug): GeneratedFaq[] {
   return merged.filter((faq, index, all) => all.findIndex((item) => item.q === faq.q) === index).slice(0, 15);
 }
 
+
+const RELATED_LINK_STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "into",
+  "using",
+  "use",
+  "how",
+  "what",
+  "why",
+  "when",
+  "where",
+  "this",
+  "that",
+  "your",
+  "you",
+  "our",
+  "are",
+  "can",
+  "best",
+  "complete",
+  "guide",
+  "guides",
+  "tips",
+  "ideas",
+  "online",
+  "daily",
+  "practical",
+  "learn",
+  "learning",
+  "begin",
+  "start",
+  "2024",
+  "2025",
+  "2026",
+  "2027",
+]);
+
+function normalizeRelatedValue(value?: string) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getRelatedTokens(item: BlogItem) {
+  const text = normalizeRelatedValue(
+    `${item.slug} ${item.title} ${item.category || ""}`,
+  );
+
+  return new Set(
+    text
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter((token) => token.length >= 3)
+      .filter((token) => !RELATED_LINK_STOP_WORDS.has(token))
+      .filter((token) => !/^20\d{2}$/.test(token)),
+  );
+}
+
+function tokenJaccard(
+  left: Set<string>,
+  right: Set<string>,
+) {
+  if (left.size === 0 || right.size === 0) {
+    return 0;
+  }
+
+  let intersection = 0;
+
+  left.forEach((token) => {
+    if (right.has(token)) {
+      intersection += 1;
+    }
+  });
+
+  const union =
+    left.size + right.size - intersection;
+
+  return union > 0
+    ? intersection / union
+    : 0;
+}
+
+function scoreRelatedPost(
+  sourcePost: BlogItem,
+  sourceParsed: ParsedSlug,
+  candidate: BlogItem,
+) {
+  const candidateParsed =
+    parseSlug(candidate.slug, candidate);
+
+  const sourceTokens =
+    getRelatedTokens(sourcePost);
+
+  const candidateTokens =
+    getRelatedTokens(candidate);
+
+  const sharedTokens = Array.from(
+    sourceTokens,
+  ).filter((token) =>
+    candidateTokens.has(token),
+  );
+
+  let score = 0;
+
+  const sourceCategory =
+    normalizeRelatedValue(sourcePost.category);
+
+  const candidateCategory =
+    normalizeRelatedValue(candidate.category);
+
+  if (
+    sourceCategory &&
+    candidateCategory &&
+    sourceCategory === candidateCategory
+  ) {
+    score += 52;
+  }
+
+  if (
+    sourceParsed.skillLabel !==
+      "AI and digital skills" &&
+    sourceParsed.skillLabel !==
+      "AI skills" &&
+    sourceParsed.skillLabel ===
+      candidateParsed.skillLabel
+  ) {
+    score += 38;
+  }
+
+  if (
+    sourceParsed.audienceLabel !==
+      "learners and professionals" &&
+    sourceParsed.audienceLabel ===
+      candidateParsed.audienceLabel
+  ) {
+    score += 24;
+  }
+
+  if (
+    sourceParsed.intentLabel !== "guide" &&
+    sourceParsed.intentLabel ===
+      candidateParsed.intentLabel
+  ) {
+    score += 18;
+  }
+
+  score += Math.min(
+    sharedTokens.length * 6,
+    36,
+  );
+
+  if (
+    sourceParsed.year === candidateParsed.year
+  ) {
+    score += 2;
+  }
+
+  const sourceSimilarity = tokenJaccard(
+    sourceTokens,
+    candidateTokens,
+  );
+
+  if (sourceSimilarity >= 0.9) {
+    score -= 80;
+  } else if (sourceSimilarity >= 0.76) {
+    score -= 35;
+  }
+
+  return {
+    item: candidate,
+    score,
+    sharedTokenCount: sharedTokens.length,
+    tokens: candidateTokens,
+  };
+}
+
+function selectRelatedPosts(
+  post: BlogItem,
+  parsed: ParsedSlug,
+) {
+  const scored =
+    getTypedBlogCandidatesForSlug(post.slug)
+      .filter((item) => item.slug !== post.slug)
+      .map((item) =>
+        scoreRelatedPost(post, parsed, item),
+      )
+      .filter((entry) => entry.score >= 12)
+      .sort(
+        (left, right) =>
+          right.score - left.score ||
+          right.sharedTokenCount -
+            left.sharedTokenCount ||
+          left.item.slug.localeCompare(
+            right.item.slug,
+          ),
+      );
+
+  const selected:
+    typeof scored = [];
+
+  for (const entry of scored) {
+    if (selected.length >= 6) {
+      break;
+    }
+
+    const tooSimilarToSelected =
+      selected.some(
+        (existing) =>
+          tokenJaccard(
+            existing.tokens,
+            entry.tokens,
+          ) >= 0.88,
+      );
+
+    if (!tooSimilarToSelected) {
+      selected.push(entry);
+    }
+  }
+
+  if (selected.length < 6) {
+    const selectedSlugs = new Set(
+      selected.map(
+        (entry) => entry.item.slug,
+      ),
+    );
+
+    for (const entry of scored) {
+      if (selected.length >= 6) {
+        break;
+      }
+
+      if (
+        !selectedSlugs.has(entry.item.slug)
+      ) {
+        selected.push(entry);
+        selectedSlugs.add(entry.item.slug);
+      }
+    }
+  }
+
+  return selected
+    .slice(0, 6)
+    .map((entry) => entry.item);
+}
+
 function safeDate(value?: string) {
   if (!value) return RELEASE_DATE_ISO;
   const date = new Date(value);
@@ -437,14 +687,8 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
   const modifiedDate = safeDate(post.updatedAt || post.dateModified);
   const category = post.category || parsed.skillLabel;
 
-  const relatedPosts = getTypedBlogCandidatesForSlug(post.slug)
-    .filter((item) => item.slug !== post.slug)
-    .filter(
-      (item) =>
-        item.category === post.category ||
-        item.slug.toLowerCase().includes(parsed.skillLabel.toLowerCase().split(" ")[0]),
-    )
-    .slice(0, 6);
+  const relatedPosts =
+    selectRelatedPosts(post, parsed);
 
   const schema = {
     "@context": "https://schema.org",
