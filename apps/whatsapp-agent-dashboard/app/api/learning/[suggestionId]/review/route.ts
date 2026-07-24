@@ -77,10 +77,16 @@ export async function POST(
         { status: 409 },
       );
     }
+    if (code === "LEARNING_CORRECTED_ANSWER_REQUIRED") {
+      return NextResponse.json(
+        { error: "A reviewed corrected answer is required before this candidate can be merged." },
+        { status: 400 },
+      );
+    }
     if (
-      code.includes("required") ||
-      code.includes("characters") ||
-      code.includes("exceeds")
+      code.toLowerCase().includes("required") ||
+      code.toLowerCase().includes("characters") ||
+      code.toLowerCase().includes("exceeds")
     ) {
       return NextResponse.json({ error: code }, { status: 400 });
     }
