@@ -1,6 +1,7 @@
 "use client";
 
 import ClarityEvents from "@/app/ClarityEvents";
+import { SikhadengeAnalyticsRuntime } from "@/components/analytics/SikhadengeAnalyticsRuntime";
 import { ClarityConsentBridge } from "./ClarityConsentBridge";
 import { GoogleConsentBridge } from "./GoogleConsentBridge";
 import { MetaConsentBridge } from "./MetaConsentBridge";
@@ -18,6 +19,7 @@ export function ConsentTrackingRuntime() {
 
       {ready && state.analytics === "granted" ? (
         <>
+          <SikhadengeAnalyticsRuntime />
           <ClarityEvents />
           <SegmentConsentBridge />
         </>
