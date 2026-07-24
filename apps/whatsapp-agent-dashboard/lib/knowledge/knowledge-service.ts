@@ -1,6 +1,7 @@
 import { KnowledgeStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import { createKnowledgeEmbeddings } from "./embeddings";
 import {
   knowledgeChecksum,
   normalizeKnowledgeText,
@@ -37,7 +38,9 @@ export async function ingestKnowledgeDocument(input: KnowledgeDocumentInput) {
   const content = normalizeKnowledgeText(input.content);
 
   if (content.length < 20) throw new Error("Knowledge content is too short.");
-  if (content.length > 300_000) throw new Error("Knowledge content exceeds 300,000 characters.");
+  if (content.length > 300_000) {
+    throw new Error("Knowledge content exceeds 300,000 characters.");
+  }
   if (input.effectiveFrom && input.effectiveTo && input.effectiveFrom >= input.effectiveTo) {
     throw new Error("Effective-to date must be after effective-from date.");
   }
@@ -47,6 +50,19 @@ export async function ingestKnowledgeDocument(input: KnowledgeDocumentInput) {
   if (chunks.length > 500) throw new Error("Knowledge document produced too many chunks.");
 
   const sourceChecksum = knowledgeChecksum(content);
+  let embeddingResult: Awaited<ReturnType<typeof createKnowledgeEmbeddings>> = null;
+  let embeddingError: string | null = null;
+
+  try {
+    embeddingResult = await createKnowledgeEmbeddings(
+      chunks.map((chunk) =>
+        [title, chunk.heading, chunk.content].filter(Boolean).join("\n"),
+      ),
+    );
+  } catch (error) {
+    embeddingError = error instanceof Error ? error.message.slice(0, 500) : "Embedding failed.";
+    if (process.env.KNOWLEDGE_EMBEDDINGS_REQUIRED === "true") throw error;
+  }
 
   return prisma.$transaction(async (transaction) => {
     const latest = await transaction.knowledgeDocument.findFirst({
@@ -58,14 +74,10 @@ export async function ingestKnowledgeDocument(input: KnowledgeDocumentInput) {
     const duplicate = await transaction.knowledgeChunk.findFirst({
       where: {
         document: { title, category },
-        metadata: {
-          path: ["sourceChecksum"],
-          equals: sourceChecksum,
-        },
+        metadata: { path: ["sourceChecksum"], equals: sourceChecksum },
       },
       select: { documentId: true },
     });
-
     if (duplicate) {
       throw new Error("An identical version of this knowledge document already exists.");
     }
@@ -81,11 +93,23 @@ export async function ingestKnowledgeDocument(input: KnowledgeDocumentInput) {
         effectiveFrom: input.effectiveFrom ?? null,
         effectiveTo: input.effectiveTo ?? null,
         chunks: {
-          create: chunks.map((chunk) => ({
+          create: chunks.map((chunk, index) => ({
             heading: chunk.heading,
             content: chunk.content,
             checksum: chunk.checksum,
-            metadata: toJson(chunk.metadata),
+            metadata: toJson({
+              ...chunk.metadata,
+              ...(embeddingResult
+                ? {
+                    embedding: embeddingResult.vectors[index],
+                    embeddingModel: embeddingResult.model,
+                    embeddingStatus: "READY",
+                  }
+                : {
+                    embeddingStatus: "UNAVAILABLE",
+                    embeddingError,
+                  }),
+            }),
           })),
         },
       },
@@ -107,6 +131,8 @@ export async function ingestKnowledgeDocument(input: KnowledgeDocumentInput) {
           sourceChecksum,
           chunkCount: document._count.chunks,
           previousVersionId: latest?.id ?? null,
+          embeddingModel: embeddingResult?.model ?? null,
+          embeddingStatus: embeddingResult ? "READY" : "UNAVAILABLE",
         }),
       },
     });
@@ -152,8 +178,6 @@ export async function reviewKnowledgeDocument(input: {
         category: true,
         version: true,
         status: true,
-        effectiveFrom: true,
-        effectiveTo: true,
       },
     });
     if (!existing) throw new Error("Knowledge document not found.");
@@ -206,7 +230,6 @@ export async function reviewKnowledgeDocument(input: {
         }),
       },
     });
-
     return updated;
   });
 }
