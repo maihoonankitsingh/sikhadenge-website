@@ -1,62 +1,20 @@
 import { KnowledgeStatus } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import {
+  cosineSimilarity,
+  createKnowledgeEmbeddings,
+  embeddingFromMetadata,
+} from "../knowledge/embeddings";
 import { getAgentPolicy } from "./policy";
 import type { AgentKnowledgeReference } from "./types";
 
 const STOP_WORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "by",
-  "for",
-  "from",
-  "how",
-  "i",
-  "in",
-  "is",
-  "it",
-  "me",
-  "my",
-  "of",
-  "on",
-  "or",
-  "that",
-  "the",
-  "this",
-  "to",
-  "what",
-  "when",
-  "which",
-  "with",
-  "you",
-  "your",
-  "hai",
-  "hain",
-  "ka",
-  "ke",
-  "ki",
-  "kya",
-  "ko",
-  "main",
-  "mai",
-  "mujhe",
-  "aur",
-  "se",
-  "ye",
-  "है",
-  "का",
-  "के",
-  "की",
-  "क्या",
-  "को",
-  "और",
-  "से",
-  "यह",
+  "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "how",
+  "i", "in", "is", "it", "me", "my", "of", "on", "or", "that", "the",
+  "this", "to", "what", "when", "which", "with", "you", "your", "hai",
+  "hain", "ka", "ke", "ki", "kya", "ko", "main", "mai", "mujhe", "aur",
+  "se", "ye", "है", "का", "के", "की", "क्या", "को", "और", "से", "यह",
 ]);
 
 function tokenize(value: string): string[] {
@@ -75,16 +33,22 @@ function lexicalScore(queryTokens: string[], value: string): number {
   const normalized = value.toLocaleLowerCase("en-IN");
   let matched = 0;
   let weighted = 0;
-
   for (const token of queryTokens) {
     if (!normalized.includes(token)) continue;
     matched += 1;
     weighted += token.length >= 7 ? 1.25 : token.length >= 4 ? 1 : 0.75;
   }
-
   const coverage = matched / queryTokens.length;
   const density = Math.min(1, weighted / Math.max(4, queryTokens.length));
   return Math.min(1, coverage * 0.72 + density * 0.28);
+}
+
+function metadataModel(metadata: unknown): string | null {
+  if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) {
+    return null;
+  }
+  const model = (metadata as Record<string, unknown>).embeddingModel;
+  return typeof model === "string" ? model : null;
 }
 
 export async function retrieveApprovedKnowledge(
@@ -94,18 +58,24 @@ export async function retrieveApprovedKnowledge(
   const queryTokens = tokenize(query).slice(0, 24);
   if (queryTokens.length === 0) return [];
 
+  let queryEmbedding: { model: string; vector: number[] } | null = null;
+  try {
+    const generated = await createKnowledgeEmbeddings([query]);
+    if (generated) {
+      queryEmbedding = { model: generated.model, vector: generated.vectors[0] ?? [] };
+    }
+  } catch {
+    queryEmbedding = null;
+  }
+
   const now = new Date();
   const chunks = await prisma.knowledgeChunk.findMany({
     where: {
       document: {
         status: KnowledgeStatus.APPROVED,
         AND: [
-          {
-            OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: now } }],
-          },
-          {
-            OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }],
-          },
+          { OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: now } }] },
+          { OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] },
         ],
       },
     },
@@ -113,13 +83,9 @@ export async function retrieveApprovedKnowledge(
       id: true,
       heading: true,
       content: true,
+      metadata: true,
       document: {
-        select: {
-          id: true,
-          title: true,
-          category: true,
-          version: true,
-        },
+        select: { id: true, title: true, category: true, version: true },
       },
     },
     orderBy: { updatedAt: "desc" },
@@ -131,10 +97,19 @@ export async function retrieveApprovedKnowledge(
       const titleScore = lexicalScore(queryTokens, chunk.document.title);
       const headingScore = lexicalScore(queryTokens, chunk.heading ?? "");
       const contentScore = lexicalScore(queryTokens, chunk.content);
-      const score = Math.min(
+      const lexical = Math.min(
         1,
         titleScore * 0.22 + headingScore * 0.28 + contentScore * 0.5,
       );
+
+      const storedEmbedding = embeddingFromMetadata(chunk.metadata);
+      const semantic =
+        queryEmbedding &&
+        storedEmbedding &&
+        metadataModel(chunk.metadata) === queryEmbedding.model
+          ? Math.max(0, cosineSimilarity(queryEmbedding.vector, storedEmbedding))
+          : 0;
+      const score = semantic > 0 ? lexical * 0.55 + semantic * 0.45 : lexical;
 
       return {
         chunkId: chunk.id,
@@ -142,7 +117,7 @@ export async function retrieveApprovedKnowledge(
         title: chunk.document.title,
         heading: chunk.heading,
         content: chunk.content,
-        score: Number(score.toFixed(4)),
+        score: Number(Math.min(1, score).toFixed(4)),
       } satisfies AgentKnowledgeReference;
     })
     .filter((reference) => reference.score >= policy.knowledgeMinimumScore)
