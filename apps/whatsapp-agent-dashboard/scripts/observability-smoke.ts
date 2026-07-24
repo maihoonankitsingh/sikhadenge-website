@@ -85,5 +85,7 @@ const compacted = compactOperationalError(
 );
 assert.ok(!compacted.includes("ankit@example.com"));
 assert.ok(!compacted.includes("9876543210"));
+assert.ok(compacted.includes("[REDACTED_PHONE]"));
+assert.ok(!compacted.includes("+[REDACTED_NUMBER]"));
 
-console.log("OBSERVABILITY_SMOKE_PASS=18");
+console.log("OBSERVABILITY_SMOKE_PASS=20");
