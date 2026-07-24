@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import SidebarNavigationBridge from "../components/navigation/SidebarNavigationBridge";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
@@ -11,6 +12,7 @@ import "./compact-header.css";
 import "./final-ui.css";
 import "./png-icons.css";
 import "./balanced-ui.css";
+import "./module-pages.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -36,7 +38,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <SidebarNavigationBridge />
+        {children}
+      </body>
     </html>
   );
 }
