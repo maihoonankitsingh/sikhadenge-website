@@ -162,7 +162,7 @@ export default async function StoreProductPage({ params }: PageProps) {
         brand: { "@id": ORGANIZATION_ID },
         offers: {
           "@type": "Offer",
-          url: `${BASE_URL}/checkout/${product.slug}`,
+          url: canonical,
           priceCurrency: "INR",
           price: Number(product.price).toFixed(2),
           availability: "https://schema.org/InStock",
