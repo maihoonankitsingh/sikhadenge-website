@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     robots: {
       index: false,
       follow: false,
-      googleBot: { index: false, follow: false, noArchive: true },
+      googleBot: { index: false, follow: false, noarchive: true },
     },
   };
 }
