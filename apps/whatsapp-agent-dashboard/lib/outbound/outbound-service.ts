@@ -217,14 +217,6 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
         },
       });
 
-      await transaction.whatsAppConversation.update({
-        where: { id: conversation.id },
-        data: {
-          status: ConversationStatus.WAITING,
-          lastMessageAt: now,
-        },
-      });
-
       await transaction.webhookEvent.update({
         where: { eventKey },
         data: { processedAt: new Date() },
@@ -264,6 +256,7 @@ export async function dispatchOutboundMessage(
       rawPayload: true,
       conversation: {
         select: {
+          id: true,
           contact: { select: { waId: true } },
         },
       },
@@ -320,6 +313,7 @@ export async function dispatchOutboundMessage(
 
   try {
     const sent = await sendMetaWhatsAppMessage(payload);
+    const sentAt = new Date();
     await prisma.$transaction([
       prisma.whatsAppMessage.update({
         where: { id: message.id },
@@ -333,7 +327,7 @@ export async function dispatchOutboundMessage(
             outbound: {
               ...metadata,
               attemptCount: previousAttempts + 1,
-              lastAttemptAt: new Date().toISOString(),
+              lastAttemptAt: sentAt.toISOString(),
               metaAcceptedStatus: sent.statusCode,
             },
           }),
@@ -343,8 +337,15 @@ export async function dispatchOutboundMessage(
         data: {
           messageId: message.id,
           status: MessageStatus.SENT,
-          metaTimestamp: new Date(),
+          metaTimestamp: sentAt,
           rawPayload: toJson({ source: "meta_send_response" }),
+        },
+      }),
+      prisma.whatsAppConversation.update({
+        where: { id: message.conversation.id },
+        data: {
+          status: ConversationStatus.WAITING,
+          lastMessageAt: sentAt,
         },
       }),
     ]);
