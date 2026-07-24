@@ -1,12 +1,29 @@
 import { KnowledgeStatus, LearningStatus, Prisma } from "@prisma/client";
 
+import type { AgentDecision } from "../agent/types";
 import { prisma } from "../db/prisma";
 import { knowledgeChecksum } from "../knowledge/text-processing";
+import {
+  learningCategoryFromDecision,
+  shouldCaptureLearningCandidate,
+  validateProposedLearningAnswer,
+} from "./policy";
 import { normalizeLearningText, redactLearningText } from "./redaction";
-import { validateProposedLearningAnswer } from "./policy";
+
+const AUTO_CAPTURE_PLACEHOLDER =
+  "Human reviewer must replace this placeholder with an approved answer before merge.";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function isAutoCaptured(payload: Prisma.JsonValue | null): boolean {
+  return Boolean(
+    payload &&
+      typeof payload === "object" &&
+      !Array.isArray(payload) &&
+      (payload as Record<string, unknown>).autoCaptured === true,
+  );
 }
 
 export async function listPendingLearningSuggestions(limit = 50) {
@@ -89,6 +106,7 @@ export async function createLearningSuggestion(input: {
         proposedAnswer,
         correctionReason,
         redactedPayload: toJson({
+          autoCaptured: false,
           createdById: input.actorId,
           redacted: {
             question: questionResult.categories,
@@ -99,12 +117,7 @@ export async function createLearningSuggestion(input: {
           rawContentStored: false,
         }),
       },
-      select: {
-        id: true,
-        category: true,
-        status: true,
-        createdAt: true,
-      },
+      select: { id: true, category: true, status: true, createdAt: true },
     });
 
     await transaction.auditLog.create({
@@ -117,10 +130,86 @@ export async function createLearningSuggestion(input: {
           category,
           status: suggestion.status,
           sourceMessageId: input.sourceMessageId ?? null,
+          autoCaptured: false,
           rawContentStored: false,
         }),
         ipAddress: input.ipAddress,
         userAgent: input.userAgent,
+      },
+    });
+
+    return { suggestionId: suggestion.id, duplicate: false };
+  });
+}
+
+export async function captureDecisionLearningCandidate(input: {
+  decision: AgentDecision;
+  userQuestion: string;
+  sourceMessageId?: string | null;
+  actorId?: string | null;
+}) {
+  if (!shouldCaptureLearningCandidate(input.decision)) return null;
+
+  const question = redactLearningText(input.userQuestion);
+  const original = redactLearningText(input.decision.reply);
+  const userQuestion = normalizeLearningText(question.text, 4_000);
+  const originalAnswer = normalizeLearningText(original.text, 4_000);
+  const category = learningCategoryFromDecision(input.decision);
+
+  return prisma.$transaction(async (transaction) => {
+    const duplicate = await transaction.learningSuggestion.findFirst({
+      where: {
+        status: LearningStatus.PENDING,
+        category,
+        userQuestion,
+        ...(input.sourceMessageId
+          ? { sourceMessageId: input.sourceMessageId }
+          : { originalAnswer }),
+      },
+      select: { id: true },
+    });
+    if (duplicate) return { suggestionId: duplicate.id, duplicate: true };
+
+    const suggestion = await transaction.learningSuggestion.create({
+      data: {
+        sourceMessageId: input.sourceMessageId ?? null,
+        category,
+        userQuestion,
+        originalAnswer,
+        proposedAnswer: AUTO_CAPTURE_PLACEHOLDER,
+        correctionReason: normalizeLearningText(
+          input.decision.decisionSummary || "Low-confidence agent decision requires review.",
+          2_000,
+        ),
+        redactedPayload: toJson({
+          autoCaptured: true,
+          handoffReason: input.decision.handoffReason,
+          confidence: input.decision.confidence,
+          redacted: {
+            question: question.categories,
+            originalAnswer: original.categories,
+          },
+          rawContentStored: false,
+          correctedAnswerRequired: true,
+        }),
+      },
+      select: { id: true },
+    });
+
+    await transaction.auditLog.create({
+      data: {
+        actorId: input.actorId ?? null,
+        action: "LEARNING_CANDIDATE_AUTO_CAPTURED",
+        entityType: "LearningSuggestion",
+        entityId: suggestion.id,
+        after: toJson({
+          category,
+          sourceMessageId: input.sourceMessageId ?? null,
+          handoffReason: input.decision.handoffReason,
+          confidence: input.decision.confidence,
+          correctedAnswerRequired: true,
+          rawContentStored: false,
+        }),
       },
     });
 
@@ -176,6 +265,10 @@ export async function reviewLearningSuggestion(input: {
       });
 
       return { suggestion: rejected, knowledgeDocumentId: null, duplicateKnowledge: false };
+    }
+
+    if (isAutoCaptured(suggestion.redactedPayload) && !input.correctedAnswer?.trim()) {
+      throw new Error("LEARNING_CORRECTED_ANSWER_REQUIRED");
     }
 
     const approvedAnswer = normalizeLearningText(
