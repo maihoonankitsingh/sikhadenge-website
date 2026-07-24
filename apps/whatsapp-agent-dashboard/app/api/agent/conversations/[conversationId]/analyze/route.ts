@@ -1,8 +1,14 @@
-import { DashboardRole } from "@prisma/client";
+import {
+  DashboardRole,
+  MessageActor,
+  MessageDirection,
+} from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { analyzeAndPersistConversation } from "../../../../../../lib/agent/conversation-intelligence";
 import { getCurrentDashboardUser } from "../../../../../../lib/auth/session";
+import { prisma } from "../../../../../../lib/db/prisma";
+import { captureDecisionLearningCandidate } from "../../../../../../lib/learning/learning-repository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,9 +24,7 @@ export async function POST(
   context: { params: { conversationId: string } },
 ) {
   const user = await getCurrentDashboardUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!ALLOWED_ROLES.has(user.role)) {
     return NextResponse.json({ error: "Insufficient permission." }, { status: 403 });
   }
@@ -51,9 +55,33 @@ export async function POST(
       actorId: user.id,
     });
 
-    return NextResponse.json(result, {
-      headers: { "Cache-Control": "no-store" },
+    const latestInbound = await prisma.whatsAppMessage.findFirst({
+      where: {
+        conversationId: context.params.conversationId,
+        direction: MessageDirection.INBOUND,
+        actor: MessageActor.CUSTOMER,
+        text: { not: null },
+      },
+      orderBy: { messageTimestamp: "desc" },
+      select: { id: true, text: true },
     });
+
+    const question = message || latestInbound?.text?.trim() || null;
+    const sourceMessageId =
+      !message || message === latestInbound?.text?.trim() ? latestInbound?.id ?? null : null;
+    const learningCandidate = question
+      ? await captureDecisionLearningCandidate({
+          decision: result.decision,
+          userQuestion: question,
+          sourceMessageId,
+          actorId: user.id,
+        })
+      : null;
+
+    return NextResponse.json(
+      { ...result, learningCandidate },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Analysis failed.";
     const status = detail.includes("not found") ? 404 : 422;
