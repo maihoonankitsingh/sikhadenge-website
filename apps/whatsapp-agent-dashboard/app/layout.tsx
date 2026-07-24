@@ -13,6 +13,7 @@ import "./final-ui.css";
 import "./png-icons.css";
 import "./balanced-ui.css";
 import "./module-pages.css";
+import "./knowledge-manager.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
