@@ -1,8 +1,11 @@
+import { estimateModelCostUsd, getAgentRuntimePolicy } from "../observability/runtime-policy";
+import { compactOperationalError } from "../observability/sanitize";
 import type {
   AgentDecision,
   AgentInput,
   AgentKnowledgeReference,
   AgentLeadUpdates,
+  AgentTelemetry,
   RuleClassification,
 } from "./types";
 
@@ -22,12 +25,20 @@ type ModelDecision = Pick<
 >;
 
 type ResponsesPayload = {
+  id?: unknown;
   output_text?: unknown;
   output?: Array<{
     content?: Array<{ type?: string; text?: string }>;
   }>;
+  usage?: {
+    input_tokens?: unknown;
+    output_tokens?: unknown;
+    total_tokens?: unknown;
+  } | null;
   error?: { message?: string };
 };
+
+type ModelTelemetry = Omit<AgentTelemetry, "source" | "totalLatencyMs">;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -217,44 +228,44 @@ const RESPONSE_SCHEMA = {
   ],
 } as const;
 
-export async function requestModelDecision(input: {
-  agentInput: AgentInput;
-  classification: RuleClassification;
-  knowledge: AgentKnowledgeReference[];
-}): Promise<{ decision: ModelDecision; model: string } | null> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) return null;
+function usageNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.floor(value))
+    : null;
+}
 
-  const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+async function requestSingleModel(input: {
+  apiKey: string;
+  model: string;
+  context: Record<string, unknown>;
+  fallbackModelUsed: boolean;
+}): Promise<{
+  decision: ModelDecision;
+  model: string;
+  telemetry: ModelTelemetry;
+}> {
+  const runtimePolicy = getAgentRuntimePolicy();
   const configuredTimeout = Number(process.env.OPENAI_TIMEOUT_MS);
   const timeoutMs = Number.isFinite(configuredTimeout)
     ? Math.max(5_000, Math.min(60_000, configuredTimeout))
     : DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  const context = {
-    detectedByRules: input.classification,
-    contact: input.agentInput.contact ?? null,
-    lead: input.agentInput.lead ?? null,
-    conversationSummary: input.agentInput.conversationSummary ?? null,
-    conversationHistory: compactHistory(input.agentInput),
-    currentCustomerMessage: input.agentInput.customerMessage,
-    approvedKnowledge: compactKnowledge(input.knowledge),
-  };
+  const startedAt = Date.now();
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${input.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: input.model,
         store: false,
+        max_output_tokens: runtimePolicy.maximumOutputTokens,
         instructions: systemInstructions(),
-        input: JSON.stringify(context),
+        input: JSON.stringify(input.context),
         text: {
           format: {
             type: "json_schema",
@@ -286,8 +297,79 @@ export async function requestModelDecision(input: {
 
     const decision = parseModelDecision(parsed);
     if (!decision) throw new Error("OpenAI returned an invalid agent decision.");
-    return { decision, model };
+
+    const inputTokens = usageNumber(payload.usage?.input_tokens);
+    const outputTokens = usageNumber(payload.usage?.output_tokens);
+    const totalTokens = usageNumber(payload.usage?.total_tokens);
+    const requestId =
+      response.headers.get("x-request-id")?.trim() ||
+      (typeof payload.id === "string" ? payload.id : null);
+
+    return {
+      decision,
+      model: input.model,
+      telemetry: {
+        modelLatencyMs: Date.now() - startedAt,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        estimatedCostUsd:
+          inputTokens !== null && outputTokens !== null
+            ? estimateModelCostUsd({ inputTokens, outputTokens })
+            : null,
+        fallbackModelUsed: input.fallbackModelUsed,
+        requestId,
+      },
+    };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function requestModelDecision(input: {
+  agentInput: AgentInput;
+  classification: RuleClassification;
+  knowledge: AgentKnowledgeReference[];
+}): Promise<{
+  decision: ModelDecision;
+  model: string;
+  telemetry: ModelTelemetry;
+} | null> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const runtimePolicy = getAgentRuntimePolicy();
+  if (!apiKey || !runtimePolicy.modelCallsEnabled) return null;
+
+  const primaryModel = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+  const fallbackModel = process.env.OPENAI_FALLBACK_MODEL?.trim() || null;
+  const models = Array.from(
+    new Set([primaryModel, fallbackModel].filter((value): value is string => Boolean(value))),
+  );
+
+  const context: Record<string, unknown> = {
+    detectedByRules: input.classification,
+    contact: input.agentInput.contact ?? null,
+    lead: input.agentInput.lead ?? null,
+    conversationSummary: input.agentInput.conversationSummary ?? null,
+    conversationHistory: compactHistory(input.agentInput),
+    currentCustomerMessage: input.agentInput.customerMessage,
+    approvedKnowledge: compactKnowledge(input.knowledge),
+  };
+
+  let lastError: unknown = null;
+  for (let index = 0; index < models.length; index += 1) {
+    try {
+      return await requestSingleModel({
+        apiKey,
+        model: models[index],
+        context,
+        fallbackModelUsed: index > 0,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw new Error(
+    `All configured agent models failed: ${compactOperationalError(lastError)}`,
+  );
 }
