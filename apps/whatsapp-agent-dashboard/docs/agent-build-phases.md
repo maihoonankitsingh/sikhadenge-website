@@ -92,12 +92,31 @@ An optional `message` may be supplied; otherwise the latest inbound customer tex
 
 ## Phase 4 — Counselor handoff and operations
 
-- AI/HUMAN/REVIEW_REQUIRED/PAUSED state machine.
-- Assignment queues and SLA timers.
-- Human takeover/resume controls.
-- Internal notes, tags and follow-up scheduling.
-- Complaint, refund and payment escalation queues.
-- Audit history for every decision and mode change.
+Status: implemented on `feature/whatsapp-ai-agent-roadmap`.
+
+- Validated AI/HUMAN/REVIEW_REQUIRED/PAUSED mode transitions.
+- Validated OPEN/WAITING/RESOLVED/CLOSED/SPAM status transitions.
+- Counselor self-assignment and manager/admin assignment controls.
+- Conversation and lead assignee synchronization.
+- Internal lead notes, conversation tags and follow-up scheduling.
+- Derived SLA state, priority score and operational priority band.
+- Due, unassigned and counselor-specific queue filters.
+- Audit logging with actor, IP address, user agent and before/after state.
+- No outbound WhatsApp message is sent by this phase.
+
+Operations endpoints:
+
+```text
+POST /api/conversations/{conversationId}/mode
+POST /api/conversations/{conversationId}/assignment
+POST /api/conversations/{conversationId}/status
+POST /api/conversations/{conversationId}/follow-up
+POST /api/conversations/{conversationId}/notes
+POST /api/conversations/{conversationId}/tags
+GET  /api/operations/queue
+```
+
+All write responses include `outboundSent: false`. Queue filters support `assignedToId`, `unassigned`, `due` and `limit` query parameters.
 
 ## Phase 5 — Controlled learning
 
