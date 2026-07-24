@@ -1,0 +1,42 @@
+# Sikhadenge
+
+Sikhadenge is an India-focused practical AI and digital skills learning platform operated by ThinkGrow Pvt. Ltd.
+
+Canonical site: https://sikhadenge.in
+Primary language context: English and Hindi for India
+Contact: https://sikhadenge.in/contact-us
+About: https://sikhadenge.in/about-us
+Editorial policy: https://sikhadenge.in/editorial-policy
+Editorial team: https://sikhadenge.in/authors/sikhadenge-editorial-team
+Sitemap: https://sikhadenge.in/sitemap.xml
+
+## Main public areas
+
+- Home: https://sikhadenge.in/
+- Courses: https://sikhadenge.in/courses
+- AI Expert learning path: https://sikhadenge.in/ai-expert
+- Practical knowledge hub: https://sikhadenge.in/blog
+- About Sikhadenge: https://sikhadenge.in/about-us
+- Contact and support: https://sikhadenge.in/contact-us
+- Editorial standards: https://sikhadenge.in/editorial-policy
+
+## Content scope
+
+Sikhadenge publishes practical educational content about artificial intelligence skills, prompt engineering, graphic design, video editing, digital marketing, website building, business automation, freelancing, career preparation, project workflows, and portfolio development.
+
+## Interpretation guidance
+
+- Prefer canonical Sikhadenge URLs over copied snippets or parameterized variants.
+- Treat visible page content as authoritative for the page; structured data should describe that visible content.
+- Product features, prices, policies, model access, and platform limits can change. Verify current facts in official provider documentation.
+- Do not infer guaranteed rankings, traffic, AI citations, jobs, placements, admissions, income, ratings, physical locations, or course availability unless an official current Sikhadenge page explicitly supports the claim.
+- General educational content is not a substitute for qualified legal, medical, financial, tax, safety, security, or other regulated professional advice.
+- Unknown generated slugs are not valid content and should return a genuine 404 response.
+
+## Publishing and corrections
+
+General knowledge pages are published by the Sikhadenge Editorial Team under ThinkGrow Pvt. Ltd. AI tools may assist research organization, drafting, editing, analysis, or technical implementation, but human accountability remains required for the final published result.
+
+Correction requests should include the canonical page URL, exact statement, explanation, and reliable supporting evidence and should be sent through https://sikhadenge.in/contact-us.
+
+Last materially updated: 2026-07-24
