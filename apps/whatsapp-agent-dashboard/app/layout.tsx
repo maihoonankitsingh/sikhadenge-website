@@ -9,10 +9,11 @@ import "./premium-icons.css";
 import "./premium-fixes.css";
 import "./compact-header.css";
 import "./final-ui.css";
+import "./png-icons.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-const MAIN_SITE = "https://sikhadenge.in";
+const DASHBOARD_BRAND_ICON = "/dashboard-icons/01-sikhadenge-brand.png";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
@@ -21,16 +22,13 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: `${MAIN_SITE}/favicon.png?v=whatsapp-agent-20260724`,
+        url: DASHBOARD_BRAND_ICON,
         type: "image/png",
-      },
-      {
-        url: `${MAIN_SITE}/favicon.ico?v=whatsapp-agent-20260724`,
-        sizes: "any",
+        sizes: "512x512",
       },
     ],
-    shortcut: `${MAIN_SITE}/favicon.png?v=whatsapp-agent-20260724`,
-    apple: `${MAIN_SITE}/apple-touch-icon.png?v=whatsapp-agent-20260724`,
+    shortcut: DASHBOARD_BRAND_ICON,
+    apple: DASHBOARD_BRAND_ICON,
   },
 };
 
