@@ -19,10 +19,17 @@ assert.ok(redacted.text.includes("[REDACTED_PHONE]"));
 assert.ok(redacted.text.includes("[REDACTED_EMAIL]"));
 assert.ok(redacted.text.includes("[REDACTED_OTP]"));
 assert.ok(redacted.text.includes("[REDACTED_PAYMENT_NUMBER]"));
+assert.ok(redacted.categories.includes("PAYMENT_NUMBER"));
 assert.ok(!redacted.text.includes("9876543210"));
 assert.ok(!redacted.text.includes("ankit@example.com"));
 assert.ok(!redacted.text.includes("123456"));
-assert.ok(!redacted.text.includes("4111 1111 1111 1111"));
+assert.ok(!redacted.text.includes("4111"));
+assert.ok(!redacted.text.includes("1111"));
+
+const aadhaar = redactLearningText("Aadhaar number 1234 5678 9012");
+assert.ok(aadhaar.text.includes("[REDACTED_AADHAAR]"));
+assert.ok(aadhaar.categories.includes("AADHAAR"));
+assert.ok(!aadhaar.text.includes("1234 5678 9012"));
 
 const normalized = normalizeLearningText("  Approved   answer\nfor students.  ", 100);
 assert.equal(normalized, "Approved answer for students.");
@@ -68,4 +75,4 @@ assert.equal(
   false,
 );
 
-console.log("LEARNING_SMOKE_PASS=16");
+console.log("LEARNING_SMOKE_PASS=20");
