@@ -4,61 +4,100 @@ import type { MetadataRoute } from "next";
 import generatedPages from "../data/generated-seo.json";
 import { skillsData } from "../data/skillsData";
 
-const BASE = "https://sikhadenge.in";
+const BASE_URL = "https://sikhadenge.in";
+const RELEASE_DATE = new Date("2026-07-24T00:00:00.000Z");
 
 type BlogRecord = {
   slug?: string;
+  updatedAt?: string;
+  dateModified?: string;
+  publishedAt?: string;
+  datePublished?: string;
 };
 
-function getBlogSlugs(): string[] {
+type ExpertRecord = {
+  slug?: string;
+  updatedAt?: string;
+  dateModified?: string;
+};
+
+function validDate(value?: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function contentDate(...values: Array<string | undefined>): Date {
+  for (const value of values) {
+    const date = validDate(value);
+    if (date) return date;
+  }
+  return RELEASE_DATE;
+}
+
+function getBlogRecords(): BlogRecord[] {
   try {
     const filePath = path.join(process.cwd(), "data", "blogs.json");
-    const raw = fs.readFileSync(filePath, "utf8");
-    const parsed = JSON.parse(raw) as BlogRecord[];
-    return parsed
-      .map((item) => item.slug)
-      .filter((slug): slug is string => typeof slug === "string" && slug.trim().length > 0);
-  } catch {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as BlogRecord[];
+    const seen = new Set<string>();
+    return parsed.filter((item) => {
+      const slug = typeof item?.slug === "string" ? item.slug.trim() : "";
+      if (!slug || seen.has(slug)) return false;
+      seen.add(slug);
+      item.slug = slug;
+      return true;
+    });
+  } catch (error) {
+    console.error("Unable to load blog records for sitemap", error);
     return [];
   }
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // Static dates — prevents Google thinking every page changes on every build.
-  // Update the relevant date when that section's content actually changes.
-  const DATE_HOME    = new Date("2025-04-01");
-  const DATE_STATIC  = new Date("2025-02-01");
-  const DATE_BLOG    = new Date("2025-04-15");
-  const DATE_EXPERT  = new Date("2025-01-15");
-
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: `${BASE}/`,              priority: 1.0,  changeFrequency: "weekly",  lastModified: DATE_HOME   },
-    { url: `${BASE}/ai-expert`,     priority: 0.92, changeFrequency: "weekly",  lastModified: DATE_HOME   },
-    { url: `${BASE}/blog`,          priority: 0.9,  changeFrequency: "weekly",  lastModified: DATE_BLOG   },
-    { url: `${BASE}/about-us`,      priority: 0.75, changeFrequency: "monthly", lastModified: DATE_STATIC },
-    { url: `${BASE}/reviews`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
-    { url: `${BASE}/contact`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
-    { url: `${BASE}/collab`,        priority: 0.6,  changeFrequency: "monthly", lastModified: DATE_STATIC },
-    { url: `${BASE}/terms`,         priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
-    { url: `${BASE}/privacy-policy`,priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
-    { url: `${BASE}/refund-policy`, priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
-    // NOTE: /influencer is a private portal — never include in sitemap
+    { url: `${BASE_URL}/`, lastModified: RELEASE_DATE, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE_URL}/courses`, lastModified: RELEASE_DATE, changeFrequency: "weekly", priority: 0.92 },
+    { url: `${BASE_URL}/ai-expert`, lastModified: RELEASE_DATE, changeFrequency: "weekly", priority: 0.92 },
+    { url: `${BASE_URL}/blog`, lastModified: RELEASE_DATE, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/about-us`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${BASE_URL}/contact-us`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.72 },
+    { url: `${BASE_URL}/reviews`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/companies`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.65 },
+    { url: `${BASE_URL}/collab`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/editorial-policy`, lastModified: RELEASE_DATE, changeFrequency: "monthly", priority: 0.55 },
+    {
+      url: `${BASE_URL}/authors/sikhadenge-editorial-team`,
+      lastModified: RELEASE_DATE,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+    { url: `${BASE_URL}/terms`, lastModified: RELEASE_DATE, changeFrequency: "yearly", priority: 0.35 },
+    { url: `${BASE_URL}/privacy-policy`, lastModified: RELEASE_DATE, changeFrequency: "yearly", priority: 0.35 },
+    { url: `${BASE_URL}/refund-policy`, lastModified: RELEASE_DATE, changeFrequency: "yearly", priority: 0.35 },
   ];
 
-  const blogRoutes: MetadataRoute.Sitemap = getBlogSlugs().map((slug) => ({
-    url: `${BASE}/blog/${slug}`,
-    lastModified: DATE_BLOG,
-    changeFrequency: "weekly" as const,
-    priority: 0.82,
-  }));
-
-  const expertRoutes: MetadataRoute.Sitemap = generatedPages.map((page: any) => ({
-    url: `${BASE}/expert/${page.slug}`,
-    lastModified: DATE_EXPERT,
+  const skillRoutes: MetadataRoute.Sitemap = skillsData.map((skill) => ({
+    url: `${BASE_URL}/${skill.slug}`,
+    lastModified: RELEASE_DATE,
     changeFrequency: "monthly" as const,
-    priority: 0.6,
+    priority: 0.72,
   }));
 
-  // career routes excluded — app/career/ pages do not exist yet
-  return [...staticRoutes, ...blogRoutes, ...expertRoutes];
+  const blogRoutes: MetadataRoute.Sitemap = getBlogRecords().map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: contentDate(post.updatedAt, post.dateModified, post.publishedAt, post.datePublished),
+    changeFrequency: "monthly" as const,
+    priority: 0.72,
+  }));
+
+  const expertRoutes: MetadataRoute.Sitemap = (generatedPages as ExpertRecord[])
+    .filter((page) => typeof page?.slug === "string" && page.slug.trim().length > 0)
+    .map((page) => ({
+      url: `${BASE_URL}/expert/${page.slug!.trim()}`,
+      lastModified: contentDate(page.updatedAt, page.dateModified),
+      changeFrequency: "monthly" as const,
+      priority: 0.62,
+    }));
+
+  return [...staticRoutes, ...skillRoutes, ...blogRoutes, ...expertRoutes];
 }
