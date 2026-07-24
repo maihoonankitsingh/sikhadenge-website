@@ -35,6 +35,11 @@ function isHeading(line: string): boolean {
   if (/^#{1,6}\s+/.test(compact)) return true;
   if (/^[A-Z0-9][A-Z0-9 &/():-]{3,}$/.test(compact)) return true;
   if (/^(module|course|fees?|batch|timings?|certificate|policy|eligibility|admission|demo)\b/i.test(compact)) {
+    // Keyword-led prose such as "Certificate details must come from..." is
+    // document content, not a heading. Terminal sentence punctuation is a
+    // strong, language-neutral signal that prevents that content from being
+    // silently dropped when the following section has no body.
+    if (/[.!?]$/.test(compact)) return false;
     return compact.endsWith(":") || compact.split(/\s+/).length <= 9;
   }
   return false;
