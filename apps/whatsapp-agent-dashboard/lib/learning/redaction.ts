@@ -26,8 +26,12 @@ export function redactLearningText(value: string): RedactionResult {
   replace(OTP_PATTERN, "OTP");
   replace(SECRET_PATTERN, "SECRET");
   replace(EMAIL_PATTERN, "EMAIL");
-  replace(AADHAAR_PATTERN, "AADHAAR");
+
+  // A 16-digit payment card begins with a valid 12-digit Aadhaar-shaped prefix.
+  // Redact the longer payment-number pattern first so it cannot be partially
+  // consumed and leave sensitive trailing digits behind.
   replace(CARD_PATTERN, "PAYMENT_NUMBER");
+  replace(AADHAAR_PATTERN, "AADHAAR");
   replace(PHONE_PATTERN, "PHONE");
 
   return {
