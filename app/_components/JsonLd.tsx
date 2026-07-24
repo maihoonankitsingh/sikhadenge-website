@@ -6,7 +6,7 @@ export default function JsonLd() {
     name: "Sikhadenge",
     alternateName: "Sikha Denge",
     description:
-      "Sikhadenge is a live, mentor-led online training platform by ThinkGrow Pvt. Ltd. offering courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills for students and professionals across India.",
+      "Sikhadenge is an India-focused practical AI and digital skills learning platform operated by ThinkGrow Pvt. Ltd.",
     url: "https://sikhadenge.in",
     logo: {
       "@type": "ImageObject",
@@ -14,7 +14,6 @@ export default function JsonLd() {
       width: 1200,
       height: 630,
     },
-    foundingDate: "2021",
     areaServed: { "@type": "Country", name: "India" },
     inLanguage: ["en", "hi"],
     parentOrganization: {
@@ -25,10 +24,22 @@ export default function JsonLd() {
     contactPoint: {
       "@type": "ContactPoint",
       telephone: "+91-8808505575",
+      email: "support@sikhadenge.in",
       contactType: "customer support",
       areaServed: "IN",
       availableLanguage: ["English", "Hindi"],
+      url: "https://sikhadenge.in/contact-us",
     },
+    knowsAbout: [
+      "Artificial intelligence skills",
+      "Graphic design",
+      "Video editing",
+      "Digital marketing",
+      "Website building",
+      "Business automation",
+      "Prompt engineering",
+    ],
+    publishingPrinciples: "https://sikhadenge.in/editorial-policy",
     sameAs: [
       "https://www.instagram.com/sikhadenge",
       "https://www.youtube.com/@sikhadenge",
@@ -41,17 +52,10 @@ export default function JsonLd() {
     "@type": "WebSite",
     "@id": "https://sikhadenge.in/#website",
     name: "Sikhadenge",
+    alternateName: "Sikha Denge",
     url: "https://sikhadenge.in",
     publisher: { "@id": "https://sikhadenge.in/#organization" },
-    inLanguage: "en",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: "https://sikhadenge.in/blog?q={search_term_string}",
-      },
-      "query-input": "required name=search_term_string",
-    },
+    inLanguage: ["en", "hi"],
   };
 
   return (
@@ -67,4 +71,3 @@ export default function JsonLd() {
     </>
   );
 }
-
