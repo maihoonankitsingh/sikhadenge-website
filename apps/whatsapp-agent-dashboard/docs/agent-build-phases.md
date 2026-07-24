@@ -60,23 +60,35 @@ Do not commit secrets or print them in logs.
 
 ## Phase 2 — RAG ingestion and knowledge operations
 
+Status: implemented on `feature/whatsapp-ai-agent-roadmap`.
+
 - Knowledge upload/import workflow.
 - Normalization, deduplication, chunking and checksums.
 - Versioning, effective dates and approval workflow.
-- Embeddings/vector retrieval with lexical fallback.
-- Retrieval evaluation set and source-quality scoring.
-- Conflict detection between active documents.
-- Knowledge dashboard and publication controls.
+- Optional embeddings with hybrid lexical/semantic retrieval.
+- Active-version archival and audit logging.
+- Authenticated ingestion, review and search APIs.
+- Content-preservation smoke tests.
 
 ## Phase 3 — Conversation memory and lead intelligence
 
-- Durable customer profile memory.
-- Rolling conversation summaries.
-- Explicit fact extraction with provenance.
-- Course-interest and goal discovery.
-- Lead score, temperature and stage transitions.
-- One-question-at-a-time discovery policy.
-- Duplicate-question and repeated-contact handling.
+Status: implemented on `feature/whatsapp-ai-agent-roadmap`.
+
+- Durable redacted conversation summaries in `aiSummary`.
+- Explicit contact, course, goal, timeline and availability memory.
+- Deterministic lead score, temperature and non-regressive stage transitions.
+- Automatic `REVIEW_REQUIRED` mode for low-confidence or handoff decisions.
+- Opt-out persistence and counselor-request tracking.
+- Authenticated analysis endpoint with audit logging.
+- No outbound WhatsApp message is sent by this phase.
+
+Analysis endpoint:
+
+```text
+POST /api/agent/conversations/{conversationId}/analyze
+```
+
+An optional `message` may be supplied; otherwise the latest inbound customer text is analyzed. The response always includes `outboundSent: false`.
 
 ## Phase 4 — Counselor handoff and operations
 
