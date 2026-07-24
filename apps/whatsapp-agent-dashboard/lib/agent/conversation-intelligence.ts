@@ -9,20 +9,19 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import {
+  compactOperationalError,
+  sanitizeOperationalValue,
+} from "../observability/sanitize";
 import { buildAgentInputFromConversation } from "./context";
 import { applyLeadIntelligence, type LeadSnapshot } from "./lead-intelligence";
 import { buildConversationMemory } from "./memory";
 import { generateAgentDecision } from "./orchestrator";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-}
-
-function compactError(error: unknown): string {
-  return (error instanceof Error ? error.message : "Unknown intelligence error.").slice(
-    0,
-    1_000,
-  );
+  return JSON.parse(
+    JSON.stringify(sanitizeOperationalValue(value)),
+  ) as Prisma.InputJsonValue;
 }
 
 async function resolveCustomerMessage(
@@ -243,11 +242,18 @@ export async function analyzeAndPersistConversation(input: {
             detectedLanguage: updatedConversation.detectedLanguage,
             aiConfidence: updatedConversation.aiConfidence,
             agentMode: updatedConversation.agentMode,
+            requiresHuman: decision.requiresHuman,
             handoffReason: decision.handoffReason,
+            model: decision.model,
+            telemetry: decision.telemetry ?? null,
+            safety: {
+              promptInjectionDetected: decision.safety.promptInjectionDetected,
+              sensitiveDataDetected: decision.safety.sensitiveDataDetected,
+            },
             leadStage: updatedLead.stage,
             leadTemperature: updatedLead.temperature,
             leadScore: updatedLead.score,
-            knowledgeReferences: decision.knowledgeReferences,
+            knowledgeReferenceCount: decision.knowledgeReferences.length,
             outboundSent: false,
           }),
         },
@@ -266,6 +272,8 @@ export async function analyzeAndPersistConversation(input: {
       outboundSent: false,
     };
   } catch (error) {
-    throw new Error(`Agent intelligence persistence failed: ${compactError(error)}`);
+    throw new Error(
+      `Agent intelligence persistence failed: ${compactOperationalError(error)}`,
+    );
   }
 }
