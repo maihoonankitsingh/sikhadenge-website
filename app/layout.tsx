@@ -9,64 +9,60 @@ import JsonLd from "./_components/JsonLd";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 const SITE_URL = "https://sikhadenge.in";
-const OG_IMAGE = "/images/og/og-home.jpg"; // ensure this file exists in /public/images/og/
+const OG_IMAGE = "/images/og/og-home.jpg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-
+  applicationName: "Sikhadenge",
   title: {
-    default: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
+    default: "Sikhadenge — Practical AI and Digital Skills for India",
     template: "%s | Sikhadenge",
   },
-
   description:
-    "Sikhadenge by ThinkGrow Pvt. Ltd. offers live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. Join 12,000+ students across India.",
-
-  alternates: {
-    canonical: "https://sikhadenge.in",
+    "Sikhadenge by ThinkGrow Pvt. Ltd. provides practical, mentor-led learning in AI, design, video, marketing, websites, automation, and modern digital workflows.",
+  authors: [{ name: "Sikhadenge Editorial Team", url: `${SITE_URL}/authors/sikhadenge-editorial-team` }],
+  creator: "Sikhadenge",
+  publisher: "ThinkGrow Pvt. Ltd.",
+  category: "Education",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
   },
-
-  keywords: [
-    "Graphic Design course",
-    "Video Editing course",
-    "Motion Graphics course",
-    "Adobe Photoshop training",
-    "Adobe Illustrator training",
-    "Premiere Pro course",
-    "After Effects course",
-    "Live online course",
-    "Sikhadenge",
-  ],
-
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "Sikhadenge",
     locale: "en_IN",
-    title: "Sikhadenge — Learn Graphic Design, Video Editing & AI Skills Online",
+    title: "Sikhadenge — Practical AI and Digital Skills for India",
     description:
-      "Live mentor-led courses in Graphic Design, Video Editing, Motion Graphics, and AI creative skills. 12,000+ students trained across India.",
+      "Practical, mentor-led learning in AI, design, video, marketing, websites, automation, and modern digital workflows.",
     images: [
       {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Sikhadenge",
+        alt: "Sikhadenge practical AI and digital skills learning platform",
       },
     ],
   },
-
   twitter: {
     card: "summary_large_image",
-    title: "Sikhadenge",
+    title: "Sikhadenge — Practical AI and Digital Skills for India",
     description:
-      "Live online training: Graphic Design, Video Editing, Motion Graphics, and AI-powered creative skills.",
+      "Practical, mentor-led learning in AI, design, video, marketing, websites, automation, and modern digital workflows.",
     images: [OG_IMAGE],
   },
-
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
   },
 };
 
@@ -80,11 +76,7 @@ export const viewport: Viewport = {
 const Header = dynamic(() => import("../components/Header"), { ssr: false });
 const Footer = dynamic(() => import("../components/Footer"), { ssr: false });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -97,5 +89,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
