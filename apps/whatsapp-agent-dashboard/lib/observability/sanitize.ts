@@ -6,8 +6,11 @@ const LONG_NUMBER = /\b(?:\d[ -]*?){12,19}\b/g;
 function sanitizeString(value: string): string {
   return value
     .replace(EMAIL, "[REDACTED_EMAIL]")
-    .replace(LONG_NUMBER, "[REDACTED_NUMBER]")
+    // Phone numbers are a more specific form of numeric PII. Redact them
+    // before the generic 12-19 digit pattern so an Indian country code is not
+    // partially consumed and left as a stray "+" prefix.
     .replace(PHONE, "[REDACTED_PHONE]")
+    .replace(LONG_NUMBER, "[REDACTED_NUMBER]")
     .slice(0, 2_000);
 }
 
