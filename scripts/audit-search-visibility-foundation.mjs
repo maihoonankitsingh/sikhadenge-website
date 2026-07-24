@@ -20,7 +20,7 @@ const signals = {
   robots: /robots/i,
   schema: /application\/ld\+json|@context|schema\.org/i,
   faq: /FAQPage|frequently asked|\bfaq/i,
-  answer: /quick answer|direct answer|quick verdict|key takeaway|summary/i,
+  answer: /quick answer|direct answer|quick verdict|key takeaway|answerTitle|answer=/i,
   author: /author|authors|byline|editorial/i,
   dates: /datePublished|dateModified|publishedAt|updatedAt|lastModified|reviewed/i,
   sources: /citation|references|sources|sourceUrl|externalSource|methodology/i,
@@ -64,14 +64,16 @@ for (const row of rows) {
   );
 }
 
-const outDir = path.join(root, "reports", "search-visibility");
+const outDir = process.env.SEARCH_VISIBILITY_REPORT_DIR
+  ? path.resolve(process.env.SEARCH_VISIBILITY_REPORT_DIR)
+  : path.join("/tmp", "sikhadenge-search-visibility");
 fs.mkdirSync(outDir, { recursive: true });
 const outFile = path.join(outDir, "template-foundation-latest.json");
 fs.writeFileSync(
   outFile,
   `${JSON.stringify({ generatedAt: new Date().toISOString(), critical, rows }, null, 2)}\n`,
 );
-console.log(`REPORT=${path.relative(root, outFile)}`);
+console.log(`REPORT=${outFile}`);
 
 if (failed) {
   console.error("SEARCH_VISIBILITY_FOUNDATION=FAIL");
