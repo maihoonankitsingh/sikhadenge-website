@@ -35,8 +35,12 @@ function getGeneratedTools(): ToolPage[] {
   }
 }
 
-function cleanTitle(value: string) {
-  return value.replace(/\s*\|\s*Sikhadenge\s*$/i, "").trim();
+function pageTitle(page: ToolPage) {
+  return `${page.name} Workflow Guide and Preview`;
+}
+
+function pageDescription(page: ToolPage) {
+  return `Learn the inputs, workflow, review steps, and output structure commonly used for ${page.task.trim()} with this ${page.name} guide from Sikhadenge.`;
 }
 
 function tokens(value: string) {
@@ -85,11 +89,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   }
 
   const canonical = `${BASE_URL}/free-tools/${page.slug}`;
-  const title = cleanTitle(page.title);
+  const title = pageTitle(page);
+  const description = pageDescription(page);
 
   return {
     title,
-    description: page.description,
+    description,
     alternates: { canonical },
     robots: {
       index: true,
@@ -107,13 +112,13 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       url: canonical,
       siteName: "Sikhadenge",
       title,
-      description: page.description,
+      description,
       images: [{ url: `${BASE_URL}/images/og/og-home.jpg`, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description: page.description,
+      description,
       images: [`${BASE_URL}/images/og/og-home.jpg`],
     },
   };
@@ -153,8 +158,8 @@ export default function FreeToolPage({ params }: { params: { slug: string } }) {
         "@type": "WebPage",
         "@id": `${canonical}#webpage`,
         url: canonical,
-        name: cleanTitle(page.title),
-        description: page.description,
+        name: pageTitle(page),
+        description: pageDescription(page),
         dateModified: REVIEWED_ISO,
         isPartOf: { "@id": `${BASE_URL}/#website` },
         author: { "@id": `${BASE_URL}/authors/sikhadenge-editorial-team#organization` },
@@ -166,7 +171,7 @@ export default function FreeToolPage({ params }: { params: { slug: string } }) {
         "@id": `${canonical}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
-          { "@type": "ListItem", position: 2, name: "Free Tools", item: `${BASE_URL}/free-tools` },
+          { "@type": "ListItem", position: 2, name: "AI Tools", item: `${BASE_URL}/ai-tools` },
           { "@type": "ListItem", position: 3, name: page.name, item: canonical },
         ],
       },
@@ -193,7 +198,7 @@ export default function FreeToolPage({ params }: { params: { slug: string } }) {
             <ol className="flex flex-wrap items-center justify-center gap-2">
               <li><Link className="hover:text-slate-900" href="/">Home</Link></li>
               <li aria-hidden="true">/</li>
-              <li><Link className="hover:text-slate-900" href="/free-tools">Free Tools</Link></li>
+              <li><Link className="hover:text-slate-900" href="/ai-tools">AI Tools</Link></li>
               <li aria-hidden="true">/</li>
               <li className="text-slate-700" aria-current="page">{page.name}</li>
             </ol>
@@ -204,10 +209,10 @@ export default function FreeToolPage({ params }: { params: { slug: string } }) {
               <ShieldCheck className="w-5 h-5 mr-3" /> Sikhadenge Workflow Preview
             </div>
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 leading-[1.1] mb-6 drop-shadow-sm">
-              Free Online <br /><span className="text-blue-600">{page.name}</span>
+              Free AI Workflow <br /><span className="text-blue-600">{page.name}</span>
             </h1>
             <p className="text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto font-medium">
-              {page.description} Understand the workflow, inputs, review steps, and output structure before applying it in your own AI setup.
+              {pageDescription(page)}
             </p>
           </div>
 
