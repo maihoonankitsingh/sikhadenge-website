@@ -14,6 +14,15 @@ type DashboardModuleShellProps = {
 
 const navItems = ["Inbox", "Contacts", "Leads", "Analytics", "Knowledge"] as const;
 
+const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
+  Inbox: "/dashboard-icons/02-conversations.png",
+  Contacts: "/dashboard-icons/03-contacts.png",
+  Leads: "/dashboard-icons/05-qualified-leads.png",
+  Analytics: "/dashboard-icons/07-analytics.png",
+  Knowledge: "/dashboard-icons/08-knowledge.png",
+  Settings: "/dashboard-icons/10-settings.png",
+};
+
 export default function DashboardModuleShell({
   activeTitle,
   eyebrow,
@@ -23,6 +32,8 @@ export default function DashboardModuleShell({
   userRole,
   children,
 }: DashboardModuleShellProps) {
+  const moduleKey = activeTitle.toLowerCase();
+
   return (
     <>
       <div className="session-toolbar" aria-label="Signed-in account">
@@ -71,13 +82,19 @@ export default function DashboardModuleShell({
             </div>
           </header>
 
-          <section className="module-page-card">
+          <section className="module-page-card" data-module={moduleKey}>
             <header className="module-page-header">
-              <div>
-                <p className="eyebrow">{eyebrow}</p>
-                <h2>{title}</h2>
-                <p>{description}</p>
+              <div className="module-page-heading">
+                <div className="module-page-icon" aria-hidden="true">
+                  <img src={moduleIcons[activeTitle]} alt="" />
+                </div>
+                <div className="module-page-copy">
+                  <p className="eyebrow">{eyebrow}</p>
+                  <h2>{title}</h2>
+                  <p>{description}</p>
+                </div>
               </div>
+              <span className="module-page-badge">{activeTitle} module</span>
             </header>
             <div className="module-page-content">{children}</div>
           </section>
