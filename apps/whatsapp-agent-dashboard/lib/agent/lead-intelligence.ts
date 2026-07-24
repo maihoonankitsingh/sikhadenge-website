@@ -27,6 +27,9 @@ const LOCKED_STAGES = new Set<LeadStage>([
   LeadStage.CLOSED,
 ]);
 
+const WARM_SCORE_THRESHOLD = 35;
+const HOT_SCORE_THRESHOLD = 70;
+
 function clean(value: string | undefined, current: string | null): string | null {
   if (typeof value !== "string") return current;
   const normalized = value.trim().replace(/\s+/g, " ");
@@ -47,8 +50,10 @@ function computeScore(lead: Omit<LeadSnapshot, "score" | "temperature" | "stage"
 }
 
 function temperatureFor(score: number, counselorRequested: boolean): LeadTemperature {
-  if (counselorRequested || score >= 70) return LeadTemperature.HOT;
-  if (score >= 40) return LeadTemperature.WARM;
+  if (counselorRequested || score >= HOT_SCORE_THRESHOLD) {
+    return LeadTemperature.HOT;
+  }
+  if (score >= WARM_SCORE_THRESHOLD) return LeadTemperature.WARM;
   return LeadTemperature.COLD;
 }
 
