@@ -22,6 +22,7 @@ import "./media-composer.css";
 import "./template-centre.css";
 import "./templates-module.css";
 import "./inbox-template-picker.css";
+import "./contact-manager.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
