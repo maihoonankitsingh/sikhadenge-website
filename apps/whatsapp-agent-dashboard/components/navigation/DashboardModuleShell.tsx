@@ -8,11 +8,15 @@ type DashboardModuleShellProps = {
     | "Contacts"
     | "Leads"
     | "Team"
+    | "Engagement"
     | "Analytics"
     | "Knowledge"
     | "Campaigns"
     | "Automation"
     | "Templates"
+    | "Integrations"
+    | "Admin"
+    | "Cutover"
     | "Settings";
   eyebrow: string;
   title: string;
@@ -27,11 +31,15 @@ const navItems = [
   "Contacts",
   "Leads",
   "Team",
+  "Engagement",
   "Analytics",
   "Knowledge",
   "Campaigns",
   "Automation",
   "Templates",
+  "Integrations",
+  "Admin",
+  "Cutover",
 ] as const;
 
 const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
@@ -39,11 +47,15 @@ const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Contacts: "/dashboard-icons/03-contacts.png",
   Leads: "/dashboard-icons/05-qualified-leads.png",
   Team: "/dashboard-icons/04-ai-managed.png",
+  Engagement: "/dashboard-icons/03-contacts.png",
   Analytics: "/dashboard-icons/07-analytics.png",
   Knowledge: "/dashboard-icons/08-knowledge.png",
   Campaigns: "/dashboard-icons/09-automation.png",
   Automation: "/dashboard-icons/09-automation.png",
   Templates: "/dashboard-icons/04-ai-managed.png",
+  Integrations: "/dashboard-icons/10-settings.png",
+  Admin: "/dashboard-icons/10-settings.png",
+  Cutover: "/dashboard-icons/10-settings.png",
   Settings: "/dashboard-icons/10-settings.png",
 };
 
