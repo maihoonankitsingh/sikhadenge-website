@@ -23,6 +23,7 @@ import "./template-centre.css";
 import "./templates-module.css";
 import "./inbox-template-picker.css";
 import "./contact-manager.css";
+import "./lead-manager.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
