@@ -11,6 +11,7 @@ import "./premium-fixes.css";
 import "./compact-header.css";
 import "./final-ui.css";
 import "./png-icons.css";
+import "./navigation-icon-map.css";
 import "./balanced-ui.css";
 import "./module-pages.css";
 import "./knowledge-manager.css";
