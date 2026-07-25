@@ -24,6 +24,7 @@ import "./templates-module.css";
 import "./inbox-template-picker.css";
 import "./contact-manager.css";
 import "./lead-manager.css";
+import "./team-chat.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
