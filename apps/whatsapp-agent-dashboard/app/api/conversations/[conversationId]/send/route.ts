@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
 import { queueOutboundMessage } from "../../../../../lib/outbound/outbound-service";
-import type { OutboundContent } from "../../../../../lib/outbound/types";
+import type {
+  OutboundContent,
+  OutboundMediaType,
+} from "../../../../../lib/outbound/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +17,13 @@ const ALLOWED_ROLES = new Set<DashboardRole>([
   DashboardRole.COUNSELOR,
 ]);
 
+const MEDIA_TYPES = new Set<OutboundMediaType>([
+  "image",
+  "document",
+  "video",
+  "audio",
+]);
+
 type SendPayload = {
   kind?: unknown;
   text?: unknown;
@@ -21,6 +31,10 @@ type SendPayload = {
   components?: unknown;
   replyToMetaMessageId?: unknown;
   idempotencyKey?: unknown;
+  assetId?: unknown;
+  mediaType?: unknown;
+  caption?: unknown;
+  filename?: unknown;
 };
 
 export async function POST(
@@ -83,9 +97,39 @@ export async function POST(
       templateId,
       components: Array.isArray(payload.components) ? payload.components : [],
     };
+  } else if (kind === "media") {
+    const assetId = typeof payload.assetId === "string" ? payload.assetId.trim() : "";
+    const mediaType =
+      typeof payload.mediaType === "string"
+        ? (payload.mediaType.trim().toLowerCase() as OutboundMediaType)
+        : ("" as OutboundMediaType);
+    if (!/^[a-f0-9]{32}$/.test(assetId)) {
+      return NextResponse.json({ error: "A valid assetId is required." }, { status: 400 });
+    }
+    if (!MEDIA_TYPES.has(mediaType)) {
+      return NextResponse.json(
+        { error: "mediaType must be image, document, video, or audio." },
+        { status: 400 },
+      );
+    }
+    const caption =
+      typeof payload.caption === "string" ? payload.caption.trim().slice(0, 1_024) : "";
+    const filename =
+      typeof payload.filename === "string" ? payload.filename.trim().slice(0, 180) : "";
+    content = {
+      kind: "media",
+      assetId,
+      mediaType,
+      caption: caption || null,
+      filename: filename || null,
+      replyToMetaMessageId:
+        typeof payload.replyToMetaMessageId === "string"
+          ? payload.replyToMetaMessageId.trim().slice(0, 300) || null
+          : null,
+    };
   } else {
     return NextResponse.json(
-      { error: "kind must be text or template." },
+      { error: "kind must be text, template, or media." },
       { status: 400 },
     );
   }
