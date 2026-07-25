@@ -7,6 +7,7 @@ import {
   embeddingFromMetadata,
 } from "../knowledge/embeddings";
 import { getAgentPolicy } from "./policy";
+import { searchQuestionBankKnowledge } from "./question-bank";
 import type { AgentKnowledgeReference } from "./types";
 
 const STOP_WORDS = new Set([
@@ -51,12 +52,33 @@ function metadataModel(metadata: unknown): string | null {
   return typeof model === "string" ? model : null;
 }
 
+function mergeReferences(
+  builtIn: AgentKnowledgeReference[],
+  database: AgentKnowledgeReference[],
+  limit: number,
+): AgentKnowledgeReference[] {
+  const seen = new Set<string>();
+  return [...builtIn, ...database]
+    .sort((left, right) => right.score - left.score)
+    .filter((reference) => {
+      const key = `${reference.documentId}:${reference.heading ?? ""}:${reference.content}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 export async function retrieveApprovedKnowledge(
   query: string,
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
+  const builtIn = searchQuestionBankKnowledge(
+    query,
+    Math.min(2, policy.maximumKnowledgeChunks),
+  );
   const queryTokens = tokenize(query).slice(0, 24);
-  if (queryTokens.length === 0) return [];
+  if (queryTokens.length === 0) return builtIn;
 
   let queryEmbedding: { model: string; vector: number[] } | null = null;
   try {
@@ -92,7 +114,7 @@ export async function retrieveApprovedKnowledge(
     take: 400,
   });
 
-  return chunks
+  const database = chunks
     .map((chunk) => {
       const titleScore = lexicalScore(queryTokens, chunk.document.title);
       const headingScore = lexicalScore(queryTokens, chunk.heading ?? "");
@@ -120,7 +142,11 @@ export async function retrieveApprovedKnowledge(
         score: Number(Math.min(1, score).toFixed(4)),
       } satisfies AgentKnowledgeReference;
     })
-    .filter((reference) => reference.score >= policy.knowledgeMinimumScore)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, policy.maximumKnowledgeChunks);
+    .filter((reference) => reference.score >= policy.knowledgeMinimumScore);
+
+  return mergeReferences(
+    builtIn,
+    database,
+    policy.maximumKnowledgeChunks,
+  );
 }
