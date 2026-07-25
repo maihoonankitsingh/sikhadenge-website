@@ -44,10 +44,27 @@ test -n "$DB_URL"
 
 BROWSER="$(
   NODE_PATH="$ROOT/node_modules" \
-  node -e 'console.log(require("playwright").chromium.executablePath())'
+  node -e 'console.log(require("playwright").chromium.executablePath())' 2>/dev/null || true
 )"
 
+if [ ! -x "$BROWSER" ]; then
+  BROWSER=""
+  for CANDIDATE in \
+    /usr/bin/google-chrome-stable \
+    /usr/bin/google-chrome \
+    /usr/bin/chromium-browser \
+    /snap/bin/chromium
+  do
+    if [ -x "$CANDIDATE" ]; then
+      BROWSER="$CANDIDATE"
+      break
+    fi
+  done
+fi
+
+test -n "$BROWSER"
 test -x "$BROWSER"
+"$BROWSER" --version > "$OUT/browser-version.txt" 2>&1
 
 ln -s "$ROOT/node_modules" "$STAGE/node_modules"
 
@@ -85,6 +102,7 @@ echo "STAGE_DIRTY_FILES=$(git -C "$STAGE" status --porcelain | wc -l)"
 echo "LIVE_DIRTY_FILES=$(git -C "$ROOT" status --porcelain | wc -l)"
 echo "PM2_STATUS=$(pm2 jlist | jq -r '.[] | select(.name=="sikhadenge-in") | .pm2_env.status')"
 echo "BROWSER_EXECUTABLE=$BROWSER"
+echo "BROWSER_VERSION=$(cat "$OUT/browser-version.txt")"
 echo "REPORT_DIR=$OUT"
 
 echo
