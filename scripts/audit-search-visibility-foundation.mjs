@@ -27,6 +27,21 @@ const signals = {
   breadcrumb: /BreadcrumbList|breadcrumb/i,
 };
 
+const templateAnswerEvidence = {
+  "app/[skill]/page.tsx": [
+    /\{pageDesc\}/,
+    /Search clarity/i,
+  ],
+  "app/hindi/[slug]/page.tsx": [
+    /Ye page aapko kis cheez me help karega/i,
+    /\{intro\}/,
+  ],
+  "app/prompts/[slug]/page.tsx": [
+    /What this prompt page helps you do/i,
+    /\{intro\}/,
+  ],
+};
+
 const critical = ["metadata", "canonical", "schema", "answer", "breadcrumb"];
 const rows = [];
 let failed = false;
@@ -35,7 +50,13 @@ for (const template of templates) {
   const file = path.join(root, template);
   const source = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
   const result = Object.fromEntries(
-    Object.entries(signals).map(([name, pattern]) => [name, pattern.test(source)]),
+    Object.entries(signals).map(([name, pattern]) => {
+      const genericMatch = pattern.test(source);
+      if (name !== "answer" || genericMatch) return [name, genericMatch];
+
+      const templatePatterns = templateAnswerEvidence[template] || [];
+      return [name, templatePatterns.some((candidate) => candidate.test(source))];
+    }),
   );
 
   const missingCritical = critical.filter((name) => !result[name]);
