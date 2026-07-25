@@ -10,6 +10,7 @@ const ROUTES: Record<string, string> = {
   Analytics: "/analytics",
   Knowledge: "/knowledge",
   Campaigns: "/campaigns",
+  Templates: "/templates",
   Settings: "/settings",
 };
 
@@ -24,14 +25,16 @@ export default function SidebarNavigationBridge() {
       document.querySelectorAll<HTMLElement>(".rail nav"),
     );
     for (const navigation of navigationGroups) {
-      if (!navigation.querySelector('.rail-button[title="Campaigns"]')) {
-        const campaignButton = document.createElement("button");
-        campaignButton.className = "rail-button";
-        campaignButton.title = "Campaigns";
-        campaignButton.type = "button";
-        campaignButton.textContent = "Campaigns";
-        navigation.appendChild(campaignButton);
-        cleanups.push(() => campaignButton.remove());
+      for (const title of ["Campaigns", "Templates"] as const) {
+        if (!navigation.querySelector(`.rail-button[title="${title}"]`)) {
+          const button = document.createElement("button");
+          button.className = "rail-button";
+          button.title = title;
+          button.type = "button";
+          button.textContent = title;
+          navigation.appendChild(button);
+          cleanups.push(() => button.remove());
+        }
       }
     }
 
