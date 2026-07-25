@@ -19,6 +19,7 @@ import "./targeting-manager.css";
 import "./campaigns-module.css";
 import "./media-composer.css";
 import "./template-centre.css";
+import "./templates-module.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
