@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { processWebhookAgentBridge } from "../../../../lib/agent/webhook-agent-bridge";
 import {
   getWhatsAppAppSecret,
   getWhatsAppVerifyToken,
@@ -88,8 +89,9 @@ export async function POST(request: Request) {
 
   try {
     const result = await processWhatsAppWebhook(payload, rawBody);
+    const agent = await processWebhookAgentBridge(payload);
     return NextResponse.json(
-      { received: true, ...result },
+      { received: true, ...result, agent },
       { status: 200, headers: NO_STORE_HEADERS },
     );
   } catch {
