@@ -67,11 +67,12 @@ const INTENT_PATTERNS: Array<{
   },
   {
     intent: "BATCH_SCHEDULE",
-    weight: 0.88,
+    weight: 0.9,
     patterns: [
       /\b(batch|timing|schedule|class time|start date|duration|weekend)\b/i,
-      /\b(class kab|batch kab|kitne baje|duration kya)\b/i,
-      /बैच|टाइमिंग|क्लास\s+कब|अवधि/i,
+      /\b(online|offline|live class|live online|recorded class|class mode|mode of class)\b/i,
+      /\b(class kab|batch kab|kitne baje|duration kya|class online|online class|offline class|ghar se class)\b/i,
+      /बैच|टाइमिंग|क्लास\s+कब|अवधि|ऑनलाइन|ऑफलाइन/i,
     ],
   },
   {
@@ -116,6 +117,7 @@ const INTENT_PATTERNS: Array<{
     patterns: [
       /\b(which course|best course|course suggest|career course|ai course|learn ai)\b/i,
       /\b(kaunsa course|course batao|mere liye course|ai seekhna|ai sikhna)\b/i,
+      /^\s*(course|courses|ai course)\s*[?.!]*$/i,
       /कौनसा\s+कोर्स|कोर्स\s+बताओ|एआई\s+सीखना/i,
     ],
   },
@@ -138,21 +140,24 @@ export function detectLanguage(
   message: string,
   hint?: string | null,
 ): AgentLanguage {
-  const normalizedHint = hint?.trim().toLowerCase();
-  if (normalizedHint === "hi" || normalizedHint === "hindi") return "hi";
-  if (normalizedHint === "en" || normalizedHint === "english") return "en";
-  if (normalizedHint === "hinglish") return "hinglish";
-
   const devanagari = (message.match(/[\u0900-\u097F]/g) ?? []).length;
   const latin = (message.match(/[A-Za-z]/g) ?? []).length;
 
   if (devanagari > 0 && devanagari >= latin * 0.45) return "hi";
 
+  // Current-message evidence must override a stale language stored on the contact.
+  // This keeps "fees kya hai" and "class online hai ya offline" in Hinglish.
   const hinglishMarkers = [
-    /\b(bhai|kya|kaise|kab|kitna|kitni|mujhe|chahiye|nahi|hai|hoon|karna|batao)\b/i,
-    /\b(aap|apka|mera|mere|wala|wali|samjhe)\b/i,
+    /\b(bhai|ji|haan|ha|kya|kaise|kab|kyu|kyun|kitna|kitni|mujhe|chahiye|nahi|hai|hain|hoon|hoga|hogi|karna|batao|bataiye)\b/i,
+    /\b(aap|apka|aapka|mera|mere|ka|ki|ke|ko|ya|par|se|mein|me|wala|wali|samjhe|milega|milegi)\b/i,
   ];
   if (hinglishMarkers.some((pattern) => pattern.test(message))) return "hinglish";
+
+  const normalizedHint = hint?.trim().toLowerCase();
+  if (normalizedHint === "hi" || normalizedHint === "hindi") return "hi";
+  if (normalizedHint === "hinglish") return "hinglish";
+  if (normalizedHint === "en" || normalizedHint === "english") return "en";
+
   return "en";
 }
 
