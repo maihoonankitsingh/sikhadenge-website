@@ -1,14 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type {
   InboxConversationDetail,
   InboxConversationSummary,
+  InboxMessage,
 } from "../../lib/inbox/types";
 
 type ConversationFilter = "ALL" | "UNREAD" | "HOT";
 type UserSettableMode = "AI" | "HUMAN" | "PAUSED";
+type UploadedMedia = {
+  id: string;
+  name: string;
+  mimeType: string;
+  kind: "image" | "document" | "video" | "audio";
+  size: number;
+  createdAt: string;
+  previewUrl: string;
+};
 
 type InboxDashboardProps = {
   initialConversations: InboxConversationSummary[];
@@ -58,6 +68,12 @@ function formatMessageTime(value: string): string {
   }).format(date);
 }
 
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function readable(value?: string | null): string {
   return value?.replaceAll("_", " ") || "Not captured";
 }
@@ -68,11 +84,41 @@ function messagePreview(item: InboxConversationSummary): string {
   return "No messages yet";
 }
 
+function idempotencyKey(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function TemperatureBadge({ value }: { value?: string | null }) {
   return (
     <span className={`temperature temperature-${temperatureClass(value)}`}>
       {temperatureLabel(value)}
     </span>
+  );
+}
+
+function MessageMedia({ message }: { message: InboxMessage }) {
+  if (!message.mediaUrl) return null;
+  if (message.type === "IMAGE") {
+    return (
+      <a className="message-media-link" href={message.mediaUrl} target="_blank" rel="noreferrer">
+        <img className="message-media-image" src={message.mediaUrl} alt={message.filename || "Shared image"} />
+      </a>
+    );
+  }
+  if (message.type === "VIDEO") {
+    return <video className="message-media-video" src={message.mediaUrl} controls preload="metadata" />;
+  }
+  if (message.type === "AUDIO") {
+    return <audio className="message-media-audio" src={message.mediaUrl} controls preload="metadata" />;
+  }
+  return (
+    <a className="message-document" href={message.mediaUrl} target="_blank" rel="noreferrer">
+      <span aria-hidden="true">PDF</span>
+      <strong>{message.filename || "Open document"}</strong>
+    </a>
   );
 }
 
@@ -93,6 +139,11 @@ export default function InboxDashboard({
   const [modeUpdating, setModeUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [composerNotice, setComposerNotice] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -125,9 +176,9 @@ export default function InboxDashboard({
   const selectedSummary =
     selected ?? conversations.find((item) => item.id === selectedId) ?? null;
 
-  async function loadConversation(conversationId: string) {
+  async function loadConversation(conversationId: string, force = false) {
     setSelectedId(conversationId);
-    if (selected?.id === conversationId) return;
+    if (!force && selected?.id === conversationId) return;
 
     setLoadingConversation(true);
     setError(null);
@@ -223,6 +274,88 @@ export default function InboxDashboard({
     }
   }
 
+  async function uploadAttachment(file: File) {
+    setUploading(true);
+    setError(null);
+    setComposerNotice(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await fetch("/api/media/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (response.status === 401) {
+        window.location.assign("/login");
+        return;
+      }
+      const body = (await response.json()) as { asset?: UploadedMedia; error?: string };
+      if (!response.ok || !body.asset) throw new Error(body.error || "Attachment upload failed.");
+      setUploadedMedia(body.asset);
+      setComposerNotice("Attachment verified and ready to queue.");
+    } catch (uploadError) {
+      setUploadedMedia(null);
+      setError(uploadError instanceof Error ? uploadError.message : "Attachment upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function sendMessage() {
+    if (!selectedId || sending || (!draft.trim() && !uploadedMedia)) return;
+    setSending(true);
+    setError(null);
+    setComposerNotice(null);
+    try {
+      const payload = uploadedMedia
+        ? {
+            kind: "media",
+            assetId: uploadedMedia.id,
+            mediaType: uploadedMedia.kind,
+            caption: draft.trim() || null,
+            filename: uploadedMedia.name,
+            idempotencyKey: idempotencyKey(),
+          }
+        : {
+            kind: "text",
+            text: draft.trim(),
+            idempotencyKey: idempotencyKey(),
+          };
+      const response = await fetch(
+        `/api/conversations/${encodeURIComponent(selectedId)}/send`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (response.status === 401) {
+        window.location.assign("/login");
+        return;
+      }
+      const body = (await response.json()) as {
+        queued?: boolean;
+        duplicate?: boolean;
+        outboundSent?: boolean;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(body.error || "Message could not be queued.");
+      setDraft("");
+      setUploadedMedia(null);
+      setComposerNotice(
+        body.outboundSent
+          ? "Message sent."
+          : "Message queued safely. Live Meta sending remains controlled by cutover settings.",
+      );
+      await loadConversation(selectedId, true);
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Message could not be queued.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   const nextActions = useMemo(() => {
     if (!selected?.lead) return ["Capture lead goal and course requirement"];
 
@@ -249,6 +382,7 @@ export default function InboxDashboard({
           <button className="rail-button active" title="Inbox">⌁</button>
           <button className="rail-button" title="Contacts">◎</button>
           <button className="rail-button" title="Leads">◇</button>
+          <button className="rail-button" title="Campaigns">✦</button>
           <button className="rail-button" title="Analytics">⌗</button>
           <button className="rail-button" title="Knowledge">▤</button>
         </nav>
@@ -266,7 +400,7 @@ export default function InboxDashboard({
             <button
               className="secondary-button"
               disabled
-              title="Outbound conversation creation will be enabled with Meta Cloud API."
+              title="Outbound is protected until the final Meta cutover."
             >
               Meta connection pending
             </button>
@@ -315,24 +449,9 @@ export default function InboxDashboard({
               />
             </label>
             <div className="filter-tabs">
-              <button
-                className={filter === "ALL" ? "active" : ""}
-                onClick={() => setFilter("ALL")}
-              >
-                All
-              </button>
-              <button
-                className={filter === "UNREAD" ? "active" : ""}
-                onClick={() => setFilter("UNREAD")}
-              >
-                Unread
-              </button>
-              <button
-                className={filter === "HOT" ? "active" : ""}
-                onClick={() => setFilter("HOT")}
-              >
-                Hot leads
-              </button>
+              <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>All</button>
+              <button className={filter === "UNREAD" ? "active" : ""} onClick={() => setFilter("UNREAD")}>Unread</button>
+              <button className={filter === "HOT" ? "active" : ""} onClick={() => setFilter("HOT")}>Hot leads</button>
             </div>
             <div className="conversation-list">
               {filteredConversations.length === 0 ? (
@@ -344,6 +463,7 @@ export default function InboxDashboard({
                 filteredConversations.map((item) => (
                   <button
                     key={item.id}
+                    data-conversation-id={item.id}
                     className={`conversation-item ${selectedId === item.id ? "selected" : ""}`}
                     onClick={() => void loadConversation(item.id)}
                   >
@@ -359,9 +479,7 @@ export default function InboxDashboard({
                         <span>{readable(item.lead?.stage || item.status)}</span>
                       </span>
                     </span>
-                    {item.unreadCount > 0 ? (
-                      <span className="unread-count">{item.unreadCount}</span>
-                    ) : null}
+                    {item.unreadCount > 0 ? <span className="unread-count">{item.unreadCount}</span> : null}
                   </button>
                 ))
               )}
@@ -373,9 +491,7 @@ export default function InboxDashboard({
               {selectedSummary ? (
                 <>
                   <div className="chat-person">
-                    <span className="avatar large">
-                      {initials(selectedSummary.contact.name)}
-                    </span>
+                    <span className="avatar large">{initials(selectedSummary.contact.name)}</span>
                     <div>
                       <h2>{selectedSummary.contact.name}</h2>
                       <p>{selectedSummary.contact.phone}</p>
@@ -388,20 +504,14 @@ export default function InboxDashboard({
                         type="checkbox"
                         checked={selectedSummary.agentMode === "AI"}
                         disabled={modeUpdating}
-                        onChange={(event) =>
-                          void changeMode(event.target.checked ? "AI" : "PAUSED")
-                        }
+                        onChange={(event) => void changeMode(event.target.checked ? "AI" : "PAUSED")}
                       />
                       <i />
                     </label>
                     <button
                       className="secondary-button"
                       disabled={modeUpdating}
-                      onClick={() =>
-                        void changeMode(
-                          selectedSummary.agentMode === "HUMAN" ? "AI" : "HUMAN",
-                        )
-                      }
+                      onClick={() => void changeMode(selectedSummary.agentMode === "HUMAN" ? "AI" : "HUMAN")}
                     >
                       {selectedSummary.agentMode === "HUMAN" ? "Resume AI" : "Take over"}
                     </button>
@@ -421,14 +531,8 @@ export default function InboxDashboard({
             <div className="context-strip">
               <span>Intent: {readable(selected?.currentIntent)}</span>
               <span>Language: {readable(selected?.detectedLanguage)}</span>
-              <span>
-                Agent confidence: {selected?.aiConfidence != null
-                  ? `${Math.round(selected.aiConfidence * 100)}%`
-                  : "Not calculated"}
-              </span>
-              <span className="knowledge-ok">
-                Mode: {readable(selectedSummary?.agentMode)}
-              </span>
+              <span>Agent confidence: {selected?.aiConfidence != null ? `${Math.round(selected.aiConfidence * 100)}%` : "Not calculated"}</span>
+              <span className="knowledge-ok">Mode: {readable(selectedSummary?.agentMode)}</span>
             </div>
 
             <div className="message-area">
@@ -447,29 +551,14 @@ export default function InboxDashboard({
                 <>
                   <div className="day-divider"><span>Conversation history</span></div>
                   {selected.messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`message-row ${message.direction.toLowerCase()}`}
-                    >
+                    <div key={message.id} className={`message-row ${message.direction.toLowerCase()}`}>
                       <div className="message-bubble">
                         {message.direction === "OUTBOUND" ? (
-                          <small>
-                            {message.actor === "AI"
-                              ? "AI Agent"
-                              : message.actor === "HUMAN"
-                                ? "Counselor"
-                                : readable(message.actor)}
-                          </small>
+                          <small>{message.actor === "AI" ? "AI Agent" : message.actor === "HUMAN" ? "Counselor" : readable(message.actor)}</small>
                         ) : null}
-                        <p>
-                          {message.text ||
-                            (message.filename
-                              ? `Attachment: ${message.filename}`
-                              : `[${readable(message.type)} message]`)}
-                        </p>
-                        <time>
-                          {formatMessageTime(message.messageTimestamp)} · {readable(message.status)}
-                        </time>
+                        <MessageMedia message={message} />
+                        {message.text ? <p>{message.text}</p> : !message.mediaUrl ? <p>[{readable(message.type)} message]</p> : null}
+                        <time>{formatMessageTime(message.messageTimestamp)} · {readable(message.status)}</time>
                       </div>
                     </div>
                   ))}
@@ -481,10 +570,7 @@ export default function InboxDashboard({
                   <span className="thinking-dot" />
                   <div>
                     <strong>Agent context</strong>
-                    <p>
-                      {selected.aiSummary ||
-                        `Current detected intent: ${readable(selected.currentIntent)}.`}
-                    </p>
+                    <p>{selected.aiSummary || `Current detected intent: ${readable(selected.currentIntent)}.`}</p>
                   </div>
                   <button title="Decision review will open in the learning phase">Review</button>
                 </div>
@@ -492,24 +578,59 @@ export default function InboxDashboard({
             </div>
 
             <footer className="composer">
+              <input
+                ref={fileInputRef}
+                className="media-file-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,text/plain,video/mp4,audio/mpeg,audio/mp4,audio/ogg,audio/aac"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadAttachment(file);
+                }}
+              />
+              {uploadedMedia ? (
+                <div className="composer-media-preview">
+                  {uploadedMedia.kind === "image" ? <img src={uploadedMedia.previewUrl} alt="Attachment preview" /> : <span className="composer-media-type">{uploadedMedia.kind.toUpperCase()}</span>}
+                  <div>
+                    <strong>{uploadedMedia.name}</strong>
+                    <small>{formatBytes(uploadedMedia.size)} · {uploadedMedia.mimeType}</small>
+                  </div>
+                  <button type="button" onClick={() => setUploadedMedia(null)} aria-label="Remove attachment">×</button>
+                </div>
+              ) : null}
+              {composerNotice ? <div className="composer-feedback">{composerNotice}</div> : null}
               <div className="composer-tools">
-                <button title="Attachment sending will be enabled in Meta phase">＋</button>
-                <button title="Template sending will be enabled in Meta phase">▤</button>
-                <button title="Approved replies">✦</button>
+                <button
+                  type="button"
+                  disabled={!selected || uploading || sending}
+                  title="Attach image, PDF, document, video, or audio"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? "…" : "＋"}
+                </button>
+                <button type="button" title="Open templates and targeted campaigns" onClick={() => window.location.assign("/campaigns")}>▤</button>
+                <button type="button" title="Approved replies">✦</button>
               </div>
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Manual outbound sending activates after Meta Cloud API connection..."
+                placeholder={uploadedMedia ? "Add an optional caption..." : "Write a manual reply..."}
                 rows={2}
-                disabled={!selected}
+                disabled={!selected || sending}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void sendMessage();
+                  }
+                }}
               />
               <button
                 className="send-button"
-                disabled
-                title="Outbound Meta API is not connected yet."
+                disabled={!selected || sending || uploading || (!draft.trim() && !uploadedMedia)}
+                title="Queue this message under the current outbound safety mode"
+                onClick={() => void sendMessage()}
               >
-                Send
+                {sending ? "Queueing..." : "Send"}
               </button>
             </footer>
           </section>
@@ -526,9 +647,7 @@ export default function InboxDashboard({
                 </div>
 
                 <div className="score-block">
-                  <div className="score-ring">
-                    <strong>{selectedSummary.lead?.score ?? 0}</strong><span>/100</span>
-                  </div>
+                  <div className="score-ring"><strong>{selectedSummary.lead?.score ?? 0}</strong><span>/100</span></div>
                   <div>
                     <strong>Qualification score</strong>
                     <p>Calculated from captured profile and joining intent.</p>
@@ -554,10 +673,7 @@ export default function InboxDashboard({
                     <h3>AI summary</h3>
                     <button title="Summary editing will be enabled with lead editor">Edit</button>
                   </div>
-                  <p className="summary-copy">
-                    {selected?.aiSummary ||
-                      "No AI summary is available. It will be generated after message processing is connected."}
-                  </p>
+                  <p className="summary-copy">{selected?.aiSummary || "No AI summary is available. It will be generated after message processing is connected."}</p>
                 </section>
 
                 <section className="detail-section">
@@ -572,12 +688,8 @@ export default function InboxDashboard({
                 <section className="learning-card">
                   <span>Controlled learning</span>
                   <strong>No raw chat is auto-trained</strong>
-                  <p>
-                    Counselor corrections enter an approval queue before becoming reusable knowledge.
-                  </p>
-                  <button title="Learning review page is part of the next dashboard module">
-                    Open learning queue
-                  </button>
+                  <p>Counselor corrections enter an approval queue before becoming reusable knowledge.</p>
+                  <button title="Learning review page is part of the next dashboard module">Open learning queue</button>
                 </section>
               </>
             ) : (
