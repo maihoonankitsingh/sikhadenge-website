@@ -6,6 +6,7 @@ import {
   createKnowledgeEmbeddings,
   embeddingFromMetadata,
 } from "../knowledge/embeddings";
+import { searchConciseSalesReplies } from "./concise-sales-replies";
 import { getAgentPolicy } from "./policy";
 import { searchQuestionBankKnowledge } from "./question-bank";
 import type { AgentKnowledgeReference } from "./types";
@@ -73,9 +74,15 @@ export async function retrieveApprovedKnowledge(
   query: string,
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
-  const builtIn = searchQuestionBankKnowledge(
+  const concise = searchConciseSalesReplies(query);
+  const standard = searchQuestionBankKnowledge(
     query,
     Math.min(2, policy.maximumKnowledgeChunks),
+  );
+  const builtIn = mergeReferences(
+    concise,
+    standard,
+    policy.maximumKnowledgeChunks,
   );
   const queryTokens = tokenize(query).slice(0, 24);
   if (queryTokens.length === 0) return builtIn;
@@ -95,6 +102,7 @@ export async function retrieveApprovedKnowledge(
     where: {
       document: {
         status: KnowledgeStatus.APPROVED,
+        title: { not: "SikhaDenge Owned Question Bank" },
         AND: [
           { OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: now } }] },
           { OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] },
