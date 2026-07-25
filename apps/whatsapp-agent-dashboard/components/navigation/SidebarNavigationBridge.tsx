@@ -11,6 +11,7 @@ const ROUTES: Record<string, string> = {
   Analytics: "/analytics",
   Knowledge: "/knowledge",
   Campaigns: "/campaigns",
+  Automation: "/automation",
   Templates: "/templates",
   Settings: "/settings",
 };
@@ -26,7 +27,7 @@ export default function SidebarNavigationBridge() {
       document.querySelectorAll<HTMLElement>(".rail nav"),
     );
     for (const navigation of navigationGroups) {
-      for (const title of ["Team", "Campaigns", "Templates"] as const) {
+      for (const title of ["Team", "Campaigns", "Automation", "Templates"] as const) {
         if (!navigation.querySelector(`.rail-button[title="${title}"]`)) {
           const button = document.createElement("button");
           button.className = "rail-button";
