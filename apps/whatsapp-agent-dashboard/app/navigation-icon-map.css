@@ -10,12 +10,16 @@
   background-image: var(--sd-icon-leads) !important;
 }
 
+.rail-button[title="Team"]::before {
+  background-image: var(--sd-icon-ai-managed) !important;
+}
+
 .rail-button[title="Campaigns"]::before {
   background-image: var(--sd-icon-automation) !important;
 }
 
 .rail-button[title="Templates"]::before {
-  background-image: var(--sd-icon-ai) !important;
+  background-image: var(--sd-icon-ai-managed) !important;
 }
 
 .rail-button[title="Analytics"]::before {
