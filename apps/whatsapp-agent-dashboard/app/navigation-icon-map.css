@@ -1,0 +1,27 @@
+.rail-button[title="Inbox"]::before {
+  background-image: var(--sd-icon-conversations) !important;
+}
+
+.rail-button[title="Contacts"]::before {
+  background-image: var(--sd-icon-contacts) !important;
+}
+
+.rail-button[title="Leads"]::before {
+  background-image: var(--sd-icon-leads) !important;
+}
+
+.rail-button[title="Campaigns"]::before {
+  background-image: var(--sd-icon-automation) !important;
+}
+
+.rail-button[title="Analytics"]::before {
+  background-image: var(--sd-icon-analytics) !important;
+}
+
+.rail-button[title="Knowledge"]::before {
+  background-image: var(--sd-icon-knowledge) !important;
+}
+
+.rail-button[title="Settings"]::before {
+  background-image: var(--sd-icon-settings) !important;
+}
