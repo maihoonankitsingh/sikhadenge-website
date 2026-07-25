@@ -1,6 +1,7 @@
 import { getAgentRuntimePolicy } from "../observability/runtime-policy";
 import { retrieveApprovedKnowledge } from "./knowledge";
 import { requestModelDecision } from "./openai-responses";
+import { generateOwnedReply } from "./owned-reply-engine";
 import {
   getAgentPolicy,
   inspectAgentSafety,
@@ -32,6 +33,10 @@ function referencesForDecision(references: AgentKnowledgeReference[]) {
   return references.map(({ content: _content, ...reference }) => reference);
 }
 
+function useExternalModel(): boolean {
+  return process.env.AGENT_REPLY_ENGINE_MODE?.trim().toLowerCase() === "external";
+}
+
 function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
   const english: Record<AgentIntent, string> = {
     GREETING:
@@ -41,11 +46,11 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     COURSE_DETAILS:
       "I’m checking the approved course information before sharing details. Which SikhaDenge course are you asking about?",
     FEES:
-      "Fees can vary by the selected program and current approved offer. Which SikhaDenge course would you like the verified fee for?",
+      "For complete details, please register for the free SikhaDenge demo/masterclass.",
     BATCH_SCHEDULE:
       "Please tell me the course name so I can check the approved batch timing and duration.",
     DEMO_CLASS:
-      "I can help with the demo-class process. Which course are you interested in?",
+      "I can help with the demo/masterclass registration process. Which course are you interested in?",
     ELIGIBILITY:
       "Please share your current background and the course name so eligibility can be checked accurately.",
     CERTIFICATE:
@@ -53,7 +58,7 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     PAYMENT_SUPPORT:
       "I’m forwarding this payment issue to a SikhaDenge counselor for safe verification.",
     ENROLLMENT:
-      "I can guide you through admission. Which course do you want to join?",
+      "I can guide you through admission using the free demo/masterclass registration process.",
     COUNSELOR_REQUEST:
       "I’m forwarding your request to a SikhaDenge counselor.",
     REFUND_OR_COMPLAINT:
@@ -61,7 +66,7 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     OPT_OUT:
       "Understood. Your opt-out request has been noted and no promotional follow-up should be sent.",
     OUT_OF_SCOPE:
-      "I can help with SikhaDenge courses, admissions, batches, fees, demo classes, certificates, and support.",
+      "I can help with SikhaDenge courses, admissions, batches, demo/masterclasses, certificates, and support.",
     UNKNOWN:
       "Please share a little more detail so I can understand and help correctly.",
   };
@@ -74,11 +79,11 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     COURSE_DETAILS:
       "Main approved course information check karke hi details share karunga. Aap kis SikhaDenge course ke baare mein pooch rahe hain?",
     FEES:
-      "Fees selected program aur approved offer par depend kar sakti hai. Aapko kis SikhaDenge course ki verified fee chahiye?",
+      "Complete details ke liye free SikhaDenge demo/masterclass register kijiye.",
     BATCH_SCHEDULE:
       "Approved batch timing aur duration check karne ke liye course ka naam bata dijiye.",
     DEMO_CLASS:
-      "Demo class process mein help kar dunga. Aap kis course mein interested hain?",
+      "Demo/masterclass registration process mein help kar dunga. Aap kis course mein interested hain?",
     ELIGIBILITY:
       "Eligibility accurately check karne ke liye apna background aur course ka naam bata dijiye.",
     CERTIFICATE:
@@ -86,7 +91,7 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     PAYMENT_SUPPORT:
       "Payment issue ko safe verification ke liye SikhaDenge counselor ko handover kar raha hoon.",
     ENROLLMENT:
-      "Admission process mein guide kar dunga. Aap kaunsa course join karna chahte hain?",
+      "Admission ke liye free demo/masterclass registration process mein guide kar dunga.",
     COUNSELOR_REQUEST:
       "Aapki request SikhaDenge counselor ko handover kar raha hoon.",
     REFUND_OR_COMPLAINT:
@@ -94,7 +99,7 @@ function fallbackReply(language: AgentLanguage, intent: AgentIntent): string {
     OPT_OUT:
       "Samajh gaya. Aapki opt-out request note ho gayi hai aur promotional follow-up nahi bheja jana chahiye.",
     OUT_OF_SCOPE:
-      "Main SikhaDenge courses, admission, batches, fees, demo class, certificate aur support mein help kar sakta hoon.",
+      "Main SikhaDenge courses, admission, batches, demo/masterclass, certificate aur support mein help kar sakta hoon.",
     UNKNOWN:
       "Thoda aur detail share kar dijiye, taaki main sahi samajhkar help kar sakun.",
   };
@@ -189,7 +194,8 @@ export async function generateAgentDecision(
       language: classification.language,
       intent: classification.intent,
       confidence: 1,
-      decisionSummary: "Prompt-injection pattern detected; protected instructions were not exposed.",
+      decisionSummary:
+        "Prompt-injection pattern detected; protected instructions were not exposed.",
       requiresHuman: true,
       handoffReason: "PROMPT_INJECTION",
       safety,
@@ -237,6 +243,31 @@ export async function generateAgentDecision(
   }
 
   const knowledge = await retrieveApprovedKnowledge(message);
+
+  if (!useExternalModel() || classification.intent === "FEES") {
+    const owned = generateOwnedReply({
+      agentInput: input,
+      classification,
+      knowledge,
+    });
+
+    return buildDecision({
+      reply: owned.reply,
+      language: classification.language,
+      intent: classification.intent,
+      confidence: owned.confidence,
+      decisionSummary: owned.decisionSummary,
+      requiresHuman: owned.requiresHuman,
+      handoffReason: owned.handoffReason,
+      nextQuestion: owned.nextQuestion,
+      leadUpdates: owned.leadUpdates,
+      knowledge,
+      safety,
+      model: "sikhadenge-owned-v1",
+      telemetry: runtimeTelemetry("rule", startedAt),
+    });
+  }
+
   const factualIntent = FACTUAL_INTENTS.has(classification.intent);
 
   if (factualIntent && knowledge.length === 0) {
@@ -245,7 +276,8 @@ export async function generateAgentDecision(
       language: classification.language,
       intent: classification.intent,
       confidence: Math.min(classification.confidence, 0.62),
-      decisionSummary: "No relevant approved knowledge was available for a factual answer.",
+      decisionSummary:
+        "No relevant approved knowledge was available for a factual answer.",
       requiresHuman: true,
       handoffReason: "MISSING_APPROVED_KNOWLEDGE",
       safety,
@@ -262,14 +294,14 @@ export async function generateAgentDecision(
       classification,
       knowledge,
     });
-
     if (!modelResult) {
       return buildDecision({
         reply: fallbackReply(classification.language, classification.intent),
         language: classification.language,
         intent: classification.intent,
         confidence: Math.min(classification.confidence, 0.7),
-        decisionSummary: "Model calls are unavailable; safe deterministic fallback used.",
+        decisionSummary:
+          "External model calls are unavailable; safe deterministic fallback used.",
         requiresHuman: factualIntent,
         handoffReason: factualIntent ? "AGENT_UNAVAILABLE" : null,
         knowledge,
@@ -284,7 +316,8 @@ export async function generateAgentDecision(
       modelDecision.confidence * 0.72 + classification.confidence * 0.28,
     );
     const requiresHuman =
-      modelDecision.requiresHuman || combinedConfidence < policy.autoReplyConfidence;
+      modelDecision.requiresHuman ||
+      combinedConfidence < policy.autoReplyConfidence;
     const handoffReason = requiresHuman
       ? modelDecision.handoffReason ?? "LOW_CONFIDENCE"
       : null;

@@ -25,6 +25,7 @@ const INTENT_PATTERNS: Array<{
     patterns: [
       /\b(human|person|counselor|counsellor|call me|talk to team|agent se baat)\b/i,
       /\b(sir se baat|mam se baat|team se baat|call karwao)\b/i,
+      /\b(yes\s*call|haan\s*call|ha\s*call|mujhe\s*call|phone\s*karo|call\s*chahiye|connect\s*me)\b/i,
       /काउंसलर|इंसान\s+से\s+बात|कॉल\s+करवाओ/i,
     ],
   },
@@ -59,9 +60,9 @@ const INTENT_PATTERNS: Array<{
     intent: "DEMO_CLASS",
     weight: 0.9,
     patterns: [
-      /\b(demo|trial class|free class|orientation)\b/i,
-      /\b(demo class|free demo|trial chahiye)\b/i,
-      /डेमो|फ्री\s+क्लास/i,
+      /\b(demo|trial class|free class|orientation|masterclass|webinar|workshop)\b/i,
+      /\b(demo class|free demo|trial chahiye|masterclass link|demo link)\b/i,
+      /डेमो|फ्री\s+क्लास|मास्टरक्लास/i,
     ],
   },
   {
@@ -95,8 +96,8 @@ const INTENT_PATTERNS: Array<{
     intent: "ENROLLMENT",
     weight: 0.88,
     patterns: [
-      /\b(enroll|enrol|admission|join now|register|registration)\b/i,
-      /\b(admission lena|join karna|register kaise)\b/i,
+      /\b(enroll|enrol|admission|join now|register|registration|registered)\b/i,
+      /\b(admission lena|join karna|register kaise|registration done|form fill(?:ed)?)\b/i,
       /एडमिशन|रजिस्ट्रेशन|जॉइन/i,
     ],
   },
@@ -113,9 +114,9 @@ const INTENT_PATTERNS: Array<{
     intent: "COURSE_DISCOVERY",
     weight: 0.76,
     patterns: [
-      /\b(which course|best course|course suggest|career course|ai course)\b/i,
-      /\b(kaunsa course|course batao|mere liye course)\b/i,
-      /कौनसा\s+कोर्स|कोर्स\s+बताओ/i,
+      /\b(which course|best course|course suggest|career course|ai course|learn ai)\b/i,
+      /\b(kaunsa course|course batao|mere liye course|ai seekhna|ai sikhna)\b/i,
+      /कौनसा\s+कोर्स|कोर्स\s+बताओ|एआई\s+सीखना/i,
     ],
   },
   {
