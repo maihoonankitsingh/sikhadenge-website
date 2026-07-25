@@ -19,6 +19,7 @@ import "./knowledge-manager.css";
 import "./targeting-manager.css";
 import "./campaigns-module.css";
 import "./campaign-control.css";
+import "./automation-builder.css";
 import "./media-composer.css";
 import "./template-centre.css";
 import "./templates-module.css";
