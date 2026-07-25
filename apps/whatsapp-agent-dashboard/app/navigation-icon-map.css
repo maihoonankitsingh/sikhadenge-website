@@ -14,7 +14,8 @@
   background-image: var(--sd-icon-ai) !important;
 }
 
-.rail-button[title="Campaigns"]::before {
+.rail-button[title="Campaigns"]::before,
+.rail-button[title="Automation"]::before {
   background-image: var(--sd-icon-automation) !important;
 }
 
