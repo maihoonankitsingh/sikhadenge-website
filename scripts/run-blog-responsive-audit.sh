@@ -10,12 +10,24 @@ BRANCH="${AUDIT_BRANCH:-redesign/blog-template-20260725}"
 
 mkdir -p "$OUT"
 
+if [ -L "$STAGE/node_modules" ]; then
+  LINK_TARGET="$(readlink -f "$STAGE/node_modules" 2>/dev/null || true)"
+  if [ "$LINK_TARGET" = "$ROOT/node_modules" ]; then
+    rm -f "$STAGE/node_modules"
+  else
+    echo "Unexpected node_modules symlink: ${LINK_TARGET:-unresolved}" >&2
+    exit 1
+  fi
+elif [ -e "$STAGE/node_modules" ]; then
+  echo "Unexpected regular node_modules path in stage." >&2
+  exit 1
+fi
+
 test "$(git -C "$STAGE" branch --show-current)" = "$BRANCH"
 test -z "$(git -C "$STAGE" status --porcelain)"
 test -z "$(git -C "$ROOT" status --porcelain)"
 test -f "$STAGE/.next/BUILD_ID"
 test -d "$ROOT/node_modules"
-test ! -e "$STAGE/node_modules"
 test "$(ss -H -ltnp "sport = :$PORT" 2>/dev/null | wc -l)" -eq 0
 
 DB_URL="$(
