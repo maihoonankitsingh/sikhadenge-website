@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import SidebarNavigationBridge from "../components/navigation/SidebarNavigationBridge";
+import InboxTemplatePickerBridge from "../components/templates/InboxTemplatePickerBridge";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
@@ -20,6 +21,7 @@ import "./campaigns-module.css";
 import "./media-composer.css";
 import "./template-centre.css";
 import "./templates-module.css";
+import "./inbox-template-picker.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -47,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <SidebarNavigationBridge />
+        <InboxTemplatePickerBridge />
         {children}
       </body>
     </html>
