@@ -110,7 +110,13 @@ try {
   await waitForServer();
   line("ISOLATED_SERVER_READY=YES");
 
-  browser = await chromium.launch({ headless: true });
+  const browserExecutable = process.env.PLAYWRIGHT_EXECUTABLE_PATH || chromium.executablePath();
+  line(`PLAYWRIGHT_EXECUTABLE=${browserExecutable}`);
+  browser = await chromium.launch({
+    headless: true,
+    executablePath: browserExecutable,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  });
 
   for (const viewport of viewports) {
     const pageErrors = [];
