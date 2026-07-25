@@ -1,6 +1,6 @@
 import { DashboardRole } from "@prisma/client";
 
-import TargetingManager from "../../components/campaigns/TargetingManager";
+import CampaignControlCenter from "../../components/campaigns/CampaignControlCenter";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 
@@ -17,11 +17,11 @@ export default async function CampaignsPage() {
       activeTitle="Campaigns"
       eyebrow="Targeted student outreach"
       title="Campaigns & Targeting"
-      description="Build consent-safe student segments, preview exact recipients and queue approved WhatsApp templates from the same SikhaDenge dashboard."
+      description="Build consent-safe audiences, personalise approved templates, schedule controlled batches and monitor campaign delivery from the SikhaDenge dashboard."
       userName={user.name}
       userRole={user.role}
     >
-      <TargetingManager />
+      <CampaignControlCenter />
     </DashboardModuleShell>
   );
 }
