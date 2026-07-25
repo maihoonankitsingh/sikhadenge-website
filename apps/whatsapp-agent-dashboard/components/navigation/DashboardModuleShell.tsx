@@ -3,7 +3,14 @@ import type { ReactNode } from "react";
 import LogoutButton from "../auth/LogoutButton";
 
 type DashboardModuleShellProps = {
-  activeTitle: "Inbox" | "Contacts" | "Leads" | "Analytics" | "Knowledge" | "Settings";
+  activeTitle:
+    | "Inbox"
+    | "Contacts"
+    | "Leads"
+    | "Analytics"
+    | "Knowledge"
+    | "Campaigns"
+    | "Settings";
   eyebrow: string;
   title: string;
   description: string;
@@ -12,7 +19,14 @@ type DashboardModuleShellProps = {
   children: ReactNode;
 };
 
-const navItems = ["Inbox", "Contacts", "Leads", "Analytics", "Knowledge"] as const;
+const navItems = [
+  "Inbox",
+  "Contacts",
+  "Leads",
+  "Analytics",
+  "Knowledge",
+  "Campaigns",
+] as const;
 
 const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Inbox: "/dashboard-icons/02-conversations.png",
@@ -20,6 +34,7 @@ const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Leads: "/dashboard-icons/05-qualified-leads.png",
   Analytics: "/dashboard-icons/07-analytics.png",
   Knowledge: "/dashboard-icons/08-knowledge.png",
+  Campaigns: "/dashboard-icons/09-automation.png",
   Settings: "/dashboard-icons/10-settings.png",
 };
 
