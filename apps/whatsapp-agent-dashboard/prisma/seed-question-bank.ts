@@ -45,11 +45,7 @@ async function main() {
           const hinglishAnswer = renderQuestionBankAnswer(definition, "hinglish");
           const englishAnswer = renderQuestionBankAnswer(definition, "en");
           const variants = questionBankVariants(definition);
-          const content = [
-            `Hinglish answer: ${hinglishAnswer}`,
-            `English answer: ${englishAnswer}`,
-            `Question variants: ${variants.join(" | ")}`,
-          ].join("\n");
+          const content = hinglishAnswer;
 
           return {
             heading: definition.questions[0],
@@ -61,9 +57,11 @@ async function main() {
               category: definition.category,
               intent: definition.intent,
               keywords: definition.keywords,
+              englishAnswer,
               questionVariants: variants,
               variantCount: variants.length,
               source: "sikhadenge-owned-question-bank-v1",
+              customerFacingContentOnly: true,
             }),
           };
         }),
