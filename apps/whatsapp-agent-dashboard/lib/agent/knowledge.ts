@@ -7,6 +7,7 @@ import {
   embeddingFromMetadata,
 } from "../knowledge/embeddings";
 import { searchConciseSalesReplies } from "./concise-sales-replies";
+import { searchIndustrySalesHub } from "./industry-sales-reply-hub";
 import { getAgentPolicy } from "./policy";
 import { searchQuestionBankKnowledge } from "./question-bank";
 import type { AgentKnowledgeReference } from "./types";
@@ -75,12 +76,16 @@ export async function retrieveApprovedKnowledge(
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
   const concise = searchConciseSalesReplies(query);
+  const industry = searchIndustrySalesHub(
+    query,
+    Math.min(2, policy.maximumKnowledgeChunks),
+  );
   const standard = searchQuestionBankKnowledge(
     query,
     Math.min(2, policy.maximumKnowledgeChunks),
   );
   const builtIn = mergeReferences(
-    concise,
+    [...concise, ...industry],
     standard,
     policy.maximumKnowledgeChunks,
   );
