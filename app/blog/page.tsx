@@ -2,9 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowRight,
+  BadgeCheck,
   BookOpen,
+  CheckCircle2,
+  Clock3,
+  Compass,
   FolderKanban,
-  Search,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
@@ -17,7 +21,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows",
   description:
-    "Explore 110,000+ practical AI blog pages on ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital execution.",
+    "Explore 120,000+ practical AI blog pages covering ChatGPT, Gemini, Claude, AI tools, prompts, freelancing, careers, SEO, AEO, GEO, and digital workflows.",
   alternates: {
     canonical: `${BASE_URL}/blog`,
   },
@@ -31,7 +35,7 @@ export const metadata: Metadata = {
     title:
       "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
     description:
-      "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
+      "Practical AI guides for learners, creators, freelancers, professionals, and business owners.",
     siteName: "Sikhadenge",
   },
   twitter: {
@@ -39,7 +43,7 @@ export const metadata: Metadata = {
     title:
       "AI Blog, ChatGPT Guides, AI Tools, SEO and Workflows | Sikhadenge",
     description:
-      "Practical AI blog hub with ChatGPT, Gemini, Claude, AI tools, prompts, careers, freelancing, and search-ready execution guides.",
+      "Practical AI guides for learners, creators, freelancers, professionals, and business owners.",
   },
 };
 
@@ -52,57 +56,37 @@ const BLOG_FAQS = [
   {
     question: "Is the Sikhadenge AI Blog suitable for beginners?",
     answer:
-      "Yes. Many guides are designed for beginners who want clear explanations, practical steps, useful tool guidance, and structured workflows without needing advanced technical knowledge.",
-  },
-  {
-    question: "Which AI tools and platforms are covered in the Blog?",
-    answer:
-      "The Blog includes guides related to ChatGPT, Gemini, Claude, AI image tools, content tools, design tools, video tools, marketing tools, productivity platforms, and other modern AI-assisted workflows.",
+      "Yes. Many guides are written for beginners who need clear explanations, practical steps, useful tool guidance, and structured workflows without advanced technical knowledge.",
   },
   {
     question: "Does the Blog include practical workflows or only theory?",
     answer:
-      "The Blog focuses on practical discovery and execution. Articles connect tools and concepts with workflows, use cases, implementation steps, project ideas, productivity systems, and real work outcomes.",
+      "The Blog focuses on practical execution. Articles connect tools and concepts with workflows, use cases, implementation steps, project ideas, productivity systems, and real work outcomes.",
   },
   {
-    question: "Can students use these guides for learning and career growth?",
+    question: "Are there AI guides for students, freelancers, and creators?",
     answer:
-      "Yes. Students can explore AI tools, study workflows, career paths, job-ready skills, portfolio ideas, productivity methods, and practical project guidance through the Blog.",
-  },
-  {
-    question: "Are there AI guides for freelancers and content creators?",
-    answer:
-      "Yes. The Blog includes topics for freelancers, writers, designers, video editors, marketers, creators, social media professionals, and people building client-ready digital services.",
+      "Yes. The library includes focused guides for students, job seekers, writers, designers, video editors, marketers, creators, freelancers, and small-business teams.",
   },
   {
     question: "Does the Blog cover AI careers and job-ready skills?",
     answer:
-      "Yes. Readers can explore AI career paths, future-ready skills, beginner roadmaps, freelancing opportunities, portfolio development, client workflows, and practical digital capability.",
+      "Yes. Readers can explore AI career paths, future-ready skills, beginner roadmaps, freelancing opportunities, portfolio development, client workflows, and practical digital capabilities.",
   },
   {
-    question: "Can I learn about SEO, AEO, and GEO from the Blog?",
+    question: "Can I learn about SEO, AEO, GEO, and AI search visibility?",
     answer:
-      "Yes. The knowledge hub includes content related to search visibility, SEO workflows, answer-engine optimisation, generative-engine optimisation, content structure, internal linking, and topical authority.",
+      "Yes. The Blog includes content about search visibility, SEO workflows, answer-engine optimisation, generative-engine optimisation, content structure, internal linking, and topical authority.",
   },
   {
     question: "How can I find the right article quickly?",
     answer:
-      "Start with the Featured Guides section, browse the Explore by Topic cards, or use the category labels to move toward articles related to your learning goal, tool, career path, or workflow.",
-  },
-  {
-    question: "Why are Blog articles organised into topic categories?",
-    answer:
-      "Topic categories create clearer learning paths and make it easier to discover related guides. They also help readers move from a broad question to deeper and more focused practical content.",
+      "Start with the featured guide, browse the topic collections, or open one of the popular guides selected for common learning and work goals.",
   },
   {
     question: "How large is the Sikhadenge Blog library?",
     answer:
-      "The Blog hub displays its article count dynamically. It currently contains more than 120,000 practical AI pages organised across 51 topic categories.",
-  },
-  {
-    question: "What should I do after reading a Blog guide?",
-    answer:
-      "Apply the workflow through practice, explore related articles, join the free AI masterclass, or continue with Sikhadenge courses for structured learning, mentor support, and practical project execution.",
+      "The Blog contains more than 120,000 practical AI pages organised across multiple topic categories and use cases.",
   },
 ] as const;
 
@@ -116,7 +100,7 @@ function getCategoryStats(posts: BlogItem[]) {
 
   return Array.from(counts.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
+    .slice(0, 10)
     .map(([label, count]) => ({ label, count }));
 }
 
@@ -134,7 +118,7 @@ function getRepresentativePosts(posts: BlogItem[]) {
     seen.add(category);
     picked.push(post);
 
-    if (picked.length >= 12) {
+    if (picked.length >= 10) {
       break;
     }
   }
@@ -156,44 +140,26 @@ function getPriorityPosts(posts: BlogItem[]) {
     "marketing",
   ];
 
-  const scored = posts
+  return posts
     .map((post) => {
       const haystack =
         `${post.slug} ${post.title} ${post.category || ""}`.toLowerCase();
-
       const score = priorityTerms.reduce(
-        (total, term) =>
-          total + (haystack.includes(term) ? 1 : 0),
+        (total, term) => total + (haystack.includes(term) ? 1 : 0),
         0,
       );
 
       return { post, score };
     })
-    .sort((a, b) => b.score - a.score);
-
-  const unique = new Set<string>();
-  const picked: BlogItem[] = [];
-
-  for (const item of scored) {
-    if (unique.has(item.post.slug)) {
-      continue;
-    }
-
-    unique.add(item.post.slug);
-    picked.push(item.post);
-
-    if (picked.length >= 9) {
-      break;
-    }
-  }
-
-  return picked;
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 9)
+    .map((item) => item.post);
 }
 
-function getPostSummary(post: BlogItem, limit = 175) {
+function getPostSummary(post: BlogItem, limit = 170) {
   const source =
     post.excerpt ||
-    "Practical AI guide with clear tools, useful workflows, and execution-focused learning support.";
+    "A practical AI guide with clear tools, useful workflows, and execution-focused learning support.";
 
   if (source.length <= limit) {
     return source;
@@ -202,29 +168,41 @@ function getPostSummary(post: BlogItem, limit = 175) {
   return `${source.slice(0, limit).trim()}…`;
 }
 
+function SectionIntro({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="max-w-3xl">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+        {title}
+      </h2>
+      <p className="mt-4 text-base leading-8 text-slate-600">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export default function BlogHubPage() {
   const posts = getBlogs();
   const categoryStats = getCategoryStats(posts);
-  const representativePosts =
-    getRepresentativePosts(posts);
+  const representativePosts = getRepresentativePosts(posts);
   const priorityPosts = getPriorityPosts(posts);
-
-  const featuredPost =
-    priorityPosts[0] || posts[0];
-
-  const supportingPosts =
-    priorityPosts.slice(1, 4);
-
-  const popularPosts =
-    priorityPosts.slice(0, 6);
-
-  const discoveryPosts =
-    posts.slice(0, 6);
-
+  const featuredPost = priorityPosts[0] || posts[0];
+  const supportingPosts = priorityPosts.slice(1, 4);
+  const popularPosts = priorityPosts.slice(3, 9);
+  const latestPosts = posts.slice(0, 6);
   const totalCategoryCount = new Set(
-    posts.map(
-      (post) => post.category || "AI Guides",
-    ),
+    posts.map((post) => post.category || "AI Guides"),
   ).size;
 
   const collectionJsonLd = {
@@ -233,20 +211,21 @@ export default function BlogHubPage() {
     name: "Sikhadenge AI Blog",
     url: `${BASE_URL}/blog`,
     description:
-      "Large practical AI blog hub covering tools, workflows, freelancing, careers, prompts, SEO, AEO, and GEO execution.",
+      "Practical AI guides covering tools, workflows, freelancing, careers, prompts, SEO, AEO, and GEO.",
     isPartOf: {
       "@type": "WebSite",
       name: "Sikhadenge",
       url: BASE_URL,
     },
-    hasPart: priorityPosts
-      .slice(0, 6)
-      .map((post, index) => ({
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: priorityPosts.slice(0, 6).map((post, index) => ({
         "@type": "ListItem",
         position: index + 1,
         url: `${BASE_URL}/blog/${post.slug}`,
         name: post.title,
       })),
+    },
   };
 
   const faqJsonLd = {
@@ -265,11 +244,9 @@ export default function BlogHubPage() {
   if (!featuredPost) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-20 text-slate-950">
-        <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-8 text-center">
-          <BookOpen className="mx-auto h-8 w-8 text-blue-600" />
-          <h1 className="mt-4 text-3xl font-medium">
-            Sikhadenge AI Blog
-          </h1>
+        <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <BookOpen className="mx-auto h-8 w-8 text-blue-700" />
+          <h1 className="mt-4 text-3xl font-bold">Sikhadenge AI Blog</h1>
           <p className="mt-3 text-slate-600">
             Practical AI guides are being prepared.
           </p>
@@ -280,589 +257,428 @@ export default function BlogHubPage() {
 
   return (
     <main
-      data-blog-hub-design="brand-editorial-v1"
-      className="min-h-screen bg-[linear-gradient(180deg,#F8FBFF_0%,#F8FAFC_30%,#F8FAFC_100%)] text-slate-950"
+      data-blog-hub-design="light-editorial-v2"
+      className="min-h-screen overflow-x-hidden bg-[#f8fafc] text-slate-950"
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            collectionJsonLd,
-          ),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
-
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            faqJsonLd,
-          ),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <section className="relative overflow-hidden px-4 pb-14 pt-10 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
-        <div
-          aria-hidden="true"
-          className="absolute left-[-180px] top-[-180px] h-[420px] w-[420px] rounded-full bg-blue-200/45 blur-3xl"
-        />
+      <section className="border-b border-slate-200 bg-white px-4 pb-16 pt-12 sm:px-6 sm:pb-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
+            <Link href="/" className="transition hover:text-blue-700">
+              Home
+            </Link>
+            <span className="mx-2 text-slate-300">/</span>
+            <span className="font-semibold text-slate-700">Blog</span>
+          </nav>
 
-        <div
-          aria-hidden="true"
-          className="absolute right-[-160px] top-[40px] h-[360px] w-[360px] rounded-full bg-violet-200/35 blur-3xl"
-        />
+          <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+                <Sparkles className="h-4 w-4" />
+                Sikhadenge AI Knowledge Hub
+              </div>
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[11px] font-normal uppercase tracking-[0.18em] text-blue-700 shadow-[0_8px_25px_rgba(37,99,235,0.08)] backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Sikhadenge AI Knowledge Hub
+              <h1 className="mt-6 max-w-5xl text-[38px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-[50px] lg:text-[64px]">
+                Practical AI guides for learning, work, and digital growth
+              </h1>
+
+              <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+                Explore clear, execution-focused guides across AI tools,
+                ChatGPT, careers, freelancing, content, design, marketing,
+                automation, SEO, AEO, GEO, and modern digital workflows.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href="#featured-guides"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_28px_rgba(29,78,216,0.18)] transition hover:-translate-y-0.5 hover:bg-blue-800"
+                >
+                  Start with featured guides
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="#topics"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                >
+                  Browse topics
+                  <Compass className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="mt-10 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3">
+                <div className="border-l-2 border-blue-700 pl-4">
+                  <p className="text-2xl font-bold text-slate-950">
+                    {posts.length.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">Blog pages</p>
+                </div>
+                <div className="border-l-2 border-blue-700 pl-4">
+                  <p className="text-2xl font-bold text-slate-950">
+                    {totalCategoryCount}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">Topic categories</p>
+                </div>
+                <div className="col-span-2 border-l-2 border-blue-700 pl-4 sm:col-span-1">
+                  <p className="text-2xl font-bold text-slate-950">Practical</p>
+                  <p className="mt-1 text-sm text-slate-500">Learn · Apply · Grow</p>
+                </div>
+              </div>
             </div>
 
-            <h1 className="mt-6 max-w-4xl text-[34px] font-medium leading-[1.04] tracking-[-0.035em] text-slate-950 sm:text-[44px] lg:text-[54px]">
-              Practical AI knowledge for modern work,
-              learning, and growth
-            </h1>
+            <aside className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:p-8">
+              <div className="flex items-center justify-between gap-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-200 bg-white text-blue-700">
+                  <BookOpen className="h-5 w-5" />
+                </span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-700">
+                  Reader-first
+                </span>
+              </div>
+              <h2 className="mt-6 text-2xl font-bold tracking-[-0.025em] text-slate-950">
+                Find a useful guide and move directly to execution
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Each collection is organised around a real question, learning
+                goal, tool, skill, career path, or practical workflow.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "Answer-first explanations",
+                  "Step-by-step practical workflows",
+                  "Related guides for deeper learning",
+                  "Editorial and source-quality signals",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-sm text-slate-700">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
 
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-              Discover practical guides across AI tools,
-              ChatGPT, careers, freelancing, content,
-              design, marketing, automation, and
-              future-ready digital workflows.
-            </p>
+      <section id="featured-guides" className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <SectionIntro
+            eyebrow="Start here"
+            title="Featured practical AI guides"
+            description="Begin with high-intent topics selected for common learning, career, freelancing, business, and productivity goals."
+          />
 
-            <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-9 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <article className="rounded-3xl border border-blue-200 bg-white p-7 shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:p-9">
+              <span className="inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                {featuredPost.category || "AI Guides"}
+              </span>
+              <h3 className="mt-5 max-w-3xl text-3xl font-bold leading-tight tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                {featuredPost.title}
+              </h3>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
+                {getPostSummary(featuredPost, 235)}
+              </p>
               <Link
-                href="#featured-guides"
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 hover:bg-blue-700"
+                href={`/blog/${featuredPost.slug}`}
+                className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-800"
               >
-                Explore featured guides
+                Read featured guide
                 <ArrowRight className="h-4 w-4" />
               </Link>
+            </article>
 
-              <Link
-                href="#topic-clusters"
-                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700"
-              >
-                Browse AI topics
-              </Link>
-            </div>
-
-            <div className="mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur">
-                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
-                  Total Blog Pages
-                </p>
-                <p className="mt-2 text-2xl font-medium text-slate-950">
-                  {posts.length.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur">
-                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
-                  Topic Categories
-                </p>
-                <p className="mt-2 text-2xl font-medium text-slate-950">
-                  {totalCategoryCount}
-                </p>
-              </div>
-
-              <div className="col-span-2 rounded-[20px] border border-blue-100 bg-white/85 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)] backdrop-blur sm:col-span-1">
-                <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
-                  Knowledge Focus
-                </p>
-                <p className="mt-2 text-sm font-medium text-slate-800">
-                  Learn · Apply · Grow
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {popularPosts.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  className="rounded-full border border-blue-100 bg-white/80 px-3 py-1.5 text-xs font-normal text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
-                >
-                  {post.category || "AI Guides"}
-                </Link>
+            <div className="divide-y divide-slate-200 rounded-3xl border border-slate-200 bg-white px-6 shadow-[0_14px_42px_rgba(15,23,42,0.05)]">
+              {supportingPosts.map((post, index) => (
+                <article key={post.slug} className="py-6 first:pt-7 last:pb-7">
+                  <div className="flex gap-4">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-700">
+                        {post.category || "AI Guides"}
+                      </p>
+                      <h3 className="mt-2 text-lg font-bold leading-snug text-slate-950">
+                        <Link
+                          href={`/blog/${post.slug}`}
+                          className="transition hover:text-blue-700"
+                        >
+                          {post.title}
+                        </Link>
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {getPostSummary(post, 110)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
-
-          <div className="relative mx-auto w-full max-w-[570px]">
-            <div
-              data-blog-hero-visual="ai-knowledge-map-v1"
-              className="relative overflow-hidden rounded-[34px] border border-blue-100 bg-[linear-gradient(145deg,#07152F_0%,#123D8D_58%,#7557D7_100%)] p-5 shadow-[0_30px_75px_rgba(30,64,175,0.2)] sm:p-6"
-            >
-              <div
-                aria-hidden="true"
-                className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-cyan-300/25 blur-3xl"
-              />
-
-              <div
-                aria-hidden="true"
-                className="absolute -bottom-24 -left-12 h-64 w-64 rounded-full bg-violet-300/20 blur-3xl"
-              />
-
-              <div className="relative rounded-[26px] border border-white/15 bg-white/10 p-5 backdrop-blur-xl sm:p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-blue-100/80">
-                      AI knowledge map
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-medium tracking-[-0.025em] text-white">
-                      One hub. Multiple practical paths.
-                    </h2>
-                  </div>
-
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white">
-                    <Search className="h-5 w-5" />
-                  </span>
-                </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {[
-                    "AI tools & prompts",
-                    "Careers & freelancing",
-                    "Content & marketing",
-                    "Design & video",
-                    "Automation workflows",
-                    "SEO · AEO · GEO",
-                  ].map((item, index) => (
-                    <div
-                      key={item}
-                      className="rounded-[18px] border border-white/12 bg-white/10 p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/12 text-xs font-medium text-blue-100">
-                          {String(index + 1).padStart(
-                            2,
-                            "0",
-                          )}
-                        </span>
-
-                        <span className="text-sm font-normal text-white/90">
-                          {item}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 rounded-[20px] border border-cyan-200/20 bg-slate-950/25 p-4">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-cyan-200" />
-
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        Built for practical discovery
-                      </p>
-
-                      <p className="mt-1 text-xs leading-6 text-blue-100/75">
-                        Find a useful guide, understand the
-                        workflow, and move directly toward a
-                        real learning or work outcome.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      <section
-        id="featured-guides"
-        className="px-4 py-12 sm:px-6 lg:px-8"
-      >
+      <section id="topics" className="border-y border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
-              Featured guides
-            </p>
-
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
-              Start with practical AI topics readers
-              explore first
-            </h2>
-
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-              Clear guides designed to help learners,
-              creators, freelancers, and professionals
-              understand tools and apply them in real work.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-            <Link
-              href={`/blog/${featuredPost.slug}`}
-              className="group relative overflow-hidden rounded-[30px] border border-blue-100 bg-[linear-gradient(145deg,#0A1734_0%,#184CA6_68%,#5A55D9_100%)] p-7 text-white shadow-[0_24px_60px_rgba(30,64,175,0.18)] transition hover:-translate-y-1 sm:p-9"
-            >
-              <div
-                aria-hidden="true"
-                className="absolute right-[-100px] top-[-100px] h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl"
-              />
-
-              <div className="relative">
-                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-normal uppercase tracking-[0.18em] text-blue-100">
-                  {featuredPost.category || "AI Guides"}
-                </span>
-
-                <h3 className="mt-5 max-w-2xl text-3xl font-medium leading-tight tracking-[-0.025em] sm:text-4xl">
-                  {featuredPost.title}
-                </h3>
-
-                <p className="mt-5 max-w-xl text-sm leading-7 text-blue-50/80 sm:text-base">
-                  {getPostSummary(
-                    featuredPost,
-                    235,
-                  )}
-                </p>
-
-                <div className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-white">
-                  Read featured guide
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </div>
-              </div>
-            </Link>
-
-            <div className="grid gap-4">
-              {supportingPosts.map(
-                (post, index) => (
-                  <Link
-                    key={post.slug}
-                    href={`/blog/${post.slug}`}
-                    className="group rounded-[24px] border border-blue-100 bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:border-blue-300"
-                  >
-                    <div className="flex items-start gap-4">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-xs font-medium text-blue-700">
-                        {String(index + 1).padStart(
-                          2,
-                          "0",
-                        )}
-                      </span>
-
-                      <div>
-                        <p className="text-[10px] font-normal uppercase tracking-[0.16em] text-blue-600">
-                          {post.category || "AI Guides"}
-                        </p>
-
-                        <h3 className="mt-2 text-lg font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
-                          {post.title}
-                        </h3>
-
-                        <div className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-blue-700">
-                          Read guide
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="topic-clusters"
-        className="px-4 py-12 sm:px-6 lg:px-8"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div className="max-w-3xl">
-              <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
-                Explore by topic
-              </p>
-
-              <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
-                Discover focused AI learning paths
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                Browse representative guides across the
-                strongest topic categories in the
-                Sikhadenge knowledge library.
-              </p>
-            </div>
-
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
-              <FolderKanban className="h-4 w-4 text-blue-600" />
+          <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <SectionIntro
+              eyebrow="Explore by topic"
+              title="Focused learning paths across the AI library"
+              description="Choose a topic collection and continue through related guides instead of browsing an unstructured list."
+            />
+            <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
+              <FolderKanban className="h-4 w-4 text-blue-700" />
               {totalCategoryCount} categories
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {representativePosts.map(
-              (post, index) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  className="group rounded-[24px] border border-blue-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_18px_42px_rgba(37,99,235,0.1)]"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#EAF2FF,#F1EEFF)] text-xs font-medium text-blue-700">
-                      {String(index + 1).padStart(
-                        2,
-                        "0",
-                      )}
+          <div className="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+            {representativePosts.map((post, index) => {
+              const stat = categoryStats.find(
+                (item) => item.label === (post.category || "AI Guides"),
+              );
+
+              return (
+                <article key={post.slug} className="border-t border-slate-200 pt-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="text-xs font-bold text-blue-700">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-
-                    <BookOpen className="h-4 w-4 text-slate-300 transition group-hover:text-blue-500" />
+                    <span className="text-xs text-slate-400">
+                      {stat ? `${stat.count.toLocaleString()} guides` : "Topic guide"}
+                    </span>
                   </div>
-
-                  <p className="mt-5 text-[10px] font-normal uppercase tracking-[0.17em] text-blue-600">
+                  <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
                     {post.category || "AI Guides"}
                   </p>
-
-                  <h3 className="mt-2 text-lg font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
-                    {post.title}
+                  <h3 className="mt-2 text-xl font-bold leading-snug text-slate-950">
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="transition hover:text-blue-700"
+                    >
+                      {post.title}
+                    </Link>
                   </h3>
-                </Link>
-              ),
-            )}
-          </div>
-
-          <div className="mt-7 flex flex-wrap gap-2">
-            {categoryStats.map((item) => (
-              <span
-                key={item.label}
-                className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-xs font-normal text-slate-600"
-              >
-                {item.label} ·{" "}
-                {item.count.toLocaleString()}
-              </span>
-            ))}
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"
+                  >
+                    Open topic path
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section
-        id="priority-guides"
-        className="px-4 py-12 sm:px-6 lg:px-8"
-      >
+      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-normal uppercase tracking-[0.2em] text-blue-600">
-              More practical guides
-            </p>
+          <SectionIntro
+            eyebrow="Popular now"
+            title="Guides readers can use immediately"
+            description="Practical starting points for tools, careers, freelancing, students, creators, marketing, and business workflows."
+          />
 
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] text-slate-950 sm:text-4xl">
-              Continue exploring useful AI workflows
-            </h2>
-          </div>
-
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {discoveryPosts.map((post) => (
-              <Link
+          <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {popularPosts.map((post) => (
+              <article
                 key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="group flex h-full flex-col rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)] transition hover:-translate-y-1 hover:border-blue-300"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]"
               >
-                <p className="text-[10px] font-normal uppercase tracking-[0.17em] text-blue-600">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
                   {post.category || "AI Guides"}
                 </p>
-
-                <h3 className="mt-3 text-xl font-medium leading-snug text-slate-950 transition group-hover:text-blue-700">
-                  {post.title}
+                <h3 className="mt-3 text-xl font-bold leading-snug text-slate-950">
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="transition hover:text-blue-700"
+                  >
+                    {post.title}
+                  </Link>
                 </h3>
-
-                <p className="mt-4 flex-1 text-sm leading-7 text-slate-600">
-                  {getPostSummary(post)}
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  {getPostSummary(post, 130)}
                 </p>
-
-                <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-blue-700">
-                  Read article
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </div>
-              </Link>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"
+                >
+                  Read guide
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
+      <section className="border-y border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-5 md:grid-cols-3">
-            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                <Search className="h-5 w-5" />
-              </span>
-
-              <h2 className="mt-5 text-xl font-medium text-slate-950">
-                Search-ready structure
-              </h2>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Clear internal links, topic discovery,
-                and representative articles help readers
-                and search systems understand the depth
-                of each subject.
+          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+                Editorial standard
               </p>
-            </article>
-
-            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
-                <Sparkles className="h-5 w-5" />
-              </span>
-
-              <h2 className="mt-5 text-xl font-medium text-slate-950">
-                Answer-first content
+              <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                Built for useful answers, not keyword padding
               </h2>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                High-intent AI topics remain easy to
-                discover, understand, recommend, and
-                connect with practical execution.
+              <p className="mt-5 text-base leading-8 text-slate-600">
+                The Blog structure supports readers first while preserving clear
+                signals for search engines, answer engines, and AI retrieval
+                systems.
               </p>
-            </article>
-
-            <article className="rounded-[26px] border border-blue-100 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.045)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
-                <FolderKanban className="h-5 w-5" />
-              </span>
-
-              <h2 className="mt-5 text-xl font-medium text-slate-950">
-                Authority clusters
-              </h2>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Category-led content supports stronger
-                topical depth, lower orphan-page risk,
-                and clearer learning journeys.
-              </p>
-            </article>
-          </div>
-
-          <div className="mt-6 rounded-[30px] border border-blue-100 bg-[linear-gradient(135deg,#F3F8FF_0%,#F6F2FF_100%)] p-6 shadow-[0_16px_42px_rgba(37,99,235,0.06)] sm:p-8">
-            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <p className="text-[10px] font-normal uppercase tracking-[0.18em] text-blue-600">
-                  Crawl Signals
-                </p>
-
-                <h2 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-slate-950">
-                  Strong discovery without exposing
-                  technical complexity to readers
-                </h2>
-
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  Canonical URLs, internal linking depth,
-                  topic grouping, and structured data
-                  remain preserved behind a cleaner,
-                  visitor-first Blog experience.
-                </p>
-              </div>
-
               <Link
-                href="/sitemap.xml"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-blue-200 bg-white px-5 py-3 text-sm font-medium text-blue-700 transition hover:-translate-y-0.5 hover:border-blue-400"
+                href="/editorial-policy"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"
               >
-                Open sitemap
+                Read the editorial policy
                 <ArrowRight className="h-4 w-4" />
               </Link>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  icon: BadgeCheck,
+                  title: "Editorial ownership",
+                  text: "Clear authorship, update signals, review context, and accountable site policies.",
+                },
+                {
+                  icon: CheckCircle2,
+                  title: "Answer-first structure",
+                  text: "Direct summaries, practical steps, FAQs, and related learning paths for fast understanding.",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "Trust and source quality",
+                  text: "Guidance is framed with scope, limitations, verification cues, and source standards where needed.",
+                },
+                {
+                  icon: Clock3,
+                  title: "Ongoing maintenance",
+                  text: "Pages use update and revalidation systems so the library can be reviewed and improved over time.",
+                },
+              ].map(({ icon: Icon, title, text }) => (
+                <article key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-white text-blue-700">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold text-slate-950">{title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{text}</p>
+                </article>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      <section
-        aria-labelledby="blog-faq-heading"
-        data-blog-faq-style="home-light-v1"
-        className="border-y border-slate-200 bg-[#F6F8FC] px-4 py-16 sm:px-6 md:py-20 lg:px-8"
-      >
+      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-4xl">
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-medium text-blue-700">
-              FAQs
-            </span>
+          <SectionIntro
+            eyebrow="Recently available"
+            title="Continue exploring the knowledge library"
+            description="Open another practical guide and build a connected learning path around your current goal."
+          />
 
-            <h2
-              id="blog-faq-heading"
-              className="mt-6 text-4xl font-medium tracking-[-0.035em] text-slate-950 sm:text-5xl"
-            >
-              Frequently asked questions
-            </h2>
-
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
-              Clear answers about the Sikhadenge AI Blog,
-              practical guides, topic discovery, AI tools,
-              careers, workflows, and structured learning.
-            </p>
-          </div>
-
-          <div className="mt-12 space-y-4">
-            {BLOG_FAQS.map((faq) => (
-              <details
-                key={faq.question}
-                className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_26px_rgba(15,23,42,0.035)] transition open:border-blue-200 open:shadow-[0_14px_34px_rgba(37,99,235,0.08)]"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-6 text-left text-base font-medium text-slate-950 outline-none sm:px-8 sm:py-7 sm:text-lg [&::-webkit-details-marker]:hidden">
-                  <span>{faq.question}</span>
-
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600 transition duration-300 group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="h-5 w-5"
+          <div className="mt-9 divide-y divide-slate-200 rounded-3xl border border-slate-200 bg-white px-6 sm:px-8">
+            {latestPosts.map((post) => (
+              <article key={post.slug} className="grid gap-3 py-6 sm:grid-cols-[160px_1fr_auto] sm:items-center sm:gap-6">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-700">
+                  {post.category || "AI Guides"}
+                </p>
+                <div>
+                  <h3 className="text-lg font-bold leading-snug text-slate-950">
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="transition hover:text-blue-700"
                     >
-                      <path
-                        d="m7 10 5 5 5-5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                      {post.title}
+                    </Link>
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    {getPostSummary(post, 115)}
+                  </p>
+                </div>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  aria-label={`Read ${post.title}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <SectionIntro
+            eyebrow="FAQ"
+            title="Questions about the Sikhadenge AI Blog"
+            description="Clear answers about the library, its topics, intended readers, and practical learning approach."
+          />
+
+          <div className="mt-9 divide-y divide-slate-200 border-y border-slate-200">
+            {BLOG_FAQS.map((faq, index) => (
+              <details key={faq.question} className="group py-5">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-5 text-left text-base font-bold text-slate-950 marker:content-none sm:text-lg">
+                  <span className="flex items-start gap-4">
+                    <span className="mt-0.5 text-xs font-bold text-blue-700">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    {faq.question}
+                  </span>
+                  <span className="text-xl font-normal text-slate-400 transition group-open:rotate-45">
+                    +
                   </span>
                 </summary>
-
-                <div className="border-t border-slate-100 px-6 pb-7 pt-5 text-sm leading-7 text-slate-600 sm:px-8 sm:text-base sm:leading-8">
+                <p className="pb-2 pl-10 pr-8 pt-3 text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
                   {faq.answer}
-                </div>
+                </p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 lg:px-8">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[34px] border border-blue-100 bg-[linear-gradient(135deg,#07152F_0%,#174899_60%,#6255D8_100%)] px-6 py-10 text-white shadow-[0_28px_70px_rgba(30,64,175,0.2)] sm:px-10 sm:py-12">
+      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-blue-200 bg-blue-50 px-6 py-10 sm:px-10 sm:py-12">
           <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="max-w-3xl">
-              <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-blue-100/75">
-                Learn beyond the article
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+                From reading to execution
               </p>
-
-              <h2 className="mt-3 text-3xl font-medium tracking-[-0.025em] sm:text-4xl">
-                Turn practical AI knowledge into
-                real project capability
+              <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                Build practical AI skills with a structured next step
               </h2>
-
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-50/80 sm:text-base">
-                Continue from useful guides to structured
-                learning, mentor support, practical
-                workflows, and visible output.
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                Continue with free learning resources, guided courses, and
+                project-focused support after exploring the Blog.
               </p>
             </div>
-
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 lg:justify-end">
               <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-blue-800 transition hover:-translate-y-0.5 hover:bg-blue-50"
+                href="/free-ai-masterclass"
+                className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-800"
               >
-                Join Free AI Masterclass
+                Join free AI masterclass
                 <ArrowRight className="h-4 w-4" />
               </Link>
-
               <Link
                 href="/courses"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-white/15"
+                className="inline-flex min-h-12 items-center rounded-xl border border-blue-300 bg-white px-6 py-3 text-sm font-bold text-blue-800 transition hover:border-blue-400"
               >
                 Explore courses
               </Link>
