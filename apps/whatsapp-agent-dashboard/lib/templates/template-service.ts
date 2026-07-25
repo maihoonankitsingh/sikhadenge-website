@@ -275,7 +275,8 @@ export async function syncTemplatesFromMeta(actorId: string) {
   const records: MetaTemplateRecord[] = [];
 
   for (let page = 0; nextUrl && page < 10; page += 1) {
-    const response = await metaFetch<MetaTemplateListResponse>(nextUrl);
+    const response: MetaTemplateListResponse =
+      await metaFetch<MetaTemplateListResponse>(nextUrl);
     records.push(...(response.data ?? []));
     nextUrl = response.paging?.next;
   }
