@@ -7,6 +7,7 @@ import type {
   OutboundContent,
   OutboundMediaType,
 } from "../../../../../lib/outbound/types";
+import { assertManualSendOwnership } from "../../../../../lib/team/team-chat-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -135,6 +136,11 @@ export async function POST(
   }
 
   try {
+    await assertManualSendOwnership({
+      conversationId: context.params.conversationId,
+      actor: { id: user.id, role: user.role },
+    });
+
     const result = await queueOutboundMessage({
       conversationId: context.params.conversationId,
       actor: MessageActor.COUNSELOR,
@@ -149,7 +155,7 @@ export async function POST(
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Queueing failed.";
-    const status = detail.includes("not found") ? 404 : 422;
+    const status = detail.includes("not found") ? 404 : detail.includes("owned") || detail.includes("Claim") || detail.includes("Human mode") ? 409 : 422;
     return NextResponse.json({ error: detail, outboundSent: false }, { status });
   }
 }
