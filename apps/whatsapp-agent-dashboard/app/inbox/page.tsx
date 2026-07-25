@@ -8,11 +8,20 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function InboxPage() {
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams?: { conversation?: string };
+}) {
   const user = await requireDashboardUser();
   const conversations = await listInboxConversations();
-  const initialConversation = conversations[0]
-    ? await getInboxConversation(conversations[0].id)
+  const requestedId = searchParams?.conversation?.trim() || null;
+  const initialId =
+    requestedId && conversations.some((item) => item.id === requestedId)
+      ? requestedId
+      : conversations[0]?.id ?? null;
+  const initialConversation = initialId
+    ? await getInboxConversation(initialId)
     : null;
 
   return (
