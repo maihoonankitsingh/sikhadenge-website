@@ -19,9 +19,52 @@ const SENSITIVE_DATA_PATTERNS = [
   /\b(?:ओटीपी|सीवीवी|यूपीआई पिन|एटीएम पिन)\b/i,
 ];
 
+const LEADING_EMOJI = /^\p{Extended_Pictographic}/u;
+
 function numberFromEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name]);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function polishGenericReply(reply: string): string {
+  const lower = reply.toLocaleLowerCase("en-IN");
+
+  if (
+    lower.includes("ji, bataiye aap course, class timing") ||
+    lower.includes("bilkul. aapka question kis baare mein hai") ||
+    lower.includes("zaroor help karenge. thoda sa clear kar dijiye")
+  ) {
+    return "💬 Main SikhaDenge ka learning assistant hoon 😊 Aap AI course, class timing, demo/masterclass ya admission ke baare mein kya jaanna chahenge?";
+  }
+
+  if (
+    lower.includes("certainly. is your question about a course") ||
+    lower.includes("please tell me whether you need course details")
+  ) {
+    return "💬 I’m the SikhaDenge learning assistant 😊 What would you like to know about the AI course, class timing, demo/masterclass, or admission?";
+  }
+
+  return reply;
+}
+
+function replyIcon(reply: string): string {
+  const lower = reply.toLocaleLowerCase("en-IN");
+
+  if (/\b(hello|welcome|namaste|namaskar|happy to guide)\b/i.test(lower)) return "👋";
+  if (/\b(payment|transaction|refund|complaint|account issue|safe review)\b/i.test(lower)) return "🛡️";
+  if (/\b(call|counsellor|counselor|handover|forwarding|contact karega)\b/i.test(lower)) return "📞";
+  if (/\b(demo|masterclass|webinar|workshop)\b/i.test(lower)) return "🎓";
+  if (/\b(certificate|certification)\b/i.test(lower)) return "🏅";
+  if (/\b(class|batch|timing|online|offline|schedule)\b/i.test(lower)) return "💻";
+  if (/\b(course|program|learning|career|freelancing|business growth|ai skills)\b/i.test(lower)) return "🚀";
+  if (/\b(opt-out|unsubscribe|promotional follow-up|message nahi)\b/i.test(lower)) return "✅";
+  return "💬";
+}
+
+function professionalizeReply(reply: string): string {
+  const polished = polishGenericReply(reply.trim());
+  if (!polished || LEADING_EMOJI.test(polished)) return polished;
+  return `${replyIcon(polished)} ${polished}`;
 }
 
 export function getAgentPolicy() {
@@ -36,7 +79,7 @@ export function getAgentPolicy() {
     ),
     maximumReplyCharacters: Math.max(
       300,
-      Math.min(4_000, numberFromEnv("AGENT_MAX_REPLY_CHARACTERS", 1_200)),
+      Math.min(4_000, numberFromEnv("AGENT_MAX_REPLY_CHARACTERS", 700)),
     ),
     maximumHistoryMessages: Math.max(
       4,
@@ -70,7 +113,7 @@ export function inspectAgentSafety(message: string): AgentSafetyResult {
 
 export function trimAgentReply(reply: string): string {
   const maximum = getAgentPolicy().maximumReplyCharacters;
-  const compact = reply.trim().replace(/\n{3,}/g, "\n\n");
+  const compact = professionalizeReply(reply).replace(/\n{3,}/g, "\n\n");
   if (compact.length <= maximum) return compact;
   return `${compact.slice(0, Math.max(0, maximum - 1)).trimEnd()}…`;
 }
