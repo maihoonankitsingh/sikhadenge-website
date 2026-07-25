@@ -1,6 +1,7 @@
 import { AgentMode, DashboardRole, MessageStatus, TemplateStatus } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import { getOutboundMode } from "../meta/outbound-client";
 
 function configured(name: string): boolean {
   return Boolean(process.env[name]?.trim());
@@ -29,16 +30,22 @@ export async function getCutoverReadiness() {
     webhookStatuses,
     pendingCampaigns,
     activeAutomationFlows,
+    latestInbound,
   ] = await Promise.all([
     prisma.whatsAppTemplate.count({ where: { status: TemplateStatus.APPROVED } }),
     prisma.whatsAppMessage.count({ where: { status: MessageStatus.QUEUED } }),
     prisma.whatsAppMessage.count({ where: { status: MessageStatus.FAILED } }),
     prisma.whatsAppConversation.count({ where: { agentMode: AgentMode.REVIEW_REQUIRED } }),
     prisma.dashboardUser.count({ where: { role: DashboardRole.ADMIN, isActive: true } }),
-    prisma.webhookEvent.count({ where: { eventType: "message" } }),
-    prisma.webhookEvent.count({ where: { eventType: "status" } }),
+    prisma.webhookEvent.count({ where: { eventType: "message", processingError: null } }),
+    prisma.webhookEvent.count({ where: { eventType: "status", processingError: null } }),
     prisma.webhookEvent.count({ where: { eventType: "campaign_plan", processedAt: null } }),
     prisma.webhookEvent.count({ where: { eventType: "automation_flow", processingError: null } }),
+    prisma.webhookEvent.findFirst({
+      where: { eventType: "message", processingError: null },
+      orderBy: { receivedAt: "desc" },
+      select: { receivedAt: true },
+    }),
   ]);
 
   const wabaConfigured = configuredAny(
@@ -58,7 +65,18 @@ export async function getCutoverReadiness() {
     "WHATSAPP_GRAPH_VERSION",
     "META_GRAPH_API_VERSION",
   );
-  const outboundMode = process.env.WHATSAPP_OUTBOUND_MODE?.trim().toLowerCase() || "disabled";
+  const signatureConfigured =
+    configured("WHATSAPP_APP_SECRET") && configured("WHATSAPP_VERIFY_TOKEN");
+  const effectiveOutboundMode = getOutboundMode();
+  const migrationEvidence =
+    wabaConfigured &&
+    phoneConfigured &&
+    tokenConfigured &&
+    signatureConfigured &&
+    webhookMessages > 0;
+  const aiAutoReplyEnabled =
+    enabled("AGENT_AUTO_REPLY_ENABLED") && enabled("AGENT_IMMEDIATE_DISPATCH_ENABLED");
+
   const checks = [
     {
       id: "waba",
@@ -92,46 +110,42 @@ export async function getCutoverReadiness() {
       id: "signature",
       group: "Webhooks",
       label: "App secret and verify token configured",
-      status:
-        configured("WHATSAPP_APP_SECRET") && configured("WHATSAPP_VERIFY_TOKEN")
-          ? "PASS"
-          : "BLOCKED",
+      status: signatureConfigured ? "PASS" : "BLOCKED",
       detail: "Webhook verification and signature validation are available.",
     },
     {
       id: "subscription",
       group: "Webhooks",
       label: "WABA app subscription",
-      status: wabaConfigured ? "MANUAL" : "BLOCKED",
-      detail: "Reconfirm the production app subscription immediately before cutover.",
+      status: webhookMessages > 0 ? "PASS" : wabaConfigured ? "MANUAL" : "BLOCKED",
+      detail: webhookMessages > 0
+        ? "Production message webhooks are reaching the owned dashboard."
+        : "Subscribe the production app and send one inbound test message.",
     },
     {
       id: "inbound",
       group: "Webhooks",
       label: "Real inbound webhook evidence",
       status: webhookMessages > 0 ? "PASS" : "PENDING",
-      detail: `${webhookMessages} inbound message event(s) and ${webhookStatuses} status event(s) stored.`,
-    },
-    {
-      id: "sim",
-      group: "Phone migration",
-      label: "SIM receives Meta SMS or voice verification",
-      status: "MANUAL",
-      detail: "Confirm on the phone during the supervised migration window. Never paste the code into chat.",
+      detail: `${webhookMessages} inbound message event(s) and ${webhookStatuses} status event(s) stored.${latestInbound ? ` Latest inbound: ${latestInbound.receivedAt.toISOString()}.` : ""}`,
     },
     {
       id: "registration",
       group: "Phone migration",
-      label: "Phone registration and two-step PIN",
-      status: "MANUAL",
-      detail: "Registration must be completed through Meta with a private six-digit two-step PIN.",
+      label: "Phone registered on owned Cloud API",
+      status: migrationEvidence ? "PASS" : "MANUAL",
+      detail: migrationEvidence
+        ? "Owned credentials and production inbound traffic confirm the migrated number is active."
+        : "Complete verification, registration and a production inbound smoke test.",
     },
     {
       id: "aisensy",
       group: "Provider ownership",
-      label: "AiSensy production ownership removed",
-      status: "MANUAL",
-      detail: "Disconnect only after Cloud API registration succeeds and rollback evidence is captured.",
+      label: "Owned dashboard receives production traffic",
+      status: migrationEvidence ? "PASS" : "MANUAL",
+      detail: migrationEvidence
+        ? "Production traffic is being processed by the SikhaDenge-owned webhook."
+        : "Keep the previous provider available until owned webhook evidence is stored.",
     },
     {
       id: "templates",
@@ -141,33 +155,32 @@ export async function getCutoverReadiness() {
       detail: `${approvedTemplates} Meta-approved template(s) available.`,
     },
     {
-      id: "outbound-lock",
+      id: "outbound-mode",
       group: "Messaging",
-      label: "Outbound remains locked before cutover",
-      status: outboundMode !== "live" ? "PASS" : "BLOCKED",
-      detail: `Current outbound mode: ${outboundMode}.`,
+      label: "Manual outbound delivery mode",
+      status: effectiveOutboundMode === "live" ? "PASS" : "PENDING",
+      detail: `Effective outbound mode: ${effectiveOutboundMode}.`,
     },
     {
-      id: "ai-lock",
+      id: "ai-reply",
       group: "Messaging",
-      label: "AI auto-reply locks remain off",
-      status:
-        !enabled("AGENT_AUTO_REPLY_ENABLED") && !enabled("AGENT_IMMEDIATE_DISPATCH_ENABLED")
-          ? "PASS"
-          : "BLOCKED",
-      detail: "Both AI reply and immediate dispatch require explicit final activation.",
+      label: "AI automatic reply runtime",
+      status: aiAutoReplyEnabled && effectiveOutboundMode === "live" ? "PASS" : "PENDING",
+      detail: aiAutoReplyEnabled
+        ? "AI auto-reply and immediate dispatch are enabled."
+        : "Enable AI auto-reply only after manual outbound smoke testing passes.",
     },
     {
       id: "bulk-lock",
       group: "Messaging",
-      label: "Campaign and automation external actions remain off",
+      label: "Campaign and automation safeguards",
       status:
         !enabled("WHATSAPP_CAMPAIGNS_ENABLED") &&
         !enabled("AUTOMATION_ACTIONS_ENABLED") &&
         !enabled("INTEGRATION_EXTERNAL_WRITES_ENABLED")
           ? "PASS"
-          : "BLOCKED",
-      detail: "Bulk and external writes stay disabled until post-cutover smoke tests pass.",
+          : "MANUAL",
+      detail: "Bulk and external writes should remain controlled until individual messaging is stable.",
     },
     {
       id: "queue",
@@ -190,13 +203,6 @@ export async function getCutoverReadiness() {
       status: activeAdmins > 0 ? "PASS" : "BLOCKED",
       detail: `${activeAdmins} active administrator account(s).`,
     },
-    {
-      id: "login",
-      group: "Access",
-      label: "Final login consolidation",
-      status: "PENDING",
-      detail: "Existing login remains unchanged until Meta cutover and production verification are complete.",
-    },
   ] as const;
 
   const blocked = checks.filter((check) => check.status === "BLOCKED").length;
@@ -206,8 +212,11 @@ export async function getCutoverReadiness() {
 
   return {
     readyForSupervisedCutover: blocked === 0,
-    readyForAutomaticCutover: false,
-    cutoverExecuted: false,
+    readyForAutomaticCutover:
+      migrationEvidence && effectiveOutboundMode === "live" && blocked === 0,
+    cutoverExecuted: migrationEvidence,
+    metaConnected: migrationEvidence,
+    outboundMode: effectiveOutboundMode,
     checks,
     summary: { passed, pending, manual, blocked },
     inventory: {
@@ -222,8 +231,8 @@ export async function getCutoverReadiness() {
       activeAutomationFlows,
     },
     constraints: {
-      aiSensyStillOwnsLiveTraffic: true,
-      outboundMustRemainDisabled: true,
+      aiSensyStillOwnsLiveTraffic: !migrationEvidence,
+      outboundMustRemainDisabled: !migrationEvidence,
       otpMustRemainPrivate: true,
       twoStepPinMustRemainPrivate: true,
       externalChangesRequireExplicitApproval: true,

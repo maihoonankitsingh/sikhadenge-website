@@ -29,6 +29,7 @@ import "./contact-manager.css";
 import "./lead-manager.css";
 import "./team-chat.css";
 import "./live-agent-manager.css";
+import "./workable-dashboard.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 

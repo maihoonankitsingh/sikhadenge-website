@@ -1,4 +1,4 @@
-import InboxDashboard from "../../components/inbox/InboxDashboard";
+import InboxDashboardV2 from "../../components/inbox/InboxDashboardV2";
 import LogoutButton from "../../components/auth/LogoutButton";
 import { requireDashboardUser } from "../../lib/auth/session";
 import {
@@ -33,7 +33,7 @@ export default async function InboxPage({
         </span>
         <LogoutButton />
       </div>
-      <InboxDashboard
+      <InboxDashboardV2
         initialConversations={conversations}
         initialConversation={initialConversation}
       />
