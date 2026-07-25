@@ -20,6 +20,21 @@ export default function SidebarNavigationBridge() {
   useEffect(() => {
     const cleanups: Array<() => void> = [];
 
+    const navigationGroups = Array.from(
+      document.querySelectorAll<HTMLElement>(".rail nav"),
+    );
+    for (const navigation of navigationGroups) {
+      if (!navigation.querySelector('.rail-button[title="Campaigns"]')) {
+        const campaignButton = document.createElement("button");
+        campaignButton.className = "rail-button";
+        campaignButton.title = "Campaigns";
+        campaignButton.type = "button";
+        campaignButton.textContent = "Campaigns";
+        navigation.appendChild(campaignButton);
+        cleanups.push(() => campaignButton.remove());
+      }
+    }
+
     for (const [title, route] of Object.entries(ROUTES)) {
       const buttons = Array.from(
         document.querySelectorAll<HTMLButtonElement>(
