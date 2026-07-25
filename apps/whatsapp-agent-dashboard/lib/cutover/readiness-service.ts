@@ -6,6 +6,10 @@ function configured(name: string): boolean {
   return Boolean(process.env[name]?.trim());
 }
 
+function configuredAny(...names: string[]): boolean {
+  return names.some((name) => configured(name));
+}
+
 function enabled(name: string, fallback = false): boolean {
   const value = process.env[name]?.trim().toLowerCase();
   if (!value) return fallback;
@@ -37,28 +41,52 @@ export async function getCutoverReadiness() {
     prisma.webhookEvent.count({ where: { eventType: "automation_flow", processingError: null } }),
   ]);
 
+  const wabaConfigured = configuredAny(
+    "WHATSAPP_BUSINESS_ACCOUNT_ID",
+    "META_WHATSAPP_BUSINESS_ACCOUNT_ID",
+    "META_WABA_ID",
+  );
+  const phoneConfigured = configuredAny(
+    "WHATSAPP_PHONE_NUMBER_ID",
+    "META_WHATSAPP_PHONE_NUMBER_ID",
+  );
+  const tokenConfigured = configuredAny(
+    "WHATSAPP_ACCESS_TOKEN",
+    "META_WHATSAPP_ACCESS_TOKEN",
+  );
+  const graphConfigured = configuredAny(
+    "WHATSAPP_GRAPH_VERSION",
+    "META_GRAPH_API_VERSION",
+  );
   const outboundMode = process.env.WHATSAPP_OUTBOUND_MODE?.trim().toLowerCase() || "disabled";
   const checks = [
     {
       id: "waba",
       group: "Meta account",
       label: "WABA ID configured",
-      status: configured("WHATSAPP_BUSINESS_ACCOUNT_ID") ? "PASS" : "BLOCKED",
+      status: wabaConfigured ? "PASS" : "BLOCKED",
       detail: "Business account identifier is stored in the environment.",
     },
     {
       id: "phone",
       group: "Meta account",
       label: "Phone Number ID configured",
-      status: configured("WHATSAPP_PHONE_NUMBER_ID") ? "PASS" : "BLOCKED",
+      status: phoneConfigured ? "PASS" : "BLOCKED",
       detail: "Production phone-number identifier is stored in the environment.",
     },
     {
       id: "token",
       group: "Meta account",
       label: "System-user access token configured",
-      status: configured("WHATSAPP_ACCESS_TOKEN") ? "PASS" : "BLOCKED",
+      status: tokenConfigured ? "PASS" : "BLOCKED",
       detail: "Token value is never displayed by the dashboard.",
+    },
+    {
+      id: "graph",
+      group: "Meta account",
+      label: "Graph API version configured",
+      status: graphConfigured ? "PASS" : "BLOCKED",
+      detail: "Production Meta requests use the configured Graph API version.",
     },
     {
       id: "signature",
@@ -74,7 +102,7 @@ export async function getCutoverReadiness() {
       id: "subscription",
       group: "Webhooks",
       label: "WABA app subscription",
-      status: configured("WHATSAPP_BUSINESS_ACCOUNT_ID") ? "MANUAL" : "BLOCKED",
+      status: wabaConfigured ? "MANUAL" : "BLOCKED",
       detail: "Reconfirm the production app subscription immediately before cutover.",
     },
     {
