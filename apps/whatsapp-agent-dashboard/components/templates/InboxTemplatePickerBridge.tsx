@@ -42,6 +42,7 @@ export default function InboxTemplatePickerBridge() {
   const [selectedId, setSelectedId] = useState("");
   const [values, setValues] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export default function InboxTemplatePickerBridge() {
   }, []);
 
   useEffect(() => {
-    if (!open || templates.length > 0 || loading) return;
+    if (!open || loaded || loading) return;
     setLoading(true);
     void fetch("/api/templates?limit=250", { cache: "no-store" })
       .then(async (response) => {
@@ -90,17 +91,21 @@ export default function InboxTemplatePickerBridge() {
           error?: string;
         };
         if (!response.ok) throw new Error(payload.error || "Templates could not be loaded.");
-        return { templates: (payload.templates ?? []).filter((item) => item.status === "APPROVED") };
+        return {
+          templates: (payload.templates ?? []).filter((item) => item.status === "APPROVED"),
+        };
       })
       .then((payload) => {
         setTemplates(payload.templates);
         setSelectedId(payload.templates[0]?.id ?? "");
+        setLoaded(true);
       })
       .catch((loadError) => {
         setError(loadError instanceof Error ? loadError.message : "Templates could not be loaded.");
+        setLoaded(true);
       })
       .finally(() => setLoading(false));
-  }, [loading, open, templates.length]);
+  }, [loaded, loading, open]);
 
   useEffect(() => {
     setValues(Array.from({ length: count }, () => ""));
@@ -164,10 +169,19 @@ export default function InboxTemplatePickerBridge() {
   if (!open) return null;
 
   return (
-    <div className="inbox-template-overlay" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) setOpen(false);
-    }}>
-      <section className="inbox-template-dialog" role="dialog" aria-modal="true" aria-label="Send approved template">
+    <div
+      className="inbox-template-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setOpen(false);
+      }}
+    >
+      <section
+        className="inbox-template-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Send approved template"
+      >
         <header>
           <div><span>Approved message</span><h2>Send WhatsApp template</h2></div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Close">×</button>
@@ -176,12 +190,53 @@ export default function InboxTemplatePickerBridge() {
         {error ? <div className="inbox-template-alert error">{error}</div> : null}
         {notice ? <div className="inbox-template-alert success">{notice}</div> : null}
 
-        {loading ? <div className="inbox-template-empty">Loading approved templates...</div> : templates.length === 0 ? <div className="inbox-template-empty"><strong>No approved template available</strong><p>Create or sync an approved template from Template Centre.</p><button type="button" onClick={() => window.location.assign("/templates")}>Open Template Centre</button></div> : <>
-          <label className="inbox-template-field"><span>Approved template</span><select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>{templates.map((template) => <option key={template.id} value={template.id}>{template.name} · {template.language}</option>)}</select></label>
-          <div className="inbox-template-message"><span>{selected?.category}</span><p>{selectedBody || "Template body preview unavailable."}</p></div>
-          {values.map((value, index) => <label className="inbox-template-field" key={index}><span>Value for {`{{${index + 1}}}`}</span><input value={value} onChange={(event) => setValues((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /></label>)}
-          <div className="inbox-template-actions"><button type="button" className="secondary" onClick={() => window.location.assign("/templates")}>Manage templates</button><button type="button" onClick={() => void sendTemplate()} disabled={!conversationId || sending}>{sending ? "Queueing..." : "Queue template"}</button></div>
-        </>}
+        {loading ? (
+          <div className="inbox-template-empty">Loading approved templates...</div>
+        ) : templates.length === 0 ? (
+          <div className="inbox-template-empty">
+            <strong>No approved template available</strong>
+            <p>Create or sync an approved template from Template Centre.</p>
+            <button type="button" onClick={() => window.location.assign("/templates")}>Open Template Centre</button>
+          </div>
+        ) : (
+          <>
+            <label className="inbox-template-field">
+              <span>Approved template</span>
+              <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} · {template.language}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="inbox-template-message">
+              <span>{selected?.category}</span>
+              <p>{selectedBody || "Template body preview unavailable."}</p>
+            </div>
+            {values.map((value, index) => (
+              <label className="inbox-template-field" key={index}>
+                <span>Value for {`{{${index + 1}}}`}</span>
+                <input
+                  value={value}
+                  onChange={(event) =>
+                    setValues((current) =>
+                      current.map((item, itemIndex) =>
+                        itemIndex === index ? event.target.value : item,
+                      ),
+                    )
+                  }
+                />
+              </label>
+            ))}
+            <div className="inbox-template-actions">
+              <button type="button" className="secondary" onClick={() => window.location.assign("/templates")}>Manage templates</button>
+              <button type="button" onClick={() => void sendTemplate()} disabled={!conversationId || sending}>
+                {sending ? "Queueing..." : "Queue template"}
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
