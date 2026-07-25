@@ -7,6 +7,7 @@ type DashboardModuleShellProps = {
     | "Inbox"
     | "Contacts"
     | "Leads"
+    | "Team"
     | "Analytics"
     | "Knowledge"
     | "Campaigns"
@@ -24,6 +25,7 @@ const navItems = [
   "Inbox",
   "Contacts",
   "Leads",
+  "Team",
   "Analytics",
   "Knowledge",
   "Campaigns",
@@ -34,6 +36,7 @@ const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Inbox: "/dashboard-icons/02-conversations.png",
   Contacts: "/dashboard-icons/03-contacts.png",
   Leads: "/dashboard-icons/05-qualified-leads.png",
+  Team: "/dashboard-icons/04-ai-managed.png",
   Analytics: "/dashboard-icons/07-analytics.png",
   Knowledge: "/dashboard-icons/08-knowledge.png",
   Campaigns: "/dashboard-icons/09-automation.png",
