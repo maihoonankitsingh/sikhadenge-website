@@ -233,7 +233,7 @@ export function GeneratedPageLayout({
 
   return (
     <main
-      data-blog-article-design="editorial-v5-lead-first"
+      data-blog-article-design="editorial-v5-1-full-width"
       className="min-h-screen overflow-x-hidden bg-[#fbfcff] text-slate-950 selection:bg-blue-200 selection:text-blue-950"
     >
       <header className="relative overflow-hidden border-b border-slate-200 bg-white pt-20 sm:pt-24">
@@ -359,7 +359,7 @@ export function GeneratedPageLayout({
         </nav>
       </div>
 
-      <div className="mx-auto grid max-w-[1280px] gap-12 px-4 py-12 sm:px-6 sm:py-16 lg:px-8 xl:grid-cols-[minmax(0,880px)_300px] xl:items-start">
+      <div className="mx-auto max-w-[1120px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <article className="min-w-0">
           <section
             id="quick-answer"
@@ -670,54 +670,6 @@ export function GeneratedPageLayout({
           </section>
         </article>
 
-        <aside className="hidden xl:block">
-          <div className="sticky top-24 space-y-6">
-            <div className="overflow-hidden rounded-[28px] border border-blue-200 bg-white">
-              <div className="bg-[#071b43] px-6 py-7 text-white">
-                <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-200">
-                  <GraduationCap className="h-4 w-4" /> Free masterclass
-                </div>
-                <h2 className="mt-4 text-2xl font-black leading-tight tracking-[-0.03em]">
-                  Ready to apply this topic?
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-blue-100">
-                  Register directly and continue with practical AI guidance.
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {MASTERCLASS_BENEFITS.map((benefit) => (
-                    <div key={benefit} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-                      <span className="text-sm leading-6 text-slate-700">{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-                <MasterclassButton className="mt-6 w-full" />
-              </div>
-            </div>
-
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
-                Reviewed content
-              </p>
-              <Link
-                href={authorHref}
-                className="mt-4 flex items-center gap-3 font-bold text-slate-950 hover:text-blue-700"
-              >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                  <BadgeCheck className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm">{authorLabel}</span>
-                  <span className="mt-1 block text-xs font-medium text-slate-500">
-                    Updated {updatedAt}
-                  </span>
-                </span>
-              </Link>
-            </div>
-          </div>
-        </aside>
       </div>
     </main>
   );
