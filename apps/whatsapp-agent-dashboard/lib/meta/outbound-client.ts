@@ -8,6 +8,7 @@ const DEFAULT_TIMEOUT_MS = 20_000;
 
 type MetaSendResponse = {
   messages?: Array<{ id?: string }>;
+  id?: string;
   error?: {
     message?: string;
     code?: number;
@@ -58,6 +59,52 @@ function timeoutMs(): number {
   return Math.max(5_000, Math.min(60_000, Math.floor(configured)));
 }
 
+function metaError(body: MetaSendResponse, status: number, fallback: string): Error {
+  const code = body.error?.code ? ` (${body.error.code})` : "";
+  return new Error(`${body.error?.message || `${fallback} with HTTP ${status}`}${code}`);
+}
+
+export async function uploadMetaWhatsAppMedia(input: {
+  data: Buffer;
+  mimeType: string;
+  filename: string;
+}): Promise<{ mediaId: string; statusCode: number }> {
+  const mode = getOutboundMode();
+  if (mode !== "live") throw new Error(`WhatsApp live sending is ${mode}.`);
+
+  const config = requiredLiveConfig();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs());
+
+  try {
+    const formData = new FormData();
+    formData.set("messaging_product", "whatsapp");
+    formData.set(
+      "file",
+      new Blob([new Uint8Array(input.data)], { type: input.mimeType }),
+      input.filename,
+    );
+
+    const response = await fetch(
+      `https://graph.facebook.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(
+        config.phoneNumberId,
+      )}/media`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${config.accessToken}` },
+        body: formData,
+        signal: controller.signal,
+      },
+    );
+    const body = (await response.json()) as MetaSendResponse;
+    const mediaId = body.id?.trim();
+    if (!response.ok || !mediaId) throw metaError(body, response.status, "Meta media upload failed");
+    return { mediaId, statusCode: response.status };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function sendMetaWhatsAppMessage(
   payload: PreparedMetaMessage,
 ): Promise<{
@@ -93,10 +140,7 @@ export async function sendMetaWhatsAppMessage(
     const metaMessageId = body.messages?.[0]?.id?.trim();
 
     if (!response.ok || !metaMessageId) {
-      const code = body.error?.code ? ` (${body.error.code})` : "";
-      throw new Error(
-        `${body.error?.message || `Meta send failed with HTTP ${response.status}`}${code}`,
-      );
+      throw metaError(body, response.status, "Meta send failed");
     }
 
     return { metaMessageId, statusCode: response.status };
