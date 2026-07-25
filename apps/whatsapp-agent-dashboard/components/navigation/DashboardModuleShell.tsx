@@ -11,6 +11,7 @@ type DashboardModuleShellProps = {
     | "Analytics"
     | "Knowledge"
     | "Campaigns"
+    | "Automation"
     | "Templates"
     | "Settings";
   eyebrow: string;
@@ -29,6 +30,7 @@ const navItems = [
   "Analytics",
   "Knowledge",
   "Campaigns",
+  "Automation",
   "Templates",
 ] as const;
 
@@ -40,6 +42,7 @@ const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Analytics: "/dashboard-icons/07-analytics.png",
   Knowledge: "/dashboard-icons/08-knowledge.png",
   Campaigns: "/dashboard-icons/09-automation.png",
+  Automation: "/dashboard-icons/09-automation.png",
   Templates: "/dashboard-icons/04-ai-managed.png",
   Settings: "/dashboard-icons/10-settings.png",
 };
