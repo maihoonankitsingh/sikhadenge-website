@@ -89,7 +89,20 @@ export async function POST(request: Request) {
 
   try {
     const result = await processWhatsAppWebhook(payload, rawBody);
-    const agent = await processWebhookAgentBridge(payload);
+    let agent: Awaited<ReturnType<typeof processWebhookAgentBridge>> | null = null;
+    try {
+      agent = await processWebhookAgentBridge(payload);
+    } catch {
+      agent = {
+        matched: 0,
+        analyzed: 0,
+        queued: 0,
+        sent: 0,
+        handoffs: 0,
+        skipped: 0,
+        failed: 1,
+      };
+    }
     return NextResponse.json(
       { received: true, ...result, agent },
       { status: 200, headers: NO_STORE_HEADERS },
