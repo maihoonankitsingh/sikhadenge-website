@@ -324,13 +324,13 @@ export async function updateLead(input: {
   if (Object.prototype.hasOwnProperty.call(values, "stage")) {
     const stage = normalizeStage(values.stage);
     data.stage = stage;
-    data.qualifiedAt = [
-      LeadStage.QUALIFIED,
-      LeadStage.COUNSELOR_ASSIGNED,
-      LeadStage.DEMO_BOOKED,
-      LeadStage.PAYMENT_PENDING,
-      LeadStage.ENROLLED,
-    ].includes(stage)
+    const isQualifiedStage =
+      stage === LeadStage.QUALIFIED ||
+      stage === LeadStage.COUNSELOR_ASSIGNED ||
+      stage === LeadStage.DEMO_BOOKED ||
+      stage === LeadStage.PAYMENT_PENDING ||
+      stage === LeadStage.ENROLLED;
+    data.qualifiedAt = isQualifiedStage
       ? existing.qualifiedAt ?? new Date()
       : existing.qualifiedAt;
     data.closedAt = stage === LeadStage.CLOSED ? existing.closedAt ?? new Date() : null;
@@ -478,7 +478,7 @@ export async function bulkUpdateLeads(input: {
   }
   if (Object.prototype.hasOwnProperty.call(values, "assignedToId")) {
     assignee = await validateAssignee(values.assignedToId);
-    data.assignedToId = assignee?.id ?? null;
+    (data as Prisma.LeadUncheckedUpdateManyInput).assignedToId = assignee?.id ?? null;
   }
   if (Object.prototype.hasOwnProperty.call(values, "nextFollowUpAt")) {
     data.nextFollowUpAt = normalizeDate(values.nextFollowUpAt);
