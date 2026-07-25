@@ -9,15 +9,22 @@ import {
 
 import { prisma } from "../db/prisma";
 import {
+  dashboardMediaUrl,
+  loadMediaAsset,
+  readMediaAsset,
+} from "../media/media-storage";
+import {
   getOutboundMode,
   isRetriableMetaError,
   sendMetaWhatsAppMessage,
+  uploadMetaWhatsAppMedia,
 } from "../meta/outbound-client";
 import { sha256Hex } from "../meta/signature";
 import { evaluateOutboundPolicy } from "./policy";
 import type {
   DispatchResult,
   OutboundContent,
+  OutboundMediaType,
   PreparedMetaMessage,
   QueueOutboundInput,
 } from "./types";
@@ -54,16 +61,44 @@ function outboundMetadata(value: Prisma.JsonValue | null): Record<string, unknow
     : {};
 }
 
+function isMediaMessageType(type: MessageType): boolean {
+  return [
+    MessageType.IMAGE,
+    MessageType.DOCUMENT,
+    MessageType.VIDEO,
+    MessageType.AUDIO,
+  ].includes(type);
+}
+
+function mediaTypeFromMessageType(type: MessageType): OutboundMediaType {
+  if (type === MessageType.IMAGE) return "image";
+  if (type === MessageType.DOCUMENT) return "document";
+  if (type === MessageType.VIDEO) return "video";
+  if (type === MessageType.AUDIO) return "audio";
+  throw new Error("Queued message is not a supported media type.");
+}
+
+function withContext(
+  payload: PreparedMetaMessage,
+  replyToMetaMessageId: string | null,
+): PreparedMetaMessage {
+  return replyToMetaMessageId
+    ? { ...payload, context: { message_id: replyToMetaMessageId } }
+    : payload;
+}
+
 function preparedPayload(input: {
   waId: string;
   type: MessageType;
   text: string | null;
+  filename: string | null;
   replyToMetaMessageId: string | null;
   template: {
     name: string;
     language: string;
   } | null;
   components: unknown[];
+  metaMediaId: string | null;
 }): PreparedMetaMessage {
   const base = {
     messaging_product: "whatsapp" as const,
@@ -86,18 +121,55 @@ function preparedPayload(input: {
     };
   }
 
+  if (isMediaMessageType(input.type)) {
+    if (!input.metaMediaId) throw new Error("Meta media ID is missing.");
+    const caption = input.text?.trim() || undefined;
+    const mediaType = mediaTypeFromMessageType(input.type);
+
+    if (mediaType === "image") {
+      return withContext(
+        { ...base, type: "image", image: { id: input.metaMediaId, ...(caption ? { caption } : {}) } },
+        input.replyToMetaMessageId,
+      );
+    }
+    if (mediaType === "document") {
+      return withContext(
+        {
+          ...base,
+          type: "document",
+          document: {
+            id: input.metaMediaId,
+            ...(caption ? { caption } : {}),
+            ...(input.filename ? { filename: input.filename } : {}),
+          },
+        },
+        input.replyToMetaMessageId,
+      );
+    }
+    if (mediaType === "video") {
+      return withContext(
+        { ...base, type: "video", video: { id: input.metaMediaId, ...(caption ? { caption } : {}) } },
+        input.replyToMetaMessageId,
+      );
+    }
+    return withContext(
+      { ...base, type: "audio", audio: { id: input.metaMediaId } },
+      input.replyToMetaMessageId,
+    );
+  }
+
   if (!input.text) throw new Error("Outbound text is missing.");
-  return {
-    ...base,
-    type: "text",
-    text: {
-      preview_url: false,
-      body: input.text,
+  return withContext(
+    {
+      ...base,
+      type: "text",
+      text: {
+        preview_url: false,
+        body: input.text,
+      },
     },
-    ...(input.replyToMetaMessageId
-      ? { context: { message_id: input.replyToMetaMessageId } }
-      : {}),
-  };
+    input.replyToMetaMessageId,
+  );
 }
 
 export async function queueOutboundMessage(input: QueueOutboundInput) {
@@ -139,6 +211,18 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
     throw new Error("WhatsApp template not found.");
   }
 
+  const mediaAsset =
+    input.content.kind === "media"
+      ? await loadMediaAsset(input.content.assetId)
+      : null;
+  if (
+    input.content.kind === "media" &&
+    mediaAsset &&
+    mediaAsset.kind !== input.content.mediaType
+  ) {
+    throw new Error("Selected media type does not match the uploaded file.");
+  }
+
   const policy = evaluateOutboundPolicy({
     context: {
       actor: input.actor,
@@ -169,6 +253,7 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
             conversationId: conversation.id,
             idempotencyKey,
             kind: input.content.kind,
+            assetId: input.content.kind === "media" ? input.content.assetId : null,
           }),
           attemptCount: 1,
         },
@@ -177,6 +262,12 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
       const text =
         input.content.kind === "text"
           ? input.content.text.trim().slice(0, 4_096)
+          : input.content.kind === "media"
+            ? input.content.caption?.trim().slice(0, 1_024) || null
+            : null;
+      const replyToMetaMessageId =
+        input.content.kind === "text" || input.content.kind === "media"
+          ? input.content.replyToMetaMessageId?.trim().slice(0, 300) || null
           : null;
       const message = await transaction.whatsAppMessage.create({
         data: {
@@ -187,10 +278,13 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
           type: policy.messageType,
           status: MessageStatus.QUEUED,
           text,
-          replyToMetaMessageId:
-            input.content.kind === "text"
-              ? input.content.replyToMetaMessageId?.trim() || null
+          mediaUrl: mediaAsset ? dashboardMediaUrl(mediaAsset.id) : null,
+          mimeType: mediaAsset?.mimeType ?? null,
+          filename:
+            input.content.kind === "media"
+              ? compact(input.content.filename || mediaAsset?.originalName || "attachment", 180)
               : null,
+          replyToMetaMessageId,
           rawPayload: toJson({
             outbound: {
               idempotencyKey,
@@ -202,6 +296,9 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
                 input.content.kind === "template"
                   ? input.content.components ?? []
                   : [],
+              assetId: input.content.kind === "media" ? input.content.assetId : null,
+              mediaType:
+                input.content.kind === "media" ? input.content.mediaType : null,
               serviceWindowOpen: policy.serviceWindowOpen,
               queuedAt: now.toISOString(),
               attemptCount: 0,
@@ -252,6 +349,9 @@ export async function dispatchOutboundMessage(
       status: true,
       type: true,
       text: true,
+      mediaId: true,
+      mimeType: true,
+      filename: true,
       replyToMetaMessageId: true,
       rawPayload: true,
       conversation: {
@@ -279,16 +379,37 @@ export async function dispatchOutboundMessage(
         select: { name: true, language: true },
       })
     : null;
+  const mode = getOutboundMode();
+
+  let metaMediaId =
+    message.mediaId ||
+    (typeof metadata.metaMediaId === "string" ? metadata.metaMediaId : null);
+  const assetId = typeof metadata.assetId === "string" ? metadata.assetId : null;
+  if (isMediaMessageType(message.type) && !metaMediaId) {
+    if (!assetId) throw new Error("Queued media asset ID is missing.");
+    if (mode === "live") {
+      const { asset, data } = await readMediaAsset(assetId);
+      const uploaded = await uploadMetaWhatsAppMedia({
+        data,
+        mimeType: asset.mimeType,
+        filename: message.filename || asset.originalName,
+      });
+      metaMediaId = uploaded.mediaId;
+    } else {
+      metaMediaId = `preview_${assetId.slice(0, 16)}`;
+    }
+  }
 
   const payload = preparedPayload({
     waId: message.conversation.contact.waId,
     type: message.type,
     text: message.text,
+    filename: message.filename,
     replyToMetaMessageId: message.replyToMetaMessageId,
     template,
     components,
+    metaMediaId,
   });
-  const mode = getOutboundMode();
 
   if (mode !== "live") {
     return {
@@ -319,6 +440,7 @@ export async function dispatchOutboundMessage(
         where: { id: message.id },
         data: {
           metaMessageId: sent.metaMessageId,
+          mediaId: isMediaMessageType(message.type) ? metaMediaId : message.mediaId,
           status: MessageStatus.SENT,
           failureCode: null,
           failureReason: null,
@@ -326,6 +448,7 @@ export async function dispatchOutboundMessage(
             ...asRecord(message.rawPayload),
             outbound: {
               ...metadata,
+              metaMediaId: isMediaMessageType(message.type) ? metaMediaId : null,
               attemptCount: previousAttempts + 1,
               lastAttemptAt: sentAt.toISOString(),
               metaAcceptedStatus: sent.statusCode,
@@ -370,6 +493,7 @@ export async function dispatchOutboundMessage(
     await prisma.whatsAppMessage.update({
       where: { id: message.id },
       data: {
+        mediaId: isMediaMessageType(message.type) ? metaMediaId : message.mediaId,
         status: nextStatus,
         failureCode: retriable ? "RETRIABLE_META_ERROR" : "META_SEND_FAILED",
         failureReason: reason,
@@ -377,6 +501,7 @@ export async function dispatchOutboundMessage(
           ...asRecord(message.rawPayload),
           outbound: {
             ...metadata,
+            metaMediaId: isMediaMessageType(message.type) ? metaMediaId : null,
             attemptCount: previousAttempts + 1,
             lastAttemptAt: new Date().toISOString(),
             lastError: reason,
