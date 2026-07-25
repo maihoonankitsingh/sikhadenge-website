@@ -150,7 +150,7 @@ export function detectLanguage(
 
   const hinglishMarkers = [
     /\b(bhai|kya|kaise|kab|kitna|kitni|mujhe|chahiye|nahi|hai|hoon|karna|batao)\b/i,
-    /\b(aap|apka|mera|mere|wala|wali|samjhe)/i,
+    /\b(aap|apka|mera|mere|wala|wali|samjhe)\b/i,
   ];
   if (hinglishMarkers.some((pattern) => pattern.test(message))) return "hinglish";
   return "en";
