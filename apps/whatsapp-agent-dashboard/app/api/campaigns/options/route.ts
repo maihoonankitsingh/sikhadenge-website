@@ -1,8 +1,8 @@
 import { DashboardRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
-import { getCampaignTargetingOptions } from "../../../../../lib/campaigns/targeting-service";
+import { getCurrentDashboardUser } from "../../../../lib/auth/session";
+import { getCampaignTargetingOptions } from "../../../../lib/campaigns/targeting-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
