@@ -56,8 +56,10 @@ export async function getCurrentDashboardUser(): Promise<DashboardIdentity | nul
   const session = await prisma.dashboardSession.findUnique({
     where: { tokenHash: hashSessionToken(token) },
     select: {
+      id: true,
       expiresAt: true,
       revokedAt: true,
+      lastSeenAt: true,
       user: {
         select: {
           id: true,
@@ -77,6 +79,13 @@ export async function getCurrentDashboardUser(): Promise<DashboardIdentity | nul
     !session.user.isActive
   ) {
     return null;
+  }
+
+  if (Date.now() - session.lastSeenAt.getTime() >= 30_000) {
+    await prisma.dashboardSession.update({
+      where: { id: session.id },
+      data: { lastSeenAt: new Date() },
+    });
   }
 
   return {
