@@ -11,7 +11,7 @@
 }
 
 .rail-button[title="Team"]::before {
-  background-image: var(--sd-icon-ai-managed) !important;
+  background-image: var(--sd-icon-ai) !important;
 }
 
 .rail-button[title="Campaigns"]::before {
@@ -19,7 +19,7 @@
 }
 
 .rail-button[title="Templates"]::before {
-  background-image: var(--sd-icon-ai-managed) !important;
+  background-image: var(--sd-icon-ai) !important;
 }
 
 .rail-button[title="Analytics"]::before {
