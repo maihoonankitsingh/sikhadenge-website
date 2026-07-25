@@ -8,13 +8,28 @@ const ROUTES: Record<string, string> = {
   Contacts: "/contacts",
   Leads: "/leads",
   Team: "/team",
+  Engagement: "/engagement",
   Analytics: "/analytics",
   Knowledge: "/knowledge",
   Campaigns: "/campaigns",
   Automation: "/automation",
   Templates: "/templates",
+  Integrations: "/integrations",
+  Admin: "/admin",
+  Cutover: "/cutover",
   Settings: "/settings",
 };
+
+const DYNAMIC_TITLES = [
+  "Team",
+  "Engagement",
+  "Campaigns",
+  "Automation",
+  "Templates",
+  "Integrations",
+  "Admin",
+  "Cutover",
+] as const;
 
 export default function SidebarNavigationBridge() {
   const pathname = usePathname();
@@ -27,7 +42,7 @@ export default function SidebarNavigationBridge() {
       document.querySelectorAll<HTMLElement>(".rail nav"),
     );
     for (const navigation of navigationGroups) {
-      for (const title of ["Team", "Campaigns", "Automation", "Templates"] as const) {
+      for (const title of DYNAMIC_TITLES) {
         if (!navigation.querySelector(`.rail-button[title="${title}"]`)) {
           const button = document.createElement("button");
           button.className = "rail-button";
