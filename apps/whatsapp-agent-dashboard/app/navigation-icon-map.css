@@ -14,6 +14,10 @@
   background-image: var(--sd-icon-automation) !important;
 }
 
+.rail-button[title="Templates"]::before {
+  background-image: var(--sd-icon-ai) !important;
+}
+
 .rail-button[title="Analytics"]::before {
   background-image: var(--sd-icon-analytics) !important;
 }
