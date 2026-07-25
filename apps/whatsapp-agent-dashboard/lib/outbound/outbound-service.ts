@@ -62,12 +62,12 @@ function outboundMetadata(value: Prisma.JsonValue | null): Record<string, unknow
 }
 
 function isMediaMessageType(type: MessageType): boolean {
-  return [
-    MessageType.IMAGE,
-    MessageType.DOCUMENT,
-    MessageType.VIDEO,
-    MessageType.AUDIO,
-  ].includes(type);
+  return (
+    type === MessageType.IMAGE ||
+    type === MessageType.DOCUMENT ||
+    type === MessageType.VIDEO ||
+    type === MessageType.AUDIO
+  );
 }
 
 function mediaTypeFromMessageType(type: MessageType): OutboundMediaType {
