@@ -25,6 +25,15 @@ export function isServiceWindowOpen(
   return Boolean(serviceWindowExpiresAt && serviceWindowExpiresAt.getTime() > now.getTime());
 }
 
+function messageTypeFor(content: OutboundContent): MessageType {
+  if (content.kind === "template") return MessageType.TEMPLATE;
+  if (content.kind === "text") return MessageType.TEXT;
+  if (content.mediaType === "image") return MessageType.IMAGE;
+  if (content.mediaType === "document") return MessageType.DOCUMENT;
+  if (content.mediaType === "video") return MessageType.VIDEO;
+  return MessageType.AUDIO;
+}
+
 export function evaluateOutboundPolicy(input: {
   context: OutboundPolicyContext;
   content: OutboundContent;
@@ -35,8 +44,7 @@ export function evaluateOutboundPolicy(input: {
     input.context.serviceWindowExpiresAt,
     now,
   );
-  const messageType =
-    input.content.kind === "template" ? MessageType.TEMPLATE : MessageType.TEXT;
+  const messageType = messageTypeFor(input.content);
 
   if (input.context.consentStatus === ConsentStatus.OPTED_OUT) {
     return {
@@ -97,6 +105,15 @@ export function evaluateOutboundPolicy(input: {
         serviceWindowOpen,
       };
     }
+  }
+
+  if (input.content.kind === "media" && !serviceWindowOpen) {
+    return {
+      allowed: false,
+      reason: "TEMPLATE_REQUIRED_OUTSIDE_SERVICE_WINDOW",
+      messageType,
+      serviceWindowOpen,
+    };
   }
 
   if (
