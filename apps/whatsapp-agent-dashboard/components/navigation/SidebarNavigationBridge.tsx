@@ -9,6 +9,7 @@ const ROUTES: Record<string, string> = {
   Leads: "/leads",
   Analytics: "/analytics",
   Knowledge: "/knowledge",
+  Campaigns: "/campaigns",
   Settings: "/settings",
 };
 
