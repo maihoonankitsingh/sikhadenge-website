@@ -140,7 +140,7 @@ try {
 
     const metrics = await page.evaluate(({ expectedSidebar }) => {
       const main = document.querySelector("main");
-      const header = document.querySelector("header");
+      const header = main?.querySelector(":scope > header") || document.querySelector("main > header");
       const h1 = document.querySelector("h1");
       const faqItems = [...document.querySelectorAll("#faq details")];
       const faqSummaries = [...document.querySelectorAll("#faq summary")];
