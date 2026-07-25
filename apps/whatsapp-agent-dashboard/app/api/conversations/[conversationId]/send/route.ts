@@ -2,7 +2,10 @@ import { DashboardRole, MessageActor } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
-import { queueOutboundMessage } from "../../../../../lib/outbound/outbound-service";
+import {
+  dispatchOutboundMessage,
+  queueOutboundMessage,
+} from "../../../../../lib/outbound/outbound-service";
 import type {
   OutboundContent,
   OutboundMediaType,
@@ -141,7 +144,7 @@ export async function POST(
       actor: { id: user.id, role: user.role },
     });
 
-    const result = await queueOutboundMessage({
+    const queued = await queueOutboundMessage({
       conversationId: context.params.conversationId,
       actor: MessageActor.COUNSELOR,
       sentById: user.id,
@@ -149,13 +152,36 @@ export async function POST(
       idempotencyKey,
     });
 
-    return NextResponse.json(result, {
-      status: result.duplicate ? 200 : 201,
-      headers: { "Cache-Control": "no-store" },
-    });
+    let dispatch = null;
+    let dispatchError: string | null = null;
+    if (queued.message?.id && !queued.duplicate) {
+      try {
+        dispatch = await dispatchOutboundMessage(queued.message.id);
+      } catch (error) {
+        dispatchError = error instanceof Error ? error.message : "Meta delivery failed.";
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ...queued,
+        outboundSent: dispatch?.outboundSent ?? false,
+        dispatchStatus: dispatch?.status ?? queued.message?.status ?? null,
+        dispatchMode: dispatch?.mode ?? null,
+        dispatchError,
+      },
+      {
+        status: queued.duplicate ? 200 : 201,
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Queueing failed.";
-    const status = detail.includes("not found") ? 404 : detail.includes("owned") || detail.includes("Claim") || detail.includes("Human mode") ? 409 : 422;
+    const status = detail.includes("not found")
+      ? 404
+      : detail.includes("owned") || detail.includes("Claim") || detail.includes("Human mode")
+        ? 409
+        : 422;
     return NextResponse.json({ error: detail, outboundSent: false }, { status });
   }
 }
