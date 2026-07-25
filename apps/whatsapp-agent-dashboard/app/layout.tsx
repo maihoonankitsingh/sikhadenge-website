@@ -14,6 +14,8 @@ import "./png-icons.css";
 import "./balanced-ui.css";
 import "./module-pages.css";
 import "./knowledge-manager.css";
+import "./targeting-manager.css";
+import "./campaigns-module.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
