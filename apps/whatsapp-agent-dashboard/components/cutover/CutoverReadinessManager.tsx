@@ -6,6 +6,8 @@ type Readiness = {
   readyForSupervisedCutover: boolean;
   readyForAutomaticCutover: boolean;
   cutoverExecuted: boolean;
+  metaConnected?: boolean;
+  outboundMode?: "disabled" | "dry_run" | "live";
   checks: Array<{
     id: string;
     group: string;
@@ -26,7 +28,11 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 function humanise(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export default function CutoverReadinessManager() {
@@ -51,20 +57,32 @@ export default function CutoverReadinessManager() {
     void load();
   }, []);
 
-  if (loading && !data) return <div className="suite-loading">Running final cutover readiness audit…</div>;
+  if (loading && !data) return <div className="suite-loading">Running production readiness audit…</div>;
   if (!data) return <div className="suite-alert error">{error || "Cutover readiness unavailable."}</div>;
 
   const groups = Array.from(new Set(data.checks.map((check) => check.group)));
+  const headline = data.cutoverExecuted
+    ? data.outboundMode === "live"
+      ? "Cloud API migration and live outbound delivery are active"
+      : "Cloud API migration is complete; outbound activation is pending"
+    : data.readyForSupervisedCutover
+      ? "Technical prerequisites can proceed to supervised review"
+      : "Cutover remains blocked";
 
   return (
     <div className="suite-stack">
       <section className="cutover-banner">
         <div>
-          <span>Phase 20 safety boundary</span>
-          <h3>{data.readyForSupervisedCutover ? "Technical prerequisites can proceed to supervised review" : "Cutover remains blocked"}</h3>
-          <p>No Meta registration, AiSensy disconnection, outbound activation or login consolidation is performed from this page.</p>
+          <span>Production connection control</span>
+          <h3>{headline}</h3>
+          <p>
+            Incoming ownership is determined from configured Meta credentials and stored production webhook evidence.
+            Manual, AI, campaign and automation sending remain independently controlled.
+          </p>
         </div>
-        <button type="button" className="secondary" onClick={() => void load()}>Run audit again</button>
+        <button type="button" className="secondary" onClick={() => void load()} disabled={loading}>
+          {loading ? "Running…" : "Run audit again"}
+        </button>
       </section>
 
       {error ? <div className="suite-alert error">{error}</div> : null}
@@ -100,15 +118,17 @@ export default function CutoverReadinessManager() {
           </div>
         </div>
         <div className="suite-card">
-          <header><div><span>Non-negotiable controls</span><h3>Final-cutover constraints</h3></div></header>
+          <header><div><span>Operational controls</span><h3>Current constraints</h3></div></header>
           <div className="suite-list compact">
-            {Object.entries(data.constraints).map(([name, value]) => <article key={name}><span>{humanise(name)}</span><strong>{value ? "Required" : "No"}</strong></article>)}
+            {Object.entries(data.constraints).map(([name, value]) => <article key={name}><span>{humanise(name)}</span><strong>{value ? "Yes" : "No"}</strong></article>)}
           </div>
         </div>
       </section>
 
-      <div className="suite-alert warning">
-        The active SIM makes verification possible, but OTP and the six-digit two-step PIN must stay private. AiSensy remains the live owner until registration, webhook and rollback checks succeed in the supervised cutover window.
+      <div className={`suite-alert ${data.cutoverExecuted ? "success" : "warning"}`}>
+        {data.cutoverExecuted
+          ? `The SikhaDenge-owned webhook is receiving production traffic. Effective outbound mode: ${data.outboundMode || "disabled"}.`
+          : "Complete phone registration and store a real inbound webhook event before retiring the previous provider."}
       </div>
     </div>
   );
