@@ -54,9 +54,6 @@ function normalizeTemplateName(value: string): string {
     .replace(/^_+|_+$/g, "")
     .replace(/_+/g, "_");
   if (!cleaned) throw new Error("Template name must contain letters or numbers.");
-  if (!/^[a-z0-9_]+$/.test(cleaned)) {
-    throw new Error("Template name may contain lowercase letters, numbers and underscores only.");
-  }
   return cleaned;
 }
 
@@ -82,7 +79,7 @@ function normalizeComponents(value: unknown): TemplateComponent[] {
   }
   if (value.length > 10) throw new Error("Too many template components.");
 
-  return value.map((component, index) => {
+  const normalized = value.map((component, index) => {
     if (!component || typeof component !== "object" || Array.isArray(component)) {
       throw new Error(`Component ${index + 1} is invalid.`);
     }
@@ -92,12 +89,16 @@ function normalizeComponents(value: unknown): TemplateComponent[] {
       throw new Error(`Component ${index + 1} has an unsupported type.`);
     }
 
-    const normalized: TemplateComponent = { ...record, type };
-    if (typeof normalized.text === "string") {
-      normalized.text = normalized.text.trim();
-    }
-    return normalized;
+    const result: TemplateComponent = { ...record, type };
+    if (typeof result.text === "string") result.text = result.text.trim();
+    return result;
   });
+
+  const body = normalized.find((component) => component.type === "BODY");
+  if (!body || typeof body.text !== "string" || !body.text.trim()) {
+    throw new Error("A non-empty BODY component is required.");
+  }
+  return normalized;
 }
 
 function metaStatus(value: string | undefined): TemplateStatus {
@@ -106,7 +107,6 @@ function metaStatus(value: string | undefined): TemplateStatus {
   if (normalized === "REJECTED") return TemplateStatus.REJECTED;
   if (normalized === "PAUSED") return TemplateStatus.PAUSED;
   if (normalized === "DISABLED" || normalized === "DELETED") return TemplateStatus.DISABLED;
-  if (normalized === "PENDING" || normalized === "IN_APPEAL") return TemplateStatus.PENDING;
   return TemplateStatus.PENDING;
 }
 
@@ -148,12 +148,23 @@ async function metaFetch<T>(url: string, init?: RequestInit): Promise<T> {
     };
     if (!response.ok) {
       const suffix = payload.error?.code ? ` (${payload.error.code})` : "";
-      throw new Error(`${payload.error?.message || `Meta request failed with HTTP ${response.status}`}${suffix}`);
+      throw new Error(
+        `${payload.error?.message || `Meta request failed with HTTP ${response.status}`}${suffix}`,
+      );
     }
     return payload;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function hasPlaceholderMediaHandle(components: Prisma.JsonValue): boolean {
+  if (!Array.isArray(components)) return false;
+  return components.some((component) => {
+    if (!component || typeof component !== "object" || Array.isArray(component)) return false;
+    const example = (component as Record<string, unknown>).example;
+    return JSON.stringify(example ?? "").includes("REPLACE_WITH_META_SAMPLE_HANDLE_BEFORE_SUBMIT");
+  });
 }
 
 export async function listTemplates(limit = 200) {
@@ -199,8 +210,14 @@ export async function submitTemplateToMeta(input: {
     where: { id: input.templateId },
   });
   if (!template) throw new Error("WhatsApp template not found.");
-  if (![TemplateStatus.DRAFT, TemplateStatus.REJECTED].includes(template.status)) {
+  if (
+    template.status !== TemplateStatus.DRAFT &&
+    template.status !== TemplateStatus.REJECTED
+  ) {
     throw new Error("Only draft or rejected templates can be submitted.");
+  }
+  if (hasPlaceholderMediaHandle(template.components)) {
+    throw new Error("Media-header sample handle must be uploaded before Meta submission.");
   }
 
   const config = templateConfig();
@@ -258,56 +275,67 @@ export async function syncTemplatesFromMeta(actorId: string) {
   const records: MetaTemplateRecord[] = [];
 
   for (let page = 0; nextUrl && page < 10; page += 1) {
-    const response: MetaTemplateListResponse = await metaFetch<MetaTemplateListResponse>(nextUrl);
+    const response = await metaFetch<MetaTemplateListResponse>(nextUrl);
     records.push(...(response.data ?? []));
     nextUrl = response.paging?.next;
   }
 
   let created = 0;
   let updated = 0;
+  let skipped = 0;
+  const rejectionSummary: Array<{ name: string; reason: string | null }> = [];
+
   for (const record of records) {
-    if (!record.id || !record.name || !record.language) continue;
+    if (!record.id || !record.name || !record.language) {
+      skipped += 1;
+      continue;
+    }
     const existing = await prisma.whatsAppTemplate.findFirst({
-      where: {
-        OR: [{ metaTemplateId: record.id }, { name: record.name }],
-      },
+      where: { OR: [{ metaTemplateId: record.id }, { name: record.name }] },
     });
     const components = Array.isArray(record.components) ? record.components : [];
-    const metadata = {
-      components,
-      sync: {
-        rejectedReason: record.rejected_reason ?? null,
-        qualityScore: record.quality_score ?? null,
-      },
-    };
 
     if (existing) {
       await prisma.whatsAppTemplate.update({
         where: { id: existing.id },
         data: {
           metaTemplateId: record.id,
-          name: record.name,
           language: record.language,
           category: record.category || existing.category,
           status: metaStatus(record.status),
-          components: toJson(metadata),
+          components: toJson(components),
           lastSyncedAt: new Date(),
         },
       });
       updated += 1;
     } else {
-      await prisma.whatsAppTemplate.create({
-        data: {
-          metaTemplateId: record.id,
-          name: record.name,
-          language: record.language,
-          category: record.category || "UTILITY",
-          status: metaStatus(record.status),
-          components: toJson(metadata),
-          lastSyncedAt: new Date(),
-        },
-      });
-      created += 1;
+      try {
+        await prisma.whatsAppTemplate.create({
+          data: {
+            metaTemplateId: record.id,
+            name: record.name,
+            language: record.language,
+            category: record.category || "UTILITY",
+            status: metaStatus(record.status),
+            components: toJson(components),
+            lastSyncedAt: new Date(),
+          },
+        });
+        created += 1;
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          skipped += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (record.rejected_reason) {
+      rejectionSummary.push({ name: record.name, reason: record.rejected_reason });
     }
   }
 
@@ -316,9 +344,15 @@ export async function syncTemplatesFromMeta(actorId: string) {
       actorId,
       action: "WHATSAPP_TEMPLATES_SYNCED",
       entityType: "WhatsAppTemplate",
-      after: toJson({ fetched: records.length, created, updated }),
+      after: toJson({
+        fetched: records.length,
+        created,
+        updated,
+        skipped,
+        rejected: rejectionSummary.slice(0, 50),
+      }),
     },
   });
 
-  return { fetched: records.length, created, updated };
+  return { fetched: records.length, created, updated, skipped };
 }
