@@ -2,7 +2,6 @@ import {
   AgentMode,
   MessageActor,
   MessageDirection,
-  MessageStatus,
   MessageType,
   Prisma,
 } from "@prisma/client";
@@ -15,7 +14,10 @@ import {
   queueOutboundMessage,
 } from "../outbound/outbound-service";
 import { getAgentRuntimePolicy } from "../observability/runtime-policy";
-import { compactOperationalError, sanitizeOperationalValue } from "../observability/sanitize";
+import {
+  compactOperationalError,
+  sanitizeOperationalValue,
+} from "../observability/sanitize";
 import { analyzeAndPersistConversation } from "./conversation-intelligence";
 
 export type LiveAgentLifecycleResult = {
@@ -117,10 +119,11 @@ async function finishLifecycle(
   });
 }
 
-async function markUnsupportedInbound(input: {
+async function markReviewRequired(input: {
   messageId: string;
   conversationId: string;
-  messageType: MessageType;
+  reason: "UNSUPPORTED_MEDIA" | "AGENT_UNAVAILABLE";
+  messageType?: MessageType;
 }) {
   await prisma.$transaction(async (transaction) => {
     const conversation = await transaction.whatsAppConversation.findUnique({
@@ -134,19 +137,22 @@ async function markUnsupportedInbound(input: {
       data: {
         agentMode: AgentMode.REVIEW_REQUIRED,
         humanTakeoverAt: new Date(),
-        humanTakeoverReason: "UNSUPPORTED_MEDIA",
+        humanTakeoverReason: input.reason,
       },
     });
     await transaction.auditLog.create({
       data: {
-        action: "AGENT_MEDIA_HANDOFF_REQUIRED",
+        action:
+          input.reason === "UNSUPPORTED_MEDIA"
+            ? "AGENT_MEDIA_HANDOFF_REQUIRED"
+            : "AGENT_RUNTIME_HANDOFF_REQUIRED",
         entityType: "WhatsAppConversation",
         entityId: conversation.id,
         after: toJson({
           sourceMessageId: input.messageId,
-          messageType: input.messageType,
+          messageType: input.messageType ?? null,
           agentMode: AgentMode.REVIEW_REQUIRED,
-          handoffReason: "UNSUPPORTED_MEDIA",
+          handoffReason: input.reason,
         }),
       },
     });
@@ -160,18 +166,14 @@ export async function processInboundAgentLifecycle(input: {
     where: { id: input.messageId },
     select: {
       id: true,
+      metaMessageId: true,
       conversationId: true,
       direction: true,
       actor: true,
       type: true,
       text: true,
       status: true,
-      conversation: {
-        select: {
-          agentMode: true,
-          assignedToId: true,
-        },
-      },
+      conversation: { select: { agentMode: true } },
     },
   });
 
@@ -258,9 +260,10 @@ export async function processInboundAgentLifecycle(input: {
     }
 
     if (message.type !== MessageType.TEXT || !message.text?.trim()) {
-      await markUnsupportedInbound({
+      await markReviewRequired({
         messageId: message.id,
         conversationId: message.conversationId,
+        reason: "UNSUPPORTED_MEDIA",
         messageType: message.type,
       });
       const result: LiveAgentLifecycleResult = {
@@ -291,10 +294,9 @@ export async function processInboundAgentLifecycle(input: {
       actorId: null,
     });
 
-    const handoff = decision.requiresHuman;
-    const liveReady = getLiveAgentPolicy().liveAutoReplyReady;
+    const livePolicy = getLiveAgentPolicy();
     const shouldAutoReply =
-      liveReady &&
+      livePolicy.liveAutoReplyReady &&
       decision.shouldReply &&
       Boolean(decision.reply.trim()) &&
       !decision.requiresHuman &&
@@ -302,11 +304,11 @@ export async function processInboundAgentLifecycle(input: {
       intelligence.conversation.agentMode === AgentMode.AI;
 
     if (!shouldAutoReply) {
-      const reason = handoff
+      const reason = decision.requiresHuman
         ? decision.handoffReason || "HUMAN_REVIEW_REQUIRED"
         : decision.intent === "OPT_OUT"
           ? "OPT_OUT_RECORDED_NO_AUTOREPLY"
-          : liveReady
+          : livePolicy.liveAutoReplyReady
             ? "DECISION_NOT_SENDABLE"
             : "LIVE_AUTOREPLY_LOCKED";
       const result: LiveAgentLifecycleResult = {
@@ -314,8 +316,8 @@ export async function processInboundAgentLifecycle(input: {
         analyzed: true,
         queued: false,
         sent: false,
-        handoff,
-        skipped: !handoff,
+        handoff: decision.requiresHuman,
+        skipped: !decision.requiresHuman,
         failed: false,
         reason,
       };
@@ -324,10 +326,10 @@ export async function processInboundAgentLifecycle(input: {
         confidence: decision.confidence,
         requiresHuman: decision.requiresHuman,
         handoffReason: decision.handoffReason,
-        knowledgeReferences: decision.knowledgeReferences.length,
+        knowledgeReferenceCount: decision.knowledgeReferences.length,
         model: decision.model,
         telemetry: decision.telemetry ?? null,
-        policy: getLiveAgentPolicy(),
+        policy: livePolicy,
       });
       return result;
     }
@@ -339,17 +341,17 @@ export async function processInboundAgentLifecycle(input: {
       content: {
         kind: "text",
         text: decision.reply,
-        replyToMetaMessageId: message.id,
+        replyToMetaMessageId: message.metaMessageId,
       },
       idempotencyKey: `agent-reply:${message.id}`,
     });
 
     let sent = false;
-    let dispatchStatus: MessageStatus | null = null;
-    if (queued.message?.id && getLiveAgentPolicy().immediateDispatchEnabled) {
+    let dispatchStatus: "QUEUED" | "SENT" | "FAILED" | null = null;
+    if (queued.message?.id && livePolicy.immediateDispatchEnabled) {
       const dispatch = await dispatchOutboundMessage(queued.message.id);
       dispatchStatus = dispatch.status;
-      sent = dispatch.status === MessageStatus.SENT;
+      sent = dispatch.status === "SENT" && dispatch.outboundSent;
     }
 
     const result: LiveAgentLifecycleResult = {
@@ -359,15 +361,20 @@ export async function processInboundAgentLifecycle(input: {
       sent,
       handoff: false,
       skipped: false,
-      failed: false,
-      reason: sent ? "AI_REPLY_SENT" : "AI_REPLY_QUEUED",
+      failed: dispatchStatus === "FAILED",
+      reason:
+        dispatchStatus === "FAILED"
+          ? "AI_REPLY_DISPATCH_FAILED"
+          : sent
+            ? "AI_REPLY_SENT"
+            : "AI_REPLY_QUEUED",
     };
     await finishLifecycle(message.id, result, {
       outboundMessageId: queued.message?.id ?? null,
       dispatchStatus,
       intent: decision.intent,
       confidence: decision.confidence,
-      knowledgeReferences: decision.knowledgeReferences.length,
+      knowledgeReferenceCount: decision.knowledgeReferences.length,
       model: decision.model,
       telemetry: decision.telemetry ?? null,
     });
@@ -386,22 +393,17 @@ export async function processInboundAgentLifecycle(input: {
     };
 
     try {
-      await prisma.whatsAppConversation.updateMany({
-        where: {
-          id: message.conversationId,
-          agentMode: AgentMode.AI,
-        },
-        data: {
-          agentMode: AgentMode.REVIEW_REQUIRED,
-          humanTakeoverAt: new Date(),
-          humanTakeoverReason: "AGENT_UNAVAILABLE",
-        },
+      await markReviewRequired({
+        messageId: message.id,
+        conversationId: message.conversationId,
+        reason: "AGENT_UNAVAILABLE",
+        messageType: message.type,
       });
       await finishLifecycle(message.id, result, {
         sourceMessageStatus: message.status,
       });
     } catch {
-      // Webhook ingestion must remain successful even when lifecycle logging fails.
+      // Webhook ingestion must remain successful even if lifecycle logging fails.
     }
     return result;
   }
@@ -419,16 +421,14 @@ export async function getLiveAgentStatus() {
       orderBy: { receivedAt: "desc" },
       take: 25,
       select: {
-        eventKey: true,
         processedAt: true,
         processingError: true,
         payload: true,
-        receivedAt: true,
       },
     }),
   ]);
 
-  const metrics = recentLifecycle.reduce(
+  const recent = recentLifecycle.reduce(
     (totals, event) => {
       const payload =
         event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)
@@ -447,7 +447,7 @@ export async function getLiveAgentStatus() {
   return {
     policy,
     conversations: { aiMode, pendingReview },
-    recent: metrics,
+    recent,
     sampleSize: recentLifecycle.length,
     generatedAt: new Date().toISOString(),
   };
