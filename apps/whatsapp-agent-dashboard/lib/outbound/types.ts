@@ -1,6 +1,7 @@
 import type { MessageActor, MessageType } from "@prisma/client";
 
 export type OutboundMode = "disabled" | "dry_run" | "live";
+export type OutboundMediaType = "image" | "document" | "video" | "audio";
 
 export type OutboundTextRequest = {
   kind: "text";
@@ -14,7 +15,19 @@ export type OutboundTemplateRequest = {
   components?: unknown[];
 };
 
-export type OutboundContent = OutboundTextRequest | OutboundTemplateRequest;
+export type OutboundMediaRequest = {
+  kind: "media";
+  assetId: string;
+  mediaType: OutboundMediaType;
+  caption?: string | null;
+  filename?: string | null;
+  replyToMetaMessageId?: string | null;
+};
+
+export type OutboundContent =
+  | OutboundTextRequest
+  | OutboundTemplateRequest
+  | OutboundMediaRequest;
 
 export type QueueOutboundInput = {
   conversationId: string;
@@ -36,7 +49,7 @@ export type PreparedMetaMessage = {
   messaging_product: "whatsapp";
   recipient_type: "individual";
   to: string;
-  type: "text" | "template";
+  type: "text" | "template" | OutboundMediaType;
   text?: {
     preview_url: boolean;
     body: string;
@@ -46,6 +59,10 @@ export type PreparedMetaMessage = {
     language: { code: string };
     components?: unknown[];
   };
+  image?: { id: string; caption?: string };
+  document?: { id: string; caption?: string; filename?: string };
+  video?: { id: string; caption?: string };
+  audio?: { id: string };
   context?: {
     message_id: string;
   };
