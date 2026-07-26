@@ -32,6 +32,7 @@ import "./live-agent-manager.css";
 import "./workable-dashboard.css";
 import "./executive-redesign.css";
 import "./executive-layout-hotfix.css";
+import "./executive-sidebar-hard-lock.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
