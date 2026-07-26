@@ -1,5 +1,6 @@
 import type {
   AgentIntent,
+  AgentKnowledgeReference,
   AgentLanguage,
   AgentLeadUpdates,
 } from "./types";
@@ -49,6 +50,14 @@ const DURATION_QUERY = [
 
 function matchesAny(message: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(message));
+}
+
+function preferredLanguage(message: string): AgentLanguage {
+  const explicitEnglish =
+    /\b(?:what|which|how|when|where|please|tell\s+me|can\s+i|is\s+the|are\s+the|i\s+want)\b/i.test(
+      message,
+    );
+  return explicitEnglish ? "en" : "hinglish";
 }
 
 function courseDetailsReply(language: AgentLanguage): string {
@@ -139,4 +148,28 @@ export function getSingleCourseReply(input: {
   }
 
   return null;
+}
+
+export function searchSingleCourseReplies(
+  query: string,
+): AgentKnowledgeReference[] {
+  const match = getSingleCourseReply({
+    message: query,
+    language: preferredLanguage(query),
+  });
+  if (!match) return [];
+
+  return [
+    {
+      chunkId: `single-course:${match.intent.toLowerCase()}`,
+      documentId: "sikhadenge-single-course-facts-v1",
+      title: "SikhaDenge Become AI Expert Fixed Facts",
+      heading:
+        match.intent === "BATCH_SCHEDULE"
+          ? "Become AI Expert class schedule"
+          : "Become AI Expert program details",
+      content: match.reply,
+      score: 1,
+    },
+  ];
 }
