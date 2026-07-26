@@ -16,7 +16,6 @@ import {
   processInboundAgentLifecycle,
   type LiveAgentLifecycleResult,
 } from "./live-agent-service";
-import { classifyMessage } from "./rule-engine";
 
 export type WebhookAgentBridgeResult = {
   matched: number;
@@ -65,9 +64,6 @@ export async function processWebhookAgentBridge(
     result.matched += 1;
     let lifecycle: LiveAgentLifecycleResult;
     try {
-      const classification = stored.text?.trim()
-        ? classifyMessage(stored.text, null)
-        : null;
       const policy = getLiveAgentPolicy();
       const shouldShowTyping =
         policy.liveAutoReplyReady &&
@@ -75,10 +71,7 @@ export async function processWebhookAgentBridge(
         stored.actor === MessageActor.CUSTOMER &&
         stored.type === MessageType.TEXT &&
         Boolean(stored.text?.trim()) &&
-        stored.conversation.agentMode === AgentMode.AI &&
-        Boolean(classification) &&
-        classification?.intent !== "OPT_OUT" &&
-        classification?.requiresHuman !== true;
+        stored.conversation.agentMode === AgentMode.AI;
 
       if (shouldShowTyping) {
         const startedAt = Date.now();
