@@ -320,8 +320,8 @@ export function BlogLongformCareerGuide() {
     >
       <BlogLeadPopup />
 
-      <header className="border-b border-slate-200 bg-white pt-20 sm:pt-24">
-        <div className="mx-auto max-w-[1320px] px-4 pb-14 sm:px-6 sm:pb-16 lg:px-8">
+      <header className="border-b border-slate-200 bg-white pt-[72px] sm:pt-20">
+        <div className="mx-auto max-w-[1320px] px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 text-sm font-medium text-slate-500">
             <Link href="/" className="hover:text-blue-700">Home</Link>
             <span>/</span>
@@ -330,7 +330,7 @@ export function BlogLongformCareerGuide() {
             <span className="text-slate-700">AI Career For Beginners Without Coding</span>
           </nav>
 
-          <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center xl:gap-16">
+          <div className="mt-6 grid gap-8 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center xl:gap-16">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">
                 <Sparkles className="h-4 w-4" /> Beginner AI career guide
