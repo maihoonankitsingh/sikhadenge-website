@@ -13,6 +13,7 @@ type DashboardModuleShellProps = {
     | "Engagement"
     | "Analytics"
     | "Knowledge"
+    | "Agent Training"
     | "Campaigns"
     | "Automation"
     | "Templates"
@@ -36,6 +37,7 @@ const navItems = [
   { title: "Engagement", href: "/engagement" },
   { title: "Analytics", href: "/analytics" },
   { title: "Knowledge", href: "/knowledge" },
+  { title: "Agent Training", href: "/training" },
   { title: "Campaigns", href: "/campaigns" },
   { title: "Automation", href: "/automation" },
   { title: "Templates", href: "/templates" },
@@ -52,6 +54,7 @@ const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Engagement: "/dashboard-icons/03-contacts.png",
   Analytics: "/dashboard-icons/07-analytics.png",
   Knowledge: "/dashboard-icons/08-knowledge.png",
+  "Agent Training": "/dashboard-icons/08-knowledge.png",
   Campaigns: "/dashboard-icons/09-automation.png",
   Automation: "/dashboard-icons/09-automation.png",
   Templates: "/dashboard-icons/04-ai-managed.png",
