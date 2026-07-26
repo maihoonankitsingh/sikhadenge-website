@@ -67,13 +67,23 @@ export function getWhatsAppTypingPolicy() {
 
 export async function showWhatsAppTypingIndicator(
   metaMessageId: string,
-): Promise<{ shown: boolean; startedAt: number; statusCode: number | null }> {
-  const startedAt = Date.now();
+): Promise<{
+  shown: boolean;
+  requestedAt: number;
+  acknowledgedAt: number;
+  statusCode: number | null;
+}> {
+  const requestedAt = Date.now();
   const policy = getWhatsAppTypingPolicy();
   const messageId = metaMessageId.trim();
 
   if (!policy.enabled || !messageId || getOutboundMode() !== "live") {
-    return { shown: false, startedAt, statusCode: null };
+    return {
+      shown: false,
+      requestedAt,
+      acknowledgedAt: Date.now(),
+      statusCode: null,
+    };
   }
 
   const config = requiredLiveConfig();
@@ -115,15 +125,20 @@ export async function showWhatsAppTypingIndicator(
       );
     }
 
-    return { shown: true, startedAt, statusCode: response.status };
+    return {
+      shown: true,
+      requestedAt,
+      acknowledgedAt: Date.now(),
+      statusCode: response.status,
+    };
   } finally {
     clearTimeout(timer);
   }
 }
 
-export async function waitForTypingDelay(startedAt: number): Promise<number> {
+export async function waitForTypingDelay(acknowledgedAt: number): Promise<number> {
   const delayMs = getWhatsAppTypingPolicy().delayMs;
-  const elapsed = Math.max(0, Date.now() - startedAt);
+  const elapsed = Math.max(0, Date.now() - acknowledgedAt);
   const remaining = Math.max(0, delayMs - elapsed);
   if (remaining > 0) {
     await new Promise<void>((resolve) => setTimeout(resolve, remaining));
