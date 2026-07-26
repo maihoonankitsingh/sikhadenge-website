@@ -74,13 +74,21 @@ export async function processWebhookAgentBridge(
         stored.conversation.agentMode === AgentMode.AI;
 
       if (shouldShowTyping) {
-        const startedAt = Date.now();
+        let acknowledgedAt = Date.now();
         try {
-          await showWhatsAppTypingIndicator(event.message.id);
-        } catch {
-          // Typing indicator failure must never block the actual customer reply.
+          const indicator = await showWhatsAppTypingIndicator(event.message.id);
+          acknowledgedAt = indicator.acknowledgedAt;
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message.replace(/\s+/g, " ").slice(0, 300)
+              : "Unknown Meta typing indicator error.";
+          console.warn(`[whatsapp-typing] ${message}`);
+          acknowledgedAt = Date.now();
         }
-        await waitForTypingDelay(startedAt);
+
+        // Keep the reply unsent for a full delay after Meta acknowledges typing.
+        await waitForTypingDelay(acknowledgedAt);
       }
 
       lifecycle = await processInboundAgentLifecycle({ messageId: stored.id });
