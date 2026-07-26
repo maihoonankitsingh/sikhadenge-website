@@ -10,6 +10,7 @@ import { searchConciseSalesReplies } from "./concise-sales-replies";
 import { searchIndustrySalesHub } from "./industry-sales-reply-hub";
 import { getAgentPolicy } from "./policy";
 import { searchQuestionBankKnowledge } from "./question-bank";
+import { searchSingleCourseReplies } from "./single-course-replies";
 import type { AgentKnowledgeReference } from "./types";
 
 const STOP_WORDS = new Set([
@@ -85,6 +86,7 @@ export async function retrieveApprovedKnowledge(
   query: string,
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
+  const singleCourse = searchSingleCourseReplies(query).filter(isStudentSafeReference);
   const concise = searchConciseSalesReplies(query).filter(isStudentSafeReference);
   const industry = searchIndustrySalesHub(
     query,
@@ -95,7 +97,7 @@ export async function retrieveApprovedKnowledge(
     Math.min(2, policy.maximumKnowledgeChunks),
   ).filter(isStudentSafeReference);
   const builtIn = mergeReferences(
-    [...concise, ...industry],
+    [...singleCourse, ...concise, ...industry],
     standard,
     policy.maximumKnowledgeChunks,
   );
