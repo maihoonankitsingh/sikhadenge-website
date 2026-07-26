@@ -1,9 +1,22 @@
+import {
+  AgentMode,
+  MessageActor,
+  MessageDirection,
+  MessageType,
+} from "@prisma/client";
+
 import { prisma } from "../db/prisma";
 import { normalizeWhatsAppWebhook } from "../meta/webhook-normalizer";
 import {
+  showWhatsAppTypingIndicator,
+  waitForTypingDelay,
+} from "../meta/typing-indicator";
+import {
+  getLiveAgentPolicy,
   processInboundAgentLifecycle,
   type LiveAgentLifecycleResult,
 } from "./live-agent-service";
+import { classifyMessage } from "./rule-engine";
 
 export type WebhookAgentBridgeResult = {
   matched: number;
@@ -35,7 +48,14 @@ export async function processWebhookAgentBridge(
     if (event.kind !== "message") continue;
     const stored = await prisma.whatsAppMessage.findUnique({
       where: { metaMessageId: event.message.id },
-      select: { id: true },
+      select: {
+        id: true,
+        text: true,
+        direction: true,
+        actor: true,
+        type: true,
+        conversation: { select: { agentMode: true } },
+      },
     });
     if (!stored) {
       result.skipped += 1;
@@ -45,6 +65,31 @@ export async function processWebhookAgentBridge(
     result.matched += 1;
     let lifecycle: LiveAgentLifecycleResult;
     try {
+      const classification = stored.text?.trim()
+        ? classifyMessage(stored.text, null)
+        : null;
+      const policy = getLiveAgentPolicy();
+      const shouldShowTyping =
+        policy.liveAutoReplyReady &&
+        stored.direction === MessageDirection.INBOUND &&
+        stored.actor === MessageActor.CUSTOMER &&
+        stored.type === MessageType.TEXT &&
+        Boolean(stored.text?.trim()) &&
+        stored.conversation.agentMode === AgentMode.AI &&
+        Boolean(classification) &&
+        classification?.intent !== "OPT_OUT" &&
+        classification?.requiresHuman !== true;
+
+      if (shouldShowTyping) {
+        const startedAt = Date.now();
+        try {
+          await showWhatsAppTypingIndicator(event.message.id);
+        } catch {
+          // Typing indicator failure must never block the actual customer reply.
+        }
+        await waitForTypingDelay(startedAt);
+      }
+
       lifecycle = await processInboundAgentLifecycle({ messageId: stored.id });
     } catch {
       result.failed += 1;
