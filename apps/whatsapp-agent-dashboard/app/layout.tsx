@@ -31,6 +31,7 @@ import "./team-chat.css";
 import "./live-agent-manager.css";
 import "./workable-dashboard.css";
 import "./executive-redesign.css";
+import "./executive-layout-hotfix.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
