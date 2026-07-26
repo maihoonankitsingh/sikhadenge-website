@@ -20,6 +20,15 @@ const STOP_WORDS = new Set([
   "se", "ye", "है", "का", "के", "की", "क्या", "को", "और", "से", "यह",
 ]);
 
+const HIDDEN_STUDENT_PROGRAM =
+  /AI Business Growth Architect|Business Growth Architect|growth architect program|business-focused program/iu;
+
+function isStudentSafeReference(reference: AgentKnowledgeReference): boolean {
+  return !HIDDEN_STUDENT_PROGRAM.test(
+    `${reference.title} ${reference.heading ?? ""} ${reference.content}`,
+  );
+}
+
 function tokenize(value: string): string[] {
   return Array.from(
     new Set(
@@ -61,6 +70,7 @@ function mergeReferences(
 ): AgentKnowledgeReference[] {
   const seen = new Set<string>();
   return [...builtIn, ...database]
+    .filter(isStudentSafeReference)
     .sort((left, right) => right.score - left.score)
     .filter((reference) => {
       const key = `${reference.documentId}:${reference.heading ?? ""}:${reference.content}`;
@@ -75,15 +85,15 @@ export async function retrieveApprovedKnowledge(
   query: string,
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
-  const concise = searchConciseSalesReplies(query);
+  const concise = searchConciseSalesReplies(query).filter(isStudentSafeReference);
   const industry = searchIndustrySalesHub(
     query,
     Math.min(2, policy.maximumKnowledgeChunks),
-  );
+  ).filter(isStudentSafeReference);
   const standard = searchQuestionBankKnowledge(
     query,
     Math.min(2, policy.maximumKnowledgeChunks),
-  );
+  ).filter(isStudentSafeReference);
   const builtIn = mergeReferences(
     [...concise, ...industry],
     standard,
@@ -128,6 +138,12 @@ export async function retrieveApprovedKnowledge(
   });
 
   const database = chunks
+    .filter(
+      (chunk) =>
+        !HIDDEN_STUDENT_PROGRAM.test(
+          `${chunk.document.title} ${chunk.heading ?? ""} ${chunk.content}`,
+        ),
+    )
     .map((chunk) => {
       const titleScore = lexicalScore(queryTokens, chunk.document.title);
       const headingScore = lexicalScore(queryTokens, chunk.heading ?? "");

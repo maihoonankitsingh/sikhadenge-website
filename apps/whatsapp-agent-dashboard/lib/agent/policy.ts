@@ -20,43 +20,135 @@ const SENSITIVE_DATA_PATTERNS = [
 ];
 
 const LEADING_EMOJI = /^\p{Extended_Pictographic}/u;
+const HIDDEN_PUBLIC_PROGRAM =
+  /AI Business Growth Architect|Business Growth Architect|business-focused program|growth architect program/iu;
 
 function numberFromEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name]);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function agentTimeZone(): string {
+  return process.env.AGENT_TIMEZONE?.trim() || "Asia/Kolkata";
+}
+
+function currentAgentHour(): number {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: agentTimeZone(),
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date());
+    const hour = Number(parts.find((part) => part.type === "hour")?.value);
+    return Number.isFinite(hour) ? hour : 12;
+  } catch {
+    return 12;
+  }
+}
+
+function timeGreeting(language: "en" | "hinglish"): string {
+  const hour = currentAgentHour();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 22) return "Good evening";
+  return language === "en" ? "Hello" : "Namaste";
+}
+
+function removeHiddenProgramSentences(reply: string): string {
+  const parts = reply
+    .replace(/\r/g, "\n")
+    .split(/(?<=[.!?।])\s+|\n+/u)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !HIDDEN_PUBLIC_PROGRAM.test(part));
+
+  if (parts.length > 0) return parts.join(" ");
+  return "Become AI Expert Program practical AI learning, career growth, freelancing aur productivity skills par focused hai.";
+}
+
+function replaceCourseChoiceQuestions(reply: string): string {
+  return reply
+    .replace(
+      /(?:Aap\s+)?kis\s+course(?:\s+ka\s+batch)?(?:\s+mein)?\s+(?:interested\s+hain|dekh\s+rahe\s+hain|ke\s+baare\s+mein\s+pooch\s+rahe\s+hain)\??/giu,
+      "Aapka main goal kya hai—career growth, freelancing, content/design ya office productivity?",
+    )
+    .replace(
+      /Kaunsa\s+course\s+dekh\s+rahe\s+hain\??/giu,
+      "Aapka main goal kya hai—career growth, freelancing, content/design ya office productivity?",
+    )
+    .replace(
+      /(?:Bas\s+)?course\s+ka\s+naam(?:\s+share\s+kar)?\s+(?:bata|confirm|share)\s+dijiye[.!]?/giu,
+      "Aap apna current background aur main goal bata dijiye.",
+    )
+    .replace(
+      /Which\s+(?:SikhaDenge\s+)?(?:course|program)(?:\s+batch)?\s+(?:are\s+you\s+interested\s+in|are\s+you\s+considering|would\s+you\s+like\s+details\s+about|are\s+you\s+asking\s+about)\??/giu,
+      "What is your main goal—career growth, freelancing, content/design, or office productivity?",
+    )
+    .replace(
+      /Please\s+(?:tell|share)\s+me\s+the\s+course\s+name[.!]?/giu,
+      "Please share your current background and main goal.",
+    );
+}
+
+function humanGreeting(language: "en" | "hinglish"): string {
+  const greeting = timeGreeting(language);
+  if (language === "en") {
+    return `👋 ${greeting}! How are you? I’ll guide you about SikhaDenge’s Become AI Expert Program. What is your main goal—career growth, freelancing, content/design, or office productivity?`;
+  }
+  return `👋 ${greeting} ji! Aap kaise hain? Main SikhaDenge ke Become AI Expert Program ke baare mein guide karunga. Aapka main goal kya hai—career growth, freelancing, content/design ya office productivity?`;
+}
+
 function polishGenericReply(reply: string): string {
-  const lower = reply.toLocaleLowerCase("en-IN");
+  const publicReply = replaceCourseChoiceQuestions(
+    removeHiddenProgramSentences(reply.trim()),
+  );
+  const lower = publicReply.toLocaleLowerCase("en-IN");
+
+  const looksLikeGreeting =
+    /^(?:👋\s*)?(?:hello|hi|hey|namaste|namaskar|good\s+(?:morning|afternoon|evening))/i.test(
+      publicReply,
+    ) ||
+    lower.includes("welcome to sikhadenge") ||
+    lower.includes("sikhadenge mein aapka welcome") ||
+    lower.includes("learning assistant hoon") ||
+    lower.includes("i’m the sikhadenge learning assistant");
+
+  if (looksLikeGreeting) {
+    return humanGreeting(
+      /\b(aap|hai|hain|kya|kaise|ji|namaste)\b/i.test(publicReply)
+        ? "hinglish"
+        : "en",
+    );
+  }
 
   if (
     lower.includes("ji, bataiye aap course, class timing") ||
     lower.includes("bilkul. aapka question kis baare mein hai") ||
     lower.includes("zaroor help karenge. thoda sa clear kar dijiye")
   ) {
-    return "💬 Main SikhaDenge ka learning assistant hoon 😊 Aap AI course, class timing, demo/masterclass ya admission ke baare mein kya jaanna chahenge?";
+    return "💬 Bilkul ji. Main Become AI Expert Program, class timing, demo/masterclass aur admission ke baare mein guide karunga. Aapka current background aur main goal kya hai?";
   }
 
   if (
     lower.includes("certainly. is your question about a course") ||
     lower.includes("please tell me whether you need course details")
   ) {
-    return "💬 I’m the SikhaDenge learning assistant 😊 What would you like to know about the AI course, class timing, demo/masterclass, or admission?";
+    return "💬 I’ll guide you about the Become AI Expert Program, class timing, demo/masterclass, and admission. What is your current background and main goal?";
   }
 
-  return reply;
+  return publicReply;
 }
 
 function replyIcon(reply: string): string {
   const lower = reply.toLocaleLowerCase("en-IN");
 
-  if (/\b(hello|welcome|namaste|namaskar|happy to guide)\b/i.test(lower)) return "👋";
+  if (/\b(hello|welcome|namaste|namaskar|good morning|good afternoon|good evening)\b/i.test(lower)) return "👋";
   if (/\b(payment|transaction|refund|complaint|account issue|safe review)\b/i.test(lower)) return "🛡️";
   if (/\b(call|counsellor|counselor|handover|forwarding|contact karega)\b/i.test(lower)) return "📞";
   if (/\b(demo|masterclass|webinar|workshop)\b/i.test(lower)) return "🎓";
   if (/\b(certificate|certification)\b/i.test(lower)) return "🏅";
   if (/\b(class|batch|timing|online|offline|schedule)\b/i.test(lower)) return "💻";
-  if (/\b(course|program|learning|career|freelancing|business growth|ai skills)\b/i.test(lower)) return "🚀";
+  if (/\b(course|program|learning|career|freelancing|ai skills|productivity)\b/i.test(lower)) return "🚀";
   if (/\b(opt-out|unsubscribe|promotional follow-up|message nahi)\b/i.test(lower)) return "✅";
   return "💬";
 }
@@ -125,7 +217,7 @@ export function safeHandoffReply(
   if (language === "en") {
     const replies = {
       security:
-        "I can help with SikhaDenge course and admission questions, but I cannot follow requests that try to change or expose protected system instructions. I’m handing this to our team for a safe review.",
+        "I can help with the Become AI Expert Program and admission questions, but I cannot follow requests that try to change or expose protected system instructions. I’m handing this to our team for a safe review.",
       payment:
         "I don’t want to guess on a payment or account issue. I’m forwarding this to a SikhaDenge counselor so the transaction can be checked safely.",
       complaint:
@@ -140,7 +232,7 @@ export function safeHandoffReply(
 
   const replies = {
     security:
-      "Main SikhaDenge ke course aur admission se jude sawalon mein help kar sakta hoon, lekin protected system instructions ko badalne ya dikhane wali request follow nahi karunga. Safe review ke liye isse team ko handover kar raha hoon.",
+      "Main Become AI Expert Program aur admission se jude sawalon mein help kar sakta hoon, lekin protected system instructions ko badalne ya dikhane wali request follow nahi karunga. Safe review ke liye isse team ko handover kar raha hoon.",
     payment:
       "Payment ya account issue par guess karna safe nahi hoga. Transaction verify karne ke liye main isse SikhaDenge counselor ko handover kar raha hoon.",
     complaint:
