@@ -1,5 +1,6 @@
 import {
   AgentMode,
+  LeadStage,
   MessageActor,
   MessageDirection,
   MessageType,
@@ -53,7 +54,15 @@ export async function processWebhookAgentBridge(
         direction: true,
         actor: true,
         type: true,
-        conversation: { select: { agentMode: true } },
+        conversation: {
+          select: {
+            id: true,
+            agentMode: true,
+            humanTakeoverAt: true,
+            lead: { select: { stage: true } },
+            _count: { select: { messages: true } },
+          },
+        },
       },
     });
     if (!stored) {
@@ -64,6 +73,23 @@ export async function processWebhookAgentBridge(
     result.matched += 1;
     let lifecycle: LiveAgentLifecycleResult;
     try {
+      const isFirstMessageForNewLead =
+        stored.conversation.lead?.stage === LeadStage.NEW &&
+        stored.conversation._count.messages === 1;
+      const canAutoActivate =
+        isFirstMessageForNewLead &&
+        stored.conversation.agentMode !== AgentMode.HUMAN &&
+        !stored.conversation.humanTakeoverAt;
+
+      let effectiveAgentMode = stored.conversation.agentMode;
+      if (canAutoActivate && effectiveAgentMode !== AgentMode.AI) {
+        await prisma.whatsAppConversation.update({
+          where: { id: stored.conversation.id },
+          data: { agentMode: AgentMode.AI },
+        });
+        effectiveAgentMode = AgentMode.AI;
+      }
+
       const policy = getLiveAgentPolicy();
       const shouldShowTyping =
         policy.liveAutoReplyReady &&
@@ -71,7 +97,7 @@ export async function processWebhookAgentBridge(
         stored.actor === MessageActor.CUSTOMER &&
         stored.type === MessageType.TEXT &&
         Boolean(stored.text?.trim()) &&
-        stored.conversation.agentMode === AgentMode.AI;
+        effectiveAgentMode === AgentMode.AI;
 
       if (shouldShowTyping) {
         let acknowledgedAt = Date.now();
