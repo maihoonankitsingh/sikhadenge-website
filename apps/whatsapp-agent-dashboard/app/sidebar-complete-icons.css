@@ -1,0 +1,296 @@
+/*
+ * SikhaDenge WhatsApp Agent
+ * Final sidebar icon mapping and desktop sizing lock.
+ */
+
+/* Existing approved icons */
+body .dashboard-shell .rail nav .rail-button[title="Inbox"]::before {
+  background-image: var(--sd-icon-conversations) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Contacts"]::before {
+  background-image: var(--sd-icon-contacts) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Leads"]::before {
+  background-image: var(--sd-icon-leads) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Team"]::before {
+  background-image: var(--sd-icon-ai) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Engagement"]::before {
+  background-image: var(--sd-icon-unread) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Analytics"]::before {
+  background-image: var(--sd-icon-analytics) !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Knowledge"]::before {
+  background-image: var(--sd-icon-knowledge) !important;
+}
+
+/* Newly uploaded icons */
+body .dashboard-shell .rail nav .rail-button[title="Campaigns"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/09-campaigns.png") !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Automation"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/10-automation.png") !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Templates"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/11-templates.png") !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Integrations"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/12-integrations.png") !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Admin"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/13-admin.png") !important;
+}
+
+body .dashboard-shell .rail nav .rail-button[title="Cutover"]::before {
+  background-image: url("/dashboard-icons/sidebar-extra/14-cutover.png") !important;
+}
+
+/* Final desktop size and position lock */
+@media (min-width: 851px) {
+  body .dashboard-shell .rail nav .rail-button[title] {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 7px 10px 7px 44px !important;
+    overflow: visible !important;
+    line-height: 1.15 !important;
+  }
+
+  body .dashboard-shell .rail nav .rail-button[title]::before {
+    content: "" !important;
+    position: absolute !important;
+    display: block !important;
+    left: 11px !important;
+    top: 50% !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    background-color: transparent !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 0.9 !important;
+    transform: translateY(-50%) !important;
+    box-sizing: border-box !important;
+  }
+
+  body .dashboard-shell .rail nav .rail-button[title]:hover::before,
+  body .dashboard-shell .rail nav .rail-button[title].active::before {
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.04) !important;
+    filter: drop-shadow(0 5px 8px rgba(24, 200, 255, 0.22)) !important;
+  }
+}
+
+/*
+ * Absolute final white plate.
+ * First background layer = icon.
+ * Second background layer = compulsory white rounded tile.
+ */
+
+html body .dashboard-shell .rail nav .rail-button[title="Inbox"]::before {
+  background-image:
+    var(--sd-icon-conversations),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Contacts"]::before {
+  background-image:
+    var(--sd-icon-contacts),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Leads"]::before {
+  background-image:
+    var(--sd-icon-leads),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Team"]::before {
+  background-image:
+    var(--sd-icon-ai),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Engagement"]::before {
+  background-image:
+    var(--sd-icon-unread),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Analytics"]::before {
+  background-image:
+    var(--sd-icon-analytics),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Knowledge"]::before {
+  background-image:
+    var(--sd-icon-knowledge),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Campaigns"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/09-campaigns.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Automation"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/10-automation.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Templates"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/11-templates.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Integrations"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/12-integrations.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Admin"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/13-admin.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+html body .dashboard-shell .rail nav .rail-button[title="Cutover"]::before {
+  background-image:
+    url("/dashboard-icons/sidebar-extra/14-cutover.png"),
+    linear-gradient(#ffffff, #ffffff) !important;
+}
+
+@media (min-width: 851px) {
+  html body .dashboard-shell .rail nav .rail-button[title]::before {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+
+    background-color: #ffffff !important;
+    background-size:
+      19px 19px,
+      100% 100% !important;
+    background-position:
+      center,
+      center !important;
+    background-repeat:
+      no-repeat,
+      no-repeat !important;
+
+    border: 1px solid rgba(226, 232, 240, 0.98) !important;
+    border-radius: 9px !important;
+    box-shadow:
+      0 6px 14px rgba(15, 23, 42, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  }
+}
+
+/*
+ * Increase only the artwork inside the existing 28px white tile.
+ * Tile dimensions and menu spacing remain unchanged.
+ */
+@media (min-width: 851px) {
+  html body .dashboard-shell .rail nav .rail-button[title]::before {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+
+    background-size:
+      23px 23px,
+      100% 100% !important;
+  }
+
+  html body .dashboard-shell .rail .rail-bottom::before {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+
+    background-size:
+      23px 23px,
+      100% 100% !important;
+  }
+}
+
+/*
+ * Zoom only the internally padded uploaded PNG artwork.
+ * White tile remains exactly 28x28.
+ * Existing approved icons remain unchanged.
+ */
+@media (min-width: 851px) {
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Campaigns"]::before,
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Automation"]::before,
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Templates"]::before,
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Integrations"]::before,
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Admin"]::before,
+  html body .dashboard-shell .rail nav
+  .rail-button[title="Cutover"]::before {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+
+    background-size:
+      40px 40px,
+      100% 100% !important;
+
+    background-position:
+      center,
+      center !important;
+
+    background-repeat:
+      no-repeat,
+      no-repeat !important;
+
+    border-radius: 9px !important;
+  }
+}

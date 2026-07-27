@@ -33,6 +33,10 @@ import "./workable-dashboard.css";
 import "./executive-redesign.css";
 import "./executive-layout-hotfix.css";
 import "./executive-sidebar-hard-lock.css";
+import "./sidebar-complete-icons.css";
+import "./inbox-viewport-lock.css";
+import "./inbox-compact-density.css";
+import "./metric-strip-final.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
