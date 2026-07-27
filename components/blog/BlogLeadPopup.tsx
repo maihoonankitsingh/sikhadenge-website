@@ -64,10 +64,11 @@ const GLOBAL_POLISH = `
 
     main[data-blog-article-design="editorial-v7-longform-sticky-lead"]
       aside > div {
-      position: sticky !important;
-      top: calc(var(--sd-offer-h, 0px) + 64px + 1rem) !important;
+      position: static !important;
+      top: auto !important;
       display: grid !important;
       gap: 0.75rem !important;
+      min-height: 100% !important;
       max-height: none !important;
       overflow: visible !important;
       padding: 0 !important;
@@ -112,9 +113,9 @@ const GLOBAL_POLISH = `
   @media (min-width: 1280px) {
     main[data-blog-article-design="editorial-v7-longform-sticky-lead"]
       nav[aria-label="Article sections"] {
-      flex-wrap: wrap;
-      overflow-x: visible;
-      row-gap: 0.5rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      row-gap: 0;
       padding-top: 0.65rem;
       padding-bottom: 0.65rem;
     }

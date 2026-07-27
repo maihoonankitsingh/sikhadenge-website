@@ -383,7 +383,7 @@ export function BlogLongformCareerGuide() {
         </div>
       </header>
 
-      <div className="sticky z-30 border-b border-slate-200 bg-white/95 backdrop-blur" style={{ top: "calc(var(--sd-offer-h, 0px) + 64px)" }}>
+      <div className="border-b border-slate-200 bg-white/95 backdrop-blur">
         <nav aria-label="Article sections" className="mx-auto flex max-w-[1320px] gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
           {CONTENTS.slice(0, 8).map(([href, label]) => (
             <a key={href} href={`#${href}`} className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
@@ -645,8 +645,8 @@ export function BlogLongformCareerGuide() {
         </article>
 
         <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-5">
-            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.10)]">
+          <div className="relative grid min-h-full content-start gap-3">
+            <section className="sticky z-10 self-start overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.10)]" style={{ top: "calc(var(--sd-offer-h, 0px) + 80px)" }}>
               <div className="bg-[#071b43] p-6 text-white">
                 <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-blue-200">Free practical session</p>
                 <h2 className="mt-3 text-2xl font-black leading-tight">Build your AI career action plan</h2>
