@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, Sparkles, X } from "lucide-react";
 
-const POPUP_KEY = "sikhadenge-blog-lead-popup-v7-3";
+const POPUP_KEY = "sikhadenge-blog-lead-popup-v7-4";
 const MASTERCLASS_URL =
   "https://sikhadenge.in/gen-ai-masterclass/register-one-step";
 
@@ -65,7 +65,7 @@ const GLOBAL_POLISH = `
     main[data-blog-article-design="editorial-v7-longform-sticky-lead"]
       aside > div {
       position: sticky !important;
-      top: calc(var(--sd-offer-h, 0px) + var(--sd-header-h, 56px) + 1rem) !important;
+      top: calc(var(--sd-offer-h, 0px) + 64px + 1rem) !important;
       display: grid !important;
       gap: 0.75rem !important;
       max-height: none !important;
@@ -144,6 +144,7 @@ export function BlogLeadPopup() {
   useEffect(() => {
     let alreadySeen = false;
     let timer: number | undefined;
+    let hasOpened = false;
 
     try {
       alreadySeen = window.sessionStorage.getItem(POPUP_KEY) === "seen";
@@ -154,16 +155,25 @@ export function BlogLeadPopup() {
     if (alreadySeen) return;
 
     const schedulePopup = () => {
-      if (timer !== undefined || document.visibilityState !== "visible") return;
+      if (hasOpened || timer !== undefined || document.visibilityState !== "visible") return;
 
       timer = window.setTimeout(() => {
-        rememberPopupShown();
+        timer = undefined;
+        hasOpened = true;
         setOpen(true);
       }, 4500);
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") schedulePopup();
+      if (hasOpened) return;
+
+      if (document.visibilityState === "hidden") {
+        if (timer !== undefined) window.clearTimeout(timer);
+        timer = undefined;
+        return;
+      }
+
+      schedulePopup();
     };
 
     schedulePopup();
@@ -241,7 +251,7 @@ export function BlogLeadPopup() {
 
       {open ? (
         <div
-          data-blog-lead-popup="v7-3"
+          data-blog-lead-popup="v7-4"
           className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[5px] md:items-center md:p-5"
           role="presentation"
           onMouseDown={(event) => {

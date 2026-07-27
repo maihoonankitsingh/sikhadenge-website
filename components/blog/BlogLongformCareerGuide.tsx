@@ -383,7 +383,7 @@ export function BlogLongformCareerGuide() {
         </div>
       </header>
 
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="sticky z-30 border-b border-slate-200 bg-white/95 backdrop-blur" style={{ top: "calc(var(--sd-offer-h, 0px) + 64px)" }}>
         <nav aria-label="Article sections" className="mx-auto flex max-w-[1320px] gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
           {CONTENTS.slice(0, 8).map(([href, label]) => (
             <a key={href} href={`#${href}`} className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
