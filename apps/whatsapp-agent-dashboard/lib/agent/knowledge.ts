@@ -12,6 +12,7 @@ import { searchJobAssistanceReplies } from "./job-assistance-replies";
 import { getAgentPolicy } from "./policy";
 import { searchQuestionBankKnowledge } from "./question-bank";
 import { searchSingleCourseReplies } from "./single-course-replies";
+import { searchSkillFitReplies } from "./skill-fit-replies";
 import type { AgentKnowledgeReference } from "./types";
 
 const STOP_WORDS = new Set([
@@ -87,6 +88,7 @@ export async function retrieveApprovedKnowledge(
   query: string,
 ): Promise<AgentKnowledgeReference[]> {
   const policy = getAgentPolicy();
+  const skillFit = searchSkillFitReplies(query).filter(isStudentSafeReference);
   const jobAssistance = searchJobAssistanceReplies(query).filter(isStudentSafeReference);
   const singleCourse = searchSingleCourseReplies(query).filter(isStudentSafeReference);
   const concise = searchConciseSalesReplies(query).filter(isStudentSafeReference);
@@ -99,7 +101,7 @@ export async function retrieveApprovedKnowledge(
     Math.min(2, policy.maximumKnowledgeChunks),
   ).filter(isStudentSafeReference);
   const builtIn = mergeReferences(
-    [...jobAssistance, ...singleCourse, ...concise, ...industry],
+    [...skillFit, ...jobAssistance, ...singleCourse, ...concise, ...industry],
     standard,
     policy.maximumKnowledgeChunks,
   );
