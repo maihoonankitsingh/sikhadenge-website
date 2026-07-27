@@ -24,8 +24,12 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
+function normalizeIntent(intent: string | null): string {
+  return (intent ?? "").trim().replace(/\s+/g, " ").slice(0, 100).toUpperCase();
+}
+
 function categoryFromIntent(intent: string | null): string {
-  const normalized = normalizeLearningText(intent ?? "", 100).toUpperCase();
+  const normalized = normalizeIntent(intent);
   if (!normalized || normalized === "UNKNOWN") return "MANUAL_COUNSELOR_REPLY";
   return normalized;
 }
@@ -99,10 +103,7 @@ export async function captureManualReplyLearningCandidate(input: {
     return { captured: false, reason: "LOW_VALUE_EXCHANGE" };
   }
 
-  const normalizedIntent = normalizeLearningText(
-    outbound.conversation.currentIntent ?? "",
-    100,
-  ).toUpperCase();
+  const normalizedIntent = normalizeIntent(outbound.conversation.currentIntent);
   if (NON_LEARNING_INTENTS.has(normalizedIntent)) {
     return { captured: false, reason: "NON_LEARNING_INTENT" };
   }
