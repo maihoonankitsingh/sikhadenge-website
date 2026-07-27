@@ -12,6 +12,7 @@ import MetaConnectionStatus from "../navigation/MetaConnectionStatus";
 
 type ConversationFilter = "ALL" | "UNREAD" | "HOT";
 type UserSettableMode = "AI" | "HUMAN" | "PAUSED";
+type MobileView = "LIST" | "CHAT";
 type UploadedMedia = {
   id: string;
   name: string;
@@ -162,6 +163,10 @@ export default function InboxDashboardV2({
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<MobileView>(
+    initialConversation ? "CHAT" : "LIST",
+  );
+  const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedIdRef = useRef(selectedId);
   const pollingRef = useRef(false);
@@ -486,7 +491,11 @@ export default function InboxDashboardV2({
   }, [selected]);
 
   return (
-    <main className="dashboard-shell">
+    <main
+      className={`dashboard-shell mobile-view-${mobileView.toLowerCase()} ${
+        mobileDetailsOpen ? "mobile-details-open" : ""
+      }`}
+    >
       <aside className="rail" aria-label="Primary navigation">
         <Link className="brand-mark" href="/inbox" aria-label="Open inbox">S</Link>
         <nav>
@@ -560,7 +569,11 @@ export default function InboxDashboardV2({
                   type="button"
                   data-conversation-id={item.id}
                   className={`conversation-item ${selectedId === item.id ? "selected" : ""}`}
-                  onClick={() => void loadConversation(item.id)}
+                  onClick={() => {
+                      setMobileView("CHAT");
+                      setMobileDetailsOpen(false);
+                      void loadConversation(item.id);
+                    }}
                 >
                   <span className="avatar">{initials(item.contact.name)}</span>
                   <span className="conversation-copy">
@@ -578,11 +591,30 @@ export default function InboxDashboardV2({
             <header className="chat-header">
               {selectedSummary ? (
                 <>
+                  <button
+                    className="mobile-inbox-back"
+                    type="button"
+                    aria-label="Back to conversations"
+                    onClick={() => {
+                      setMobileDetailsOpen(false);
+                      setMobileView("LIST");
+                    }}
+                  >
+                    ←
+                  </button>
                   <div className="chat-person">
                     <span className="avatar large">{initials(selectedSummary.contact.name)}</span>
                     <div><h2>{selectedSummary.contact.name}</h2><p>{selectedSummary.contact.phone}</p></div>
                   </div>
                   <div className="chat-actions">
+                    <button
+                      className="mobile-lead-button"
+                      type="button"
+                      aria-expanded={mobileDetailsOpen}
+                      onClick={() => setMobileDetailsOpen(true)}
+                    >
+                      Lead
+                    </button>
                     <label className="ai-switch">
                       <span>{modeUpdating ? "Updating..." : "AI Agent"}</span>
                       <input
@@ -709,7 +741,22 @@ export default function InboxDashboardV2({
             </footer>
           </section>
 
+          <button
+            className="mobile-details-backdrop"
+            type="button"
+            aria-label="Close Lead Intelligence"
+            onClick={() => setMobileDetailsOpen(false)}
+          />
+
           <aside className="details-panel">
+            <button
+              className="mobile-details-close"
+              type="button"
+              aria-label="Close Lead Intelligence"
+              onClick={() => setMobileDetailsOpen(false)}
+            >
+              ×
+            </button>
             {selectedSummary ? (
               <>
                 <div className="lead-card-head"><div><p className="eyebrow">Lead intelligence</p><h2>{selectedSummary.contact.name}</h2></div><TemperatureBadge value={selectedSummary.lead?.temperature} /></div>

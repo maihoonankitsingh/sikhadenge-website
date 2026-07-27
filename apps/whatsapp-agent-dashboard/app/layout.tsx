@@ -38,6 +38,7 @@ import "./inbox-viewport-lock.css";
 import "./inbox-compact-density.css";
 import "./metric-strip-final.css";
 import "./responsive-tablet.css";
+import "./responsive-composer-fix.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
