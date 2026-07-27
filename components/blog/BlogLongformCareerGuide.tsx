@@ -356,7 +356,7 @@ export function BlogLongformCareerGuide() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[34px] bg-[#071b43] p-7 text-white shadow-[0_30px_90px_rgba(15,37,86,0.22)] sm:p-8">
+            <div className="relative overflow-hidden rounded-[26px] bg-[#071b43] p-6 text-white shadow-[0_30px_90px_rgba(15,37,86,0.22)] sm:p-8">
               <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/35 blur-3xl" />
               <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-amber-300/20 blur-3xl" />
               <div className="relative">
@@ -374,7 +374,7 @@ export function BlogLongformCareerGuide() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-7 rounded-2xl bg-white/10 p-5 text-sm leading-7 text-blue-100">
+                <div className="mt-6 rounded-2xl bg-white/10 p-4 text-sm leading-7 text-blue-100">
                   This guide does not promise a job, income or ranking. It provides a structured learning and proof-of-work framework.
                 </div>
               </div>
@@ -395,8 +395,8 @@ export function BlogLongformCareerGuide() {
 
       <div className="mx-auto grid max-w-[1320px] gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_330px] lg:px-8 xl:gap-14">
         <article className="min-w-0">
-          <section id="quick-answer" className="scroll-mt-28 overflow-hidden rounded-[30px] border border-blue-200 bg-white">
-            <div className="border-l-[6px] border-blue-600 px-6 py-8 sm:px-10 sm:py-11">
+          <section id="quick-answer" className="scroll-mt-28 overflow-hidden rounded-[24px] border border-blue-200 bg-white">
+            <div className="border-l-[6px] border-blue-600 px-6 py-7 sm:px-8 sm:py-9">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">Quick answer</p>
               <h2 className="mt-4 text-[28px] font-black leading-[1.15] tracking-[-0.03em] sm:text-[36px]">Yes, you can start an AI career without coding—but you still need a real professional skill.</h2>
               <p className="mt-5 text-[17px] leading-8 text-slate-700 sm:text-[18px] sm:leading-9">
@@ -405,7 +405,7 @@ export function BlogLongformCareerGuide() {
             </div>
           </section>
 
-          <section className="mt-10 rounded-[30px] border border-slate-200 bg-white p-6 sm:p-9">
+          <section className="mt-8 rounded-[24px] border border-slate-200 bg-white p-5 sm:p-7">
             <div className="flex items-center gap-3">
               <Route className="h-6 w-6 text-blue-700" />
               <h2 className="text-2xl font-black tracking-[-0.03em]">Table of contents</h2>
@@ -465,7 +465,7 @@ export function BlogLongformCareerGuide() {
               {PATHS.map((path, index) => {
                 const Icon = path.icon;
                 return (
-                  <div key={path.title} className="rounded-[30px] border border-slate-200 bg-white p-6 sm:p-8">
+                  <div key={path.title} className="rounded-[24px] border border-slate-200 bg-white p-5 sm:p-7">
                     <div className="grid gap-6 sm:grid-cols-[72px_minmax(0,1fr)]">
                       <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Icon className="h-8 w-8" /></span>
                       <div>
@@ -523,7 +523,7 @@ export function BlogLongformCareerGuide() {
 
           <section id="workflow" className="mt-16 scroll-mt-28">
             <SectionTitle eyebrow="Visual workflow" title="The human-plus-AI production system" description="AI is most useful when it sits inside a controlled process with clear inputs, checks and responsibility." />
-            <div className="overflow-hidden rounded-[32px] border border-blue-200 bg-[linear-gradient(135deg,#eff6ff,#ffffff_48%,#fff8df)] p-6 sm:p-9">
+            <div className="overflow-hidden rounded-[24px] border border-blue-200 bg-[linear-gradient(135deg,#eff6ff,#ffffff_48%,#fff8df)] p-5 sm:p-7">
               <div className="grid gap-4 lg:grid-cols-5">
                 {[
                   ["01", "Brief", "Define user, goal, constraints and success criteria."],
@@ -565,7 +565,7 @@ export function BlogLongformCareerGuide() {
             </div>
           </section>
 
-          <div className="mt-12 rounded-[30px] bg-[#0b2b6f] p-7 text-white sm:p-9">
+          <div className="mt-10 rounded-[24px] bg-[#0b2b6f] p-6 text-white sm:p-8">
             <div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center">
               <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-200">Build with guidance</p><h2 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">Turn one project idea into a focused learning plan.</h2><p className="mt-3 max-w-2xl text-base leading-7 text-blue-100">Use the free masterclass to understand practical workflow thinking before you spend months collecting unrelated tools.</p></div>
               <RegisterButton label="Register Free" />
@@ -636,7 +636,7 @@ export function BlogLongformCareerGuide() {
             </div>
           </section>
 
-          <section className="mt-16 rounded-[32px] bg-[linear-gradient(135deg,#071b43,#1748c7)] p-7 text-white sm:p-10">
+          <section className="mt-14 rounded-[24px] bg-[linear-gradient(135deg,#071b43,#1748c7)] p-6 text-white sm:p-8">
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-200">Next practical step</p>
             <h2 className="mt-4 max-w-3xl text-[29px] font-black leading-[1.1] tracking-[-0.035em] text-white sm:text-[38px]">Move from reading to one focused AI workflow.</h2>
             <p className="mt-5 max-w-3xl text-lg leading-9 text-blue-100">Choose a direction, complete the first project and use feedback to improve. The free Gen AI Masterclass can help you organise the starting plan without claiming guaranteed career results.</p>
