@@ -37,6 +37,7 @@ import "./sidebar-complete-icons.css";
 import "./inbox-viewport-lock.css";
 import "./inbox-compact-density.css";
 import "./metric-strip-final.css";
+import "./responsive-tablet.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
