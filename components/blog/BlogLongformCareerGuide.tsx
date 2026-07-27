@@ -289,7 +289,7 @@ function SectionTitle({
       <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-[44px]">
+      <h2 className="mt-3 text-[29px] font-black leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[38px]">
         {title}
       </h2>
       {description ? (
@@ -335,10 +335,10 @@ export function BlogLongformCareerGuide() {
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">
                 <Sparkles className="h-4 w-4" /> Beginner AI career guide
               </div>
-              <h1 className="mt-7 max-w-[900px] text-[44px] font-black leading-[1.01] tracking-[-0.052em] sm:text-[58px] lg:text-[66px]">
+              <h1 className="mt-7 max-w-[900px] text-[39px] font-black leading-[1.04] tracking-[-0.045em] sm:text-[50px] lg:text-[58px]">
                 AI Career For Beginners Without Coding
               </h1>
-              <p className="mt-7 max-w-[850px] text-lg leading-9 text-slate-600 sm:text-[21px] sm:leading-10">
+              <p className="mt-7 max-w-[850px] text-[17px] leading-8 text-slate-600 sm:text-[19px] sm:leading-9">
                 A detailed, practical guide to choosing a non-coding AI direction, building reliable workflows, creating portfolio evidence and moving towards real career or freelance opportunities without pretending that one tool or prompt is a complete profession.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-600">
@@ -361,7 +361,7 @@ export function BlogLongformCareerGuide() {
               <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-amber-300/20 blur-3xl" />
               <div className="relative">
                 <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-200">Article outcome</p>
-                <h2 className="mt-4 text-[31px] font-black leading-[1.08] tracking-[-0.035em]">Finish with a 90-day execution plan.</h2>
+                <h2 className="mt-4 text-[27px] font-black leading-[1.12] tracking-[-0.035em]">Finish with a 90-day execution plan.</h2>
                 <div className="mt-7 space-y-4">
                   {[
                     "Choose one AI-enabled career direction",
@@ -398,8 +398,8 @@ export function BlogLongformCareerGuide() {
           <section id="quick-answer" className="scroll-mt-28 overflow-hidden rounded-[30px] border border-blue-200 bg-white">
             <div className="border-l-[6px] border-blue-600 px-6 py-8 sm:px-10 sm:py-11">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">Quick answer</p>
-              <h2 className="mt-4 text-[31px] font-black leading-[1.12] tracking-[-0.035em] sm:text-[42px]">Yes, you can start an AI career without coding—but you still need a real professional skill.</h2>
-              <p className="mt-5 text-[18px] leading-9 text-slate-700 sm:text-[20px] sm:leading-10">
+              <h2 className="mt-4 text-[28px] font-black leading-[1.15] tracking-[-0.03em] sm:text-[36px]">Yes, you can start an AI career without coding—but you still need a real professional skill.</h2>
+              <p className="mt-5 text-[17px] leading-8 text-slate-700 sm:text-[18px] sm:leading-9">
                 The strongest non-coding path is to combine AI with a practical work area such as content, design, video, marketing, research, operations or customer support. Learn the complete workflow, verify the output, document your decisions and build portfolio projects that another person can evaluate. Coding can expand your options later, but it is not required before you begin creating useful AI-assisted work.
               </p>
             </div>
@@ -638,7 +638,7 @@ export function BlogLongformCareerGuide() {
 
           <section className="mt-16 rounded-[32px] bg-[linear-gradient(135deg,#071b43,#1748c7)] p-7 text-white sm:p-10">
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-200">Next practical step</p>
-            <h2 className="mt-4 max-w-3xl text-[32px] font-black leading-[1.08] tracking-[-0.04em] sm:text-[44px]">Move from reading to one focused AI workflow.</h2>
+            <h2 className="mt-4 max-w-3xl text-[29px] font-black leading-[1.1] tracking-[-0.035em] text-white sm:text-[38px]">Move from reading to one focused AI workflow.</h2>
             <p className="mt-5 max-w-3xl text-lg leading-9 text-blue-100">Choose a direction, complete the first project and use feedback to improve. The free Gen AI Masterclass can help you organise the starting plan without claiming guaranteed career results.</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row"><RegisterButton label="Register for Free Masterclass" /><Link href="/ai-skills" className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/15">Explore AI skills</Link></div>
           </section>
