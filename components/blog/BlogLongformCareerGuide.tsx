@@ -289,11 +289,11 @@ function SectionTitle({
       <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-[29px] font-black leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[38px]">
+      <h2 className="mt-3 text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-slate-950 sm:text-[32px]">
         {title}
       </h2>
       {description ? (
-        <p className="mt-4 text-[17px] leading-8 text-slate-600 sm:text-lg">
+        <p className="mt-3 text-[16px] leading-7 text-slate-600 sm:text-[17px] sm:leading-8">
           {description}
         </p>
       ) : null}
@@ -335,10 +335,10 @@ export function BlogLongformCareerGuide() {
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">
                 <Sparkles className="h-4 w-4" /> Beginner AI career guide
               </div>
-              <h1 className="mt-7 max-w-[900px] text-[39px] font-black leading-[1.04] tracking-[-0.045em] sm:text-[50px] lg:text-[58px]">
+              <h1 className="mt-7 max-w-[900px] text-[34px] font-black leading-[1.08] tracking-[-0.04em] sm:text-[42px] lg:text-[48px]">
                 AI Career For Beginners Without Coding
               </h1>
-              <p className="mt-7 max-w-[850px] text-[17px] leading-8 text-slate-600 sm:text-[19px] sm:leading-9">
+              <p className="mt-7 max-w-[850px] text-[16px] leading-7 text-slate-600 sm:text-[17px] sm:leading-8">
                 A detailed, practical guide to choosing a non-coding AI direction, building reliable workflows, creating portfolio evidence and moving towards real career or freelance opportunities without pretending that one tool or prompt is a complete profession.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-600">
@@ -361,7 +361,7 @@ export function BlogLongformCareerGuide() {
               <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-amber-300/20 blur-3xl" />
               <div className="relative">
                 <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-200">Article outcome</p>
-                <h2 className="mt-4 text-[27px] font-black leading-[1.12] tracking-[-0.035em]">Finish with a 90-day execution plan.</h2>
+                <h2 className="mt-4 text-[23px] font-black leading-[1.16] tracking-[-0.035em]">Finish with a 90-day execution plan.</h2>
                 <div className="mt-7 space-y-4">
                   {[
                     "Choose one AI-enabled career direction",
@@ -398,8 +398,8 @@ export function BlogLongformCareerGuide() {
           <section id="quick-answer" className="scroll-mt-28 overflow-hidden rounded-[24px] border border-blue-200 bg-white">
             <div className="border-l-[6px] border-blue-600 px-6 py-7 sm:px-8 sm:py-9">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">Quick answer</p>
-              <h2 className="mt-4 text-[28px] font-black leading-[1.15] tracking-[-0.03em] sm:text-[36px]">Yes, you can start an AI career without coding—but you still need a real professional skill.</h2>
-              <p className="mt-5 text-[17px] leading-8 text-slate-700 sm:text-[18px] sm:leading-9">
+              <h2 className="mt-4 text-[25px] font-black leading-[1.18] tracking-[-0.025em] sm:text-[31px]">Yes, you can start an AI career without coding—but you still need a real professional skill.</h2>
+              <p className="mt-5 text-[16px] leading-7 text-slate-700 sm:text-[17px] sm:leading-8">
                 The strongest non-coding path is to combine AI with a practical work area such as content, design, video, marketing, research, operations or customer support. Learn the complete workflow, verify the output, document your decisions and build portfolio projects that another person can evaluate. Coding can expand your options later, but it is not required before you begin creating useful AI-assisted work.
               </p>
             </div>
@@ -422,7 +422,7 @@ export function BlogLongformCareerGuide() {
 
           <section id="career-scope" className="mt-16 scroll-mt-28">
             <SectionTitle eyebrow="Career foundation" title="What an AI career without coding actually means" description="The phrase can be misleading unless you separate tool usage from professional capability." />
-            <div className="space-y-6 text-[18px] leading-9 text-slate-700">
+            <div className="space-y-6 text-[16px] leading-8 text-slate-700">
               <p>
                 A non-coding AI career does not mean earning money simply because you know how to type prompts. It means using AI inside a useful workflow and taking responsibility for the quality of the final output. The workflow may involve research, writing, design, video, marketing, sales support, project coordination, customer communication or internal operations. AI can accelerate parts of the process, but the learner still needs to understand the audience, objective, constraints and quality standard.
               </p>
@@ -450,11 +450,11 @@ export function BlogLongformCareerGuide() {
                 <div key={title} className="rounded-[26px] border border-slate-200 bg-white p-6">
                   <Users className="h-7 w-7 text-blue-700" />
                   <h3 className="mt-5 text-xl font-black">{title}</h3>
-                  <p className="mt-3 text-base leading-8 text-slate-600">{text}</p>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">{text}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-6 rounded-[26px] border border-amber-200 bg-amber-50 p-6 text-base leading-8 text-amber-950">
+            <div className="mt-6 rounded-[26px] border border-amber-200 bg-amber-50 p-6 text-[15px] leading-7 text-amber-950">
               <strong>This guide is not a shortcut:</strong> it is not designed for anyone looking for guaranteed employment, instant income, fabricated portfolio work or a way to avoid learning the fundamentals of a profession.
             </div>
           </section>
@@ -472,7 +472,7 @@ export function BlogLongformCareerGuide() {
                         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700">{path.label}</p>
                         <h3 className="mt-2 text-[28px] font-black tracking-[-0.035em]">{path.title}</h3>
                         <p className="mt-3 text-sm font-bold text-slate-500">Best for: {path.bestFor}</p>
-                        <p className="mt-4 text-[17px] leading-8 text-slate-700">{path.description}</p>
+                        <p className="mt-4 text-[16px] leading-7 text-slate-700">{path.description}</p>
                         <div className="mt-5 flex flex-wrap gap-2">
                           {path.examples.map((example) => <span key={example} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">{example}</span>)}
                         </div>
@@ -514,7 +514,7 @@ export function BlogLongformCareerGuide() {
                   <span className="relative z-10 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-700 text-sm font-black text-white shadow-lg sm:h-[70px] sm:w-[70px]">{step.number}</span>
                   <div className="rounded-[26px] border border-slate-200 bg-white p-6 sm:p-7">
                     <h3 className="text-xl font-black tracking-[-0.025em] sm:text-2xl">{step.title}</h3>
-                    <p className="mt-3 text-[17px] leading-8 text-slate-650">{step.text}</p>
+                    <p className="mt-3 text-[16px] leading-7 text-slate-650">{step.text}</p>
                   </div>
                 </div>
               ))}
@@ -583,15 +583,15 @@ export function BlogLongformCareerGuide() {
               </div>
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <div className="rounded-[26px] border border-emerald-200 bg-emerald-50 p-6"><ShieldCheck className="h-7 w-7 text-emerald-700" /><h3 className="mt-4 text-xl font-black">Responsible selection</h3><p className="mt-3 text-base leading-8 text-emerald-950">Check data handling, privacy, ownership, accuracy limitations, accessibility and whether the tool is permitted in the environment where you plan to work.</p></div>
-              <div className="rounded-[26px] border border-amber-200 bg-amber-50 p-6"><Lightbulb className="h-7 w-7 text-amber-700" /><h3 className="mt-4 text-xl font-black">Avoid tool dependency</h3><p className="mt-3 text-base leading-8 text-amber-950">Keep your process portable. Save briefs, source material, checklists and project documentation so your capability survives when pricing, features or product availability changes.</p></div>
+              <div className="rounded-[26px] border border-emerald-200 bg-emerald-50 p-6"><ShieldCheck className="h-7 w-7 text-emerald-700" /><h3 className="mt-4 text-xl font-black">Responsible selection</h3><p className="mt-3 text-[15px] leading-7 text-emerald-950">Check data handling, privacy, ownership, accuracy limitations, accessibility and whether the tool is permitted in the environment where you plan to work.</p></div>
+              <div className="rounded-[26px] border border-amber-200 bg-amber-50 p-6"><Lightbulb className="h-7 w-7 text-amber-700" /><h3 className="mt-4 text-xl font-black">Avoid tool dependency</h3><p className="mt-3 text-[15px] leading-7 text-amber-950">Keep your process portable. Save briefs, source material, checklists and project documentation so your capability survives when pricing, features or product availability changes.</p></div>
             </div>
           </section>
 
           <section id="opportunities" className="mt-16 scroll-mt-28">
             <SectionTitle eyebrow="Opportunity map" title="Career and freelance directions" description="These are work categories, not guaranteed job titles or income claims. Your opportunity depends on proof, demand, communication and execution quality." />
             <div className="grid gap-5 sm:grid-cols-2">
-              {OPPORTUNITIES.map((item) => <div key={item.title} className="rounded-[26px] border border-slate-200 bg-white p-6"><Target className="h-7 w-7 text-blue-700" /><h3 className="mt-4 text-xl font-black">{item.title}</h3><p className="mt-3 text-base leading-8 text-slate-600">{item.description}</p></div>)}
+              {OPPORTUNITIES.map((item) => <div key={item.title} className="rounded-[26px] border border-slate-200 bg-white p-6"><Target className="h-7 w-7 text-blue-700" /><h3 className="mt-4 text-xl font-black">{item.title}</h3><p className="mt-3 text-[15px] leading-7 text-slate-600">{item.description}</p></div>)}
             </div>
           </section>
 
@@ -616,7 +616,7 @@ export function BlogLongformCareerGuide() {
 
           <section id="methodology" className="mt-16 scroll-mt-28">
             <SectionTitle eyebrow="Editorial standard" title="Sources, verification and methodology" />
-            <div className="space-y-5 rounded-[28px] border border-emerald-200 bg-emerald-50 p-6 text-base leading-8 text-emerald-950 sm:p-8">
+            <div className="space-y-5 rounded-[28px] border border-emerald-200 bg-emerald-50 p-6 text-[15px] leading-7 text-emerald-950 sm:p-8">
               <p>This guide is educational and uses a workflow-first framework rather than salary predictions, hiring guarantees or unverifiable market statistics. It distinguishes between non-coding AI-assisted work and technical AI engineering so beginners can choose an appropriate starting depth.</p>
               <p>Tool features, pricing, access conditions and employer requirements can change. Before making a purchase, sharing sensitive information or applying for a role, verify the current official documentation, privacy terms, role description and local requirements.</p>
               <p>Portfolio examples should be truthful. Clearly explain your contribution, use permitted source material, respect confidentiality and do not fabricate testimonials, performance results or client relationships.</p>
@@ -630,7 +630,7 @@ export function BlogLongformCareerGuide() {
               {FAQS.map(([question, answer]) => (
                 <details key={question} className="group rounded-[24px] border border-slate-200 bg-white px-5 py-1 open:border-blue-200 sm:px-7">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-base font-black text-slate-950 sm:text-lg">{question}<ChevronDown className="h-5 w-5 shrink-0 text-blue-700 transition group-open:rotate-180" /></summary>
-                  <p className="border-t border-slate-100 pb-6 pt-5 text-base leading-8 text-slate-600">{answer}</p>
+                  <p className="border-t border-slate-100 pb-6 pt-5 text-[15px] leading-7 text-slate-600">{answer}</p>
                 </details>
               ))}
             </div>

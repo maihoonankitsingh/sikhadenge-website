@@ -288,7 +288,7 @@ export function BlogLeadPopup() {
 
                 <h2
                   id="blog-lead-popup-title"
-                  className="mt-5 max-w-md break-words text-[29px] font-black leading-[1.08] tracking-[-0.04em] sm:text-[34px] md:text-[36px]"
+                  className="mt-5 max-w-md break-words text-[25px] font-black leading-[1.12] tracking-[-0.03em] sm:text-[29px] md:text-[30px]"
                 >
                   Turn this guide into one clear AI action plan.
                 </h2>
@@ -324,7 +324,7 @@ export function BlogLeadPopup() {
                 Continue from reading to action
               </p>
 
-              <h3 className="mt-3 max-w-xl break-words text-[28px] font-black leading-[1.08] tracking-[-0.035em] text-slate-950 sm:text-[32px] md:text-[34px]">
+              <h3 className="mt-3 max-w-xl break-words text-[24px] font-black leading-[1.14] tracking-[-0.03em] text-slate-950 sm:text-[28px] md:text-[29px]">
                 Reserve your free masterclass seat
               </h3>
 
