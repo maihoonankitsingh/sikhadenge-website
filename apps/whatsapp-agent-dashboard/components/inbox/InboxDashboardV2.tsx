@@ -486,7 +486,7 @@ export default function InboxDashboardV2({
   }, [selected]);
 
   return (
-    <main className="dashboard-shell">
+    <main className="dashboard-shell inbox-redesign">
       <aside className="rail" aria-label="Primary navigation">
         <Link className="brand-mark" href="/inbox" aria-label="Open inbox">S</Link>
         <nav>
