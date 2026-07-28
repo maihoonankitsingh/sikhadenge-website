@@ -49,6 +49,18 @@ export type GeneratedTool = {
   label?: string;
 };
 
+export type GeneratedJourneyStep = {
+  label: string;
+  icon?: GeneratedIconName;
+};
+
+export type GeneratedComparisonTable = {
+  title: string;
+  description?: string;
+  columns: string[];
+  rows: string[][];
+};
+
 type GeneratedIconName =
   | "answer"
   | "book"
@@ -72,8 +84,12 @@ type GeneratedPageLayoutProps = {
   badges?: string[];
   answerTitle: string;
   answer: string;
+  journey?: GeneratedJourneyStep[];
   highlights: GeneratedHighlight[];
+  useCases?: GeneratedHighlight[];
+  useCasesTitle?: string;
   steps: GeneratedStep[];
+  comparisonTable?: GeneratedComparisonTable;
   tools?: GeneratedTool[];
   mistakes?: string[];
   faqs: GeneratedFaq[];
@@ -175,8 +191,12 @@ export function GeneratedPageLayout({
   badges = [],
   answerTitle,
   answer,
+  journey = [],
   highlights,
+  useCases = [],
+  useCasesTitle = "Where this applies in real work",
   steps,
+  comparisonTable,
   tools = [],
   mistakes = [],
   faqs,
@@ -253,6 +273,35 @@ export function GeneratedPageLayout({
           </GlassCard>
         </section>
 
+        {journey.length > 0 ? (
+          <section className="mb-14" aria-label="Visual roadmap">
+            <SectionHeading eyebrow="At a glance" title="The path in one picture" icon="wand" />
+            <GlassCard className="overflow-x-auto p-6 sm:p-8">
+              <div className="flex min-w-[560px] items-start justify-between gap-2 sm:min-w-0">
+                {journey.map((node, index) => (
+                  <div key={`${index}-${node.label}`} className="flex flex-1 items-start">
+                    <div className="flex flex-col items-center text-center">
+                      <IconOrb name={node.icon || "sparkles"} tone={index % 2 === 0 ? "blue" : "gold"} size="sm" />
+                      <div className="mt-3 w-24 text-xs font-bold leading-tight text-[#D6DAE1] sm:w-28">{node.label}</div>
+                    </div>
+                    {index < journey.length - 1 ? (
+                      <svg
+                        className="mt-5 h-4 w-full min-w-[24px] shrink text-white/15"
+                        viewBox="0 0 100 10"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <line x1="0" y1="5" x2="92" y2="5" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                        <path d="M88 1 L96 5 L88 9" fill="none" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          </section>
+        ) : null}
+
         <section className="mb-14">
           <SectionHeading
             eyebrow="What you will get"
@@ -270,6 +319,27 @@ export function GeneratedPageLayout({
             ))}
           </div>
         </section>
+
+        {useCases.length > 0 ? (
+          <section className="mb-14">
+            <SectionHeading
+              eyebrow="Real-world context"
+              title={useCasesTitle}
+              description="Concrete situations where this shows up, not a generic feature list."
+              icon="search"
+              tone="gold"
+            />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {useCases.map((item, index) => (
+                <div key={item.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                  <IconOrb name={item.icon || "target"} tone={index % 2 === 0 ? "gold" : "blue"} size="sm" />
+                  <h3 className="mt-4 text-base font-bold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="mb-14">
           <SectionHeading
@@ -301,6 +371,47 @@ export function GeneratedPageLayout({
             ))}
           </div>
         </section>
+
+        {comparisonTable ? (
+          <section className="mb-14">
+            <SectionHeading
+              eyebrow="Compare before you commit"
+              title={comparisonTable.title}
+              description={comparisonTable.description}
+              icon="shield"
+            />
+            <GlassCard className="overflow-x-auto p-2 sm:p-3">
+              <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+                <thead>
+                  <tr>
+                    {comparisonTable.columns.map((col) => (
+                      <th
+                        key={col}
+                        className="border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#76A3FF]"
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonTable.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-white/[0.02]" : ""}>
+                      {row.map((cell, cellIndex) => (
+                        <td
+                          key={cellIndex}
+                          className={`px-4 py-3 align-top leading-6 text-[#C5CBD5] ${cellIndex === 0 ? "font-bold text-white" : ""}`}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </GlassCard>
+          </section>
+        ) : null}
 
         {tools.length > 0 ? (
           <section className="mb-14">
