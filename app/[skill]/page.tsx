@@ -240,6 +240,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         primaryCta={{ href: "/gen-ai-masterclass/register-one-step", label: "Join the free masterclass" }}
         secondaryCta={{ href: "/contact-us", label: "Contact Sikhadenge" }}
         theme="light"
+        iconStyle="3d"
       >
         {fields.cityIsSpecific ? (
           <section className="mb-14 rounded-3xl border border-[var(--gpk-border)] bg-[var(--gpk-card-bg)] p-6 sm:p-8">

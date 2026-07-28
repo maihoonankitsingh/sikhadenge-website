@@ -1,5 +1,11 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+
+// Blog keeps the original flat icon look untouched; only pages that opt in
+// via the iconStyle prop (threaded explicitly, not via context — this file
+// has no "use client" boundary and Next.js requires one for Context) get
+// the 3D tile treatment.
+type IconStyle = "flat" | "3d";
 import {
   ArrowRight,
   BadgeCheck,
@@ -105,6 +111,7 @@ type GeneratedPageLayoutProps = {
   primaryCta: GeneratedLink;
   secondaryCta?: GeneratedLink;
   theme?: "dark" | "light";
+  iconStyle?: "flat" | "3d";
   children?: ReactNode;
 };
 
@@ -171,19 +178,63 @@ const ICONS: Record<GeneratedIconName, typeof Sparkles> = {
   wand: WandSparkles,
 };
 
+// Same 3D icon-tile technique already used on the contact page's Icon3D
+// component (layered shadow tile + rotated gradient front + inset bevel +
+// glossy highlight), adapted here to wrap the lucide icon set instead of
+// custom SVG paths so every icon usage across the generated pages gets it.
+const ICON_TONE_3D: Record<"blue" | "gold", { front: string; shadow: string; glow: string }> = {
+  blue: {
+    front: "linear-gradient(145deg, #60A5FA 0%, #2563EB 52%, #1D4ED8 100%)",
+    shadow: "#173DA8",
+    glow: "rgba(37, 99, 235, 0.34)",
+  },
+  gold: {
+    front: "linear-gradient(145deg, #FFE58A 0%, #F5B301 52%, #D69600 100%)",
+    shadow: "#9B6B00",
+    glow: "rgba(245, 179, 1, 0.34)",
+  },
+};
+
 function IconOrb({
   name = "sparkles",
   tone = "blue",
   size = "md",
+  iconStyle = "flat",
 }: {
   name?: GeneratedIconName;
   tone?: "blue" | "gold";
   size?: "sm" | "md" | "lg";
+  iconStyle?: IconStyle;
 }) {
   const Icon = ICONS[name];
-  const boxSize =
-    size === "lg" ? "h-16 w-16 rounded-[22px]" : size === "sm" ? "h-10 w-10 rounded-xl" : "h-12 w-12 rounded-2xl";
+  const boxSize = size === "lg" ? "h-16 w-16" : size === "sm" ? "h-10 w-10" : "h-12 w-12";
+  const roundedSize = size === "lg" ? "rounded-[22px]" : size === "sm" ? "rounded-xl" : "rounded-2xl";
   const iconSize = size === "lg" ? "h-7 w-7" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
+
+  if (iconStyle === "3d") {
+    const palette = ICON_TONE_3D[tone];
+    const shadowOffset = size === "sm" ? "translate-x-1 translate-y-1" : "translate-x-1.5 translate-y-2";
+
+    return (
+      <span className={`group relative inline-flex shrink-0 ${boxSize}`} aria-hidden="true">
+        <span
+          className={`absolute inset-0 ${roundedSize} ${shadowOffset}`}
+          style={{ background: palette.shadow, opacity: 0.9 }}
+        />
+        <span
+          className={`relative grid h-full w-full -rotate-3 place-items-center ${roundedSize} border border-white/60 text-white transition duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0`}
+          style={{
+            background: palette.front,
+            boxShadow: `0 10px 22px ${palette.glow}, inset 0 1px 0 rgba(255,255,255,.65), inset 0 -6px 10px rgba(0,0,0,.12)`,
+          }}
+        >
+          <span className="absolute inset-x-2 top-1 h-1/3 rounded-full bg-white/25 blur-sm" />
+          <Icon className={`relative ${iconSize}`} strokeWidth={1.8} />
+        </span>
+      </span>
+    );
+  }
+
   const toneClasses =
     tone === "gold"
       ? "border-[#F5B301]/35 bg-[linear-gradient(145deg,rgba(245,179,1,0.30),rgba(245,179,1,0.06))] text-[#F5B301] shadow-[0_14px_34px_rgba(245,179,1,0.22)]"
@@ -191,7 +242,7 @@ function IconOrb({
 
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden border ${boxSize} ${toneClasses}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden border ${boxSize} ${roundedSize} ${toneClasses}`}
       aria-hidden="true"
     >
       <span className="absolute inset-x-2 top-1 h-px bg-white/45" />
@@ -207,16 +258,18 @@ function SectionHeading({
   description,
   icon = "sparkles",
   tone = "blue",
+  iconStyle = "flat",
 }: {
   eyebrow: string;
   title: string;
   description?: string;
   icon?: GeneratedIconName;
   tone?: "blue" | "gold";
+  iconStyle?: IconStyle;
 }) {
   return (
     <div className="mb-7 flex items-start gap-4">
-      <IconOrb name={icon} tone={tone} />
+      <IconOrb name={icon} tone={tone} iconStyle={iconStyle} />
       <div>
         <div
           className={`text-[11px] font-bold uppercase tracking-[0.22em] ${tone === "gold" ? "text-[var(--gpk-gold-text)]" : "text-[var(--gpk-accent-text)]"}`}
@@ -244,14 +297,16 @@ function ComparisonTableSection({
   table,
   eyebrow,
   icon = "shield",
+  iconStyle = "flat",
 }: {
   table: GeneratedComparisonTable;
   eyebrow: string;
   icon?: GeneratedIconName;
+  iconStyle?: IconStyle;
 }) {
   return (
     <section className="mb-14">
-      <SectionHeading eyebrow={eyebrow} title={table.title} description={table.description} icon={icon} />
+      <SectionHeading eyebrow={eyebrow} title={table.title} description={table.description} icon={icon} iconStyle={iconStyle} />
       <GlassCard className="overflow-x-auto p-2 sm:p-3">
         <table className="w-full min-w-[560px] border-collapse text-left text-sm">
           <thead>
@@ -315,6 +370,7 @@ export function GeneratedPageLayout({
   primaryCta,
   secondaryCta,
   theme = "dark",
+  iconStyle = "flat",
   children,
 }: GeneratedPageLayoutProps) {
   const vars = THEME_VARS[theme];
@@ -363,7 +419,7 @@ export function GeneratedPageLayout({
 
             <GlassCard className="relative p-6">
               <div className="absolute right-5 top-5 h-20 w-20 rounded-full bg-[#2563EB]/20 blur-3xl" />
-              <IconOrb name="answer" tone="gold" size="lg" />
+              <IconOrb name="answer" tone="gold" size="lg" iconStyle={iconStyle} />
               <div className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--gpk-gold-text)]">Answer first</div>
               <div className="mt-2 text-lg font-bold">{answerTitle}</div>
               <p className="mt-3 text-sm leading-7 text-[var(--gpk-muted)]">{answer}</p>
@@ -377,7 +433,7 @@ export function GeneratedPageLayout({
           <GlassCard className="overflow-hidden">
             <div className="grid lg:grid-cols-[220px_1fr]">
               <div className="border-b border-white/10 bg-[#2563EB] p-7 text-white lg:border-b-0 lg:border-r">
-                <IconOrb name="check" tone="gold" />
+                <IconOrb name="check" tone="gold" iconStyle={iconStyle} />
                 <h2 id="quick-answer" className="mt-5 text-xl font-extrabold text-white">Quick answer</h2>
                 <p className="mt-2 text-sm leading-6 text-white/75">A concise response for readers and answer engines.</p>
               </div>
@@ -391,13 +447,13 @@ export function GeneratedPageLayout({
 
         {journey.length > 0 ? (
           <section className="mb-14" aria-label="Visual roadmap">
-            <SectionHeading eyebrow="At a glance" title="The path in one picture" icon="wand" />
+            <SectionHeading eyebrow="At a glance" title="The path in one picture" icon="wand" iconStyle={iconStyle} />
             <GlassCard className="overflow-x-auto p-6 sm:p-8">
               <div className="flex min-w-[560px] items-start justify-between gap-2 sm:min-w-0">
                 {journey.map((node, index) => (
                   <div key={`${index}-${node.label}`} className="flex flex-1 items-start">
                     <div className="flex flex-col items-center text-center">
-                      <IconOrb name={node.icon || "sparkles"} tone={index % 2 === 0 ? "blue" : "gold"} size="sm" />
+                      <IconOrb name={node.icon || "sparkles"} tone={index % 2 === 0 ? "blue" : "gold"} size="sm" iconStyle={iconStyle} />
                       <div className="mt-3 w-24 text-xs font-bold leading-tight text-[var(--gpk-muted-3)] sm:w-28">{node.label}</div>
                     </div>
                     {index < journey.length - 1 ? (
@@ -428,11 +484,12 @@ export function GeneratedPageLayout({
             title="Practical takeaways"
             description="Clear outcomes, structured guidance, and useful next actions without keyword padding."
             icon="target"
+            iconStyle={iconStyle}
           />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {highlights.map((item, index) => (
               <GlassCard key={item.title} className="p-6">
-                <IconOrb name={item.icon || (index % 2 === 0 ? "sparkles" : "idea")} tone={index % 3 === 1 ? "gold" : "blue"} />
+                <IconOrb name={item.icon || (index % 2 === 0 ? "sparkles" : "idea")} tone={index % 3 === 1 ? "gold" : "blue"} iconStyle={iconStyle} />
                 <h3 className="mt-5 text-lg font-bold">{item.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-[var(--gpk-muted)]">{item.description}</p>
               </GlassCard>
@@ -448,11 +505,12 @@ export function GeneratedPageLayout({
               description="Concrete situations where this shows up, not a generic feature list."
               icon="search"
               tone="gold"
+              iconStyle={iconStyle}
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {useCases.map((item, index) => (
                 <div key={item.title} className="rounded-2xl border border-[var(--gpk-border)] bg-[var(--gpk-fill-3)] p-5">
-                  <IconOrb name={item.icon || "target"} tone={index % 2 === 0 ? "gold" : "blue"} size="sm" />
+                  <IconOrb name={item.icon || "target"} tone={index % 2 === 0 ? "gold" : "blue"} size="sm" iconStyle={iconStyle} />
                   <h3 className="mt-4 text-base font-bold">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[var(--gpk-faint)]">{item.description}</p>
                 </div>
@@ -472,6 +530,7 @@ export function GeneratedPageLayout({
             description="Follow the sequence, produce visible work, review the result, and improve the system."
             icon="book"
             tone="gold"
+            iconStyle={iconStyle}
           />
           <div className="space-y-4">
             {steps.map((step, index) => (
@@ -497,11 +556,11 @@ export function GeneratedPageLayout({
         </section>
 
         {comparisonTable ? (
-          <ComparisonTableSection table={comparisonTable} eyebrow="Compare before you commit" icon="shield" />
+          <ComparisonTableSection table={comparisonTable} eyebrow="Compare before you commit" icon="shield" iconStyle={iconStyle} />
         ) : null}
 
         {secondaryTable ? (
-          <ComparisonTableSection table={secondaryTable} eyebrow="Related and connected" icon="link" />
+          <ComparisonTableSection table={secondaryTable} eyebrow="Related and connected" icon="link" iconStyle={iconStyle} />
         ) : null}
 
         {tools.length > 0 ? (
@@ -511,6 +570,7 @@ export function GeneratedPageLayout({
               title="Recommended resources"
               description="Start with a focused stack. Verify current features and pricing on each provider's official website."
               icon="wand"
+              iconStyle={iconStyle}
             />
             <div className="grid gap-4 md:grid-cols-2">
               {tools.map((tool, index) => (
@@ -542,6 +602,7 @@ export function GeneratedPageLayout({
               description="These checks protect usefulness, credibility, and long-term search performance."
               icon="shield"
               tone="gold"
+              iconStyle={iconStyle}
             />
             <div className="grid gap-4 md:grid-cols-2">
               {mistakes.map((mistake) => (
@@ -569,6 +630,7 @@ export function GeneratedPageLayout({
             title="Frequently asked questions"
             description={`${faqs.length} visible, page-specific answers for users, search snippets, and AI retrieval systems.`}
             icon="answer"
+            iconStyle={iconStyle}
           />
           <div id="faq-heading" className="space-y-4">
             {faqs.map((faq) => (
@@ -611,6 +673,7 @@ export function GeneratedPageLayout({
               description="Crawlable, descriptive links connect the page to the wider Sikhadenge knowledge system."
               icon="link"
               tone="gold"
+              iconStyle={iconStyle}
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {relatedLinks.map((item) => (
