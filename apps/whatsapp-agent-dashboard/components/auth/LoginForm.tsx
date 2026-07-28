@@ -34,31 +34,64 @@ export default function LoginForm() {
     }
   }
 
+  const hasError = Boolean(error);
+
   return (
-    <form className="login-form" onSubmit={onSubmit}>
-      <label>
-        <span>Email address</span>
+    <form className="auth-form" onSubmit={onSubmit} noValidate>
+      <div className="auth-field">
+        <label className="auth-field__label" htmlFor="login-email">
+          Email address
+        </label>
         <input
+          id="login-email"
+          className="auth-input"
           type="email"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="you@sikhadenge.in"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          aria-invalid={hasError}
+          autoFocus
           required
         />
-      </label>
-      <label>
-        <span>Password</span>
+      </div>
+
+      <div className="auth-field">
+        <label className="auth-field__label" htmlFor="login-password">
+          Password
+        </label>
         <input
+          id="login-password"
+          className="auth-input"
           type="password"
           autoComplete="current-password"
+          placeholder="••••••••"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? "login-error" : undefined}
           required
         />
-      </label>
-      {error ? <p className="login-error" role="alert">{error}</p> : null}
-      <button className="login-submit" type="submit" disabled={submitting}>
-        {submitting ? "Checking..." : "Sign in"}
+      </div>
+
+      {error ? (
+        <p className="auth-error" id="login-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <button className="auth-submit" type="submit" disabled={submitting}>
+        {submitting ? (
+          <>
+            <span className="auth-spinner" aria-hidden="true" />
+            Signing in…
+          </>
+        ) : (
+          "Sign in"
+        )}
       </button>
     </form>
   );
