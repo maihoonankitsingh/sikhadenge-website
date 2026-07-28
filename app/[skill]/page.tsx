@@ -23,6 +23,9 @@ import {
   buildComparisonTable,
   buildIntroParagraph,
   buildClosingParagraph,
+  buildTransitionToTakeaways,
+  buildTransitionToSteps,
+  buildRelatedSkillsTable,
   toTitle,
 } from "../../lib/generatedSkillContent";
 import { SITE_URL, organizationSchema, websiteSchema, breadcrumbSchema } from "../../lib/schema";
@@ -123,6 +126,8 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const answer = buildAnswer(fields);
   const introParagraph = buildIntroParagraph(fields);
   const closingParagraph = buildClosingParagraph(fields);
+  const transitionToTakeaways = buildTransitionToTakeaways(fields);
+  const transitionToSteps = buildTransitionToSteps(fields);
   const faqs = buildFaqs(fields);
 
   let highlights: GeneratedHighlight[] = buildHighlights(fields);
@@ -141,6 +146,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const journey = buildJourney(fields);
   const useCases = buildUseCases(fields);
   const comparisonTable = buildComparisonTable(fields);
+  const secondaryTable = buildRelatedSkillsTable(entry, fields) ?? undefined;
 
   const badges = [
     fields.cityIsSpecific ? fields.city : "Online learning",
@@ -217,11 +223,14 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         answer={answer}
         introParagraph={introParagraph}
         journey={journey}
+        transitionToTakeaways={transitionToTakeaways}
         highlights={highlights}
         useCases={useCases}
         useCasesTitle={useCasesTitle(fields)}
+        transitionToSteps={transitionToSteps}
         steps={steps}
         comparisonTable={comparisonTable}
+        secondaryTable={secondaryTable}
         tools={tools}
         mistakes={mistakes}
         closingParagraph={closingParagraph}

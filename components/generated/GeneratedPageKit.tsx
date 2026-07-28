@@ -86,11 +86,14 @@ type GeneratedPageLayoutProps = {
   answer: string;
   introParagraph?: string;
   journey?: GeneratedJourneyStep[];
+  transitionToTakeaways?: string;
   highlights: GeneratedHighlight[];
   useCases?: GeneratedHighlight[];
   useCasesTitle?: string;
+  transitionToSteps?: string;
   steps: GeneratedStep[];
   comparisonTable?: GeneratedComparisonTable;
+  secondaryTable?: GeneratedComparisonTable;
   tools?: GeneratedTool[];
   mistakes?: string[];
   closingParagraph?: string;
@@ -237,6 +240,52 @@ function GlassCard({ children, className = "" }: { children: ReactNode; classNam
   );
 }
 
+function ComparisonTableSection({
+  table,
+  eyebrow,
+  icon = "shield",
+}: {
+  table: GeneratedComparisonTable;
+  eyebrow: string;
+  icon?: GeneratedIconName;
+}) {
+  return (
+    <section className="mb-14">
+      <SectionHeading eyebrow={eyebrow} title={table.title} description={table.description} icon={icon} />
+      <GlassCard className="overflow-x-auto p-2 sm:p-3">
+        <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+          <thead>
+            <tr>
+              {table.columns.map((col) => (
+                <th
+                  key={col}
+                  className="border-b border-[var(--gpk-border)] px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--gpk-accent-text)]"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--gpk-fill-3)]" : ""}>
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className={`px-4 py-3 align-top leading-6 text-[var(--gpk-muted-2)] ${cellIndex === 0 ? "font-bold text-[var(--gpk-text)]" : ""}`}
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </GlassCard>
+    </section>
+  );
+}
+
 export function GeneratedPageLayout({
   breadcrumbs,
   eyebrow,
@@ -247,11 +296,14 @@ export function GeneratedPageLayout({
   answer,
   introParagraph,
   journey = [],
+  transitionToTakeaways,
   highlights,
   useCases = [],
   useCasesTitle = "Where this applies in real work",
+  transitionToSteps,
   steps,
   comparisonTable,
+  secondaryTable,
   tools = [],
   mistakes = [],
   closingParagraph,
@@ -366,6 +418,10 @@ export function GeneratedPageLayout({
           </section>
         ) : null}
 
+        {transitionToTakeaways ? (
+          <p className="mb-10 max-w-3xl text-base leading-8 text-[var(--gpk-muted-2)]">{transitionToTakeaways}</p>
+        ) : null}
+
         <section className="mb-14">
           <SectionHeading
             eyebrow="What you will get"
@@ -405,6 +461,10 @@ export function GeneratedPageLayout({
           </section>
         ) : null}
 
+        {transitionToSteps ? (
+          <p className="mb-10 max-w-3xl text-base leading-8 text-[var(--gpk-muted-2)]">{transitionToSteps}</p>
+        ) : null}
+
         <section className="mb-14">
           <SectionHeading
             eyebrow="Execution roadmap"
@@ -437,44 +497,11 @@ export function GeneratedPageLayout({
         </section>
 
         {comparisonTable ? (
-          <section className="mb-14">
-            <SectionHeading
-              eyebrow="Compare before you commit"
-              title={comparisonTable.title}
-              description={comparisonTable.description}
-              icon="shield"
-            />
-            <GlassCard className="overflow-x-auto p-2 sm:p-3">
-              <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-                <thead>
-                  <tr>
-                    {comparisonTable.columns.map((col) => (
-                      <th
-                        key={col}
-                        className="border-b border-[var(--gpk-border)] px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--gpk-accent-text)]"
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparisonTable.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[var(--gpk-fill-3)]" : ""}>
-                      {row.map((cell, cellIndex) => (
-                        <td
-                          key={cellIndex}
-                          className={`px-4 py-3 align-top leading-6 text-[var(--gpk-muted-2)] ${cellIndex === 0 ? "font-bold text-[var(--gpk-text)]" : ""}`}
-                        >
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </GlassCard>
-          </section>
+          <ComparisonTableSection table={comparisonTable} eyebrow="Compare before you commit" icon="shield" />
+        ) : null}
+
+        {secondaryTable ? (
+          <ComparisonTableSection table={secondaryTable} eyebrow="Related and connected" icon="link" />
         ) : null}
 
         {tools.length > 0 ? (
