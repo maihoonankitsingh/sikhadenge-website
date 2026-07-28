@@ -10,7 +10,11 @@
 
 /* ---- Workspace container ------------------------------------------------- */
 .inbox-redesign .inbox-grid {
-  grid-template-columns: 340px minmax(440px, 1fr) 324px !important;
+  /* Side columns can shrink so all three tracks fit inside the workspace at
+     common 1280/1366 laptop widths (available ~1012px / ~1074px) instead of
+     overflowing and clipping the details panel under overflow: hidden. */
+  grid-template-columns:
+    minmax(296px, 336px) minmax(400px, 1fr) minmax(280px, 316px) !important;
   gap: 0 !important;
   height: calc(100vh - 176px) !important;
   min-height: 600px !important;
@@ -515,7 +519,7 @@
 }
 
 /* ---- Responsive ---------------------------------------------------------- */
-@media (max-width: 1180px) {
+@media (max-width: 1279px) {
   .inbox-redesign .inbox-grid {
     grid-template-columns: 300px minmax(0, 1fr) !important;
   }
