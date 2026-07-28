@@ -10,6 +10,7 @@ import type {
   GeneratedLink,
 } from "../components/generated/GeneratedPageKit";
 import { getCityFact, type CityFact } from "./cityFacts";
+import { getAudienceFact, type AudienceFact } from "./audienceFacts";
 
 export type SeoEntry = {
   slug: string;
@@ -178,6 +179,7 @@ export type ResolvedFields = {
   cityFact: CityFact | null;
   audience: string;
   audienceIsSpecific: boolean;
+  audienceFact: AudienceFact | null;
   usecase: string;
   usecaseIsSpecific: boolean;
   modifier: string;
@@ -232,6 +234,7 @@ export function resolveFields(entry: SeoEntry, fallbackSlug: string): ResolvedFi
 
   const citySlug = cityIsSpecific ? rawCity.trim().toLowerCase().replace(/\s+/g, "") : "";
   const cityFact = citySlug ? getCityFact(citySlug) : null;
+  const audienceFact = audienceIsSpecific ? getAudienceFact(rawAudience) : null;
 
   return {
     topic: toTitle(rawTopic) || toTitle(fallbackSlug),
@@ -241,6 +244,7 @@ export function resolveFields(entry: SeoEntry, fallbackSlug: string): ResolvedFi
     cityFact,
     audience: audienceIsSpecific ? toTitle(rawAudience) : "students, freelancers, and working professionals",
     audienceIsSpecific,
+    audienceFact,
     usecase: usecaseIsSpecific ? toTitle(rawUsecase) : "",
     usecaseIsSpecific,
     modifier: modifierIsSpecific ? toTitle(rawModifier) : "",
@@ -346,6 +350,9 @@ function fill(template: string, fields: ResolvedFields): string {
     .replace(/\{cityClause\}/g, locationClause(fields))
     .replace(/\{audience\}/g, fields.audience)
     .replace(/\{audienceClause\}/g, audienceClause(fields))
+    .replace(/\{audienceConstraint\}/g, fields.audienceFact?.typicalConstraint || "limited time to spend on theory")
+    .replace(/\{audienceGoal\}/g, fields.audienceFact?.primaryGoal || "get a usable result quickly")
+    .replace(/\{audienceStart\}/g, fields.audienceFact?.startingPoint || "one small, real task")
     .replace(/\{usecase\}/g, fields.usecase || fields.topic)
     .replace(/\{family\}/g, fields.family);
 }
@@ -422,10 +429,10 @@ const MODE_STEPS: Record<ContentMode, Array<[string, string, string]>> = {
     ["Confirm what is actually available{cityClause}", "Ask Sikhadenge directly for current session format and eligibility{cityClause} instead of assuming from the page alone.", "Verify first"],
   ],
   combo: [
-    ["Adapt the plan for {audience}", "Adjust pacing and project choice to match the real time and resource constraints of {audience}.", "Personalize"],
+    ["Adapt the plan for {audience}", "Plan around this: {audienceConstraint}. Start with {audienceStart} instead of a generic project.", "Personalize"],
   ],
   audience: [
-    ["Adapt the plan for {audience}", "Adjust pacing and project choice to match the time and resource constraints typical for {audience}.", "Personalize"],
+    ["Adapt the plan for {audience}", "Plan around this: {audienceConstraint}. Start with {audienceStart} instead of a generic project.", "Personalize"],
   ],
   roadmap: [
     ["Set a checkpoint date", "Give each roadmap stage a real date so drift is visible early, not after months.", "Accountability"],
@@ -555,6 +562,15 @@ export function buildFaqs(fields: ResolvedFields): GeneratedFaq[] {
     pool.push([
       "What kind of city is {city} for this topic?",
       `${fields.city} is a ${fields.cityFact.tier} city in ${fields.cityFact.state}, part of ${fields.cityFact.region} India. That affects the local job market and client base for {topic}, but not the fundamentals you need to learn — those stay the same regardless of city tier.`,
+    ]);
+  }
+
+  // Real practical constraints for this specific audience, not a generic
+  // "for {audience}" template — only added when we have the fact.
+  if (fields.audienceFact) {
+    pool.push([
+      `What's realistic for {audience} learning {topic}?`,
+      `For ${fields.audience.toLowerCase()}, time is usually ${fields.audienceFact.timeAvailability}, and the main goal is to ${fields.audienceFact.primaryGoal}. The practical constraint to plan around is that ${fields.audienceFact.typicalConstraint}. Start with ${fields.audienceFact.startingPoint} rather than a generic course outline.`,
     ]);
   }
 
@@ -792,10 +808,10 @@ const INTRO_PARAGRAPHS: Record<ContentMode, string[]> = {
     "{topic}{cityClause} is easy to search for and hard to evaluate — most pages either promise more than they can verify or say almost nothing specific. This guide takes a narrower, more useful angle: what {topic} actually involves, what a realistic starting point looks like{cityClause}, and what to check before you commit time or money to it. It treats {city} as a search and learning context, not a claim about a physical center, a guaranteed batch, or local placement — those details should always be confirmed directly with Sikhadenge rather than assumed from a page like this one.",
   ],
   combo: [
-    "If you found this page while researching {topic}{cityClause} as {audience}, the honest starting point is that generic advice rarely fits your actual constraints. This guide breaks the topic down by what a realistic path looks like for {audience} specifically — how much time it reasonably takes, what a first project should look like, and where people in a similar position tend to get stuck. {city} is used as context for search and relevance, not as a promise of a physical center or guaranteed local opportunities.",
+    "If you found this page while researching {topic}{cityClause} as {audience}, the honest starting point is that generic advice rarely fits your actual constraints. For {audience}, the real goal is usually to {audienceGoal}, and the constraint to plan around is that {audienceConstraint}. {city} is used as context for search and relevance, not as a promise of a physical center or guaranteed local opportunities.",
   ],
   audience: [
-    "Most {topic} content is written for a generic reader, which makes it either too basic or too advanced depending on where you actually are. This page is written with {audience} specifically in mind — the time constraints, the starting knowledge, and the kind of first project that tends to work. The goal is a realistic sequence you can actually follow, not a long feature list of everything {topic} could theoretically involve.",
+    "Most {topic} content is written for a generic reader, which makes it either too basic or too advanced depending on where you actually are. For {audience}, the realistic goal is usually to {audienceGoal} — and the constraint that shapes the whole plan is that {audienceConstraint}. That's why the sequence below starts with {audienceStart} instead of a generic course outline.",
   ],
   roadmap: [
     "A roadmap is only useful if the stages are sequenced correctly and each one has a clear way to check whether you actually finished it. This page lays out a practical {topic} roadmap: what to do first, what depends on what, and where a review checkpoint should sit before you move forward. It is deliberately narrower than a full course outline — the aim is a sequence you can follow end to end, not an exhaustive list of everything related to {topic}.",
