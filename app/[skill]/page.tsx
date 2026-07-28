@@ -251,9 +251,12 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gpk-gold-text)]">Location accuracy</div>
             <h2 className="mt-3 text-2xl font-extrabold">Location context without unsupported local claims</h2>
             <p className="mt-3 max-w-4xl text-sm leading-8 text-[var(--gpk-muted)] sm:text-base">
-              This page uses <strong className="text-[var(--gpk-text)]">{fields.city}</strong> as a learning and search context. It does not claim a
-              physical training center, guaranteed local batch, or city-specific placement unless Sikhadenge confirms that
-              information on an official page.
+              This page uses <strong className="text-[var(--gpk-text)]">{fields.city}</strong> as a learning and search context.
+              {fields.cityFact
+                ? ` ${fields.city} is a ${fields.cityFact.tier} city in ${fields.cityFact.state} (${fields.cityFact.region} India).`
+                : ""}{" "}
+              It does not claim a physical training center, guaranteed local batch, or city-specific placement unless
+              Sikhadenge confirms that information on an official page.
             </p>
           </section>
         ) : (

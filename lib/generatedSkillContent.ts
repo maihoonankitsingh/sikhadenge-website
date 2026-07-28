@@ -9,6 +9,7 @@ import type {
   GeneratedComparisonTable,
   GeneratedLink,
 } from "../components/generated/GeneratedPageKit";
+import { getCityFact, type CityFact } from "./cityFacts";
 
 export type SeoEntry = {
   slug: string;
@@ -172,7 +173,9 @@ function pickOne<T>(pool: T[], seed: number): T {
 export type ResolvedFields = {
   topic: string;
   city: string;
+  citySlug: string;
   cityIsSpecific: boolean;
+  cityFact: CityFact | null;
   audience: string;
   audienceIsSpecific: boolean;
   usecase: string;
@@ -227,10 +230,15 @@ export function resolveFields(entry: SeoEntry, fallbackSlug: string): ResolvedFi
   else if (kind.includes("tool") || usecaseIsSpecific || modifierIsSpecific) mode = "tool";
   else mode = "root";
 
+  const citySlug = cityIsSpecific ? rawCity.trim().toLowerCase().replace(/\s+/g, "") : "";
+  const cityFact = citySlug ? getCityFact(citySlug) : null;
+
   return {
     topic: toTitle(rawTopic) || toTitle(fallbackSlug),
     city: toTitle(rawCity),
+    citySlug,
     cityIsSpecific,
+    cityFact,
     audience: audienceIsSpecific ? toTitle(rawAudience) : "students, freelancers, and working professionals",
     audienceIsSpecific,
     usecase: usecaseIsSpecific ? toTitle(rawUsecase) : "",
@@ -539,7 +547,17 @@ const MODE_FAQS: Record<ContentMode, Array<[string, string]>> = {
 
 export function buildFaqs(fields: ResolvedFields): GeneratedFaq[] {
   const specific = MODE_FAQS[fields.mode] || [];
-  const pool = [...SHARED_FAQS, ...specific];
+  const pool: Array<[string, string]> = [...SHARED_FAQS, ...specific];
+
+  // Real, verifiable geography (state/region/tier), not a generic filler
+  // sentence — only added when we actually have the fact for this city.
+  if (fields.cityFact) {
+    pool.push([
+      "What kind of city is {city} for this topic?",
+      `${fields.city} is a ${fields.cityFact.tier} city in ${fields.cityFact.state}, part of ${fields.cityFact.region} India. That affects the local job market and client base for {topic}, but not the fundamentals you need to learn — those stay the same regardless of city tier.`,
+    ]);
+  }
+
   const count = Math.min(14, pool.length);
   const chosen = pickDeterministic(pool, count, fields.seed + 29);
   return chosen.map(([q, a]) => ({ q: fill(q, fields), a: fill(a, fields) }));
