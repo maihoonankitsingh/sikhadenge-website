@@ -17,6 +17,10 @@ import {
   buildMistakes,
   buildFaqs,
   buildTools,
+  buildJourney,
+  buildUseCases,
+  useCasesTitle,
+  buildComparisonTable,
   toTitle,
 } from "../../lib/generatedSkillContent";
 import { SITE_URL, organizationSchema, websiteSchema, breadcrumbSchema } from "../../lib/schema";
@@ -130,6 +134,9 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const steps = buildSteps(fields);
   const mistakes = buildMistakes(fields);
   const tools = buildTools(fields);
+  const journey = buildJourney(fields);
+  const useCases = buildUseCases(fields);
+  const comparisonTable = buildComparisonTable(fields);
 
   const badges = [
     fields.cityIsSpecific ? fields.city : "Online learning",
@@ -204,8 +211,12 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         badges={badges}
         answerTitle={`What is the right way to approach ${fields.topic}?`}
         answer={answer}
+        journey={journey}
         highlights={highlights}
+        useCases={useCases}
+        useCasesTitle={useCasesTitle(fields)}
         steps={steps}
+        comparisonTable={comparisonTable}
         tools={tools}
         mistakes={mistakes}
         faqs={faqs}

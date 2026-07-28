@@ -1,6 +1,13 @@
 import fs from "fs";
 import path from "path";
-import type { GeneratedFaq, GeneratedHighlight, GeneratedStep, GeneratedTool } from "../components/generated/GeneratedPageKit";
+import type {
+  GeneratedFaq,
+  GeneratedHighlight,
+  GeneratedStep,
+  GeneratedTool,
+  GeneratedJourneyStep,
+  GeneratedComparisonTable,
+} from "../components/generated/GeneratedPageKit";
 
 export type SeoEntry = {
   slug: string;
@@ -530,4 +537,204 @@ export function buildTools(fields: ResolvedFields): GeneratedTool[] {
       label: "Workflow",
     },
   ];
+}
+
+// ---------- Journey diagram (visual roadmap) ----------
+
+const JOURNEY_TEMPLATES: Record<ContentMode, Array<[string, GeneratedHighlight["icon"]]>> = {
+  city: [
+    ["Fundamentals", "book"], ["Guided practice", "target"], ["Real project", "check"], ["Review", "shield"], ["Local/remote work", "users"],
+  ],
+  combo: [
+    ["Fundamentals", "book"], ["{audience}-fit practice", "target"], ["Real project", "check"], ["Review", "shield"], ["Portfolio", "graduate"],
+  ],
+  audience: [
+    ["Fundamentals", "book"], ["{audience}-paced practice", "target"], ["Real project", "check"], ["Feedback", "shield"], ["Portfolio", "graduate"],
+  ],
+  roadmap: [
+    ["Baseline", "search"], ["Stage 1", "book"], ["Stage 2", "target"], ["Checkpoint review", "shield"], ["Case study", "graduate"],
+  ],
+  career: [
+    ["Skill build", "book"], ["Project proof", "target"], ["Portfolio", "graduate"], ["Outreach", "users"], ["Iterate", "sparkles"],
+  ],
+  question: [
+    ["Direct answer", "answer"], ["Apply to your case", "target"], ["Test it", "check"], ["Adjust", "wand"],
+  ],
+  comparison: [
+    ["Define the brief", "search"], ["Shortlist options", "book"], ["Score against brief", "check"], ["Decide", "shield"],
+  ],
+  tool: [
+    ["Pick one tool", "wand"], ["Learn core workflow", "book"], ["Small project", "target"], ["Review output", "check"],
+  ],
+  root: [
+    ["Fundamentals", "book"], ["Practice", "target"], ["Real project", "check"], ["Review", "shield"], ["Portfolio", "graduate"],
+  ],
+};
+
+export function buildJourney(fields: ResolvedFields): GeneratedJourneyStep[] {
+  const template = JOURNEY_TEMPLATES[fields.mode] || JOURNEY_TEMPLATES.root;
+  return template.map(([label, icon]) => ({ label: fill(label, fields), icon }));
+}
+
+// ---------- Use cases (where it's actually applied) ----------
+
+const SHARED_USE_CASES: Array<[string, string, GeneratedHighlight["icon"]]> = [
+  ["Personal projects", "Practicing {topic} on a project you actually care about finishing, not a throwaway exercise.", "sparkles"],
+  ["Freelance or client work", "Delivering a small, well-scoped {topic} task for a real client and handling their feedback.", "users"],
+  ["Internal work tasks", "Applying {topic} to speed up or improve a task you already do at your job or business.", "target"],
+  ["Portfolio building", "Turning {topic} practice into a documented case study for job or client applications.", "graduate"],
+  ["Content or teaching", "Explaining {topic} to someone else, which is a reliable way to find gaps in your own understanding.", "book"],
+  ["Side projects and experiments", "Testing {topic} on a low-stakes side project before committing it to important work.", "wand"],
+];
+
+const MODE_USE_CASES: Record<ContentMode, Array<[string, string, GeneratedHighlight["icon"]]>> = {
+  city: [
+    ["Local small businesses", "Small businesses{cityClause} that need {topic} help but cannot justify a full-time hire.", "target"],
+    ["Remote clients from {city}", "Clients based{cityClause} who are open to remote delivery once trust is established.", "users"],
+  ],
+  combo: [
+    ["Work fitting {audience}", "Tasks that fit the time and resource constraints typical for {audience}{cityClause}.", "users"],
+  ],
+  audience: [
+    ["Work fitting {audience}", "Tasks that fit the time and resource constraints typical for {audience}.", "users"],
+  ],
+  roadmap: [
+    ["Milestone-based projects", "Work broken into checkpoints so progress in {topic} is visible, not assumed.", "shield"],
+  ],
+  career: [
+    ["Job applications", "Using {topic} project evidence directly in resumes, portfolios, and interviews.", "graduate"],
+    ["Freelance proposals", "Referencing specific {topic} outcomes when pitching freelance work.", "users"],
+  ],
+  question: [
+    ["Quick decision-making", "Using the direct answer above to make a fast, reasonable {topic} decision today.", "answer"],
+  ],
+  comparison: [
+    ["Vendor or tool selection", "Choosing between {topic} options for a specific team or project need.", "shield"],
+  ],
+  tool: [
+    ["Daily workflow support", "Using {topic} as one step inside a larger existing workflow, not a replacement for it.", "wand"],
+  ],
+  root: [
+    ["Skill-building projects", "Structured practice projects designed specifically to build {topic} capability.", "target"],
+  ],
+};
+
+export function buildUseCases(fields: ResolvedFields): GeneratedHighlight[] {
+  const specific = MODE_USE_CASES[fields.mode] || [];
+  const pool = [...SHARED_USE_CASES, ...specific];
+  const chosen = pickDeterministic(pool, 6, fields.seed + 37);
+  return chosen.map(([title, description, icon]) => ({
+    title: fill(title, fields),
+    description: fill(description, fields),
+    icon,
+  }));
+}
+
+export function useCasesTitle(fields: ResolvedFields): string {
+  return `Where ${fields.topic} is actually used`;
+}
+
+// ---------- Comparison table ----------
+
+const COMPARISON_TABLES: Record<ContentMode, { title: string; description: string; columns: string[]; rows: string[][] }> = {
+  city: {
+    title: "Three ways to approach {topic}{cityClause}",
+    description: "A structural comparison, not a ranking of specific providers.",
+    columns: ["Approach", "Speed to first result", "Consistency needed", "Typical risk"],
+    rows: [
+      ["Unstructured videos, no plan", "Slow and inconsistent", "Low, but progress stalls easily", "Learners often quit before finishing anything usable"],
+      ["Self-directed structured study", "Moderate", "High — depends entirely on self-discipline", "Works well only with strong follow-through"],
+      ["Guided practice with review{cityClause}", "Faster feedback loop", "Moderate — structure reduces the discipline burden", "Requires real practice time, not just attendance"],
+    ],
+  },
+  combo: {
+    title: "Comparing learning routes for {audience}",
+    description: "What actually changes based on your starting constraints.",
+    columns: ["Route", "Best when", "Main trade-off"],
+    rows: [
+      ["Fast, narrow focus", "You have one urgent task to solve", "Shallow understanding outside that task"],
+      ["Broad foundation first", "You want long-term flexibility", "Slower to your first usable output"],
+      ["Guided practice matched to {audience}", "You want structure without starting from zero", "Still requires your own practice time"],
+    ],
+  },
+  audience: {
+    title: "Comparing learning routes for {audience}",
+    description: "What actually changes based on your starting constraints.",
+    columns: ["Route", "Best when", "Main trade-off"],
+    rows: [
+      ["Fast, narrow focus", "You have one urgent task to solve", "Shallow understanding outside that task"],
+      ["Broad foundation first", "You want long-term flexibility", "Slower to your first usable output"],
+      ["Guided practice matched to {audience}", "You want structure without starting from zero", "Still requires your own practice time"],
+    ],
+  },
+  roadmap: {
+    title: "Following the roadmap vs skipping ahead",
+    description: "Why sequence matters more than speed here.",
+    columns: ["Behavior", "Short-term feel", "Longer-term result"],
+    rows: [
+      ["Skip stages, jump to advanced work", "Feels faster at first", "Gaps show up under real constraints later"],
+      ["Follow every stage in order", "Feels slower at first", "Fewer repeated mistakes, steadier output quality"],
+      ["Follow stages but skip review checkpoints", "Feels productive", "Errors compound silently across stages"],
+    ],
+  },
+  career: {
+    title: "What actually signals {topic} readiness",
+    description: "Comparing common signals people rely on.",
+    columns: ["Signal", "How reliable it is", "Why"],
+    rows: [
+      ["Certificate alone", "Weak on its own", "Shows exposure, not demonstrated capability"],
+      ["Number of courses completed", "Weak on its own", "Volume does not equal applied skill"],
+      ["A small number of explained, real projects", "Strong", "Shows process, decisions, and a verifiable result"],
+    ],
+  },
+  question: {
+    title: "How to weigh advice on this question",
+    description: "Not every source deserves equal trust.",
+    columns: ["Source type", "Trust level", "Use it for"],
+    rows: [
+      ["Official documentation", "High", "Current features, limits, and exact behavior"],
+      ["Structured guides like this one", "Moderate", "General direction and a practical starting sequence"],
+      ["Anecdotal social media claims", "Low without verification", "Ideas to test, not facts to rely on"],
+    ],
+  },
+  comparison: {
+    title: "How to score {topic} options fairly",
+    description: "A simple framework instead of a fixed winner.",
+    columns: ["Criterion", "Why it matters", "How to check it"],
+    rows: [
+      ["Fit for your exact task", "Generic feature lists hide task-specific gaps", "Test with your real use case, not a demo"],
+      ["Total cost at your scale", "Entry pricing often changes at real usage volume", "Check pricing pages directly, not summaries"],
+      ["Support and documentation quality", "You will need it when something breaks", "Search their docs for your exact error before choosing"],
+    ],
+  },
+  tool: {
+    title: "Free vs paid vs enterprise tooling for {topic}",
+    description: "A general pattern — exact tiers vary by provider.",
+    columns: ["Tier", "Typical limitation", "Best for"],
+    rows: [
+      ["Free / trial", "Usage caps, watermarks, or limited features", "Learning the core workflow first"],
+      ["Paid individual", "Cost scales with usage or seats", "Consistent personal or small client work"],
+      ["Enterprise / team", "Requires procurement and onboarding", "Teams needing admin controls and support SLAs"],
+    ],
+  },
+  root: {
+    title: "Three ways to approach {topic}",
+    description: "A structural comparison, not a ranking of specific providers.",
+    columns: ["Approach", "Speed to first result", "Consistency needed", "Typical risk"],
+    rows: [
+      ["Unstructured videos, no plan", "Slow and inconsistent", "Low, but progress stalls easily", "Learners often quit before finishing anything usable"],
+      ["Self-directed structured study", "Moderate", "High — depends entirely on self-discipline", "Works well only with strong follow-through"],
+      ["Guided practice with review", "Faster feedback loop", "Moderate — structure reduces the discipline burden", "Requires real practice time, not just attendance"],
+    ],
+  },
+};
+
+export function buildComparisonTable(fields: ResolvedFields): GeneratedComparisonTable {
+  const template = COMPARISON_TABLES[fields.mode] || COMPARISON_TABLES.root;
+  return {
+    title: fill(template.title, fields),
+    description: fill(template.description, fields),
+    columns: template.columns,
+    rows: template.rows.map((row) => row.map((cell) => fill(cell, fields))),
+  };
 }
