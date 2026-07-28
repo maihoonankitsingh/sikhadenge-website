@@ -26,6 +26,7 @@ import {
   buildTransitionToTakeaways,
   buildTransitionToSteps,
   buildRelatedSkillsTable,
+  buildSiblingLinks,
   toTitle,
 } from "../../lib/generatedSkillContent";
 import { SITE_URL, organizationSchema, websiteSchema, breadcrumbSchema } from "../../lib/schema";
@@ -147,6 +148,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const useCases = buildUseCases(fields);
   const comparisonTable = buildComparisonTable(fields);
   const secondaryTable = buildRelatedSkillsTable(entry, fields) ?? undefined;
+  const { links: siblingLinks, title: siblingLinksTitle } = buildSiblingLinks(entry, fields);
 
   const badges = [
     fields.cityIsSpecific ? fields.city : "Online learning",
@@ -235,6 +237,8 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         mistakes={mistakes}
         closingParagraph={closingParagraph}
         faqs={faqs}
+        siblingLinks={siblingLinks}
+        siblingLinksTitle={siblingLinksTitle}
         relatedLinks={relatedLinks}
         updatedAt={RELEASE_DATE_LABEL}
         primaryCta={{ href: "/gen-ai-masterclass/register-one-step", label: "Join the free masterclass" }}

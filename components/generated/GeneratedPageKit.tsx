@@ -105,6 +105,8 @@ type GeneratedPageLayoutProps = {
   closingParagraph?: string;
   faqs: GeneratedFaq[];
   relatedLinks?: GeneratedLink[];
+  siblingLinks?: GeneratedLink[];
+  siblingLinksTitle?: string;
   updatedAt: string;
   authorLabel?: string;
   authorHref?: string;
@@ -293,6 +295,45 @@ function GlassCard({ children, className = "" }: { children: ReactNode; classNam
   );
 }
 
+function LinkGridSection({
+  links,
+  eyebrow,
+  title,
+  description,
+  icon = "link",
+  tone = "blue",
+  iconStyle = "flat",
+}: {
+  links: GeneratedLink[];
+  eyebrow: string;
+  title: string;
+  description?: string;
+  icon?: GeneratedIconName;
+  tone?: "blue" | "gold";
+  iconStyle?: IconStyle;
+}) {
+  return (
+    <section className="mb-14">
+      <SectionHeading eyebrow={eyebrow} title={title} description={description} icon={icon} tone={tone} iconStyle={iconStyle} />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {links.map((item) => (
+          <Link
+            key={`${item.href}-${item.label}`}
+            href={item.href}
+            className="group rounded-2xl border border-[var(--gpk-border)] bg-[var(--gpk-card-bg)] p-5 transition hover:-translate-y-0.5 hover:border-[#2563EB]/45 hover:bg-[var(--gpk-card-bg-strong)]"
+          >
+            <div className="font-bold group-hover:text-[var(--gpk-accent-text-2)]">{item.label}</div>
+            {item.description ? <p className="mt-2 text-sm leading-6 text-[var(--gpk-faint)]">{item.description}</p> : null}
+            <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[var(--gpk-accent-text)]">
+              Open page <ArrowRight className="h-3.5 w-3.5" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ComparisonTableSection({
   table,
   eyebrow,
@@ -364,6 +405,8 @@ export function GeneratedPageLayout({
   closingParagraph,
   faqs,
   relatedLinks = [],
+  siblingLinks = [],
+  siblingLinksTitle,
   updatedAt,
   authorLabel = "Sikhadenge Editorial Team",
   authorHref = "/authors/sikhadenge-editorial-team",
@@ -665,28 +708,27 @@ export function GeneratedPageLayout({
           </GlassCard>
         </section>
 
+        {siblingLinks.length > 0 ? (
+          <LinkGridSection
+            links={siblingLinks}
+            eyebrow="Same topic, more contexts"
+            title={siblingLinksTitle || "More related pages"}
+            description="Real sibling pages in this topic family, not a generic footer link dump."
+            icon="link"
+            iconStyle={iconStyle}
+          />
+        ) : null}
+
         {relatedLinks.length > 0 ? (
-          <section className="mb-14">
-            <SectionHeading
-              eyebrow="Internal links"
-              title="Continue learning"
-              description="Crawlable, descriptive links connect the page to the wider Sikhadenge knowledge system."
-              icon="link"
-              tone="gold"
-              iconStyle={iconStyle}
-            />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {relatedLinks.map((item) => (
-                <Link key={`${item.href}-${item.label}`} href={item.href} className="group rounded-2xl border border-[var(--gpk-border)] bg-[var(--gpk-card-bg)] p-5 transition hover:-translate-y-0.5 hover:border-[#2563EB]/45 hover:bg-[var(--gpk-card-bg-strong)]">
-                  <div className="font-bold group-hover:text-[var(--gpk-accent-text-2)]">{item.label}</div>
-                  {item.description ? <p className="mt-2 text-sm leading-6 text-[var(--gpk-faint)]">{item.description}</p> : null}
-                  <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[var(--gpk-accent-text)]">
-                    Open page <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
+          <LinkGridSection
+            links={relatedLinks}
+            eyebrow="Internal links"
+            title="Continue learning"
+            description="Crawlable, descriptive links connect the page to the wider Sikhadenge knowledge system."
+            icon="link"
+            tone="gold"
+            iconStyle={iconStyle}
+          />
         ) : null}
 
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(640px_320px_at_0%_0%,rgba(37,99,235,0.25),transparent_62%),linear-gradient(135deg,#111827_0%,#0D1730_100%)] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-10">

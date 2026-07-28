@@ -7,6 +7,7 @@ import type {
   GeneratedTool,
   GeneratedJourneyStep,
   GeneratedComparisonTable,
+  GeneratedLink,
 } from "../components/generated/GeneratedPageKit";
 
 export type SeoEntry = {
@@ -896,4 +897,77 @@ export function buildTransitionToTakeaways(fields: ResolvedFields): string {
 
 export function buildTransitionToSteps(fields: ResolvedFields): string {
   return fill(pickOne(TRANSITION_TO_STEPS, fields.seed + 53), fields);
+}
+
+// ---------- Sibling links (internal-linking fix) ----------
+//
+// The site's sitemap already lists all ~99,608 generated pages, but almost
+// none of them were reachable via an actual internal link — family "root"
+// pages (e.g. /ai-automation) linked to zero of their own city/audience
+// variants. Sitemap-only discovery is a weak signal; Google tends to crawl
+// but not index pages with little internal link equity pointing at them.
+// This builds real sibling links: root/"hub" pages link out to a good
+// sample of their own family's children, and every other page links to a
+// handful of thematically-similar siblings (e.g. the same topic in other
+// cities), so the tail pages sit inside a real link graph, not just a
+// sitemap entry.
+
+let _familyIndex: Map<string, SeoEntry[]> | null = null;
+
+function getFamilyIndex(): Map<string, SeoEntry[]> {
+  if (_familyIndex) return _familyIndex;
+  const index = new Map<string, SeoEntry[]>();
+  for (const item of getAllGeneratedEntries()) {
+    const key = item.familyKey || item.rootSlug || "";
+    if (!key) continue;
+    const bucket = index.get(key);
+    if (bucket) bucket.push(item);
+    else index.set(key, [item]);
+  }
+  _familyIndex = index;
+  return index;
+}
+
+function siblingDescription(sibFields: ResolvedFields, topic: string): string {
+  if (sibFields.cityIsSpecific) return `${topic} guide for ${sibFields.city}`;
+  if (sibFields.audienceIsSpecific) return `${topic} guide for ${sibFields.audience}`;
+  return `${topic} guide`;
+}
+
+export function buildSiblingLinks(
+  entry: SeoEntry,
+  fields: ResolvedFields,
+): { links: GeneratedLink[]; title: string } {
+  const familyKey = entry.familyKey || entry.rootSlug || "";
+  const allSiblings = (getFamilyIndex().get(familyKey) || []).filter((item) => item.slug !== entry.slug);
+  if (allSiblings.length === 0) return { links: [], title: "" };
+
+  const currentKind = normalizeKind(entry.pageKind);
+  const isHub = currentKind === "root";
+
+  // Keep cross-links thematically coherent for non-hub pages (a city page
+  // mostly links to other city pages of the same topic, not to an
+  // unrelated salary or roadmap page) — falls back to the full family pool
+  // if that bucket is too small to be useful.
+  let pool = allSiblings;
+  if (!isHub) {
+    const sameKind = allSiblings.filter((item) => normalizeKind(item.pageKind) === currentKind);
+    if (sameKind.length >= 6) pool = sameKind;
+  }
+
+  const count = isHub ? Math.min(30, pool.length) : Math.min(6, pool.length);
+  const chosen = pickDeterministic(pool, count, fields.seed + (isHub ? 61 : 59));
+
+  const links: GeneratedLink[] = chosen.map((sib) => {
+    const sibFields = resolveFields(sib, sib.slug);
+    const label = sib.metaTitle ? sib.metaTitle.replace(/\s+\|\s+Sikhadenge$/i, "") : uniqueTitle(sib, sibFields);
+    return {
+      href: `/${sib.slug}`,
+      label,
+      description: siblingDescription(sibFields, fields.topic),
+    };
+  });
+
+  const title = isHub ? `Explore ${fields.topic} across cities and audiences` : `More ${fields.topic} guides`;
+  return { links, title };
 }
