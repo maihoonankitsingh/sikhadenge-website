@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
 import {
+  captureManualReplyLearningCandidate,
+  type ManualReplyLearningResult,
+} from "../../../../../lib/learning/manual-reply-learning";
+import {
   dispatchOutboundMessage,
   queueOutboundMessage,
 } from "../../../../../lib/outbound/outbound-service";
@@ -162,6 +166,23 @@ export async function POST(
       }
     }
 
+    let learningCapture: ManualReplyLearningResult | null = null;
+    if (content.kind === "text" && queued.message?.id && !queued.duplicate) {
+      try {
+        learningCapture = await captureManualReplyLearningCandidate({
+          conversationId: context.params.conversationId,
+          outboundMessageId: queued.message.id,
+          actorId: user.id,
+        });
+      } catch (error) {
+        console.error("[manual-reply-learning] capture failed", {
+          conversationId: context.params.conversationId,
+          outboundMessageId: queued.message.id,
+          detail: error instanceof Error ? error.message : "Unknown learning capture failure.",
+        });
+      }
+    }
+
     return NextResponse.json(
       {
         ...queued,
@@ -169,6 +190,13 @@ export async function POST(
         dispatchStatus: dispatch?.status ?? queued.message?.status ?? null,
         dispatchMode: dispatch?.mode ?? null,
         dispatchError,
+        learningCaptured: learningCapture?.captured ?? false,
+        learningSuggestionId:
+          learningCapture?.captured === true ? learningCapture.suggestionId : null,
+        learningCaptureDuplicate:
+          learningCapture?.captured === true ? learningCapture.duplicate : false,
+        learningUpdatedExisting:
+          learningCapture?.captured === true ? learningCapture.updatedExisting : false,
       },
       {
         status: queued.duplicate ? 200 : 201,
