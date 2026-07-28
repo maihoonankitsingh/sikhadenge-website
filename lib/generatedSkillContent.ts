@@ -95,13 +95,26 @@ export function findGeneratedEntry(slug: string): SeoEntry | null {
   return getAllGeneratedEntries().find((entry) => entry.slug === slug) ?? null;
 }
 
+const KNOWN_ACRONYMS = /\b(Ai|Seo|Ui|Ux|Ml|Api|Crm|Faq)\b/g;
+const ACRONYM_MAP: Record<string, string> = {
+  Ai: "AI",
+  Seo: "SEO",
+  Ui: "UI",
+  Ux: "UX",
+  Ml: "ML",
+  Api: "API",
+  Crm: "CRM",
+  Faq: "FAQ",
+};
+
 export function toTitle(value?: string) {
   if (!value) return "";
   return value
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(KNOWN_ACRONYMS, (match) => ACRONYM_MAP[match] ?? match);
 }
 
 // Deterministic 32-bit string hash (djb2 variant) — same slug always
@@ -823,4 +836,64 @@ export function buildIntroParagraph(fields: ResolvedFields): string {
 export function buildClosingParagraph(fields: ResolvedFields): string {
   const pool = CLOSING_PARAGRAPHS[fields.mode] || CLOSING_PARAGRAPHS.root;
   return fill(pickOne(pool, fields.seed + 43), fields);
+}
+
+// ---------- Related-skills table (real per-entry data, not a template) ----------
+
+const CONNECTION_REASONS: string[] = [
+  "Shares core tools and workflow patterns with {topic}, so early practice transfers directly.",
+  "Often needed alongside {topic} in real briefs — clients and employers rarely ask for just one skill in isolation.",
+  "Uses a similar review and quality-check process to {topic}, which makes the second skill faster to pick up.",
+  "Frequently the next step once {topic} fundamentals are solid, based on how these topics are typically sequenced.",
+  "Overlaps with {topic} in the audience it serves, even though the execution details differ.",
+  "Complements {topic} well in a portfolio — pairing them signals broader practical range.",
+];
+
+const WHEN_TO_EXPLORE: string[] = [
+  "After your first {topic} project is complete and reviewed",
+  "Once the core {topic} workflow feels routine, not effortful",
+  "When a real brief specifically calls for it alongside {topic}",
+  "Alongside {topic}, if your time and bandwidth allow it",
+  "After you can explain your {topic} decisions clearly to someone else",
+  "When you're ready to widen your portfolio beyond {topic} alone",
+];
+
+export function buildRelatedSkillsTable(entry: SeoEntry, fields: ResolvedFields): GeneratedComparisonTable | null {
+  const families = (entry.relatedFamilies || [])
+    .map((slug) => toTitle(slug))
+    .filter((name) => name && name.toLowerCase() !== fields.family.toLowerCase())
+    .slice(0, 6);
+
+  if (families.length < 2) return null;
+
+  return {
+    title: fill("How {topic} connects to related skills", fields),
+    description: "Based on this page's related-topic mapping, not a generic list.",
+    columns: ["Related skill", "Why it's connected", "When to explore it"],
+    rows: families.map((name, index) => [
+      name,
+      fill(CONNECTION_REASONS[index % CONNECTION_REASONS.length], fields),
+      fill(WHEN_TO_EXPLORE[index % WHEN_TO_EXPLORE.length], fields),
+    ]),
+  };
+}
+
+// ---------- Section-transition paragraphs (connective prose, not more cards) ----------
+
+const TRANSITION_TO_TAKEAWAYS: string[] = [
+  "Before the roadmap, it helps to be specific about what you're actually working toward. The points below are the outcomes that tend to separate people who can use {topic} practically from people who have only read about it.",
+  "The list below isn't a feature summary — it's what tends to make the difference between {topic} practice that produces something usable and practice that just feels productive.",
+];
+
+const TRANSITION_TO_STEPS: string[] = [
+  "With that context in place, here is a realistic sequence for building {topic} capability. Each stage assumes you finish the one before it — jumping ahead usually shows up as inconsistent output later, not immediate failure.",
+  "The stages below are intentionally sequential. Treat each one as a checkpoint: if a stage doesn't produce something you can point to, it's worth finishing before moving on rather than pushing forward on a shaky foundation.",
+];
+
+export function buildTransitionToTakeaways(fields: ResolvedFields): string {
+  return fill(pickOne(TRANSITION_TO_TAKEAWAYS, fields.seed + 47), fields);
+}
+
+export function buildTransitionToSteps(fields: ResolvedFields): string {
+  return fill(pickOne(TRANSITION_TO_STEPS, fields.seed + 53), fields);
 }
