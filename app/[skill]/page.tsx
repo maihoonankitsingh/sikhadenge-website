@@ -224,22 +224,23 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         updatedAt={RELEASE_DATE_LABEL}
         primaryCta={{ href: "/gen-ai-masterclass/register-one-step", label: "Join the free masterclass" }}
         secondaryCta={{ href: "/contact-us", label: "Contact Sikhadenge" }}
+        theme="light"
       >
         {fields.cityIsSpecific ? (
-          <section className="mb-14 rounded-3xl border border-white/10 bg-[#111827]/70 p-6 sm:p-8">
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#F5B301]">Location accuracy</div>
+          <section className="mb-14 rounded-3xl border border-[var(--gpk-border)] bg-[var(--gpk-card-bg)] p-6 sm:p-8">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gpk-gold-text)]">Location accuracy</div>
             <h2 className="mt-3 text-2xl font-extrabold">Location context without unsupported local claims</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-8 text-[#B0B7C3] sm:text-base">
-              This page uses <strong className="text-white">{fields.city}</strong> as a learning and search context. It does not claim a
+            <p className="mt-3 max-w-4xl text-sm leading-8 text-[var(--gpk-muted)] sm:text-base">
+              This page uses <strong className="text-[var(--gpk-text)]">{fields.city}</strong> as a learning and search context. It does not claim a
               physical training center, guaranteed local batch, or city-specific placement unless Sikhadenge confirms that
               information on an official page.
             </p>
           </section>
         ) : (
-          <section className="mb-14 rounded-3xl border border-white/10 bg-[#111827]/70 p-6 sm:p-8">
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#F5B301]">Source standard</div>
+          <section className="mb-14 rounded-3xl border border-[var(--gpk-border)] bg-[var(--gpk-card-bg)] p-6 sm:p-8">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gpk-gold-text)]">Source standard</div>
             <h2 className="mt-3 text-2xl font-extrabold">Verify changing facts at the primary source</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-8 text-[#B0B7C3] sm:text-base">
+            <p className="mt-3 max-w-4xl text-sm leading-8 text-[var(--gpk-muted)] sm:text-base">
               Tool features, prices, policies, and platform limits change. Prefer official provider documentation and other
               primary sources over secondhand summaries, and treat this page as a starting roadmap, not a substitute for
               verifying details before you commit time or money.
