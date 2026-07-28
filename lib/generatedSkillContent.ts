@@ -137,6 +137,20 @@ function pickDeterministic<T>(pool: T[], count: number, seed: number): T[] {
   return seededShuffle(pool, seed).slice(0, count);
 }
 
+// Same selection as pickDeterministic, but the chosen items keep their
+// original relative order — for content where sequence matters (e.g. a
+// numbered roadmap), picking a varied subset must not scramble the steps.
+function pickDeterministicOrdered<T>(pool: T[], count: number, seed: number): T[] {
+  if (pool.length <= count) return pool;
+  const indexed = pool.map((item, index) => ({ item, index }));
+  const chosenIndexes = new Set(
+    seededShuffle(indexed, seed)
+      .slice(0, count)
+      .map((entry) => entry.index),
+  );
+  return pool.filter((_, index) => chosenIndexes.has(index));
+}
+
 function pickOne<T>(pool: T[], seed: number): T {
   return pool[seed % pool.length];
 }
@@ -317,12 +331,12 @@ function fill(template: string, fields: ResolvedFields): string {
 // ---------- Highlights ----------
 
 const SHARED_HIGHLIGHTS: Array<[string, string, GeneratedHighlight["icon"]]> = [
-  ["Foundation before tools", "Understand the core concepts of {topic} and the quality bar expected before relying on shortcuts or automation.", "book"],
-  ["Guided practical work", "Use real briefs that create a visible, reviewable output rather than passive course completion.", "target"],
-  ["Review and correction", "Apply feedback to improve accuracy, execution quality, and professional consistency in {topic} work.", "check"],
-  ["Portfolio evidence", "Document the problem, process, decisions, output, and improvement made after review.", "graduate"],
-  ["Verify changing facts", "Confirm tool features, pricing, and system requirements against official documentation, not summaries.", "search"],
-  ["One clear next action", "Move from reading to a single concrete {topic} practice task this week.", "sparkles"],
+  ["Foundation before tools", "Understand the core concepts of {topic} and the quality bar expected before relying on shortcuts or automation. Skipping this step is the most common reason early work looks inconsistent.", "book"],
+  ["Guided practical work", "Use real briefs that create a visible, reviewable output rather than passive course completion. A finished small task beats a half-finished big one.", "target"],
+  ["Review and correction", "Apply feedback to improve accuracy, execution quality, and professional consistency in {topic} work. Treat correction as part of the process, not a failure signal.", "check"],
+  ["Portfolio evidence", "Document the problem, process, decisions, output, and improvement made after review. This is what someone actually checks before trusting your work.", "graduate"],
+  ["Verify changing facts", "Confirm tool features, pricing, and system requirements against official documentation, not summaries. Secondhand information about {topic} tools goes stale quickly.", "search"],
+  ["One clear next action", "Move from reading to a single concrete {topic} practice task this week. Momentum matters more than a perfect plan at this stage.", "sparkles"],
 ];
 
 const MODE_HIGHLIGHTS: Record<ContentMode, Array<[string, string, GeneratedHighlight["icon"]]>> = {
@@ -414,7 +428,7 @@ const MODE_STEPS: Record<ContentMode, Array<[string, string, string]>> = {
 export function buildSteps(fields: ResolvedFields): GeneratedStep[] {
   const specific = MODE_STEPS[fields.mode] || [];
   const pool = [...SHARED_STEPS, ...specific];
-  const chosen = pickDeterministic(pool, 6, fields.seed + 17);
+  const chosen = pickDeterministicOrdered(pool, 6, fields.seed + 17);
   return chosen.map(([title, description, meta]) => ({
     title: fill(title, fields),
     description: fill(description, fields),
@@ -579,12 +593,12 @@ export function buildJourney(fields: ResolvedFields): GeneratedJourneyStep[] {
 // ---------- Use cases (where it's actually applied) ----------
 
 const SHARED_USE_CASES: Array<[string, string, GeneratedHighlight["icon"]]> = [
-  ["Personal projects", "Practicing {topic} on a project you actually care about finishing, not a throwaway exercise.", "sparkles"],
-  ["Freelance or client work", "Delivering a small, well-scoped {topic} task for a real client and handling their feedback.", "users"],
-  ["Internal work tasks", "Applying {topic} to speed up or improve a task you already do at your job or business.", "target"],
-  ["Portfolio building", "Turning {topic} practice into a documented case study for job or client applications.", "graduate"],
-  ["Content or teaching", "Explaining {topic} to someone else, which is a reliable way to find gaps in your own understanding.", "book"],
-  ["Side projects and experiments", "Testing {topic} on a low-stakes side project before committing it to important work.", "wand"],
+  ["Personal projects", "Practicing {topic} on a project you actually care about finishing, not a throwaway exercise. Motivation tends to hold up better when the outcome matters to you.", "sparkles"],
+  ["Freelance or client work", "Delivering a small, well-scoped {topic} task for a real client and handling their feedback. This is where you learn what 'good enough to ship' actually means.", "users"],
+  ["Internal work tasks", "Applying {topic} to speed up or improve a task you already do at your job or business, so the value is measurable against something you already track.", "target"],
+  ["Portfolio building", "Turning {topic} practice into a documented case study for job or client applications, with the problem, process, and result written out clearly.", "graduate"],
+  ["Content or teaching", "Explaining {topic} to someone else, which is a reliable way to find gaps in your own understanding before they show up in real work.", "book"],
+  ["Side projects and experiments", "Testing {topic} on a low-stakes side project before committing it to important work, so mistakes cost time rather than reputation.", "wand"],
 ];
 
 const MODE_USE_CASES: Record<ContentMode, Array<[string, string, GeneratedHighlight["icon"]]>> = {
@@ -737,4 +751,76 @@ export function buildComparisonTable(fields: ResolvedFields): GeneratedCompariso
     columns: template.columns,
     rows: template.rows.map((row) => row.map((cell) => fill(cell, fields))),
   };
+}
+
+// ---------- Long-form prose (intro + closing paragraphs) ----------
+
+const INTRO_PARAGRAPHS: Record<ContentMode, string[]> = {
+  city: [
+    "{topic}{cityClause} is easy to search for and hard to evaluate — most pages either promise more than they can verify or say almost nothing specific. This guide takes a narrower, more useful angle: what {topic} actually involves, what a realistic starting point looks like{cityClause}, and what to check before you commit time or money to it. It treats {city} as a search and learning context, not a claim about a physical center, a guaranteed batch, or local placement — those details should always be confirmed directly with Sikhadenge rather than assumed from a page like this one.",
+  ],
+  combo: [
+    "If you found this page while researching {topic}{cityClause} as {audience}, the honest starting point is that generic advice rarely fits your actual constraints. This guide breaks the topic down by what a realistic path looks like for {audience} specifically — how much time it reasonably takes, what a first project should look like, and where people in a similar position tend to get stuck. {city} is used as context for search and relevance, not as a promise of a physical center or guaranteed local opportunities.",
+  ],
+  audience: [
+    "Most {topic} content is written for a generic reader, which makes it either too basic or too advanced depending on where you actually are. This page is written with {audience} specifically in mind — the time constraints, the starting knowledge, and the kind of first project that tends to work. The goal is a realistic sequence you can actually follow, not a long feature list of everything {topic} could theoretically involve.",
+  ],
+  roadmap: [
+    "A roadmap is only useful if the stages are sequenced correctly and each one has a clear way to check whether you actually finished it. This page lays out a practical {topic} roadmap: what to do first, what depends on what, and where a review checkpoint should sit before you move forward. It is deliberately narrower than a full course outline — the aim is a sequence you can follow end to end, not an exhaustive list of everything related to {topic}.",
+  ],
+  career: [
+    "Career advice about {topic} tends to swing between vague encouragement and unrealistic promises. Neither is useful when you're trying to decide whether to invest real time in it. This page focuses on what actually tends to correlate with better outcomes — demonstrated project work, a clear explanation of your process, and consistency — while being direct about what it cannot promise: a specific salary, a guaranteed placement, or a fixed timeline. Read it as a realistic framework, not a guarantee.",
+  ],
+  question: [
+    "This page exists to answer one specific question about {topic} directly, then give you enough surrounding context to apply the answer to your actual situation rather than a generic one. Short answers are useful for a quick decision; they are not a substitute for checking the details that matter for your specific case, which is what the rest of this page is for.",
+  ],
+  comparison: [
+    "Comparing options for {topic} usually turns into a list of features that all sound similar until you actually try to use them for a real task. This page uses a different approach: a small set of criteria that tend to matter in practice, applied consistently, so you can score your own shortlist instead of relying on a single ranked recommendation that may not fit your situation.",
+  ],
+  tool: [
+    "{topic} gets easier to evaluate once you separate the underlying workflow from whichever specific tool is currently popular for it. Tools change — pricing, features, and even which product leads the category shift regularly — but the underlying skill of knowing what a good {topic} workflow looks like does not. This page focuses on that workflow first, with tool recommendations treated as a starting point to verify, not a final answer.",
+  ],
+  root: [
+    "{topic} shows up in a lot of different contexts, which makes generic overviews either too shallow to be useful or too broad to actually follow. This page takes a narrower, more practical approach: a clear explanation of what {topic} actually involves, a realistic sequence for building capability in it, and honest answers to the questions people actually ask before committing time to it.",
+  ],
+};
+
+const CLOSING_PARAGRAPHS: Record<ContentMode, string[]> = {
+  city: [
+    "None of this replaces checking current details directly with Sikhadenge — session format, eligibility, and availability{cityClause} can change, and this page is a starting roadmap, not a live schedule. If you take one thing from it, make it this: treat {topic} as a skill you build through real practice, and treat {city} as where you're searching from, not a guarantee of what's available.",
+  ],
+  combo: [
+    "The fastest way to know whether {topic} is worth your time as {audience} is to try the first practical step above on something real, not hypothetical. If it produces a result you're proud to show someone, that's a better signal than any amount of reading. If it doesn't, that's useful information too — it tells you what to adjust before going further.",
+  ],
+  audience: [
+    "The fastest way to know whether {topic} is worth your time is to try the first practical step above on something real, not hypothetical. If it produces a result you're proud to show someone, that's a better signal than any amount of reading. If it doesn't, that's useful information too — it tells you what to adjust before going further.",
+  ],
+  roadmap: [
+    "Roadmaps fail more often from skipped review checkpoints than from being too ambitious. If you take one thing from this page, make it that: finish each stage of the {topic} roadmap with a visible, checkable result before starting the next one, even if that means moving slower than you'd like.",
+  ],
+  career: [
+    "If you're using {topic} as part of a career or freelance plan, the most useful next step is usually the smallest one: finish one project you'd be comfortable showing a real client or employer, and be ready to explain the decisions behind it. That single piece of evidence tends to matter more than any additional course or certificate.",
+  ],
+  question: [
+    "If the short answer above doesn't fully resolve your situation, that's expected — most real cases have a detail a general answer can't account for. Use the surrounding sections to check the parts that are specific to you before treating this as final.",
+  ],
+  comparison: [
+    "Whichever option you choose for {topic}, treat the decision as reversible rather than permanent. Start with the option that best fits your current task, use it on something real, and revisit the comparison later if your constraints change — that's usually more reliable than trying to pick a permanent winner up front.",
+  ],
+  tool: [
+    "Tools for {topic} will keep changing after this page is published, which is exactly why the workflow above is written to outlast any specific product. When you do pick a tool, verify its current features and pricing directly with the provider rather than relying on this or any other secondhand summary.",
+  ],
+  root: [
+    "If you take one thing from this page, make it this: {topic} becomes real through a finished project you can show someone, not through consuming more content about it. Use the roadmap above to get to that first finished piece of work, then build from there.",
+  ],
+};
+
+export function buildIntroParagraph(fields: ResolvedFields): string {
+  const pool = INTRO_PARAGRAPHS[fields.mode] || INTRO_PARAGRAPHS.root;
+  return fill(pickOne(pool, fields.seed + 41), fields);
+}
+
+export function buildClosingParagraph(fields: ResolvedFields): string {
+  const pool = CLOSING_PARAGRAPHS[fields.mode] || CLOSING_PARAGRAPHS.root;
+  return fill(pickOne(pool, fields.seed + 43), fields);
 }
