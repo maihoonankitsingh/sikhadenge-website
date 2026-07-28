@@ -37,7 +37,7 @@ export default function LoginForm() {
   const hasError = Boolean(error);
 
   return (
-    <form className="auth-form" onSubmit={onSubmit} noValidate>
+    <form className="auth-form" onSubmit={onSubmit}>
       <div className="auth-field">
         <label className="auth-field__label" htmlFor="login-email">
           Email address
