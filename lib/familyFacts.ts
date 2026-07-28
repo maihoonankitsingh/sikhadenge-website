@@ -443,6 +443,78 @@ export const FAMILY_FACTS: Record<string, FamilyFact> = {
     commonPitfall: "skipping user research and jumping straight to wireframes based on assumptions",
     typicalOutput: "a tested wireframe or prototype with real user feedback documented",
   },
+
+  // Phase 5 — final tier of families, reaching 100% of families with a key
+  "app-development": {
+    displayName: "App Development",
+    realTools: ["Flutter or React Native for cross-platform apps", "Xcode or Android Studio for native builds", "Git and an app store submission checklist"],
+    coreWorkflow: "building and testing on a real device early, not just the simulator, before investing time in polish",
+    commonPitfall: "testing only in the simulator or emulator and leaving real-device testing until the very end, when device-specific bugs surface",
+    typicalOutput: "a working app installed and tested on a real device, ready for store submission or internal testing",
+  },
+  "remote-jobs": {
+    displayName: "Remote Jobs",
+    realTools: ["Remote-specific job boards such as We Work Remotely or Remote OK", "A portfolio tailored to proving async, self-managed output", "Video call tools for interviews, such as Zoom or Google Meet"],
+    coreWorkflow: "targeting roles that are genuinely remote-first, with a portfolio proving async communication and self-management ability",
+    commonPitfall: "applying to hybrid or office roles mislabeled as remote without checking the actual work-location requirement",
+    typicalOutput: "applications to verified remote-first roles with a portfolio demonstrating asynchronous, self-directed work",
+  },
+  "social-media-marketing": {
+    displayName: "Social Media Marketing",
+    realTools: ["Native platform schedulers or tools like Buffer/Later", "Canva or CapCut for creative assets", "Native platform analytics for real engagement data"],
+    coreWorkflow: "publishing consistently on one or two platforms with a content calendar, then reviewing real engagement data weekly",
+    commonPitfall: "spreading effort across every platform at once instead of building consistency on the one or two that fit the audience",
+    typicalOutput: "a content calendar with real engagement metrics tracked over several weeks",
+  },
+  "performance-marketing": {
+    displayName: "Performance Marketing",
+    realTools: ["Google Ads or Meta Ads Manager", "GA4 or a similar analytics setup for conversion tracking", "A/B testing on creative and targeting"],
+    coreWorkflow: "running small, budget-capped tests, tracking cost-per-result precisely, and scaling only what's proven to work",
+    commonPitfall: "scaling ad spend before a campaign has proven a stable, positive cost-per-result at small scale",
+    typicalOutput: "a campaign with a proven, tracked cost-per-acquisition or cost-per-lead figure at a tested budget level",
+  },
+  "email-marketing": {
+    displayName: "Email Marketing",
+    realTools: ["An email platform such as Mailchimp or Klaviyo", "A segmented subscriber list", "A/B testing on subject lines and send times"],
+    coreWorkflow: "building a segmented list and testing subject lines and content against real open and click-through rates",
+    commonPitfall: "sending the same email to an entire unsegmented list regardless of subscriber interest or stage",
+    typicalOutput: "a sent campaign or automated sequence with tracked open rates, click-through rates, and conversions",
+  },
+  "content-marketing": {
+    displayName: "Content Marketing",
+    realTools: ["A content calendar and topic-research process", "SEO or keyword tools where relevant, such as Ahrefs or Semrush", "Analytics to track real traffic and engagement per piece"],
+    coreWorkflow: "publishing consistently around a defined topic cluster, then tracking which pieces actually drive traffic or leads",
+    commonPitfall: "publishing one-off pieces on unrelated topics instead of building a connected content cluster that compounds authority",
+    typicalOutput: "a published series of connected content pieces with tracked traffic and engagement data",
+  },
+  "youtube-growth": {
+    displayName: "YouTube Growth",
+    realTools: ["YouTube Studio analytics", "Video editing software such as Premiere Pro, CapCut, or DaVinci Resolve", "A thumbnail design tool such as Canva or Photoshop"],
+    coreWorkflow: "publishing consistently, then using YouTube Studio's retention data to fix the specific point where viewers drop off",
+    commonPitfall: "focusing only on view count while ignoring audience retention data, which is what actually drives the algorithm",
+    typicalOutput: "a published video with tracked retention data used to improve the next one",
+  },
+  "instagram-growth": {
+    displayName: "Instagram Growth",
+    realTools: ["Instagram's native Insights analytics", "Canva or CapCut for content creation", "A content calendar for consistency"],
+    coreWorkflow: "publishing consistently in one content format, then using native Insights to see what actually drives saves and shares",
+    commonPitfall: "chasing follower count while ignoring saves and shares, which are stronger signals of content that's actually working",
+    typicalOutput: "a content series with tracked saves, shares, and reach data used to refine the next pieces",
+  },
+  ecommerce: {
+    displayName: "E-commerce",
+    realTools: ["A storefront platform such as Shopify or WooCommerce", "A payment processor such as Razorpay, Stripe, or PayPal", "Analytics to track real conversion rate and cart abandonment"],
+    coreWorkflow: "validating one product with real traffic and orders before expanding the catalog",
+    commonPitfall: "listing a large catalog before validating demand for even one product with real orders",
+    typicalOutput: "a live store with at least one product generating real, tracked sales",
+  },
+  "web-design": {
+    displayName: "Web Design",
+    realTools: ["Figma for design, Webflow or WordPress for the build", "A responsive design checklist covering mobile, tablet, and desktop", "Real user or client feedback before final handoff"],
+    coreWorkflow: "designing mobile-first, then checking the design across real device sizes before development handoff",
+    commonPitfall: "designing only for desktop and treating mobile as an afterthought, when most real traffic is often mobile",
+    typicalOutput: "a finished, responsive design checked across real device sizes and ready for development",
+  },
 };
 
 export function getFamilyFact(familyKey: string): FamilyFact | null {
