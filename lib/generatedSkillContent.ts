@@ -272,22 +272,27 @@ function audienceClause(fields: ResolvedFields) {
 export function uniqueTitle(entry: SeoEntry, fields: ResolvedFields): string {
   if (entry.metaTitle) return entry.metaTitle.replace(/\s+\|\s+Sikhadenge$/i, "");
 
-  // When the URL is city-specific, every variant keeps the city so the
-  // title still matches "{topic} {city}" search intent — only the
-  // phrasing/word order varies for uniqueness.
-  const variants = fields.cityIsSpecific
-    ? [
-        `${fields.topic} in ${fields.city}${audienceClause(fields)}`,
-        `${fields.topic} Classes in ${fields.city}`,
-        `Best ${fields.topic} Guide for ${fields.city}`,
-        fields.audienceIsSpecific ? `${fields.topic} for ${fields.audience} in ${fields.city}` : `${fields.topic}: ${fields.city} Roadmap`,
-      ]
-    : [
-        `${fields.topic}${audienceClause(fields)}`,
-        `${fields.topic} Guide`,
-        fields.audienceIsSpecific ? `${fields.topic} for ${fields.audience}` : `Learn ${fields.topic} Practically`,
-        fields.usecaseIsSpecific ? `${fields.topic} for ${fields.usecase}` : `${fields.topic}: Practical Roadmap`,
-      ];
+  // Bug fixed here: every variant must include whichever of city/audience/
+  // usecase are actually specific for this entry. Previously some variants
+  // dropped audience/usecase entirely, so two pages with the same topic but
+  // different audience or usecase could land on the identical generic
+  // title (e.g. two different audience+usecase combos both rendering
+  // "{topic}: Practical Roadmap"). Only the phrasing/order varies now —
+  // never whether a known-specific signal is present.
+  const descriptors: string[] = [];
+  if (fields.cityIsSpecific) descriptors.push(`in ${fields.city}`);
+  if (fields.audienceIsSpecific) descriptors.push(`for ${fields.audience}`);
+  if (fields.usecaseIsSpecific) descriptors.push(`for ${fields.usecase}`);
+
+  const variants =
+    descriptors.length > 0
+      ? [
+          `${fields.topic} ${descriptors.join(" ")}`,
+          `${fields.topic}: ${toTitle(descriptors.join(" ").replace(/^(in|for)\s+/, ""))} Guide`,
+          `Best ${fields.topic} Guide ${descriptors.slice().reverse().join(" ")}`,
+          `${fields.topic} ${descriptors.join(" ")} — Practical Roadmap`,
+        ]
+      : [`${fields.topic}`, `${fields.topic} Guide`, `Learn ${fields.topic} Practically`, `${fields.topic}: Practical Roadmap`];
 
   const unique = variants.filter((value, index, all) => value.trim().length > 0 && all.indexOf(value) === index);
   return pickOne(unique, fields.seed);
@@ -300,8 +305,8 @@ export function uniqueDescription(entry: SeoEntry, fields: ResolvedFields): stri
     `Practical ${fields.topic} guide${locationClause(fields)}${audienceClause(fields)} — workflow, tools, FAQs, and a clear next step from Sikhadenge.`,
     `Understand ${fields.topic}${locationClause(fields)}: what it means, who it is for, the learning path, common mistakes, and answers to real questions.`,
     fields.cityIsSpecific
-      ? `A structured ${fields.topic} guide for readers in ${fields.city} — skills, workflow, realistic expectations, and FAQs. No unverifiable local claims.`
-      : `A structured ${fields.topic} guide covering skills, workflow, realistic expectations, and FAQs from the Sikhadenge editorial team.`,
+      ? `A structured ${fields.topic} guide for readers in ${fields.city}${audienceClause(fields)} — skills, workflow, realistic expectations, and FAQs. No unverifiable local claims.`
+      : `A structured ${fields.topic} guide${audienceClause(fields)} covering skills, workflow, realistic expectations, and FAQs from the Sikhadenge editorial team.`,
   ];
 
   return pickOne(variants, fields.seed + 7);
