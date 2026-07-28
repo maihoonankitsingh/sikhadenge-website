@@ -84,6 +84,7 @@ type GeneratedPageLayoutProps = {
   badges?: string[];
   answerTitle: string;
   answer: string;
+  introParagraph?: string;
   journey?: GeneratedJourneyStep[];
   highlights: GeneratedHighlight[];
   useCases?: GeneratedHighlight[];
@@ -92,6 +93,7 @@ type GeneratedPageLayoutProps = {
   comparisonTable?: GeneratedComparisonTable;
   tools?: GeneratedTool[];
   mistakes?: string[];
+  closingParagraph?: string;
   faqs: GeneratedFaq[];
   relatedLinks?: GeneratedLink[];
   updatedAt: string;
@@ -243,6 +245,7 @@ export function GeneratedPageLayout({
   badges = [],
   answerTitle,
   answer,
+  introParagraph,
   journey = [],
   highlights,
   useCases = [],
@@ -251,6 +254,7 @@ export function GeneratedPageLayout({
   comparisonTable,
   tools = [],
   mistakes = [],
+  closingParagraph,
   faqs,
   relatedLinks = [],
   updatedAt,
@@ -291,6 +295,9 @@ export function GeneratedPageLayout({
               </div>
               <h1 className="mt-6 max-w-4xl text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">{title}</h1>
               <p className="mt-6 max-w-3xl text-base leading-8 text-[var(--gpk-muted-2)] sm:text-lg">{description}</p>
+              {introParagraph ? (
+                <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--gpk-muted-2)]">{introParagraph}</p>
+              ) : null}
               {badges.length > 0 ? (
                 <div className="mt-7 flex flex-wrap gap-3">
                   {badges.map((badge) => (
@@ -517,6 +524,15 @@ export function GeneratedPageLayout({
                 </div>
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {closingParagraph ? (
+          <section className="mb-14">
+            <GlassCard className="p-6 sm:p-8">
+              <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gpk-accent-text)]">Bottom line</div>
+              <p className="mt-3 text-base leading-8 text-[var(--gpk-muted-2)]">{closingParagraph}</p>
+            </GlassCard>
           </section>
         ) : null}
 

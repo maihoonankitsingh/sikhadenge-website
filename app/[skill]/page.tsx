@@ -21,6 +21,8 @@ import {
   buildUseCases,
   useCasesTitle,
   buildComparisonTable,
+  buildIntroParagraph,
+  buildClosingParagraph,
   toTitle,
 } from "../../lib/generatedSkillContent";
 import { SITE_URL, organizationSchema, websiteSchema, breadcrumbSchema } from "../../lib/schema";
@@ -119,6 +121,8 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
   const title = uniqueTitle(entry, fields);
   const description = uniqueDescription(entry, fields);
   const answer = buildAnswer(fields);
+  const introParagraph = buildIntroParagraph(fields);
+  const closingParagraph = buildClosingParagraph(fields);
   const faqs = buildFaqs(fields);
 
   let highlights: GeneratedHighlight[] = buildHighlights(fields);
@@ -211,6 +215,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         badges={badges}
         answerTitle={`What is the right way to approach ${fields.topic}?`}
         answer={answer}
+        introParagraph={introParagraph}
         journey={journey}
         highlights={highlights}
         useCases={useCases}
@@ -219,6 +224,7 @@ export default function SkillPage({ params }: { params: { skill: string } }) {
         comparisonTable={comparisonTable}
         tools={tools}
         mistakes={mistakes}
+        closingParagraph={closingParagraph}
         faqs={faqs}
         relatedLinks={relatedLinks}
         updatedAt={RELEASE_DATE_LABEL}
