@@ -11,6 +11,7 @@ import type {
 } from "../components/generated/GeneratedPageKit";
 import { getCityFact, type CityFact } from "./cityFacts";
 import { getAudienceFact, type AudienceFact } from "./audienceFacts";
+import { getFamilyFact, type FamilyFact } from "./familyFacts";
 
 export type SeoEntry = {
   slug: string;
@@ -185,6 +186,7 @@ export type ResolvedFields = {
   modifier: string;
   modifierIsSpecific: boolean;
   family: string;
+  familyFact: FamilyFact | null;
   mode: ContentMode;
   seed: number;
 };
@@ -212,6 +214,7 @@ export function resolveFields(entry: SeoEntry, fallbackSlug: string): ResolvedFi
   const rawUsecase = entry.dynamicValues?.usecase ?? "";
   const rawModifier = entry.dynamicValues?.modifier ?? "";
   const family = toTitle(entry.familyKey || entry.rootSlug || rawTopic);
+  const familyFact = entry.familyKey ? getFamilyFact(entry.familyKey) : null;
 
   const cityIsSpecific = cityFromDataIsSpecific || Boolean(cityFromSlug);
   const audienceIsSpecific = rawAudience.trim().length > 0;
@@ -250,6 +253,7 @@ export function resolveFields(entry: SeoEntry, fallbackSlug: string): ResolvedFi
     modifier: modifierIsSpecific ? toTitle(rawModifier) : "",
     modifierIsSpecific,
     family,
+    familyFact,
     mode,
     seed: hashString(fallbackSlug),
   };
@@ -340,7 +344,15 @@ const ANSWER_TEMPLATES: Record<ContentMode, string[]> = {
 export function buildAnswer(fields: ResolvedFields): string {
   const pool = ANSWER_TEMPLATES[fields.mode]?.length ? ANSWER_TEMPLATES[fields.mode] : ANSWER_TEMPLATES.root;
   const template = pickOne(pool, fields.seed + 3);
-  return fill(template, fields);
+  const base = fill(template, fields);
+
+  // Append a real, concrete fact — the actual practical workflow and what
+  // a finished piece of work looks like — instead of leaving the answer
+  // as pure generic advice.
+  if (fields.familyFact) {
+    return `${base} In practice, that means ${fields.familyFact.coreWorkflow}. A realistic finished result looks like ${fields.familyFact.typicalOutput}.`;
+  }
+  return base;
 }
 
 function fill(template: string, fields: ResolvedFields): string {
@@ -494,6 +506,14 @@ const MODE_MISTAKES: Record<ContentMode, string[]> = {
 export function buildMistakes(fields: ResolvedFields): string[] {
   const specific = MODE_MISTAKES[fields.mode] || [];
   const pool = [...SHARED_MISTAKES, ...specific];
+
+  // A real, family-specific mistake (from FAMILY_FACTS) instead of only
+  // generic advice — capitalized to read as a standalone sentence.
+  if (fields.familyFact) {
+    const pitfall = fields.familyFact.commonPitfall;
+    pool.push(pitfall.charAt(0).toUpperCase() + pitfall.slice(1) + ".");
+  }
+
   const chosen = pickDeterministic(pool, 6, fields.seed + 23);
   return chosen.map((item) => fill(item, fields));
 }
@@ -582,6 +602,25 @@ export function buildFaqs(fields: ResolvedFields): GeneratedFaq[] {
 // ---------- Tools ----------
 
 export function buildTools(fields: ResolvedFields): GeneratedTool[] {
+  if (fields.familyFact) {
+    const toolItems: GeneratedTool[] = fields.familyFact.realTools.map((toolName, index) => ({
+      name: toolName,
+      description:
+        index === 0
+          ? `The primary tool for ${fields.topic} work. Confirm current pricing and requirements before committing.`
+          : "Part of a real, working toolchain for this topic — not a generic placeholder.",
+      label: index === 0 ? "Core" : "Toolchain",
+    }));
+    return [
+      ...toolItems,
+      {
+        name: "Project brief template",
+        description: "Record the user, goal, constraints, deliverables, and acceptance criteria before starting.",
+        label: "Workflow",
+      },
+    ];
+  }
+
   return [
     {
       name: `${fields.topic} primary tool`,
