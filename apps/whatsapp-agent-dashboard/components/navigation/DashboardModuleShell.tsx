@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import LogoutButton from "../auth/LogoutButton";
 import MetaConnectionStatus from "./MetaConnectionStatus";
+import SidebarMenuIcon, { type SidebarMenuTitle } from "./SidebarMenuIcon";
 
 type DashboardModuleShellProps = {
   activeTitle:
@@ -29,7 +30,7 @@ type DashboardModuleShellProps = {
   children: ReactNode;
 };
 
-const navItems = [
+const navItems: ReadonlyArray<{ title: Exclude<SidebarMenuTitle, "Settings">; href: string }> = [
   { title: "Inbox", href: "/inbox" },
   { title: "Contacts", href: "/contacts" },
   { title: "Leads", href: "/leads" },
@@ -44,7 +45,7 @@ const navItems = [
   { title: "Integrations", href: "/integrations" },
   { title: "Admin", href: "/admin" },
   { title: "Cutover", href: "/cutover" },
-] as const;
+];
 
 const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
   Inbox: "/dashboard-icons/02-conversations.png",
@@ -100,7 +101,10 @@ export default function DashboardModuleShell({
                 aria-current={activeTitle === item.title ? "page" : undefined}
                 href={item.href}
               >
-                {item.title}
+                <span className="sidebar-menu-icon">
+                  <SidebarMenuIcon title={item.title} />
+                </span>
+                <span className="sidebar-menu-label">{item.title}</span>
               </Link>
             ))}
           </nav>
@@ -111,7 +115,10 @@ export default function DashboardModuleShell({
             aria-current={activeTitle === "Settings" ? "page" : undefined}
             href="/settings"
           >
-            Settings
+            <span className="sidebar-menu-icon">
+              <SidebarMenuIcon title="Settings" />
+            </span>
+            <span className="sidebar-menu-label">Settings</span>
           </Link>
         </aside>
 
