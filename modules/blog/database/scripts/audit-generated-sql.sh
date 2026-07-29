@@ -61,10 +61,16 @@ if [ "$TOTAL_REFERENCES" -ne "$BLOG_REFERENCES" ]; then
   fail "foreign_key_outside_blog_content"
 fi
 
-if grep -Einq '(^|[[:space:]])(DROP|TRUNCATE|DELETE[[:space:]]+FROM|UPDATE[[:space:]]+|ALTER[[:space:]]+TABLE[[:space:]]+"?public"?\.|CREATE[[:space:]]+TABLE[[:space:]]+"?public"?\.)' "$SQL"; then
-  grep -Ein '(^|[[:space:]])(DROP|TRUNCATE|DELETE[[:space:]]+FROM|UPDATE[[:space:]]+|ALTER[[:space:]]+TABLE[[:space:]]+"?public"?\.|CREATE[[:space:]]+TABLE[[:space:]]+"?public"?\.)' "$SQL" \
-    > "$OUT/dangerous-statements.txt" || true
+# Match destructive or public-schema mutation statements only at the start of a
+# SQL statement. This intentionally does not match referential actions such as
+# "ON UPDATE CASCADE" or "ON DELETE CASCADE" inside safe foreign keys.
+DANGEROUS_PATTERN='^[[:space:]]*(DROP([[:space:]]|$)|TRUNCATE([[:space:]]|$)|DELETE[[:space:]]+FROM([[:space:]]|$)|UPDATE[[:space:]]+|ALTER[[:space:]]+TABLE[[:space:]]+"?public"?\.|CREATE[[:space:]]+TABLE[[:space:]]+"?public"?\.)'
+
+if grep -Einq "$DANGEROUS_PATTERN" "$SQL"; then
+  grep -Ein "$DANGEROUS_PATTERN" "$SQL" > "$OUT/dangerous-statements.txt" || true
   fail "dangerous_or_public_mutation_detected"
+else
+  rm -f "$OUT/dangerous-statements.txt"
 fi
 
 if grep -En '"public"\.|(^|[^A-Za-z0-9_])public\.' "$SQL" > "$OUT/public-schema-references.txt"; then
