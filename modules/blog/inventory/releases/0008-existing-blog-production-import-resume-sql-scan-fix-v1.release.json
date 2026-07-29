@@ -1,0 +1,55 @@
+{
+  "releaseId": "existing-blog-production-import-resume-sql-scan-fix-v1",
+  "status": "prepared-not-approved",
+  "parentReleaseId": "existing-blog-production-import-v1",
+  "incident": {
+    "reason": "batch_101_forbidden_sql_detected",
+    "classification": "quoted-content-keyword-false-positive",
+    "committedBatches": 100,
+    "committedRecords": 100000,
+    "committedRows": 300000,
+    "remainingBatches": 21,
+    "remainingRecords": 20097,
+    "databaseStateVerified": {
+      "pages": 100000,
+      "pageVersions": 100000,
+      "contentFingerprints": 100000,
+      "publications": 0,
+      "qualityRuns": 0,
+      "editorialReviews": 0
+    }
+  },
+  "diagnosis": {
+    "broadScanMatchedQuotedContent": true,
+    "matchingExample": "ChatGPT 5.5 Update Guide for AI Learners",
+    "actualForbiddenSqlStatementsFound": 0,
+    "failedBatchExecuted": false
+  },
+  "resumeWrapper": {
+    "path": "modules/blog/inventory/scripts/resume-existing-blog-production-import-after-sql-scan-fix-v1.sh",
+    "gitBlobSha1": "0ef363ea40d8d8a263e58408286e3f5c2c676612",
+    "baseImporterGitBlobSha1": "748d449c528033eb439da7c1dad18350de627450",
+    "patch": "replace broad token scan with statement-anchored forbidden SQL scan",
+    "approvalPhrase": "APPROVE EXISTING BLOG PRODUCTION IMPORT V1 RESUME AFTER SAFETY FIX"
+  },
+  "safety": {
+    "originalPackageUnchanged": true,
+    "originalManifestUnchanged": true,
+    "existingCommittedRowsPreserved": true,
+    "idempotentRevalidationEnabled": true,
+    "perBatchTransactionsPreserved": true,
+    "allowedInsertTablesUnchanged": [
+      "blog_content.pages",
+      "blog_content.page_versions",
+      "blog_content.content_fingerprints"
+    ],
+    "publicationWritesAllowed": false,
+    "indexingEnablementAllowed": false,
+    "updateDeleteTruncateDropAlterAllowed": false
+  },
+  "authorization": {
+    "resumeExecutionApproved": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false
+  }
+}
