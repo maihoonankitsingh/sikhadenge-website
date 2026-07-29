@@ -6,7 +6,7 @@ import "../login-experience.css";
 
 export const dynamic = "force-dynamic";
 
-const BRAND_MARK = "/sikhadenge-mark.svg";
+const BRAND_MARK = "/sikhadenge-header-safe-320.png";
 
 export default async function LoginPage() {
   const user = await getCurrentDashboardUser();
