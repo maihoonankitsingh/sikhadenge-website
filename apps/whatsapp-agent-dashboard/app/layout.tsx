@@ -38,6 +38,7 @@ import "./responsive-tablet.css";
 import "./responsive-composer-fix.css";
 import "./icon-free-ui.css";
 import "./sidebar-icons-final.css";
+import "./sidebar-scroll-clarity.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
