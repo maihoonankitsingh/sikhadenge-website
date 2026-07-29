@@ -1,0 +1,44 @@
+{
+  "releaseId": "existing-blog-inventory-v2",
+  "status": "exported-read-only",
+  "sourceCommit": "197dbcc43de3a28cbd7c7328b15eb2756acb9853",
+  "workspaceId": "blog-workspace-sikhadenge-v1",
+  "contractVersion": 2,
+  "artifact": {
+    "format": "jsonl",
+    "recordCount": 120097,
+    "uniqueSlugCount": 120097,
+    "sha256": "9dd20eadc35a8a95de6ed6c0ca297971e50ae3e249d548233c0b582568caa6ba",
+    "bytes": 114234689,
+    "storage": "server-local-not-versioned"
+  },
+  "source": {
+    "manifestTotal": 120097,
+    "shardCount": 13,
+    "slugIndexEntryCount": 120097,
+    "duplicateSlugCount": 0,
+    "invalidSlugCount": 0,
+    "missingTitleCount": 0,
+    "slugIndexMismatchCount": 0
+  },
+  "coverage": {
+    "withExcerpt": 120097,
+    "withIntro": 120097,
+    "withSummaryPoints": 120097,
+    "withPracticalSteps": 120097,
+    "withMistakes": 120097,
+    "withFaqs": 120097
+  },
+  "exactDuplicateSignals": {
+    "titleGroups": 0,
+    "contentGroups": 0,
+    "contentFingerprintExcludesSlug": true,
+    "interpretation": "Exact-hash equality was not found. This does not prove semantic uniqueness, usefulness, source verification, or index eligibility."
+  },
+  "safety": {
+    "databaseReadPerformed": false,
+    "databaseWritePerformed": false,
+    "productionFilesModified": false,
+    "bulkImportApproved": false
+  }
+}
