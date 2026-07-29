@@ -1,0 +1,42 @@
+{
+  "releaseId": "blog-workspace-sikhadenge-v1",
+  "status": "applied-to-production",
+  "foundationReleaseId": "blog-content-foundation-v1",
+  "foundationAttestationCommit": "c44510ce8e49721ed8cab63d7b2579494396469c",
+  "bootstrapSourceCommit": "7da5d2433f38b8f2d9f0e04c485be7f9115dfa26",
+  "bootstrapScript": {
+    "path": "modules/blog/database/scripts/bootstrap-production-workspace-v1.sh",
+    "gitBlobSha1": "348988a2793f7054f09028cdedd56aa01671922e"
+  },
+  "workspace": {
+    "id": "blog-workspace-sikhadenge-v1",
+    "key": "sikhadenge-blog",
+    "name": "Sikhadenge Blog Content Platform",
+    "locale": "en-IN",
+    "defaultCanonicalHost": "https://sikhadenge.in",
+    "targetPageCapacity": 500000,
+    "qualityPolicyKey": "blog-production-v1",
+    "publicationDefault": "blocked",
+    "indexEligibilityDefault": "BLOCKED",
+    "defaultRobotsDirective": "noindex,follow",
+    "requiresPassedQualityGate": true,
+    "requiresEditorialApproval": true
+  },
+  "productionApply": {
+    "status": "PASS",
+    "transactionCommitted": true,
+    "appliedAt": "2026-07-29T11:36:50+05:30",
+    "workspaceCount": 1,
+    "otherBlogRowsCreated": 0,
+    "publicTableCountBefore": 43,
+    "publicTableCountAfter": 43,
+    "publicBlogOidUnchanged": true
+  },
+  "safetyState": {
+    "pagesCreated": 0,
+    "topicsCreated": 0,
+    "sourcesCreated": 0,
+    "publicationsCreated": 0,
+    "defaultIndexingBlocked": true
+  }
+}
