@@ -6,6 +6,7 @@ export {
   CANONICAL_BLOG_WORKSPACE_KEY,
   getBlogPlatformBaseline,
   getCanonicalBlogWorkspace,
+  getImportedBlogRecordBySlugForReview,
 } from "@/modules/blog/repositories";
 
 export type {
@@ -13,4 +14,5 @@ export type {
   BlogPlatformCounts,
   BlogWorkspaceSafetySettings,
   CanonicalBlogWorkspace,
+  ImportedBlogReviewRecord,
 } from "@/modules/blog/repositories";
