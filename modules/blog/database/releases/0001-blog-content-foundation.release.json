@@ -1,8 +1,9 @@
 {
   "releaseId": "blog-content-foundation-v1",
-  "status": "approved-for-production-apply",
+  "status": "applied-to-production",
   "validatedSourceCommit": "92d8d54640d6f6afdaa54f762b346b499ca5feed",
   "readinessCommit": "24079953ff2939a39b4b1f655c9ce19416a4d3a6",
+  "applyScriptCommit": "939754c189b29e4744a7847b44be23530942f1eb",
   "schema": {
     "path": "modules/blog/database/schema.prisma",
     "sha256": "9f38d7c4b529e20f127b909a8e7a4444621586547251be5bf9dd4e89d7c91cbb"
@@ -45,5 +46,27 @@
     "approvedAt": "2026-07-29T10:56:00+05:30",
     "approvalChannel": "chat-explicit",
     "approvalStatement": "APPROVE BLOG CONTENT FOUNDATION V1 PRODUCTION APPLY"
+  },
+  "productionApply": {
+    "status": "PASS",
+    "appliedAt": "2026-07-29T11:19:18+05:30",
+    "transactionCommitted": true,
+    "blogContentSchemaPresent": true,
+    "tables": 23,
+    "enumTypes": 16,
+    "baseIndexes": 63,
+    "guardIndexes": 6,
+    "totalExpectedIndexes": 69,
+    "foreignKeys": 33,
+    "guardConstraints": 17,
+    "guardTriggers": 1,
+    "publicTableCountBefore": 43,
+    "publicTableCountAfter": 43,
+    "publicBlogOidUnchanged": true,
+    "backupHashVerified": true,
+    "migrationHashVerified": true,
+    "schemaHashVerified": true,
+    "guardBlobVerified": true,
+    "serverReport": "/root/sikhadenge-blog-production-apply-20260729_111918"
   }
 }
