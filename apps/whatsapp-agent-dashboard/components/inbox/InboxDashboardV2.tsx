@@ -119,6 +119,89 @@ function TemperatureBadge({ value }: { value?: string | null }) {
   );
 }
 
+type ChannelId = "whatsapp" | "instagram" | "messenger" | "telegram";
+
+type ChannelDef = {
+  id: ChannelId;
+  label: string;
+  connected: boolean;
+};
+
+// WhatsApp is the live transport for every conversation in this system today.
+// Instagram, Messenger and Telegram are shown as part of the unified multi-
+// channel inbox and are flagged as not-yet-connected so nothing is faked.
+const CHANNELS: ChannelDef[] = [
+  { id: "whatsapp", label: "WhatsApp", connected: true },
+  { id: "instagram", label: "Instagram", connected: false },
+  { id: "messenger", label: "Messenger", connected: false },
+  { id: "telegram", label: "Telegram", connected: false },
+];
+
+// Every stored conversation arrives over WhatsApp Cloud API, so its channel is
+// WhatsApp. Centralised here so the badge and channel filter stay truthful.
+function channelOf(_conversation: InboxConversationSummary): ChannelId {
+  return "whatsapp";
+}
+
+function ChannelGlyph({ channel, size = 16 }: { channel: ChannelId; size?: number }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false as const,
+  };
+  if (channel === "whatsapp") {
+    return (
+      <svg {...common}>
+        <rect width="24" height="24" rx="7" fill="#25D366" />
+        <path
+          fill="#fff"
+          d="M12 5.9a6 6 0 0 0-5.1 9.1L6 18.3l3.5-.9A6 6 0 1 0 12 5.9Zm0 1.5a4.5 4.5 0 0 1 3.8 6.9l.5 1.9-1.9-.5A4.5 4.5 0 1 1 12 7.4Zm-2.1 2.2c-.1 0-.3 0-.4.2-.2.2-.5.5-.5 1.1s.5 1.2.6 1.3c.1.2 1 1.6 2.5 2.2 1.2.5 1.5.4 1.7.4.3 0 .9-.4 1-.7.1-.3.1-.6.1-.6 0-.1-.2-.2-.4-.3l-.9-.4c-.1 0-.2 0-.3.1l-.4.5c-.1.1-.2.1-.3.1-.2-.1-.7-.3-1.3-.8-.4-.4-.7-.9-.8-1.1 0-.1 0-.2.1-.3l.2-.3v-.3l-.4-1c-.1-.2-.2-.2-.3-.2Z"
+        />
+      </svg>
+    );
+  }
+  if (channel === "instagram") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="chnl-ig" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stopColor="#FEDA75" />
+            <stop offset=".35" stopColor="#FA7E1E" />
+            <stop offset=".62" stopColor="#D62976" />
+            <stop offset="1" stopColor="#962FBF" />
+          </linearGradient>
+        </defs>
+        <rect width="24" height="24" rx="7" fill="url(#chnl-ig)" />
+        <rect x="6" y="6" width="12" height="12" rx="4" fill="none" stroke="#fff" strokeWidth="1.6" />
+        <circle cx="12" cy="12" r="2.7" fill="none" stroke="#fff" strokeWidth="1.6" />
+        <circle cx="15.6" cy="8.4" r="1" fill="#fff" />
+      </svg>
+    );
+  }
+  if (channel === "messenger") {
+    return (
+      <svg {...common}>
+        <rect width="24" height="24" rx="7" fill="#0084FF" />
+        <path
+          fill="#fff"
+          d="M12 6c-3.4 0-6 2.5-6 5.6 0 1.7.8 3.2 2.1 4.2v2.2l2-1.1c.6.2 1.2.3 1.9.3 3.4 0 6-2.5 6-5.6S15.4 6 12 6Zm.4 7.5-1.7-1.7-3 1.7 3.3-3.5 1.7 1.7 3-1.7-3.3 3.5Z"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <rect width="24" height="24" rx="7" fill="#29A9EA" />
+      <path
+        fill="#fff"
+        d="m17.6 7.7-1.9 9c-.1.6-.5.7-1 .5l-2.7-2-1.3 1.3c-.2.1-.3.3-.6.3l.2-2.9 5.2-4.7c.2-.2 0-.3-.4-.1L8.7 13l-2.7-.8c-.6-.2-.6-.6.1-.9l10.5-4c.5-.2.9.1.7.9Z"
+      />
+    </svg>
+  );
+}
+
 function MessageMedia({ message }: { message: InboxMessage }) {
   if (!message.mediaUrl) return null;
   if (message.type === "IMAGE") {
@@ -153,6 +236,7 @@ export default function InboxDashboardV2({
   const [selected, setSelected] = useState<InboxConversationDetail | null>(initialConversation);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ConversationFilter>("ALL");
+  const [channelFilter, setChannelFilter] = useState<ChannelId>("whatsapp");
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [modeUpdating, setModeUpdating] = useState(false);
   const [operationBusy, setOperationBusy] = useState(false);
@@ -252,9 +336,25 @@ export default function InboxDashboardV2({
         filter === "ALL" ||
         (filter === "UNREAD" && item.unreadCount > 0) ||
         (filter === "HOT" && item.lead?.temperature === "HOT");
-      return Boolean(matchesQuery && matchesFilter);
+      const matchesChannel = channelOf(item) === channelFilter;
+      return Boolean(matchesQuery && matchesFilter && matchesChannel);
     });
-  }, [conversations, filter, search]);
+  }, [conversations, filter, search, channelFilter]);
+
+  const channelUnread = useMemo(() => {
+    const totals: Record<ChannelId, number> = {
+      whatsapp: 0,
+      instagram: 0,
+      messenger: 0,
+      telegram: 0,
+    };
+    for (const item of conversations) {
+      totals[channelOf(item)] += item.unreadCount;
+    }
+    return totals;
+  }, [conversations]);
+
+  const activeChannel = CHANNELS.find((item) => item.id === channelFilter) ?? CHANNELS[0];
 
   const metrics = useMemo(() => {
     const open = conversations.filter((item) => item.status !== "CLOSED").length;
@@ -551,6 +651,37 @@ export default function InboxDashboardV2({
                 ↻
               </button>
             </div>
+            <div className="channel-rail" aria-label="Channels">
+              <p className="channel-rail-title">Channels</p>
+              <ul className="channel-list">
+                {CHANNELS.map((channel) => {
+                  const unread = channelUnread[channel.id];
+                  const isActive = channelFilter === channel.id;
+                  return (
+                    <li key={channel.id}>
+                      <button
+                        type="button"
+                        className={`channel-item ${isActive ? "active" : ""} ${channel.connected ? "" : "pending"}`}
+                        aria-pressed={isActive}
+                        onClick={() => setChannelFilter(channel.id)}
+                      >
+                        <span className="channel-icon"><ChannelGlyph channel={channel.id} /></span>
+                        <span className="channel-name">{channel.label}</span>
+                        {channel.connected ? (
+                          unread > 0 ? (
+                            <span className="channel-count">{unread}</span>
+                          ) : (
+                            <span className="channel-dot" aria-label="Connected" title="Connected" />
+                          )
+                        ) : (
+                          <span className="channel-tag">Connect</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <label className="search-box">
               <span>⌕</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, number or course" />
@@ -562,7 +693,14 @@ export default function InboxDashboardV2({
             </div>
             <div className="conversation-list">
               {filteredConversations.length === 0 ? (
-                <div className="panel-empty-state"><strong>No conversations found</strong><p>New WhatsApp messages appear here automatically.</p></div>
+                activeChannel.connected ? (
+                  <div className="panel-empty-state"><strong>No conversations found</strong><p>New WhatsApp messages appear here automatically.</p></div>
+                ) : (
+                  <div className="panel-empty-state">
+                    <strong>No {activeChannel.label} conversations yet</strong>
+                    <p>Connect {activeChannel.label} to bring its chats into this unified inbox.</p>
+                  </div>
+                )
               ) : filteredConversations.map((item) => (
                 <button
                   key={item.id}
@@ -575,7 +713,12 @@ export default function InboxDashboardV2({
                       void loadConversation(item.id);
                     }}
                 >
-                  <span className="avatar">{initials(item.contact.name)}</span>
+                  <span className="avatar">
+                    {initials(item.contact.name)}
+                    <span className="channel-badge" aria-label={`${CHANNELS.find((c) => c.id === channelOf(item))?.label ?? "WhatsApp"} conversation`}>
+                      <ChannelGlyph channel={channelOf(item)} size={15} />
+                    </span>
+                  </span>
                   <span className="conversation-copy">
                     <span className="conversation-name-row"><strong>{item.contact.name}</strong><time>{formatListTime(item.lastMessageAt)}</time></span>
                     <span className="conversation-preview">{messagePreview(item)}</span>
@@ -603,8 +746,22 @@ export default function InboxDashboardV2({
                     ←
                   </button>
                   <div className="chat-person">
-                    <span className="avatar large">{initials(selectedSummary.contact.name)}</span>
-                    <div><h2>{selectedSummary.contact.name}</h2><p>{selectedSummary.contact.phone}</p></div>
+                    <span className="avatar large">
+                      {initials(selectedSummary.contact.name)}
+                      <span className="channel-badge">
+                        <ChannelGlyph channel={channelOf(selectedSummary)} size={17} />
+                      </span>
+                    </span>
+                    <div>
+                      <h2>{selectedSummary.contact.name}</h2>
+                      <p>
+                        <span className="chat-channel-chip">
+                          <ChannelGlyph channel={channelOf(selectedSummary)} size={13} />
+                          {CHANNELS.find((c) => c.id === channelOf(selectedSummary))?.label ?? "WhatsApp"}
+                        </span>
+                        {selectedSummary.contact.phone}
+                      </p>
+                    </div>
                   </div>
                   <div className="chat-actions">
                     <button
