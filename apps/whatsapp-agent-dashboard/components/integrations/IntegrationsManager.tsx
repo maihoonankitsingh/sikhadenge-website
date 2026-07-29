@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import MetaEmbeddedSignupCard from "./MetaEmbeddedSignupCard";
+
 type Provider = {
   provider: string;
   label: string;
@@ -144,6 +146,8 @@ export default function IntegrationsManager() {
 
       {error ? <div className="suite-alert error">{error}</div> : null}
       {success ? <div className="suite-alert success">{success}</div> : null}
+
+      <MetaEmbeddedSignupCard />
 
       <section className="suite-grid two">
         <form className="suite-card" onSubmit={save}>
