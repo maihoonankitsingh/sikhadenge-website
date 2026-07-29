@@ -1,0 +1,113 @@
+/*
+ * SikhaDenge WhatsApp Agent — image-icon removal layer.
+ *
+ * Scope:
+ * - removes PNG/JPG/WebP dashboard icons from legacy module pages
+ * - keeps the approved SikhaDenge brand logo
+ * - keeps customer/media images and the inbox's inline SVG icon system
+ * - loaded last so old image-icon styles cannot reappear
+ */
+
+/* Remove legacy sidebar image tiles while preserving readable labels. */
+.dashboard-shell:not(.sx-inbox) .rail nav .rail-button::before,
+.dashboard-shell:not(.sx-inbox) .rail .rail-bottom::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .rail nav .rail-button,
+.dashboard-shell:not(.sx-inbox) .rail .rail-bottom {
+  padding-left: 12px !important;
+}
+
+/* Remove the image icon injected beside legacy topbar headings. */
+.dashboard-shell:not(.sx-inbox) .topbar > div:first-child {
+  min-height: 0 !important;
+  padding-left: 0 !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .topbar > div:first-child::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* KPI cards become clean text-first cards. */
+.dashboard-shell:not(.sx-inbox) .metric-card,
+.dashboard-shell:not(.sx-inbox) .metric-card:nth-child(n) {
+  padding-left: 12px !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .metric-card::before,
+.dashboard-shell:not(.sx-inbox) .metric-card::after,
+.dashboard-shell:not(.sx-inbox) .metric-card:nth-child(n)::before,
+.dashboard-shell:not(.sx-inbox) .metric-card:nth-child(n)::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Module page header and information-card image icons. */
+.dashboard-shell:not(.sx-inbox) .module-page-card {
+  --module-icon: none !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .module-page-icon {
+  display: none !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .module-page-heading {
+  gap: 0 !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .module-info-card {
+  padding-left: 20px !important;
+}
+
+.dashboard-shell:not(.sx-inbox) .module-info-card::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Catch remaining dashboard icon image elements without touching brand/media. */
+.dashboard-shell img[src^="/dashboard-icons/"]:not([src$="01-sikhadenge-brand.png"]) {
+  display: none !important;
+}
+
+.dashboard-shell [class*="icon"] img[src^="/dashboard-icons/"],
+.dashboard-shell [class*="Icon"] img[src^="/dashboard-icons/"] {
+  display: none !important;
+}
+
+/* Prevent legacy image backgrounds from surviving on icon wrappers. */
+.dashboard-shell:not(.sx-inbox) [class*="module-icon"]::before,
+.dashboard-shell:not(.sx-inbox) [class*="metric-icon"]::before,
+.dashboard-shell:not(.sx-inbox) [class*="stat-icon"]::before,
+.dashboard-shell:not(.sx-inbox) [class*="card-icon"]::before {
+  background-image: none !important;
+}
+
+/* Mobile navigation must not retain empty space reserved for image tiles. */
+@media (max-width: 767px) {
+  .dashboard-shell:not(.sx-inbox) .rail nav .rail-button,
+  .dashboard-shell:not(.sx-inbox) .rail .rail-bottom {
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 10px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+  }
+}
