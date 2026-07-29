@@ -1,0 +1,50 @@
+{
+  "releaseId": "existing-blog-production-import-resume-sql-scan-fix-v1",
+  "approvalId": "existing-blog-production-import-resume-sql-scan-fix-v1-approval-20260729",
+  "status": "approved-for-resume-execution",
+  "approvedAt": "2026-07-29T15:40:00+05:30",
+  "approvalPhrase": "APPROVE EXISTING BLOG PRODUCTION IMPORT V1 RESUME AFTER SAFETY FIX",
+  "approvedScope": {
+    "resumeProductionImport": true,
+    "remainingBatches": 21,
+    "remainingRecords": 20097,
+    "targetFinalRecords": 120097,
+    "targetFinalRows": 360291
+  },
+  "frozenImplementation": {
+    "resumeWrapperPath": "modules/blog/inventory/scripts/resume-existing-blog-production-import-sql-scan-fix-v1.sh",
+    "resumeWrapperGitBlobSha1": "0ef363ea40d8d8a263e58408286e3f5c2c676612",
+    "baseImporterPath": "modules/blog/inventory/scripts/import-existing-blog-batch-package-v1.sh",
+    "baseImporterGitBlobSha1": "748d449c528033eb439da7c1dad18350de627450",
+    "forbiddenSqlScan": "statement-anchored"
+  },
+  "resumeBehaviour": {
+    "alreadyCommittedBatches": 100,
+    "alreadyCommittedRecords": 100000,
+    "existingRowsRevalidated": true,
+    "existingRowsDuplicated": false,
+    "idempotencyMechanism": "INSERT ON CONFLICT (id) DO NOTHING plus exact post-insert verification",
+    "perBatchTransaction": true
+  },
+  "incident": {
+    "failedBatch": 101,
+    "failedBatchExecuted": false,
+    "actualForbiddenSqlStatementsFound": 0,
+    "rootCause": "quoted article content containing Update triggered broad SQL keyword scan"
+  },
+  "safetyDefaults": {
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "indexEligibility": "BLOCKED",
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0
+  },
+  "authorization": {
+    "resumeExecutionApproved": true,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "qualityGateBypassApproved": false,
+    "editorialGateBypassApproved": false
+  }
+}
