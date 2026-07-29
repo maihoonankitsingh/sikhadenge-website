@@ -1,0 +1,71 @@
+{
+  "releaseId": "existing-blog-production-import-attestation-v1",
+  "status": "applied-and-attested",
+  "branch": "feature/blog-content-platform-20260729",
+  "parentReleaseId": "existing-blog-production-import-v1",
+  "sourceCommits": {
+    "importApproval": "776a4faafee5c4104d1f58c84bfcaad1db6cd709",
+    "resumeFix": "d208a40be832e1c93e3478d486708b396785e049",
+    "resumeApproval": "e099f18624cd0d7e6a027ceedb096956c854bcae",
+    "postImportAttestor": "1ad6c17ec78d3144b44c9902ec5f049eeea8682a"
+  },
+  "artifacts": {
+    "importReport": "/var/lib/sikhadenge-blog-artifacts/existing-blog-production-import-v1-20260729_1520",
+    "postImportAttestation": "/var/lib/sikhadenge-blog-artifacts/existing-blog-production-import-attestation-v1-20260729_155716"
+  },
+  "sourcePlan": {
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "bytes": 512082000,
+    "recordCount": 120097
+  },
+  "batchPackage": {
+    "manifestSha256": "5659094b972e2806310cd1a3d72ef19e26f1106df14b6a38b545759fc5d9fe0a",
+    "batchCount": 121,
+    "recordsPerFullBatch": 1000,
+    "finalBatchRecords": 97
+  },
+  "productionDatabase": {
+    "pages": 120097,
+    "pageVersions": 120097,
+    "contentFingerprints": 120097,
+    "totalImportedRows": 360291,
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0,
+    "databaseBytes": 780606487,
+    "publicBlogOid": 20331,
+    "publicTableCount": 43
+  },
+  "verifiedContracts": {
+    "uniqueSlugs": true,
+    "uniqueCanonicalPaths": true,
+    "uniqueSourceRecordKeys": true,
+    "uniqueExactContentHashes": true,
+    "oneVersionPerPage": true,
+    "oneFingerprintPerVersion": true,
+    "foreignKeyRelations": true,
+    "safetyMetadata": true,
+    "publicBlogOidUnchanged": true,
+    "publicTableCountUnchanged": true
+  },
+  "safetyDefaults": {
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "indexEligibility": "BLOCKED",
+    "publicationEnabled": false,
+    "qualityGatePassed": false,
+    "editorialApprovalGranted": false
+  },
+  "authorization": {
+    "importCompleted": true,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "routeWiringApproved": false
+  },
+  "attestation": {
+    "status": "PASS",
+    "databaseReadPerformed": true,
+    "databaseWritePerformed": false,
+    "productionFilesModified": false
+  }
+}
