@@ -36,15 +36,19 @@ npx --no-install prisma validate --schema "$WORK_SCHEMA" > "$OUT/prisma-validate
 
 psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "
 SELECT 'POSTGRES_VERSION=' || current_setting('server_version');
-SELECT 'CREATE_SCHEMA_PRIVILEGE=' || has_database_privilege(current_user,current_database(),'CREATE');
-SELECT 'BLOG_SCHEMA_EXISTS=' || EXISTS (
+SELECT 'CREATE_SCHEMA_PRIVILEGE=' || (has_database_privilege(current_user,current_database(),'CREATE'))::text;
+SELECT 'BLOG_SCHEMA_EXISTS=' || (EXISTS (
   SELECT 1 FROM information_schema.schemata WHERE schema_name='blog_content'
-);
-SELECT 'PUBLIC_BLOG_TABLE_EXISTS=' || to_regclass('public.\"Blog\"') IS NOT NULL;
+))::text;
+SELECT 'PUBLIC_BLOG_TABLE_EXISTS=' || (to_regclass('public.\"Blog\"') IS NOT NULL)::text;
 " > "$OUT/database-preflight.txt"
 
 if grep -q '^BLOG_SCHEMA_EXISTS=true$' "$OUT/database-preflight.txt"; then
   fail "blog_content_schema_already_exists"
+fi
+
+if ! grep -q '^PUBLIC_BLOG_TABLE_EXISTS=true$' "$OUT/database-preflight.txt"; then
+  fail "public_blog_table_missing"
 fi
 
 if ! npx --no-install prisma migrate diff \
