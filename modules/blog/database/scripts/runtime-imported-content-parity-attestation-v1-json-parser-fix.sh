@@ -8,6 +8,7 @@ OUT="${2:-}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 BASE="$ROOT/modules/blog/database/scripts/runtime-imported-content-parity-attestation-v1.sh"
 PATCHED="$OUT/runtime-imported-content-parity-attestation-v1.parser-fixed.sh"
+LOCAL_PRISMA="$ROOT/node_modules/.bin/prisma"
 EXPECTED_BASE_BLOB='f48a64ae4153a1b6fcb9099d52bbca71151de4bf'
 
 fail() {
@@ -24,6 +25,7 @@ test -n "$PACKAGE" && test -d "$PACKAGE" || fail 'package_missing'
 test -n "$OUT" || fail 'output_directory_missing'
 mkdir -p "$OUT"
 test -s "$BASE" || fail 'base_attestor_missing'
+test -x "$LOCAL_PRISMA" || fail 'local_prisma_missing'
 
 ACTUAL_BASE_BLOB="$(git hash-object "$BASE")"
 test "$ACTUAL_BASE_BLOB" = "$EXPECTED_BASE_BLOB" || fail 'base_attestor_blob_mismatch'
@@ -67,7 +69,10 @@ echo 'BLOG_RUNTIME_IMPORTED_CONTENT_PARITY_PARSER_FIX_STATUS=PASS'
 echo 'BASE_ATTESTOR_GIT_BLOB_VERIFIED=YES'
 echo 'RUNTIME_VALUES_PARSER=JSON_PARSE_UTF8'
 echo 'PATCHED_ATTESTOR_ROOT=EXPLICIT_PROJECT_ROOT'
+echo 'ATTESTOR_WORKING_DIRECTORY=PROJECT_ROOT'
+echo 'LOCAL_PRISMA_PRECHECK=PASS'
 echo 'DATABASE_WRITE_CAPABILITY_ADDED=NO'
 echo "REPORT=$OUT"
 
+cd "$ROOT"
 BLOG_RUNTIME_PARITY_ROOT="$ROOT" exec bash "$PATCHED" "$PACKAGE" "$OUT"
