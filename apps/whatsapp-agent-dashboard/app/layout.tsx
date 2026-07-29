@@ -37,6 +37,7 @@ import "./metric-strip-final.css";
 import "./responsive-tablet.css";
 import "./responsive-composer-fix.css";
 import "./icon-free-ui.css";
+import "./sidebar-icons-final.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
