@@ -24,7 +24,7 @@ done
 test -n "${DATABASE_URL:-}" || fail "DATABASE_URL_missing"
 test -s "$SQL" || fail "migration_sql_missing"
 test -s "$SCHEMA" || fail "schema_missing"
-test -x "$AUDIT_SCRIPT" || fail "isolation_audit_not_executable"
+test -s "$AUDIT_SCRIPT" || fail "isolation_audit_missing"
 mkdir -p "$OUT"
 
 SCHEMA_SHA=$(sha256sum "$SCHEMA" | awk '{print $1}')
