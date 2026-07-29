@@ -1,0 +1,46 @@
+{
+  "releaseId": "existing-blog-review-repository-smoke-v1",
+  "status": "passed-and-attested",
+  "sourceCommit": "611add9615b2a622c50708b3cd3b9431a54ec1f4",
+  "repositoryContract": {
+    "entrypoint": "getImportedBlogRecordBySlugForReview",
+    "mode": "review-only",
+    "databaseAccess": "read-only",
+    "routeEligible": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false
+  },
+  "verifiedBehaviour": {
+    "firstMiddleLastPackageParity": true,
+    "missingSlugReturnsNull": true,
+    "malformedSlugInvariantVerified": true,
+    "malformedSlugErrorCode": "IMPORTED_PAGE_SLUG_INVALID"
+  },
+  "sampleSlugs": {
+    "first": "chatgpt-se-resume-kaise-banaye",
+    "middle": "ai-tools-for-marketing-for-developers-ranking-for-freshers",
+    "last": "best-ai-tools-for-teachers-hindi-working-professionals-daily-workflow-checklist-2026"
+  },
+  "runtimeSafety": {
+    "expectedRecords": 120097,
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "indexEligibility": "BLOCKED",
+    "rootPrismaClientUnchanged": true,
+    "publicBlogOidUnchanged": true,
+    "databaseSignatureUnchanged": true,
+    "databaseReadPerformed": true,
+    "databaseWritePerformed": false,
+    "routeFilesModified": false
+  },
+  "serverEvidence": {
+    "status": "PASS",
+    "report": "/var/lib/sikhadenge-blog-artifacts/blog-imported-page-repository-smoke-v1-20260729_214036"
+  },
+  "nextGate": {
+    "controlledPreviewContractRequired": true,
+    "liveRouteWiringApproved": false,
+    "publicationApproved": false,
+    "indexingApproved": false
+  }
+}
