@@ -1,0 +1,72 @@
+{
+  "releaseId": "existing-blog-import-plan-v1",
+  "status": "validated-dry-run",
+  "createdAt": "2026-07-29T13:11:54+05:30",
+  "sourceCommit": "ddd837a15e6563f2bcf00a8043c9253e4434e47a",
+  "sourceInventory": {
+    "releaseId": "existing-blog-inventory-v2",
+    "contractVersion": 2,
+    "sha256": "9dd20eadc35a8a95de6ed6c0ca297971e50ae3e249d548233c0b582568caa6ba",
+    "bytes": 114234689,
+    "recordCount": 120097,
+    "shardCount": 13
+  },
+  "planArtifact": {
+    "contractVersion": 1,
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "bytes": 512082000,
+    "recordCount": 120097
+  },
+  "plannedRows": {
+    "pages": 120097,
+    "pageVersions": 120097,
+    "contentFingerprints": 120097,
+    "total": 360291,
+    "topics": 0,
+    "audiences": 0,
+    "searchIntents": 0,
+    "sources": 0,
+    "claims": 0,
+    "sections": 0,
+    "faqs": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0,
+    "publications": 0
+  },
+  "safetyDefaults": {
+    "workspaceId": "blog-workspace-sikhadenge-v1",
+    "pageLifecycleStatus": "DISCOVERED",
+    "pageIndexEligibility": "BLOCKED",
+    "versionStatus": "WRITING",
+    "versionOrigin": "MIGRATED",
+    "sourceCoverage": 0,
+    "originalityScore": 0,
+    "qualityScore": 0,
+    "requiresResearch": true,
+    "requiresQualityGate": true,
+    "requiresEditorialApproval": true,
+    "publicationBlocked": true
+  },
+  "deterministicIdentity": {
+    "algorithm": "sha256",
+    "pageIdPrefix": "legacy-page-v1-",
+    "versionIdPrefix": "legacy-version-v1-",
+    "fingerprintIdPrefix": "legacy-fingerprint-v1-",
+    "collisions": 0
+  },
+  "authorization": {
+    "bulkImportApproved": false,
+    "productionWriteApproved": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false
+  },
+  "evidence": {
+    "inventoryExportStatus": "PASS",
+    "inventoryAttestationStatus": "PASS",
+    "importPlanBuildStatus": "PASS",
+    "databaseReadPerformed": false,
+    "databaseWritePerformed": false,
+    "productionFilesModified": false,
+    "serverReportDirectory": "/var/lib/sikhadenge-blog-artifacts/existing-import-plan-v1-20260729_131154"
+  }
+}
