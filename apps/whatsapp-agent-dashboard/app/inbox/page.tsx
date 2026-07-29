@@ -1,11 +1,10 @@
 import InboxDashboardV2 from "../../components/inbox/InboxDashboardV2";
-import LogoutButton from "../../components/auth/LogoutButton";
 import { requireDashboardUser } from "../../lib/auth/session";
 import {
   getInboxConversation,
   listInboxConversations,
 } from "../../lib/inbox/conversation-repository";
-import "../inbox-polish.css";
+import "../inbox-rebuild.css";
 
 export const dynamic = "force-dynamic";
 
@@ -26,18 +25,11 @@ export default async function InboxPage({
     : null;
 
   return (
-    <>
-      <div className="session-toolbar" aria-label="Signed-in account">
-        <span>
-          <strong>{user.name}</strong>
-          <small>{user.role.toLowerCase()}</small>
-        </span>
-        <LogoutButton />
-      </div>
-      <InboxDashboardV2
-        initialConversations={conversations}
-        initialConversation={initialConversation}
-      />
-    </>
+    <InboxDashboardV2
+      initialConversations={conversations}
+      initialConversation={initialConversation}
+      userName={user.name}
+      userRole={user.role.toLowerCase()}
+    />
   );
 }

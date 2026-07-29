@@ -9,6 +9,7 @@ import type {
   InboxMessage,
 } from "../../lib/inbox/types";
 import MetaConnectionStatus from "../navigation/MetaConnectionStatus";
+import LogoutButton from "../auth/LogoutButton";
 
 type ConversationFilter = "ALL" | "UNREAD" | "HOT";
 type UserSettableMode = "AI" | "HUMAN" | "PAUSED";
@@ -26,6 +27,8 @@ type UploadedMedia = {
 type InboxDashboardProps = {
   initialConversations: InboxConversationSummary[];
   initialConversation: InboxConversationDetail | null;
+  userName?: string;
+  userRole?: string;
 };
 
 const NAV_ITEMS = [
@@ -43,6 +46,9 @@ const NAV_ITEMS = [
   ["Admin", "/admin"],
   ["Cutover", "/cutover"],
 ] as const;
+
+// Primary items shown as the main sidebar nav; the rest sit under "Manage".
+const PRIMARY_NAV = new Set(["Inbox", "Contacts", "Leads", "Team", "Engagement", "Analytics", "Knowledge"]);
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -113,29 +119,184 @@ function suggestedReply(action: string): string {
 
 function TemperatureBadge({ value }: { value?: string | null }) {
   return (
-    <span className={`temperature temperature-${temperatureClass(value)}`}>
+    <span className={`sx-temp sx-temp-${temperatureClass(value)}`}>
       {temperatureLabel(value)}
     </span>
   );
+}
+
+type ChannelId = "whatsapp" | "instagram" | "messenger" | "telegram";
+
+type ChannelDef = {
+  id: ChannelId;
+  label: string;
+  connected: boolean;
+};
+
+// WhatsApp is the live transport for every conversation in this system today.
+// Instagram, Messenger and Telegram are shown as part of the unified multi-
+// channel inbox and are flagged as not-yet-connected so nothing is faked.
+const CHANNELS: ChannelDef[] = [
+  { id: "whatsapp", label: "WhatsApp", connected: true },
+  { id: "instagram", label: "Instagram", connected: false },
+  { id: "messenger", label: "Messenger", connected: false },
+  { id: "telegram", label: "Telegram", connected: false },
+];
+
+// Every stored conversation arrives over WhatsApp Cloud API, so its channel is
+// WhatsApp. Centralised here so the badge and channel filter stay truthful.
+function channelOf(_conversation: InboxConversationSummary): ChannelId {
+  return "whatsapp";
+}
+
+function ChannelGlyph({ channel, size = 16 }: { channel: ChannelId; size?: number }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false as const,
+  };
+  if (channel === "whatsapp") {
+    return (
+      <svg {...common}>
+        <rect width="24" height="24" rx="7" fill="#25D366" />
+        <path
+          fill="#fff"
+          d="M12 5.9a6 6 0 0 0-5.1 9.1L6 18.3l3.5-.9A6 6 0 1 0 12 5.9Zm0 1.5a4.5 4.5 0 0 1 3.8 6.9l.5 1.9-1.9-.5A4.5 4.5 0 1 1 12 7.4Zm-2.1 2.2c-.1 0-.3 0-.4.2-.2.2-.5.5-.5 1.1s.5 1.2.6 1.3c.1.2 1 1.6 2.5 2.2 1.2.5 1.5.4 1.7.4.3 0 .9-.4 1-.7.1-.3.1-.6.1-.6 0-.1-.2-.2-.4-.3l-.9-.4c-.1 0-.2 0-.3.1l-.4.5c-.1.1-.2.1-.3.1-.2-.1-.7-.3-1.3-.8-.4-.4-.7-.9-.8-1.1 0-.1 0-.2.1-.3l.2-.3v-.3l-.4-1c-.1-.2-.2-.2-.3-.2Z"
+        />
+      </svg>
+    );
+  }
+  if (channel === "instagram") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="chnl-ig" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stopColor="#FEDA75" />
+            <stop offset=".35" stopColor="#FA7E1E" />
+            <stop offset=".62" stopColor="#D62976" />
+            <stop offset="1" stopColor="#962FBF" />
+          </linearGradient>
+        </defs>
+        <rect width="24" height="24" rx="7" fill="url(#chnl-ig)" />
+        <rect x="6" y="6" width="12" height="12" rx="4" fill="none" stroke="#fff" strokeWidth="1.6" />
+        <circle cx="12" cy="12" r="2.7" fill="none" stroke="#fff" strokeWidth="1.6" />
+        <circle cx="15.6" cy="8.4" r="1" fill="#fff" />
+      </svg>
+    );
+  }
+  if (channel === "messenger") {
+    return (
+      <svg {...common}>
+        <rect width="24" height="24" rx="7" fill="#0084FF" />
+        <path
+          fill="#fff"
+          d="M12 6c-3.4 0-6 2.5-6 5.6 0 1.7.8 3.2 2.1 4.2v2.2l2-1.1c.6.2 1.2.3 1.9.3 3.4 0 6-2.5 6-5.6S15.4 6 12 6Zm.4 7.5-1.7-1.7-3 1.7 3.3-3.5 1.7 1.7 3-1.7-3.3 3.5Z"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <rect width="24" height="24" rx="7" fill="#29A9EA" />
+      <path
+        fill="#fff"
+        d="m17.6 7.7-1.9 9c-.1.6-.5.7-1 .5l-2.7-2-1.3 1.3c-.2.1-.3.3-.6.3l.2-2.9 5.2-4.7c.2-.2 0-.3-.4-.1L8.7 13l-2.7-.8c-.6-.2-.6-.6.1-.9l10.5-4c.5-.2.9.1.7.9Z"
+      />
+    </svg>
+  );
+}
+
+// Line-style UI icons (Lucide-flavoured) drawn with currentColor.
+function Ic({ name, size = 18 }: { name: string; size?: number }) {
+  const p = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    focusable: false as const,
+  };
+  switch (name) {
+    case "inbox":
+      return (<svg {...p}><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>);
+    case "contacts":
+      return (<svg {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
+    case "leads":
+      return (<svg {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>);
+    case "team":
+      return (<svg {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
+    case "engagement":
+      return (<svg {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>);
+    case "analytics":
+      return (<svg {...p}><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>);
+    case "knowledge":
+      return (<svg {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>);
+    case "campaigns":
+      return (<svg {...p}><path d="m3 11 18-5v12L3 14v-3z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" /></svg>);
+    case "automation":
+      return (<svg {...p}><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" /></svg>);
+    case "templates":
+      return (<svg {...p}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></svg>);
+    case "integrations":
+      return (<svg {...p}><path d="m12 2 9 5-9 5-9-5 9-5z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></svg>);
+    case "admin":
+      return (<svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
+    case "cutover":
+      return (<svg {...p}><path d="M12 2v10" /><path d="M18.4 6.6a9 9 0 1 1-12.8 0" /></svg>);
+    case "settings":
+      return (<svg {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>);
+    case "search":
+      return (<svg {...p}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>);
+    case "compose":
+      return (<svg {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>);
+    case "refresh":
+      return (<svg {...p}><path d="M23 4v6h-6" /><path d="M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" /><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>);
+    case "more":
+      return (<svg {...p} strokeWidth={2}><circle cx="5" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="19" cy="12" r="1" fill="currentColor" /></svg>);
+    case "back":
+      return (<svg {...p}><path d="m15 18-6-6 6-6" /></svg>);
+    case "send":
+      return (<svg {...p}><path d="m22 2-7 20-4-9-9-4 20-7z" /><path d="M22 2 11 13" /></svg>);
+    case "plus":
+      return (<svg {...p}><path d="M12 5v14" /><path d="M5 12h14" /></svg>);
+    case "sparkle":
+      return (<svg {...p}><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z" /></svg>);
+    case "grid":
+      return (<svg {...p}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>);
+    case "x":
+      return (<svg {...p}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
+    case "phone":
+      return (<svg {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>);
+    case "video":
+      return (<svg {...p}><path d="m23 7-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>);
+    default:
+      return null;
+  }
 }
 
 function MessageMedia({ message }: { message: InboxMessage }) {
   if (!message.mediaUrl) return null;
   if (message.type === "IMAGE") {
     return (
-      <a className="message-media-link" href={message.mediaUrl} target="_blank" rel="noreferrer">
-        <img className="message-media-image" src={message.mediaUrl} alt={message.filename || "Shared image"} />
+      <a className="sx-msg-media" href={message.mediaUrl} target="_blank" rel="noreferrer">
+        <img className="sx-msg-image" src={message.mediaUrl} alt={message.filename || "Shared image"} />
       </a>
     );
   }
   if (message.type === "VIDEO") {
-    return <video className="message-media-video" src={message.mediaUrl} controls preload="metadata" />;
+    return <video className="sx-msg-video" src={message.mediaUrl} controls preload="metadata" />;
   }
   if (message.type === "AUDIO") {
-    return <audio className="message-media-audio" src={message.mediaUrl} controls preload="metadata" />;
+    return <audio className="sx-msg-audio" src={message.mediaUrl} controls preload="metadata" />;
   }
   return (
-    <a className="message-document" href={message.mediaUrl} target="_blank" rel="noreferrer">
+    <a className="sx-msg-doc" href={message.mediaUrl} target="_blank" rel="noreferrer">
       <span aria-hidden="true">PDF</span>
       <strong>{message.filename || "Open document"}</strong>
     </a>
@@ -145,6 +306,8 @@ function MessageMedia({ message }: { message: InboxMessage }) {
 export default function InboxDashboardV2({
   initialConversations,
   initialConversation,
+  userName = "Account",
+  userRole = "operator",
 }: InboxDashboardProps) {
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -153,6 +316,7 @@ export default function InboxDashboardV2({
   const [selected, setSelected] = useState<InboxConversationDetail | null>(initialConversation);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ConversationFilter>("ALL");
+  const [channelFilter, setChannelFilter] = useState<ChannelId>("whatsapp");
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [modeUpdating, setModeUpdating] = useState(false);
   const [operationBusy, setOperationBusy] = useState(false);
@@ -252,9 +416,25 @@ export default function InboxDashboardV2({
         filter === "ALL" ||
         (filter === "UNREAD" && item.unreadCount > 0) ||
         (filter === "HOT" && item.lead?.temperature === "HOT");
-      return Boolean(matchesQuery && matchesFilter);
+      const matchesChannel = channelOf(item) === channelFilter;
+      return Boolean(matchesQuery && matchesFilter && matchesChannel);
     });
-  }, [conversations, filter, search]);
+  }, [conversations, filter, search, channelFilter]);
+
+  const channelUnread = useMemo(() => {
+    const totals: Record<ChannelId, number> = {
+      whatsapp: 0,
+      instagram: 0,
+      messenger: 0,
+      telegram: 0,
+    };
+    for (const item of conversations) {
+      totals[channelOf(item)] += item.unreadCount;
+    }
+    return totals;
+  }, [conversations]);
+
+  const activeChannel = CHANNELS.find((item) => item.id === channelFilter) ?? CHANNELS[0];
 
   const metrics = useMemo(() => {
     const open = conversations.filter((item) => item.status !== "CLOSED").length;
@@ -490,319 +670,466 @@ export default function InboxDashboardV2({
     return actions.length > 0 ? actions : ["No pending qualification question"];
   }, [selected]);
 
+  const navIconFor = (title: string) => title.toLowerCase();
+
+  function renderChannels(variant: "rail" | "chips") {
+    return (
+      <div className={variant === "rail" ? "sx-channels" : "sx-channels sx-channels-chips"} aria-label="Channels">
+        {variant === "rail" ? <p className="sx-side-label">Channels</p> : null}
+        <div className="sx-channels-list">
+          {CHANNELS.map((channel) => {
+            const unread = channelUnread[channel.id];
+            const isActive = channelFilter === channel.id;
+            return (
+              <button
+                key={channel.id}
+                type="button"
+                className={`sx-chan ${isActive ? "is-active" : ""} ${channel.connected ? "" : "is-pending"}`}
+                aria-pressed={isActive}
+                onClick={() => setChannelFilter(channel.id)}
+              >
+                <span className="sx-chan-ic"><ChannelGlyph channel={channel.id} /></span>
+                <span className="sx-chan-name">{channel.label}</span>
+                {channel.connected ? (
+                  unread > 0 ? (
+                    <span className="sx-chan-count">{unread}</span>
+                  ) : (
+                    <span className="sx-chan-dot" aria-label="Connected" title="Connected" />
+                  )
+                ) : (
+                  <span className="sx-chan-tag">Connect</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main
-      className={`dashboard-shell inbox-redesign mobile-view-${mobileView.toLowerCase()} ${
-        mobileDetailsOpen ? "mobile-details-open" : ""
-      }`}
+      className={`sx-inbox sx-mv-${mobileView.toLowerCase()} ${mobileDetailsOpen ? "sx-details-open" : ""}`}
     >
-      <aside className="rail" aria-label="Primary navigation">
-        <Link className="brand-mark" href="/inbox" aria-label="Open inbox">S</Link>
-        <nav>
-          {NAV_ITEMS.map(([title, href]) => (
-            <Link
-              key={title}
-              className={`rail-button ${title === "Inbox" ? "active" : ""}`}
-              title={title}
-              aria-label={title}
-              aria-current={title === "Inbox" ? "page" : undefined}
-              href={href}
-            >
-              {title}
-            </Link>
-          ))}
-        </nav>
-        <Link className="rail-button rail-bottom" title="Settings" aria-label="Settings" href="/settings">
-          Settings
+      {/* LEFT NAVIGATION — keeps the .rail / nav / .rail-button / .brand-mark hooks intact */}
+      <aside className="rail sx-side" aria-label="Primary navigation">
+        <Link className="brand-mark sx-brand" href="/inbox" aria-label="Open inbox">
+          <span className="sx-brand-logo">
+            <img src="/sikhadenge-app-mark-v3.svg" alt="" width={26} height={26} />
+          </span>
+          <span className="sx-brand-name">
+            SikhaDenge
+            <small>WhatsApp AI</small>
+          </span>
         </Link>
+
+        <div className="sx-side-scroll">
+          <nav className="sx-nav">
+            {NAV_ITEMS.filter(([title]) => PRIMARY_NAV.has(title)).map(([title, href]) => (
+              <Link
+                key={title}
+                className={`rail-button sx-navitem ${title === "Inbox" ? "active is-active" : ""}`}
+                title={title}
+                aria-label={title}
+                aria-current={title === "Inbox" ? "page" : undefined}
+                href={href}
+              >
+                <span className="sx-navic"><Ic name={navIconFor(title)} /></span>
+                <span className="sx-navlabel">{title}</span>
+                {title === "Inbox" && metrics.unread > 0 ? (
+                  <span className="sx-navbadge">{metrics.unread}</span>
+                ) : null}
+              </Link>
+            ))}
+          </nav>
+
+          {renderChannels("rail")}
+
+          <div className="sx-side-group">
+            <p className="sx-side-label">Manage</p>
+            <nav className="sx-nav">
+              {NAV_ITEMS.filter(([title]) => !PRIMARY_NAV.has(title)).map(([title, href]) => (
+                <Link
+                  key={title}
+                  className="rail-button sx-navitem"
+                  title={title}
+                  aria-label={title}
+                  href={href}
+                >
+                  <span className="sx-navic"><Ic name={navIconFor(title)} /></span>
+                  <span className="sx-navlabel">{title}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        <div className="sx-side-foot">
+          <Link className="rail-button sx-navitem" title="Settings" aria-label="Settings" href="/settings">
+            <span className="sx-navic"><Ic name="settings" /></span>
+            <span className="sx-navlabel">Settings</span>
+          </Link>
+          <div className="sx-account">
+            <span className="sx-acc-avatar">{initials(userName)}</span>
+            <span className="sx-acc-copy">
+              <strong>{userName}</strong>
+              <small>{userRole}</small>
+            </span>
+            <LogoutButton />
+          </div>
+        </div>
       </aside>
 
-      <section className="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">SikhaDenge owned system</p>
-            <h1>WhatsApp AI Agent</h1>
-          </div>
-          <div className="topbar-actions">
-            <span className="inbox-live-indicator">Live inbox · 1 second</span>
-            <div className="system-status"><span /> Database connected</div>
-            <MetaConnectionStatus />
-          </div>
-        </header>
-
-        <section className="metric-row" aria-label="Operational summary">
-          <article className="metric-card"><span>Open conversations</span><strong>{metrics.open}</strong><small>Current database records</small></article>
-          <article className="metric-card"><span>AI managed</span><strong>{metrics.aiManaged}</strong><small>Agent mode currently enabled</small></article>
-          <article className="metric-card"><span>Qualified leads</span><strong>{metrics.qualified}</strong><small>Lead score 45 or higher</small></article>
-          <article className="metric-card"><span>Unread messages</span><strong>{metrics.unread}</strong><small>Across all conversations</small></article>
-        </section>
-
-        <section className="inbox-grid">
-          <aside className="conversation-panel">
-            <div className="panel-heading">
-              <div><p className="eyebrow">Unified inbox</p><h2>Conversations</h2></div>
+      {/* CONVERSATION LIST COLUMN */}
+      <section className="sx-list">
+        <header className="sx-list-head">
+          <div className="sx-list-headtop">
+            <div>
+              <h1 className="sx-list-title">Messages</h1>
+              <p className="sx-list-sub">{filteredConversations.length} conversations · live sync</p>
+            </div>
+            <div className="sx-list-headactions">
+              <span className="sx-live"><i />Live</span>
               <button
-                className="icon-button"
+                className="sx-iconbtn"
                 type="button"
                 aria-label="Reset conversation filters"
                 title="Reset filters"
                 onClick={() => { setSearch(""); setFilter("ALL"); }}
               >
-                ↻
+                <Ic name="refresh" size={16} />
               </button>
             </div>
-            <label className="search-box">
-              <span>⌕</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, number or course" />
-            </label>
-            <div className="filter-tabs">
-              <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>All</button>
-              <button className={filter === "UNREAD" ? "active" : ""} onClick={() => setFilter("UNREAD")}>Unread</button>
-              <button className={filter === "HOT" ? "active" : ""} onClick={() => setFilter("HOT")}>Hot leads</button>
-            </div>
-            <div className="conversation-list">
-              {filteredConversations.length === 0 ? (
-                <div className="panel-empty-state"><strong>No conversations found</strong><p>New WhatsApp messages appear here automatically.</p></div>
-              ) : filteredConversations.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-conversation-id={item.id}
-                  className={`conversation-item ${selectedId === item.id ? "selected" : ""}`}
-                  onClick={() => {
-                      setMobileView("CHAT");
-                      setMobileDetailsOpen(false);
-                      void loadConversation(item.id);
-                    }}
-                >
-                  <span className="avatar">{initials(item.contact.name)}</span>
-                  <span className="conversation-copy">
-                    <span className="conversation-name-row"><strong>{item.contact.name}</strong><time>{formatListTime(item.lastMessageAt)}</time></span>
-                    <span className="conversation-preview">{messagePreview(item)}</span>
-                    <span className="conversation-meta"><TemperatureBadge value={item.lead?.temperature} /><span>{readable(item.lead?.stage || item.status)}</span></span>
-                  </span>
-                  {item.unreadCount > 0 ? <span className="unread-count">{item.unreadCount}</span> : null}
-                </button>
-              ))}
-            </div>
-          </aside>
+          </div>
+          <div className="sx-list-status">
+            <MetaConnectionStatus />
+          </div>
+        </header>
 
-          <section className="chat-panel">
-            <header className="chat-header">
-              {selectedSummary ? (
-                <>
-                  <button
-                    className="mobile-inbox-back"
-                    type="button"
-                    aria-label="Back to conversations"
-                    onClick={() => {
-                      setMobileDetailsOpen(false);
-                      setMobileView("LIST");
-                    }}
-                  >
-                    ←
-                  </button>
-                  <div className="chat-person">
-                    <span className="avatar large">{initials(selectedSummary.contact.name)}</span>
-                    <div><h2>{selectedSummary.contact.name}</h2><p>{selectedSummary.contact.phone}</p></div>
-                  </div>
-                  <div className="chat-actions">
-                    <button
-                      className="mobile-lead-button"
-                      type="button"
-                      aria-expanded={mobileDetailsOpen}
-                      onClick={() => setMobileDetailsOpen(true)}
-                    >
-                      Lead
-                    </button>
-                    <label className="ai-switch">
-                      <span>{modeUpdating ? "Updating..." : "AI Agent"}</span>
-                      <input
-                        type="checkbox"
-                        checked={selectedSummary.agentMode === "AI"}
-                        disabled={modeUpdating}
-                        onChange={(event) => void changeMode(event.target.checked ? "AI" : "PAUSED")}
-                      />
-                      <i />
-                    </label>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      disabled={modeUpdating}
-                      onClick={() => void changeMode(selectedSummary.agentMode === "HUMAN" ? "AI" : "HUMAN")}
-                    >
-                      {selectedSummary.agentMode === "HUMAN" ? "Resume AI" : "Take over"}
-                    </button>
-                    <button className="icon-button" type="button" title="More actions" onClick={() => setActionMenuOpen((value) => !value)}>•••</button>
-                    {actionMenuOpen ? (
-                      <div className="chat-action-menu">
-                        <button type="button" onClick={() => selectedId && void markRead(selectedId)}>Mark as read</button>
-                        <Link href="/contacts">Open contact manager</Link>
-                        <Link href="/leads">Open lead manager</Link>
-                        <Link href="/team">Open team assignment</Link>
-                        {selectedSummary.status === "RESOLVED" || selectedSummary.status === "CLOSED" ? (
-                          <button type="button" disabled={operationBusy} onClick={() => void updateStatus("OPEN")}>Reopen conversation</button>
-                        ) : (
-                          <button className="danger" type="button" disabled={operationBusy} onClick={() => void updateStatus("RESOLVED")}>Resolve conversation</button>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                </>
-              ) : (
-                <div className="chat-person"><div><h2>No conversation selected</h2><p>Incoming WhatsApp conversations will be listed on the left.</p></div></div>
-              )}
-            </header>
+        {renderChannels("chips")}
 
-            <div className="context-strip">
-              <span>Intent: {readable(selected?.currentIntent)}</span>
-              <span>Language: {readable(selected?.detectedLanguage)}</span>
-              <span>Agent confidence: {selected?.aiConfidence != null ? `${Math.round(selected.aiConfidence * 100)}%` : "Not calculated"}</span>
-              <span className="knowledge-ok">Mode: {readable(selectedSummary?.agentMode)}</span>
-            </div>
-
-            {error ? <div className="inbox-operation-error">{error}</div> : null}
-
-            <div className="message-area" ref={messageAreaRef}>
-              {loadingConversation ? (
-                <div className="center-state">Loading conversation...</div>
-              ) : !selected ? (
-                <div className="center-state"><strong>Inbox is ready</strong><p>Incoming messages will update automatically.</p></div>
-              ) : selected.messages.length === 0 ? (
-                <div className="center-state">No message has been stored in this conversation.</div>
-              ) : (
-                <>
-                  <div className="day-divider"><span>Conversation history</span></div>
-                  {selected.messages.map((message) => (
-                    <div key={message.id} className={`message-row ${message.direction.toLowerCase()}`}>
-                      <div className="message-bubble">
-                        {message.direction === "OUTBOUND" ? <small>{message.actor === "AI" ? "AI Agent" : message.actor === "HUMAN" ? "Counselor" : readable(message.actor)}</small> : null}
-                        <MessageMedia message={message} />
-                        {message.text ? <p>{message.text}</p> : !message.mediaUrl ? <p>[{readable(message.type)} message]</p> : null}
-                        <time>{formatMessageTime(message.messageTimestamp)} · {readable(message.status)}</time>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {selected?.aiSummary || selected?.currentIntent ? (
-                <div className="agent-thinking">
-                  <span className="thinking-dot" />
-                  <div><strong>Agent context</strong><p>{selected.aiSummary || `Current detected intent: ${readable(selected.currentIntent)}.`}</p></div>
-                  <button type="button" onClick={() => window.location.assign("/knowledge")}>Review</button>
-                </div>
-              ) : null}
-            </div>
-
-            <footer className="composer">
-              <input
-                ref={fileInputRef}
-                className="media-file-input"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,text/plain,video/mp4,audio/mpeg,audio/mp4,audio/ogg,audio/aac"
-                onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAttachment(file); }}
-              />
-              {uploadedMedia ? (
-                <div className="composer-media-preview">
-                  {uploadedMedia.kind === "image" ? <img src={uploadedMedia.previewUrl} alt="Attachment preview" /> : <span className="composer-media-type">{uploadedMedia.kind.toUpperCase()}</span>}
-                  <div><strong>{uploadedMedia.name}</strong><small>{formatBytes(uploadedMedia.size)} · {uploadedMedia.mimeType}</small></div>
-                  <button type="button" onClick={() => setUploadedMedia(null)} aria-label="Remove attachment">×</button>
-                </div>
-              ) : null}
-              {composerNotice ? <div className="composer-feedback">{composerNotice}</div> : null}
-              <div className="composer-tools">
-                <button type="button" disabled={!selected || uploading || sending} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>{uploading ? "…" : "＋"}</button>
-                <button type="button" title="Open templates and targeted campaigns">▤</button>
-                <button type="button" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>✦</button>
-              </div>
-              <textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={uploadedMedia ? "Add an optional caption..." : "Write a manual reply..."}
-                rows={2}
-                disabled={!selected || sending}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void sendMessage();
-                  }
-                }}
-              />
-              <button
-                className="send-button"
-                type="button"
-                disabled={!selected || sending || uploading || (!draft.trim() && !uploadedMedia)}
-                title="Send through the current WhatsApp Cloud API runtime mode"
-                onClick={() => void sendMessage()}
-              >
-                {sending ? "Sending..." : "Send"}
-              </button>
-            </footer>
-          </section>
-
-          <button
-            className="mobile-details-backdrop"
-            type="button"
-            aria-label="Close Lead Intelligence"
-            onClick={() => setMobileDetailsOpen(false)}
+        <label className="sx-search">
+          <Ic name="search" size={17} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search name, number or course"
           />
+        </label>
 
-          <aside className="details-panel">
-            <button
-              className="mobile-details-close"
-              type="button"
-              aria-label="Close Lead Intelligence"
-              onClick={() => setMobileDetailsOpen(false)}
-            >
-              ×
-            </button>
-            {selectedSummary ? (
-              <>
-                <div className="lead-card-head"><div><p className="eyebrow">Lead intelligence</p><h2>{selectedSummary.contact.name}</h2></div><TemperatureBadge value={selectedSummary.lead?.temperature} /></div>
-                <div className="score-block"><div className="score-ring"><strong>{selectedSummary.lead?.score ?? 0}</strong><span>/100</span></div><div><strong>Qualification score</strong><p>Calculated from captured profile and joining intent.</p></div></div>
-                <section className="detail-section">
-                  <h3>Lead profile</h3>
-                  <dl>
-                    <div><dt>Course</dt><dd>{readable(selectedSummary.lead?.interestedCourse)}</dd></div>
-                    <div><dt>City</dt><dd>{readable(selectedSummary.contact.city)}</dd></div>
-                    <div><dt>Occupation</dt><dd>{readable(selectedSummary.lead?.occupation)}</dd></div>
-                    <div><dt>Experience</dt><dd>{readable(selectedSummary.lead?.experienceLevel)}</dd></div>
-                    <div><dt>Joining</dt><dd>{readable(selectedSummary.lead?.joiningTimeline)}</dd></div>
-                    <div><dt>Source</dt><dd>{readable(selected?.source)}</dd></div>
-                    <div><dt>Stage</dt><dd>{readable(selectedSummary.lead?.stage || selectedSummary.status)}</dd></div>
-                    <div><dt>Owner</dt><dd>{selectedSummary.assignee?.name || "Unassigned"}</dd></div>
-                  </dl>
-                </section>
-                <section className="detail-section">
-                  <div className="section-title-row"><h3>AI summary</h3><button type="button" onClick={() => window.location.assign("/leads")}>Edit</button></div>
-                  <p className="summary-copy">{selected?.aiSummary || "No AI summary is available yet."}</p>
-                </section>
-                <section className="detail-section">
-                  <h3>Next actions</h3>
-                  {nextActions.map((action) => (
-                    <label className="task-check actionable" key={action}>
-                      <input
-                        type="checkbox"
-                        disabled={action === "No pending qualification question"}
-                        onChange={() => setDraft(suggestedReply(action))}
-                      /> {action}
-                    </label>
-                  ))}
-                </section>
-                <section className="learning-card">
-                  <span>Controlled learning</span>
-                  <strong>No raw chat is auto-trained</strong>
-                  <p>Counselor corrections enter an approval queue before becoming reusable knowledge.</p>
-                  <button type="button" onClick={() => window.location.assign("/knowledge")}>Open learning queue</button>
-                </section>
-              </>
+        <div className="sx-tabs">
+          <button className={filter === "ALL" ? "is-active" : ""} onClick={() => setFilter("ALL")}>All</button>
+          <button className={filter === "UNREAD" ? "is-active" : ""} onClick={() => setFilter("UNREAD")}>Unread</button>
+          <button className={filter === "HOT" ? "is-active" : ""} onClick={() => setFilter("HOT")}>Hot leads</button>
+        </div>
+
+        <div className="sx-convos">
+          {filteredConversations.length === 0 ? (
+            activeChannel.connected ? (
+              <div className="sx-empty"><strong>No conversations found</strong><p>New WhatsApp messages appear here automatically.</p></div>
             ) : (
-              <div className="panel-empty-state"><strong>No lead selected</strong><p>Select a conversation to view qualification and agent context.</p></div>
-            )}
-          </aside>
-        </section>
+              <div className="sx-empty">
+                <strong>No {activeChannel.label} conversations yet</strong>
+                <p>Connect {activeChannel.label} to bring its chats into this unified inbox.</p>
+              </div>
+            )
+          ) : filteredConversations.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              data-conversation-id={item.id}
+              className={`conversation-item sx-convo ${selectedId === item.id ? "selected is-selected" : ""}`}
+              onClick={() => {
+                setMobileView("CHAT");
+                setMobileDetailsOpen(false);
+                void loadConversation(item.id);
+              }}
+            >
+              <span className="sx-avatar">
+                {initials(item.contact.name)}
+                <span className="sx-chanbadge" aria-label={`${CHANNELS.find((c) => c.id === channelOf(item))?.label ?? "WhatsApp"} conversation`}>
+                  <ChannelGlyph channel={channelOf(item)} size={14} />
+                </span>
+              </span>
+              <span className="sx-convo-main">
+                <span className="sx-convo-top">
+                  <strong>{item.contact.name}</strong>
+                  <time>{formatListTime(item.lastMessageAt)}</time>
+                </span>
+                <span className="sx-convo-prev">{messagePreview(item)}</span>
+                <span className="sx-convo-meta">
+                  <TemperatureBadge value={item.lead?.temperature} />
+                  <span className="sx-convo-stage">{readable(item.lead?.stage || item.status)}</span>
+                </span>
+              </span>
+              {item.unreadCount > 0 ? <span className="sx-unread">{item.unreadCount}</span> : null}
+            </button>
+          ))}
+        </div>
       </section>
+
+      {/* CHAT COLUMN */}
+      <section className="sx-chat">
+        <header className="sx-chat-head">
+          {selectedSummary ? (
+            <>
+              <button
+                className="sx-chat-back"
+                type="button"
+                aria-label="Back to conversations"
+                onClick={() => { setMobileDetailsOpen(false); setMobileView("LIST"); }}
+              >
+                <Ic name="back" />
+              </button>
+              <div className="sx-chat-person">
+                <span className="sx-avatar sx-avatar-lg">
+                  {initials(selectedSummary.contact.name)}
+                  <span className="sx-chanbadge">
+                    <ChannelGlyph channel={channelOf(selectedSummary)} size={16} />
+                  </span>
+                </span>
+                <div className="sx-chat-ident">
+                  <h2>{selectedSummary.contact.name}</h2>
+                  <p>
+                    <span className="sx-chat-chip">
+                      <ChannelGlyph channel={channelOf(selectedSummary)} size={12} />
+                      {CHANNELS.find((c) => c.id === channelOf(selectedSummary))?.label ?? "WhatsApp"}
+                    </span>
+                    <span className="sx-chat-phone">{selectedSummary.contact.phone}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="sx-chat-actions">
+                <button
+                  className="sx-lead-btn"
+                  type="button"
+                  aria-expanded={mobileDetailsOpen}
+                  onClick={() => setMobileDetailsOpen(true)}
+                >
+                  Lead
+                </button>
+                <label className="sx-switch" title="Toggle AI Agent">
+                  <span>{modeUpdating ? "Updating…" : "AI Agent"}</span>
+                  <input
+                    type="checkbox"
+                    checked={selectedSummary.agentMode === "AI"}
+                    disabled={modeUpdating}
+                    onChange={(event) => void changeMode(event.target.checked ? "AI" : "PAUSED")}
+                  />
+                  <i />
+                </label>
+                <button
+                  className="sx-btn-outline"
+                  type="button"
+                  disabled={modeUpdating}
+                  onClick={() => void changeMode(selectedSummary.agentMode === "HUMAN" ? "AI" : "HUMAN")}
+                >
+                  {selectedSummary.agentMode === "HUMAN" ? "Resume AI" : "Take over"}
+                </button>
+                <button className="sx-iconbtn" type="button" title="More actions" onClick={() => setActionMenuOpen((value) => !value)}>
+                  <Ic name="more" />
+                </button>
+                {actionMenuOpen ? (
+                  <div className="sx-menu">
+                    <button type="button" onClick={() => selectedId && void markRead(selectedId)}>Mark as read</button>
+                    <Link href="/contacts">Open contact manager</Link>
+                    <Link href="/leads">Open lead manager</Link>
+                    <Link href="/team">Open team assignment</Link>
+                    {selectedSummary.status === "RESOLVED" || selectedSummary.status === "CLOSED" ? (
+                      <button type="button" disabled={operationBusy} onClick={() => void updateStatus("OPEN")}>Reopen conversation</button>
+                    ) : (
+                      <button className="sx-menu-danger" type="button" disabled={operationBusy} onClick={() => void updateStatus("RESOLVED")}>Resolve conversation</button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <div className="sx-chat-person"><div className="sx-chat-ident"><h2>No conversation selected</h2><p>Incoming WhatsApp conversations will be listed on the left.</p></div></div>
+          )}
+        </header>
+
+        <div className="sx-context">
+          <span>Intent · {readable(selected?.currentIntent)}</span>
+          <span>Language · {readable(selected?.detectedLanguage)}</span>
+          <span>Confidence · {selected?.aiConfidence != null ? `${Math.round(selected.aiConfidence * 100)}%` : "N/A"}</span>
+          <span className="sx-context-ok">Mode · {readable(selectedSummary?.agentMode)}</span>
+        </div>
+
+        {error ? <div className="sx-error">{error}</div> : null}
+
+        <div className="sx-messages" ref={messageAreaRef}>
+          {loadingConversation ? (
+            <div className="sx-center">Loading conversation…</div>
+          ) : !selected ? (
+            <div className="sx-center"><strong>Inbox is ready</strong><p>Incoming messages will update automatically.</p></div>
+          ) : selected.messages.length === 0 ? (
+            <div className="sx-center">No message has been stored in this conversation.</div>
+          ) : (
+            <>
+              <div className="sx-daydivider"><span>Today</span></div>
+              {selected.messages.map((message) => (
+                <div key={message.id} className={`sx-msgrow ${message.direction.toLowerCase()}`}>
+                  <div className="sx-bubble">
+                    {message.direction === "OUTBOUND" ? <small>{message.actor === "AI" ? "AI Agent" : message.actor === "HUMAN" ? "Counselor" : readable(message.actor)}</small> : null}
+                    <MessageMedia message={message} />
+                    {message.text ? <p>{message.text}</p> : !message.mediaUrl ? <p>[{readable(message.type)} message]</p> : null}
+                    <time>{formatMessageTime(message.messageTimestamp)} · {readable(message.status)}</time>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {selected?.aiSummary || selected?.currentIntent ? (
+            <div className="sx-agentnote">
+              <span className="sx-agentnote-dot" />
+              <div><strong>Agent context</strong><p>{selected.aiSummary || `Current detected intent: ${readable(selected.currentIntent)}.`}</p></div>
+              <button type="button" onClick={() => window.location.assign("/knowledge")}>Review</button>
+            </div>
+          ) : null}
+        </div>
+
+        <footer className="sx-composer">
+          <input
+            ref={fileInputRef}
+            className="sx-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,text/plain,video/mp4,audio/mpeg,audio/mp4,audio/ogg,audio/aac"
+            onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAttachment(file); }}
+          />
+          {uploadedMedia ? (
+            <div className="sx-composer-media">
+              {uploadedMedia.kind === "image" ? <img src={uploadedMedia.previewUrl} alt="Attachment preview" /> : <span className="sx-composer-mediatype">{uploadedMedia.kind.toUpperCase()}</span>}
+              <div><strong>{uploadedMedia.name}</strong><small>{formatBytes(uploadedMedia.size)} · {uploadedMedia.mimeType}</small></div>
+              <button type="button" onClick={() => setUploadedMedia(null)} aria-label="Remove attachment"><Ic name="x" size={15} /></button>
+            </div>
+          ) : null}
+          {composerNotice ? <div className="sx-composer-note">{composerNotice}</div> : null}
+          <div className="sx-composer-row">
+            <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
+              {uploading ? <span className="sx-spin">…</span> : <Ic name="plus" />}
+            </button>
+            <button className="sx-composer-tool" type="button" title="Open templates and targeted campaigns">
+              <Ic name="grid" />
+            </button>
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={uploadedMedia ? "Add an optional caption…" : "Write a message…"}
+              rows={1}
+              disabled={!selected || sending}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendMessage();
+                }
+              }}
+            />
+            <button className="sx-composer-tool" type="button" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>
+              <Ic name="sparkle" />
+            </button>
+            <button
+              className="sx-send"
+              type="button"
+              disabled={!selected || sending || uploading || (!draft.trim() && !uploadedMedia)}
+              title="Send through the current WhatsApp Cloud API runtime mode"
+              onClick={() => void sendMessage()}
+            >
+              {sending ? <span className="sx-spin">…</span> : <Ic name="send" size={19} />}
+            </button>
+          </div>
+        </footer>
+      </section>
+
+      {/* DETAILS COLUMN / SLIDE-OVER */}
+      <button
+        className="sx-details-backdrop"
+        type="button"
+        aria-label="Close lead intelligence"
+        onClick={() => setMobileDetailsOpen(false)}
+      />
+      <aside className="sx-details">
+        <button
+          className="sx-details-close"
+          type="button"
+          aria-label="Close lead intelligence"
+          onClick={() => setMobileDetailsOpen(false)}
+        >
+          <Ic name="x" size={16} />
+        </button>
+        {selectedSummary ? (
+          <>
+            <div className="sx-profile">
+              <span className="sx-avatar sx-avatar-xl">
+                {initials(selectedSummary.contact.name)}
+                <span className="sx-chanbadge">
+                  <ChannelGlyph channel={channelOf(selectedSummary)} size={18} />
+                </span>
+              </span>
+              <h2>{selectedSummary.contact.name}</h2>
+              <p className="sx-profile-handle">{selectedSummary.contact.phone}</p>
+              <TemperatureBadge value={selectedSummary.lead?.temperature} />
+            </div>
+
+            <div className="sx-ai-summary">
+              <div className="sx-ai-summary-head"><Ic name="sparkle" size={15} /> AI Summary</div>
+              <p>{selected?.aiSummary || "No AI summary is available yet. It is generated automatically as the conversation develops."}</p>
+              <button type="button" className="sx-ai-summary-edit" onClick={() => window.location.assign("/leads")}>Edit in lead manager</button>
+            </div>
+
+            <div className="sx-score">
+              <div className="sx-score-ring" style={{ ["--sx-score" as string]: `${selectedSummary.lead?.score ?? 0}` }}>
+                <strong>{selectedSummary.lead?.score ?? 0}</strong>
+                <span>/100</span>
+              </div>
+              <div>
+                <strong>Qualification score</strong>
+                <p>Calculated from captured profile and joining intent.</p>
+              </div>
+            </div>
+
+            <section className="sx-detail-block">
+              <h3>Lead profile</h3>
+              <dl className="sx-detail-list">
+                <div><dt>Course</dt><dd>{readable(selectedSummary.lead?.interestedCourse)}</dd></div>
+                <div><dt>City</dt><dd>{readable(selectedSummary.contact.city)}</dd></div>
+                <div><dt>Occupation</dt><dd>{readable(selectedSummary.lead?.occupation)}</dd></div>
+                <div><dt>Experience</dt><dd>{readable(selectedSummary.lead?.experienceLevel)}</dd></div>
+                <div><dt>Joining</dt><dd>{readable(selectedSummary.lead?.joiningTimeline)}</dd></div>
+                <div><dt>Source</dt><dd>{readable(selected?.source)}</dd></div>
+                <div><dt>Stage</dt><dd>{readable(selectedSummary.lead?.stage || selectedSummary.status)}</dd></div>
+                <div><dt>Owner</dt><dd>{selectedSummary.assignee?.name || "Unassigned"}</dd></div>
+              </dl>
+            </section>
+
+            <section className="sx-detail-block">
+              <h3>Next actions</h3>
+              <div className="sx-actions">
+                {nextActions.map((action) => (
+                  <label className="sx-action" key={action}>
+                    <input
+                      type="checkbox"
+                      disabled={action === "No pending qualification question"}
+                      onChange={() => setDraft(suggestedReply(action))}
+                    />
+                    <span>{action}</span>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <section className="sx-learning">
+              <span className="sx-learning-tag">Controlled learning</span>
+              <strong>No raw chat is auto-trained</strong>
+              <p>Counselor corrections enter an approval queue before becoming reusable knowledge.</p>
+              <button type="button" onClick={() => window.location.assign("/knowledge")}>Open learning queue</button>
+            </section>
+          </>
+        ) : (
+          <div className="sx-empty"><strong>No lead selected</strong><p>Select a conversation to view qualification and agent context.</p></div>
+        )}
+      </aside>
     </main>
   );
 }
