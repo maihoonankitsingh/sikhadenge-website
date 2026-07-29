@@ -1,0 +1,37 @@
+{
+  "releaseId": "controlled-blog-review-preview-route-mount-approval-v1",
+  "status": "explicitly-approved-not-deployed",
+  "approvedAt": "2026-07-29T22:13:00+05:30",
+  "approvalPhrase": "APPROVE CONTROLLED BLOG REVIEW PREVIEW ROUTE MOUNT V1",
+  "approvedScope": {
+    "route": "/api/internal/blog-review-preview/[slug]",
+    "method": "GET",
+    "responseFormat": "application/json",
+    "databaseAccess": "read-only",
+    "authentication": "x-sikhadenge-blog-review-token",
+    "previewContract": "getControlledImportedBlogReviewPreview"
+  },
+  "requiredSafety": {
+    "failClosedAuthentication": true,
+    "noindex": true,
+    "nofollow": true,
+    "noarchive": true,
+    "noStore": true,
+    "canonicalExposed": false,
+    "tokenLogged": false,
+    "tokenReturned": false,
+    "databaseWriteAllowed": false,
+    "liveBlogRouteModified": false,
+    "publicationApproved": false,
+    "indexingApproved": false,
+    "productionDeploymentApproved": false
+  },
+  "outOfScope": [
+    "live /blog/[slug] database wiring",
+    "publication creation",
+    "index eligibility changes",
+    "sitemap changes",
+    "production deployment",
+    "database mutations"
+  ]
+}
