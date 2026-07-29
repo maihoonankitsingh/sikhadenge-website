@@ -1,0 +1,58 @@
+{
+  "releaseId": "existing-blog-runtime-import-parity-v1",
+  "status": "passed-and-attested",
+  "recordedAt": "2026-07-29T21:25:14+05:30",
+  "branch": "feature/blog-content-platform-20260729",
+  "sourceCommit": "22ea1278cae9f0c40acb81668b66f9e349fc78e3",
+  "sourcePlan": {
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "recordCount": 120097
+  },
+  "batchPackage": {
+    "manifestSha256": "5659094b972e2806310cd1a3d72ef19e26f1106df14b6a38b545759fc5d9fe0a",
+    "batchCount": 121
+  },
+  "runtimeDatabase": {
+    "pages": 120097,
+    "pageVersions": 120097,
+    "contentFingerprints": 120097,
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0
+  },
+  "verifiedContracts": {
+    "canonicalWorkspaceRuntime": true,
+    "fullImportedCounts": true,
+    "fullUniqueness": true,
+    "fullSafetyDefaults": true,
+    "firstMiddleLastParity": true,
+    "rootPrismaClientUnchanged": true,
+    "publicBlogOidUnchanged": true,
+    "databaseSignatureUnchanged": true
+  },
+  "sampleSlugs": {
+    "first": "chatgpt-se-resume-kaise-banaye",
+    "middle": "ai-tools-for-marketing-for-developers-ranking-for-freshers",
+    "last": "best-ai-tools-for-teachers-hindi-working-professionals-daily-workflow-checklist-2026"
+  },
+  "runtimeExecution": {
+    "isolatedPrismaClientGenerated": true,
+    "serverOnlyEntrypointLoaded": true,
+    "serverOnlyTestShimUsed": true,
+    "workingDirectory": "PROJECT_ROOT",
+    "localPrismaPrecheck": "PASS",
+    "runtimeValuesParser": "JSON_PARSE_UTF8"
+  },
+  "safety": {
+    "databaseReadPerformed": true,
+    "databaseWritePerformed": false,
+    "routeFilesModified": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "routeWiringApproved": false
+  },
+  "serverEvidence": {
+    "status": "PASS",
+    "report": "/var/lib/sikhadenge-blog-artifacts/blog-runtime-import-parity-v1-prisma-cwd-fix-20260729_212514"
+  }
+}
