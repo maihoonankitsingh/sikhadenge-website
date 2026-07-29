@@ -27,7 +27,6 @@ PG_TRGM_BEFORE=$(psql "$DATABASE_URL" -X -Atc "SELECT EXISTS (SELECT 1 FROM pg_e
 [ "$BLOG_SCHEMA_BEFORE" = "f" ] || fail "blog_content_schema_already_exists"
 
 {
-  echo '\\set ON_ERROR_STOP on'
   echo 'BEGIN;'
   cat "$MIGRATION_SQL"
   sed -E '/^[[:space:]]*BEGIN;[[:space:]]*$/d; /^[[:space:]]*COMMIT;[[:space:]]*$/d' "$GUARD_SQL"
@@ -282,6 +281,9 @@ $$;
 ROLLBACK;
 SQL
 } > "$WRAPPER"
+
+[ "$(head -n 1 "$WRAPPER")" = "BEGIN;" ] || fail "wrapper_first_line_invalid"
+grep -q '^ROLLBACK;$' "$WRAPPER" || fail "wrapper_rollback_missing"
 
 if ! psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "$WRAPPER" > "$LOG" 2>&1; then
   tail -n 120 "$LOG" >&2 || true
