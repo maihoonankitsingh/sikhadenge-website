@@ -1,0 +1,51 @@
+{
+  "releaseId": "existing-blog-import-batch-package-v1",
+  "status": "prepared-not-approved",
+  "parentReleaseId": "existing-blog-import-plan-v1",
+  "sourceCommit": "35c0e48aad1c91a4fcdc5ae98db40dd80f2c99ed",
+  "builder": {
+    "path": "modules/blog/inventory/scripts/build-existing-blog-import-batch-package-v1.mjs",
+    "gitBlobSha1": "f94f82af4cf15534ca4c09e6f45c48b09366cd73"
+  },
+  "planArtifact": {
+    "contractVersion": 1,
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "bytes": 512082000,
+    "recordCount": 120097,
+    "plannedRows": 360291
+  },
+  "batchContract": {
+    "packageContractVersion": 1,
+    "recordsPerBatch": 1000,
+    "expectedBatchCount": 121,
+    "expectedFullBatchCount": 120,
+    "expectedFinalBatchRecords": 97,
+    "rowKindsPerRecord": 3,
+    "preserveOriginalJsonlBytes": true,
+    "requirePerBatchSha256": true,
+    "requireExactPlanRecombination": true
+  },
+  "databaseContract": {
+    "workspaceId": "blog-workspace-sikhadenge-v1",
+    "pageLifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "indexEligibility": "BLOCKED",
+    "publicationRows": 0,
+    "qualityRunRows": 0,
+    "editorialReviewRows": 0
+  },
+  "executionContract": {
+    "productionImportScriptIncluded": false,
+    "databaseReadAllowed": false,
+    "databaseWriteAllowed": false,
+    "productionFileModificationAllowed": false,
+    "nextRequiredPhase": "batch-package-attestation"
+  },
+  "authorization": {
+    "bulkImportApproved": false,
+    "productionWriteApproved": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "explicitApprovalPhraseDefined": false
+  }
+}
