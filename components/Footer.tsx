@@ -23,7 +23,7 @@ export default function Footer() {
           <div>
             <a href="/" className="inline-flex items-center overflow-visible" aria-label="Sikhadenge Home">
   <img
-    src="/brand/sikhadenge-header-safe-320.png?v=headersafe1"
+    src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
     alt="Sikhadenge"
     className="block h-12 w-auto object-contain"
   />

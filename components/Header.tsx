@@ -22,7 +22,7 @@ export default function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex h-16 items-center overflow-visible" aria-label="Sikhadenge Home">
           <img
-            src="/brand/sikhadenge-header-safe-320.png?v=headersafe1"
+            src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
             alt="Sikhadenge"
             className="block h-12 w-auto object-contain"
           />

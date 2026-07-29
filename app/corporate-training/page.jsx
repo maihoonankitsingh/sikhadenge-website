@@ -595,7 +595,7 @@ export default function CorporateTrainingPage() {
 
             <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href="https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD"
+                href="https://wa.me/918808505575"
                 className="inline-flex items-center justify-center rounded-xl bg-[#22C55E] px-4 py-2.5 text-[14px] font-semibold text-white shadow-md transition hover:opacity-95"
               >
                 Talk on WhatsApp
@@ -1019,7 +1019,7 @@ export default function CorporateTrainingPage() {
                 </div>
 
                 <a
-                  href="https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD"
+                  href="https://wa.me/918808505575"
                   className="mt-3 inline-flex items-center justify-center rounded-2xl bg-[#2563EB] px-6 py-4 text-[16px] font-semibold text-white shadow-[0_10px_24px_rgba(37,99,235,0.22)] transition hover:bg-[#1D4ED8] sm:col-span-2"
                 >
                   Discuss on WhatsApp
@@ -1061,7 +1061,7 @@ export default function CorporateTrainingPage() {
 
             <div className="mt-5 flex items-center justify-center">
               <a
-                href="https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD"
+                href="https://wa.me/918808505575"
                 className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-2 text-[14px] font-semibold text-[#0B1220] shadow-[0_8px_18px_rgba(255,255,255,0.08)] transition hover:translate-y-[-1px]"
               >
                 Talk to Our Team

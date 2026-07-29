@@ -26,7 +26,7 @@ const CONFIG = {
     email: "support@sikhadenge.in",
     instagram: "@sikhadenge.ai",
     whatsapp:
-      "https://chat.whatsapp.com/BrWIgvcmOGZBdmfcoPCGHD",
+      "https://wa.me/918808505575",
   },
   company: {
     name: "Sikhadenge",
