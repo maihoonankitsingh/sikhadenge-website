@@ -60,9 +60,12 @@ ALTER TABLE blog_content.claims
   ADD CONSTRAINT claims_validity_window
   CHECK ("validUntil" IS NULL OR "validFrom" IS NULL OR "validUntil" >= "validFrom");
 
+-- Use the native enum value in the partial-index predicate. Casting an enum to
+-- text is not immutable in PostgreSQL and is therefore rejected in an index
+-- predicate.
 CREATE UNIQUE INDEX publications_one_live_version_per_page
   ON blog_content.publications ("pageId")
-  WHERE status::text = 'PUBLISHED';
+  WHERE status = 'PUBLISHED'::"blog_content"."BlogPublicationStatus";
 
 CREATE INDEX page_versions_title_trgm_idx
   ON blog_content.page_versions USING gin (title gin_trgm_ops);
