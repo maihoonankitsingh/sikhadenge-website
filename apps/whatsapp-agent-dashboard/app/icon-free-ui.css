@@ -186,7 +186,7 @@
 }
 
 /* Catch remaining dashboard icon image elements without touching brand/media. */
-.dashboard-shell img[src^="/dashboard-icons/"]:not([src$="01-sikhadenge-brand.png"]) {
+.dashboard-shell img[src^="/dashboard-icons/"] {
   display: none !important;
 }
 

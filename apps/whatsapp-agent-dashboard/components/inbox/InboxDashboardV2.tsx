@@ -871,7 +871,7 @@ export default function InboxDashboardV2({
       <aside className="rail sx-side" aria-label="Primary navigation">
         <Link className="brand-mark sx-brand" href="/inbox" aria-label="Open inbox">
           <span className="sx-brand-logo">
-            <img src="/sikhadenge-app-mark-v3.svg" alt="" width={26} height={26} />
+            <img src="/sikhadenge-mark.svg" alt="" width={26} height={26} />
           </span>
           <span className="sx-brand-name">
             SikhaDenge

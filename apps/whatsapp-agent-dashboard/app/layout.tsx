@@ -42,7 +42,7 @@ import "./sidebar-scroll-clarity.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-const DASHBOARD_BRAND_ICON = "/dashboard-icons/01-sikhadenge-brand.png";
+const DASHBOARD_BRAND_ICON = "/sikhadenge-mark.svg";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
