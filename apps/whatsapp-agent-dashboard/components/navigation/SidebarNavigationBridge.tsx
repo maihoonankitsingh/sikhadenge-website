@@ -20,17 +20,6 @@ const ROUTES: Record<string, string> = {
   Settings: "/settings",
 };
 
-const DYNAMIC_TITLES = [
-  "Team",
-  "Engagement",
-  "Campaigns",
-  "Automation",
-  "Templates",
-  "Integrations",
-  "Admin",
-  "Cutover",
-] as const;
-
 export default function SidebarNavigationBridge() {
   const pathname = usePathname();
   const router = useRouter();
@@ -38,37 +27,31 @@ export default function SidebarNavigationBridge() {
   useEffect(() => {
     const cleanups: Array<() => void> = [];
 
-    const navigationGroups = Array.from(
-      document.querySelectorAll<HTMLElement>(".rail nav"),
-    );
-    for (const navigation of navigationGroups) {
-      for (const title of DYNAMIC_TITLES) {
-        if (!navigation.querySelector(`.rail-button[title="${title}"]`)) {
-          const button = document.createElement("button");
-          button.className = "rail-button";
-          button.title = title;
-          button.type = "button";
-          button.textContent = title;
-          navigation.appendChild(button);
-          cleanups.push(() => button.remove());
-        }
-      }
-    }
-
+    /*
+     * Navigation items are now rendered directly by DashboardModuleShell and
+     * InboxDashboardV2, including their inline SVG icons. Do not synthesize
+     * missing buttons here: doing so once per <nav> duplicated menu entries and
+     * produced text-only rows without icons in the rebuilt Inbox sidebar.
+     */
     for (const [title, route] of Object.entries(ROUTES)) {
-      const buttons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>(
+      const controls = Array.from(
+        document.querySelectorAll<HTMLElement>(
           `.rail-button[title="${title}"]`,
         ),
       );
 
-      for (const button of buttons) {
-        const handler = () => router.push(route);
-        button.addEventListener("click", handler);
-        button.setAttribute("aria-label", title);
-        button.classList.toggle("active", pathname === route);
-        button.setAttribute("aria-current", pathname === route ? "page" : "false");
-        cleanups.push(() => button.removeEventListener("click", handler));
+      for (const control of controls) {
+        const handler = (event: Event) => {
+          if (control instanceof HTMLAnchorElement) return;
+          event.preventDefault();
+          router.push(route);
+        };
+
+        control.addEventListener("click", handler);
+        control.setAttribute("aria-label", title);
+        control.classList.toggle("active", pathname === route);
+        control.setAttribute("aria-current", pathname === route ? "page" : "false");
+        cleanups.push(() => control.removeEventListener("click", handler));
       }
     }
 
@@ -77,11 +60,18 @@ export default function SidebarNavigationBridge() {
     );
 
     for (const brandMark of brandMarks) {
-      const handler = () => router.push("/inbox");
+      const handler = (event: Event) => {
+        if (brandMark instanceof HTMLAnchorElement) return;
+        event.preventDefault();
+        router.push("/inbox");
+      };
+
       brandMark.addEventListener("click", handler);
-      brandMark.setAttribute("role", "button");
-      brandMark.setAttribute("tabindex", "0");
       brandMark.setAttribute("aria-label", "Open inbox");
+      if (!(brandMark instanceof HTMLAnchorElement)) {
+        brandMark.setAttribute("role", "button");
+        brandMark.setAttribute("tabindex", "0");
+      }
       cleanups.push(() => brandMark.removeEventListener("click", handler));
     }
 
