@@ -25,7 +25,7 @@ fail() {
   exit 1
 }
 
-for command_name in psql pg_restore sha256sum stat find sort head df awk date flock node; do
+for command_name in psql pg_restore sha256sum stat find sort head df awk date flock node grep cut tail tee; do
   command -v "$command_name" >/dev/null || fail "${command_name}_not_found"
 done
 
@@ -44,7 +44,7 @@ PLAN_BYTES="$(stat -c '%s' "$PLAN")"
 test "$PLAN_SHA256" = "$EXPECTED_PLAN_SHA256" || fail 'plan_hash_mismatch'
 test "$PLAN_BYTES" = "$EXPECTED_PLAN_BYTES" || fail 'plan_size_mismatch'
 
-node - "$PLAN_SUMMARY" <<'NODE' || exit 41
+if ! node - "$PLAN_SUMMARY" <<'NODE'
 const fs = require('node:fs');
 const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const ok =
@@ -65,7 +65,9 @@ const ok =
   p.planArtifact?.records === 120097;
 if (!ok) process.exit(1);
 NODE
-[ "$?" -eq 0 ] || fail 'plan_summary_contract_mismatch'
+then
+  fail 'plan_summary_contract_mismatch'
+fi
 
 grep -qx 'BLOG_TRANSACTIONAL_SAMPLE_IMPORT_STATUS=PASS' "$BATCH_REPORT/status.txt" || fail 'batch_rehearsal_not_passed'
 grep -qx 'SAMPLE_RECORDS=1000' "$BATCH_REPORT/status.txt" || fail 'batch_record_count_mismatch'
