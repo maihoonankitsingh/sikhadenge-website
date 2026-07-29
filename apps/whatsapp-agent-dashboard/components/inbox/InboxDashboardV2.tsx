@@ -492,7 +492,7 @@ export default function InboxDashboardV2({
 
   return (
     <main
-      className={`dashboard-shell mobile-view-${mobileView.toLowerCase()} ${
+      className={`dashboard-shell inbox-redesign mobile-view-${mobileView.toLowerCase()} ${
         mobileDetailsOpen ? "mobile-details-open" : ""
       }`}
     >

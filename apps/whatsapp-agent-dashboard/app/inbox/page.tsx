@@ -5,6 +5,7 @@ import {
   getInboxConversation,
   listInboxConversations,
 } from "../../lib/inbox/conversation-repository";
+import "../inbox-polish.css";
 
 export const dynamic = "force-dynamic";
 
