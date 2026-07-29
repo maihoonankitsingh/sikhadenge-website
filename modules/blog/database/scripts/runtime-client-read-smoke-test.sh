@@ -57,7 +57,8 @@ process.stdout.write(String(count));
 
 test "$MODEL_COUNT" = "23" || fail "generated_model_count_mismatch"
 
-node - "$GENERATED" "$VALUES" <<'NODE' || exit 21
+set +e
+node - "$GENERATED" "$VALUES" <<'NODE'
 const fs = require("node:fs");
 const generatedPath = process.argv[2];
 const valuesPath = process.argv[3];
@@ -126,8 +127,9 @@ main()
     process.exit(1);
   });
 NODE
-
 NODE_RC=$?
+set -e
+
 test "$NODE_RC" = "0" || fail "runtime_client_read_failed"
 test -s "$VALUES" || fail "runtime_values_missing"
 
