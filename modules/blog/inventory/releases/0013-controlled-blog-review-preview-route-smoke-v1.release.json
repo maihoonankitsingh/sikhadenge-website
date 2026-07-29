@@ -1,0 +1,69 @@
+{
+  "releaseId": "controlled-blog-review-preview-route-smoke-v1",
+  "status": "passed-and-attested-not-deployed",
+  "sourceCommit": "c9e362af032b60da714ef184be1d2166ed96a6e5",
+  "approval": {
+    "releaseId": "controlled-blog-review-preview-route-mount-approval-v1",
+    "approvalPhrase": "APPROVE CONTROLLED BLOG REVIEW PREVIEW ROUTE MOUNT V1",
+    "verified": true
+  },
+  "routeContract": {
+    "path": "/api/internal/blog-review-preview/[slug]",
+    "method": "GET",
+    "getHandlerMounted": true,
+    "nonGetHandlersExported": false,
+    "runtime": "nodejs",
+    "dynamic": "force-dynamic",
+    "revalidate": 0
+  },
+  "accessControl": {
+    "tokenHeader": "x-sikhadenge-blog-review-token",
+    "missingConfigurationFailsClosed": true,
+    "weakConfigurationFailsClosed": true,
+    "absentTokenHiddenAsNotFound": true,
+    "wrongTokenHiddenAsNotFound": true,
+    "tokenStored": false,
+    "tokenReturned": false,
+    "tokenLeakedToArtifacts": false
+  },
+  "responseSafety": {
+    "validAuthenticatedReadStatus": 200,
+    "missingSlugStatus": 404,
+    "malformedSlugStatus": 400,
+    "robots": "noindex, nofollow, noarchive, nosnippet, noimageindex",
+    "cacheControl": "private, no-store, no-cache, max-age=0, must-revalidate",
+    "canonicalExposed": false,
+    "routeMounted": true,
+    "routeEligible": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "databaseWriteAllowed": false
+  },
+  "runtimeVerification": {
+    "nextServerModuleResolution": "PROJECT_NODE_MODULES",
+    "sampleSlug": "chatgpt-se-resume-kaise-banaye",
+    "liveBlogRouteModified": false,
+    "rootPrismaClientUnchanged": true,
+    "publicBlogOidUnchanged": true,
+    "databaseSignatureUnchanged": true,
+    "databaseReadPerformed": true,
+    "databaseWritePerformed": false
+  },
+  "deployment": {
+    "productionDeploymentPerformed": false,
+    "productionDeploymentApproved": false,
+    "liveRouteWiringApproved": false,
+    "publicationApproved": false,
+    "indexingApproved": false
+  },
+  "serverEvidence": {
+    "status": "PASS",
+    "report": "/var/lib/sikhadenge-blog-artifacts/blog-controlled-review-preview-route-smoke-v1-module-fix-20260729_222301"
+  },
+  "nextGate": {
+    "productionPreviewDeploymentRequiresSeparateApproval": true,
+    "liveBlogRouteWiringApproved": false,
+    "publicationApproved": false,
+    "indexingApproved": false
+  }
+}
