@@ -3,6 +3,7 @@ import { DashboardRole } from "@prisma/client";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import TemplateManager from "../../components/templates/TemplateManager";
 import { requireDashboardUser } from "../../lib/auth/session";
+import "../dashboard-system.css";
 
 export const dynamic = "force-dynamic";
 

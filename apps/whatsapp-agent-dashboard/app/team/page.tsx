@@ -4,6 +4,7 @@ import DashboardModuleShell from "../../components/navigation/DashboardModuleShe
 import TeamChatManager from "../../components/team/TeamChatManager";
 import { requireDashboardUser } from "../../lib/auth/session";
 import { listTeamOverview } from "../../lib/team/team-chat-service";
+import "../dashboard-system.css";
 
 export const dynamic = "force-dynamic";
 

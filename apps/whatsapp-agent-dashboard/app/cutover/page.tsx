@@ -3,6 +3,7 @@ import { DashboardRole } from "@prisma/client";
 import CutoverReadinessManager from "../../components/cutover/CutoverReadinessManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
+import "../dashboard-system.css";
 
 export const dynamic = "force-dynamic";
 
