@@ -1,0 +1,42 @@
+{
+  "releaseId": "controlled-blog-review-preview-production-deployment-approval-v1",
+  "status": "explicitly-approved-not-deployed",
+  "approvalPhrase": "APPROVE CONTROLLED BLOG REVIEW PREVIEW PRODUCTION DEPLOYMENT V1",
+  "approvedAt": "2026-07-29T22:27:00+05:30",
+  "sourceEvidenceCommit": "77befc2dfff2978f27f334ce1ab661b0b2846308",
+  "approvedScope": {
+    "route": "/api/internal/blog-review-preview/[slug]",
+    "method": "GET",
+    "environment": "production",
+    "buildApplication": true,
+    "restartExistingApplicationProcess": true,
+    "verifyUnauthenticated404": true,
+    "verifyAuthenticated200": true,
+    "verifySecurityHeaders": true,
+    "verifyExistingLivePagesHealthy": true
+  },
+  "requiredSafety": {
+    "databaseAccess": "read-only",
+    "databaseWriteAllowed": false,
+    "liveBlogRouteModified": false,
+    "liveBlogRouteWiringApproved": false,
+    "publicationApproved": false,
+    "indexingApproved": false,
+    "unrelatedProductionChangesMayBeModified": false,
+    "forcePushAllowed": false,
+    "productionRollbackRequired": true
+  },
+  "preDeploymentGate": {
+    "productionRepositoryAuditRequired": true,
+    "dirtyFileIsolationRequired": true,
+    "currentProcessIdentificationRequired": true,
+    "currentBuildAndHealthBaselineRequired": true,
+    "environmentBackupRequired": true,
+    "sourceAndBuildBackupRequired": true
+  },
+  "deployment": {
+    "performed": false,
+    "report": null,
+    "deployedCommit": null
+  }
+}
