@@ -1,0 +1,70 @@
+{
+  "releaseId": "existing-blog-production-importer-v1",
+  "status": "prepared-not-approved",
+  "parentReleaseId": "existing-blog-import-batch-artifact-v1",
+  "sourcePlan": {
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "bytes": 512082000,
+    "recordCount": 120097,
+    "plannedRows": 360291
+  },
+  "batchPackage": {
+    "manifestSha256": "5659094b972e2806310cd1a3d72ef19e26f1106df14b6a38b545759fc5d9fe0a",
+    "manifestBytes": 55691,
+    "batchCount": 121,
+    "recordsPerFullBatch": 1000,
+    "finalBatchRecords": 97
+  },
+  "importer": {
+    "path": "modules/blog/inventory/scripts/import-existing-blog-batch-package-v1.sh",
+    "gitBlobSha1": "748d449c528033eb439da7c1dad18350de627450",
+    "approvalPhrase": "APPROVE EXISTING BLOG PRODUCTION IMPORT V1",
+    "readinessMaximumAgeSeconds": 21600,
+    "globalLock": "/var/lock/sikhadenge-blog-production-import-v1.lock",
+    "perBatchTransaction": true,
+    "idempotentResume": true,
+    "exactPostInsertVerification": true
+  },
+  "allowedDatabaseWrites": {
+    "schemas": ["blog_content"],
+    "tables": ["pages", "page_versions", "content_fingerprints"],
+    "operations": ["INSERT"],
+    "rowKindsPerRecord": 3
+  },
+  "forbiddenDatabaseWrites": {
+    "operations": ["UPDATE", "DELETE", "TRUNCATE", "DROP", "ALTER"],
+    "tables": [
+      "public.Blog",
+      "blog_content.publications",
+      "blog_content.quality_runs",
+      "blog_content.editorial_reviews"
+    ]
+  },
+  "safetyDefaults": {
+    "workspaceId": "blog-workspace-sikhadenge-v1",
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "versionOrigin": "MIGRATED",
+    "indexEligibility": "BLOCKED",
+    "sourceCoverage": 0,
+    "originalityScore": 0,
+    "qualityScore": 0,
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0
+  },
+  "authorization": {
+    "bulkImportApproved": false,
+    "productionWriteApproved": false,
+    "executionApproved": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false
+  },
+  "requiredBeforeExecution": [
+    "fresh production readiness PASS",
+    "verified database backup",
+    "exact explicit approval phrase",
+    "clean source worktree",
+    "operator review of final execution command"
+  ]
+}
