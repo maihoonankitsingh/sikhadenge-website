@@ -1,0 +1,60 @@
+{
+  "releaseId": "controlled-blog-review-preview-contract-v1",
+  "status": "passed-and-attested",
+  "sourceCommit": "42984dee4732f9e2e305c5c146cc874e9d89fd2a",
+  "contract": {
+    "mode": "controlled-review-preview",
+    "serverOnly": true,
+    "routeMounted": false,
+    "routeEligible": false,
+    "liveBlogRouteModified": false,
+    "databaseAccess": "read-only"
+  },
+  "accessControl": {
+    "tokenAuthentication": "timing-safe-sha256",
+    "tokenHeader": "x-sikhadenge-blog-review-token",
+    "missingConfigurationFailsClosed": true,
+    "weakConfigurationFailsClosed": true,
+    "absentTokenFailsClosed": true,
+    "wrongTokenFailsClosed": true,
+    "tokenStored": false,
+    "tokenReturned": false,
+    "tokenLeakedToArtifacts": false
+  },
+  "responseSafety": {
+    "robots": "noindex, nofollow, noarchive, nosnippet, noimageindex",
+    "cacheControl": "private, no-store, no-cache, max-age=0, must-revalidate",
+    "canonicalExposed": false,
+    "reviewOnly": true,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "databaseWriteAllowed": false
+  },
+  "runtimeVerification": {
+    "firstMiddleLastPackageParity": true,
+    "expectedRecords": 120097,
+    "missingSlugReturnsNull": true,
+    "malformedSlugBlocked": true,
+    "appTreeUnchanged": true,
+    "rootPrismaClientUnchanged": true,
+    "publicBlogOidUnchanged": true,
+    "databaseSignatureUnchanged": true,
+    "databaseReadPerformed": true,
+    "databaseWritePerformed": false
+  },
+  "sampleSlugs": {
+    "first": "chatgpt-se-resume-kaise-banaye",
+    "middle": "ai-tools-for-marketing-for-developers-ranking-for-freshers",
+    "last": "best-ai-tools-for-teachers-hindi-working-professionals-daily-workflow-checklist-2026"
+  },
+  "serverEvidence": {
+    "status": "PASS",
+    "report": "/var/lib/sikhadenge-blog-artifacts/blog-controlled-review-preview-contract-v1-20260729_220323"
+  },
+  "nextGate": {
+    "previewRouteMountApproved": false,
+    "liveRouteWiringApproved": false,
+    "publicationApproved": false,
+    "indexingApproved": false
+  }
+}
