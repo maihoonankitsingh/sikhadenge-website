@@ -1,0 +1,42 @@
+{
+  "releaseId": "existing-blog-import-batch-artifact-v1",
+  "status": "validated-artifact-not-approved",
+  "parentReleaseId": "existing-blog-import-batch-package-v1",
+  "sourcePlan": {
+    "sha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "bytes": 512082000,
+    "recordCount": 120097,
+    "plannedRows": 360291
+  },
+  "packageManifest": {
+    "sha256": "5659094b972e2806310cd1a3d72ef19e26f1106df14b6a38b545759fc5d9fe0a",
+    "bytes": 55691,
+    "packageContractVersion": 1
+  },
+  "batchContract": {
+    "recordsPerBatch": 1000,
+    "batchCount": 121,
+    "fullBatchCount": 120,
+    "finalBatchRecords": 97,
+    "rowKindsPerRecord": 3
+  },
+  "safetyDefaults": {
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "indexEligibility": "BLOCKED",
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0
+  },
+  "authorization": {
+    "bulkImportApproved": false,
+    "productionWriteApproved": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false
+  },
+  "attestation": {
+    "required": true,
+    "databaseAccessAllowed": false,
+    "productionFileModificationAllowed": false
+  }
+}
