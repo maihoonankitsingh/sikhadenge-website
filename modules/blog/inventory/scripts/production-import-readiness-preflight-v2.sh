@@ -10,7 +10,7 @@ OUT="${4:-/tmp/blog-production-import-readiness-v2-$(date +%Y%m%d_%H%M%S)}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 BASE_SCRIPT="$ROOT/modules/blog/inventory/scripts/production-import-readiness-preflight-v1.sh"
 PATCHED_SCRIPT="$OUT/production-import-readiness-preflight.patched.sh"
-EXPECTED_BASE_BLOB='d08c1adc83dd52d62f56ef97da2d91aff18cabe6'
+EXPECTED_BASE_BLOB='53f6844ab331e115c0c6e275d7e1d34712d633e8'
 
 fail() {
   mkdir -p "$OUT"
