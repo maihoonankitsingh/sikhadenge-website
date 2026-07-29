@@ -11,8 +11,6 @@ import "./premium-icons.css";
 import "./premium-fixes.css";
 import "./compact-header.css";
 import "./final-ui.css";
-import "./png-icons.css";
-import "./navigation-icon-map.css";
 import "./balanced-ui.css";
 import "./module-pages.css";
 import "./knowledge-manager.css";
@@ -33,12 +31,12 @@ import "./workable-dashboard.css";
 import "./executive-redesign.css";
 import "./executive-layout-hotfix.css";
 import "./executive-sidebar-hard-lock.css";
-import "./sidebar-complete-icons.css";
 import "./inbox-viewport-lock.css";
 import "./inbox-compact-density.css";
 import "./metric-strip-final.css";
 import "./responsive-tablet.css";
 import "./responsive-composer-fix.css";
+import "./icon-free-ui.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
