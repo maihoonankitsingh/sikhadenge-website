@@ -4,7 +4,7 @@
 
 generator blogContentClient {
   provider = "prisma-client-js"
-  output   = "../../../node_modules/.prisma/blog-content-client"
+  output   = "./generated/client"
 }
 
 datasource db {
@@ -32,67 +32,65 @@ enum BlogIndexEligibility {
   REVIEW_REQUIRED
   ELIGIBLE
   INDEXED
-  NOINDEX
+  REMOVED
 
   @@schema("blog_content")
 }
 
-enum BlogSourceType {
+enum BlogSourceKind {
   OFFICIAL_DOCUMENTATION
   GOVERNMENT
-  STANDARDS_BODY
+  STANDARD_BODY
   ORIGINAL_RESEARCH
   FIRST_PARTY
   ACADEMIC
-  REPUTABLE_NEWS
+  INDUSTRY_REPORT
+  NEWS
   SECONDARY_REFERENCE
-  INTERNAL_EVIDENCE
 
   @@schema("blog_content")
 }
 
-enum BlogTrustTier {
-  PRIMARY
-  HIGH
-  MEDIUM
-  LIMITED
+enum BlogSourceStatus {
+  DISCOVERED
+  ACTIVE
+  STALE
+  UNAVAILABLE
   REJECTED
+  ARCHIVED
 
   @@schema("blog_content")
 }
 
 enum BlogClaimStatus {
   DRAFT
-  NEEDS_EVIDENCE
   VERIFIED
-  CONFLICTED
+  DISPUTED
   STALE
   REJECTED
+  ARCHIVED
 
   @@schema("blog_content")
 }
 
 enum BlogEvidenceStrength {
-  DIRECT
+  PRIMARY
   STRONG
-  SUPPORTING
+  MODERATE
   WEAK
-  CONTRADICTING
 
   @@schema("blog_content")
 }
 
 enum BlogSectionKind {
   DIRECT_ANSWER
-  SUMMARY
+  INTRODUCTION
   EXPLANATION
   EXAMPLE
-  USE_CASE
   STEPS
   COMPARISON
   TOOLS
   MISTAKES
-  CHECKLIST
   FAQ
   SOURCES
   CONCLUSION
@@ -102,22 +100,12 @@ enum BlogSectionKind {
   @@schema("blog_content")
 }
 
-enum BlogFingerprintKind {
-  EXACT_SHA256
-  NORMALIZED_SHA256
-  SIMHASH64
-  MINHASH
-  SEMANTIC
-
-  @@schema("blog_content")
-}
-
-enum BlogSimilarityClass {
-  UNIQUE
-  RELATED
-  NEAR_DUPLICATE
-  DUPLICATE
-  NEEDS_REVIEW
+enum BlogContentOrigin {
+  HUMAN
+  ASSISTED
+  GENERATED
+  IMPORTED
+  MIGRATED
 
   @@schema("blog_content")
 }
@@ -128,44 +116,45 @@ enum BlogQualityRunStatus {
   PASSED
   FAILED
   ERROR
+  CANCELLED
 
   @@schema("blog_content")
 }
 
 enum BlogQualityCheckKind {
+  REQUIRED_FIELDS
+  MINIMUM_DEPTH
+  SOURCE_COVERAGE
+  CLAIM_SUPPORT
   EXACT_DUPLICATE
   NEAR_DUPLICATE
   SEMANTIC_SIMILARITY
-  TITLE_UNIQUENESS
-  META_UNIQUENESS
-  DIRECT_ANSWER_UNIQUENESS
+  TITLE_SIMILARITY
+  INTRO_SIMILARITY
   FAQ_REPETITION
   TEMPLATE_RATIO
-  THIN_CONTENT
-  SOURCE_COVERAGE
-  CLAIM_SUPPORT
-  SOURCE_FRESHNESS
   INTERNAL_LINKS
-  CANONICAL
-  STRUCTURED_DATA
-  READABILITY
-  SAFETY
-  EDITORIAL_APPROVAL
+  EXTERNAL_LINKS
+  SOURCE_FRESHNESS
+  BROKEN_LINKS
+  FACT_CONFLICT
+  SCHEMA_ALIGNMENT
+  INDEX_ELIGIBILITY
+  HUMAN_REVIEW
 
   @@schema("blog_content")
 }
 
-enum BlogQualityCheckStatus {
-  PASS
-  WARN
-  FAIL
-  SKIPPED
+enum BlogQualitySeverity {
+  INFO
+  WARNING
   ERROR
+  BLOCKER
 
   @@schema("blog_content")
 }
 
-enum BlogReviewStatus {
+enum BlogReviewDecision {
   PENDING
   APPROVED
   CHANGES_REQUESTED
@@ -175,17 +164,17 @@ enum BlogReviewStatus {
 }
 
 enum BlogPublicationStatus {
-  STAGED
+  DRAFT
+  SCHEDULED
   PUBLISHED
   PAUSED
-  UNPUBLISHED
-  ROLLED_BACK
+  RETIRED
   FAILED
 
   @@schema("blog_content")
 }
 
-enum BlogRefreshStatus {
+enum BlogRefreshJobStatus {
   QUEUED
   RUNNING
   COMPLETED
@@ -196,76 +185,87 @@ enum BlogRefreshStatus {
 }
 
 enum BlogAuditActorType {
-  HUMAN
+  USER
   AGENT
   SYSTEM
-  IMPORT
+  MIGRATION
 
   @@schema("blog_content")
 }
 
-model BlogWorkspace {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         String   @unique @db.VarChar(80)
-  name        String   @db.VarChar(160)
-  description String?  @db.Text
-  locale      String   @default("en-IN") @db.VarChar(20)
-  active      Boolean  @default(true)
-  settings    Json     @default("{}")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+enum BlogSimilarityKind {
+  EXACT
+  NORMALIZED
+  TRIGRAM
+  MINHASH
+  SIMHASH
+  SEMANTIC
+  TITLE
+  INTRO
+  FAQ
+  SECTION
 
-  topics      BlogTopic[]
-  audiences   BlogAudience[]
-  intents     BlogSearchIntent[]
-  sources     BlogSource[]
-  claims      BlogClaim[]
-  pages       BlogPage[]
-  refreshJobs BlogRefreshJob[]
-  auditEvents BlogAuditEvent[]
+  @@schema("blog_content")
+}
+
+model BlogContentWorkspace {
+  id                   String                 @id @default(cuid())
+  key                  String                 @unique
+  name                 String
+  locale               String                 @default("en-IN")
+  defaultCanonicalHost String                 @default("https://sikhadenge.in")
+  targetPageCapacity   Int                    @default(500000)
+  settings             Json                   @default("{}")
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  topics               BlogContentTopic[]
+  audiences            BlogContentAudience[]
+  searchIntents        BlogContentSearchIntent[]
+  sources              BlogContentSource[]
+  claims               BlogContentClaim[]
+  pages                BlogContentPage[]
+  refreshJobs          BlogContentRefreshJob[]
+  auditEvents          BlogContentAuditEvent[]
 
   @@map("workspaces")
   @@schema("blog_content")
 }
 
-model BlogTopic {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String   @db.Uuid
-  parentId    String?  @db.Uuid
-  slug        String   @db.VarChar(240)
-  name        String   @db.VarChar(240)
-  description String?  @db.Text
-  entityType  String?  @db.VarChar(80)
-  metadata    Json     @default("{}")
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-
-  workspace BlogWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  parent    BlogTopic?     @relation("BlogTopicHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children  BlogTopic[]    @relation("BlogTopicHierarchy")
-  edgesFrom BlogTopicEdge[] @relation("BlogTopicEdgeFrom")
-  edgesTo   BlogTopicEdge[] @relation("BlogTopicEdgeTo")
-  pages     BlogPageTopic[]
+model BlogContentTopic {
+  id          String             @id @default(cuid())
+  workspaceId String
+  slug        String
+  name        String
+  description String?
+  entityType  String?
+  parentId    String?
+  metadata    Json               @default("{}")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  workspace   BlogContentWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      BlogContentTopic?  @relation("TopicHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    BlogContentTopic[] @relation("TopicHierarchy")
+  outgoing    BlogContentTopicEdge[] @relation("TopicEdgeFrom")
+  incoming    BlogContentTopicEdge[] @relation("TopicEdgeTo")
+  pages       BlogContentPageTopic[]
 
   @@unique([workspaceId, slug])
-  @@index([workspaceId, parentId])
-  @@index([workspaceId, entityType])
+  @@index([workspaceId, name])
+  @@index([parentId])
   @@map("topics")
   @@schema("blog_content")
 }
 
-model BlogTopicEdge {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fromTopicId String   @db.Uuid
-  toTopicId   String   @db.Uuid
-  relation    String   @db.VarChar(80)
-  weight      Float    @default(1)
-  metadata    Json     @default("{}")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-
-  fromTopic BlogTopic @relation("BlogTopicEdgeFrom", fields: [fromTopicId], references: [id], onDelete: Cascade)
-  toTopic   BlogTopic @relation("BlogTopicEdgeTo", fields: [toTopicId], references: [id], onDelete: Cascade)
+model BlogContentTopicEdge {
+  id          String           @id @default(cuid())
+  fromTopicId String
+  toTopicId   String
+  relation    String
+  weight      Float            @default(1)
+  metadata    Json             @default("{}")
+  createdAt   DateTime         @default(now())
+  fromTopic   BlogContentTopic @relation("TopicEdgeFrom", fields: [fromTopicId], references: [id], onDelete: Cascade)
+  toTopic     BlogContentTopic @relation("TopicEdgeTo", fields: [toTopicId], references: [id], onDelete: Cascade)
 
   @@unique([fromTopicId, toTopicId, relation])
   @@index([toTopicId, relation])
@@ -273,277 +273,287 @@ model BlogTopicEdge {
   @@schema("blog_content")
 }
 
-model BlogAudience {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String   @db.Uuid
-  key         String   @db.VarChar(120)
-  label       String   @db.VarChar(200)
-  description String?  @db.Text
-  constraints Json     @default("{}")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-
-  workspace BlogWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  pages     BlogPage[]
+model BlogContentAudience {
+  id          String                  @id @default(cuid())
+  workspaceId String
+  key         String
+  label       String
+  description String?
+  attributes  Json                    @default("{}")
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  workspace   BlogContentWorkspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pages       BlogContentPage[]
 
   @@unique([workspaceId, key])
+  @@index([workspaceId, label])
   @@map("audiences")
   @@schema("blog_content")
 }
 
-model BlogSearchIntent {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String   @db.Uuid
-  key         String   @db.VarChar(120)
-  label       String   @db.VarChar(200)
-  description String?  @db.Text
-  funnelStage String?  @db.VarChar(80)
-  requirements Json    @default("{}")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-
-  workspace BlogWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  pages     BlogPage[]
+model BlogContentSearchIntent {
+  id          String               @id @default(cuid())
+  workspaceId String
+  key         String
+  label       String
+  description String?
+  intentClass String
+  attributes  Json                 @default("{}")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  workspace   BlogContentWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pages       BlogContentPage[]
 
   @@unique([workspaceId, key])
+  @@index([workspaceId, intentClass])
   @@map("search_intents")
   @@schema("blog_content")
 }
 
-model BlogSource {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId    String          @db.Uuid
-  canonicalUrl   String          @db.Text
-  urlHash        String          @db.Char(64)
-  domain         String          @db.VarChar(255)
-  title          String?         @db.Text
-  sourceType     BlogSourceType
-  trustTier      BlogTrustTier
-  publisher      String?         @db.VarChar(255)
-  author         String?         @db.VarChar(255)
-  language       String          @default("en") @db.VarChar(20)
-  robotsAllowed  Boolean         @default(true)
-  active         Boolean         @default(true)
-  freshnessDays  Int?
-  lastCheckedAt  DateTime?       @db.Timestamptz(6)
-  nextCheckAt    DateTime?       @db.Timestamptz(6)
-  metadata       Json            @default("{}")
-  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
+model BlogContentSource {
+  id                String                  @id @default(cuid())
+  workspaceId       String
+  canonicalUrl      String
+  host              String
+  title             String?
+  publisher         String?
+  kind              BlogSourceKind
+  status            BlogSourceStatus       @default(DISCOVERED)
+  authorityScore    Float?
+  trustNotes        String?
+  robotsAllowed     Boolean?
+  firstDiscoveredAt DateTime                @default(now())
+  lastCheckedAt     DateTime?
+  nextCheckAt       DateTime?
+  metadata          Json                    @default("{}")
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  workspace         BlogContentWorkspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  snapshots         BlogContentSourceSnapshot[]
+  refreshJobs       BlogContentRefreshJob[]
 
-  workspace BlogWorkspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  snapshots BlogSourceSnapshot[]
-  refreshJobs BlogRefreshJob[]
-
-  @@unique([workspaceId, urlHash])
-  @@index([workspaceId, domain, trustTier])
-  @@index([workspaceId, nextCheckAt])
+  @@unique([workspaceId, canonicalUrl])
+  @@index([workspaceId, status, nextCheckAt])
+  @@index([host, kind])
   @@map("sources")
   @@schema("blog_content")
 }
 
-model BlogSourceSnapshot {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sourceId      String   @db.Uuid
-  fetchedAt     DateTime @default(now()) @db.Timestamptz(6)
-  httpStatus    Int?
-  finalUrl      String?  @db.Text
-  title         String?  @db.Text
-  publishedAt   DateTime? @db.Timestamptz(6)
-  modifiedAt    DateTime? @db.Timestamptz(6)
-  contentHash   String   @db.Char(64)
-  extractedText String?  @db.Text
-  archiveUri    String?  @db.Text
-  responseMeta  Json     @default("{}")
-  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+model BlogContentSourceSnapshot {
+  id             String               @id @default(cuid())
+  sourceId       String
+  fetchedAt      DateTime             @default(now())
+  httpStatus     Int?
+  finalUrl       String?
+  contentType    String?
+  title          String?
+  bodyText       String?
+  bodyHash       String
+  storageKey     String?
+  publishedAt    DateTime?
+  modifiedAt     DateTime?
+  expiresAt      DateTime?
+  extractionMeta Json                 @default("{}")
+  source         BlogContentSource    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  evidence       BlogContentClaimEvidence[]
 
-  source    BlogSource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  evidence  BlogClaimEvidence[]
-
-  @@unique([sourceId, contentHash])
-  @@index([sourceId, fetchedAt(sort: Desc)])
+  @@unique([sourceId, bodyHash])
+  @@index([sourceId, fetchedAt])
+  @@index([expiresAt])
   @@map("source_snapshots")
   @@schema("blog_content")
 }
 
-model BlogClaim {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId     String          @db.Uuid
-  stableKey       String          @db.VarChar(180)
-  statement       String          @db.Text
-  normalizedHash  String          @db.Char(64)
-  claimType       String          @db.VarChar(100)
-  subjectKey      String?         @db.VarChar(180)
-  status          BlogClaimStatus @default(DRAFT)
-  validFrom       DateTime?       @db.Timestamptz(6)
-  validUntil      DateTime?       @db.Timestamptz(6)
-  verifiedAt      DateTime?       @db.Timestamptz(6)
-  verifiedBy      String?         @db.VarChar(180)
-  reviewNotes     String?         @db.Text
-  metadata        Json            @default("{}")
-  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
-
-  workspace     BlogWorkspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  evidence      BlogClaimEvidence[]
-  sectionClaims BlogSectionClaim[]
+model BlogContentClaim {
+  id                String                 @id @default(cuid())
+  workspaceId       String
+  stableKey         String
+  statement         String
+  normalizedHash    String
+  status            BlogClaimStatus        @default(DRAFT)
+  confidence        Float                  @default(0)
+  validFrom         DateTime?
+  validUntil        DateTime?
+  verifiedAt        DateTime?
+  verifiedBy        String?
+  contradictionNote String?
+  metadata          Json                   @default("{}")
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  workspace         BlogContentWorkspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  evidence          BlogContentClaimEvidence[]
+  sections          BlogContentSectionClaim[]
 
   @@unique([workspaceId, stableKey])
-  @@index([workspaceId, normalizedHash])
+  @@unique([workspaceId, normalizedHash])
   @@index([workspaceId, status, validUntil])
   @@map("claims")
   @@schema("blog_content")
 }
 
-model BlogClaimEvidence {
-  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  claimId     String               @db.Uuid
-  snapshotId  String               @db.Uuid
+model BlogContentClaimEvidence {
+  id          String                @id @default(cuid())
+  claimId     String
+  snapshotId  String
   strength    BlogEvidenceStrength
-  supports    Boolean              @default(true)
-  locator     String?              @db.Text
-  evidenceHash String?              @db.Char(64)
-  notes       String?              @db.Text
-  createdAt   DateTime             @default(now()) @db.Timestamptz(6)
+  quote       String?
+  locator     String?
+  supports    Boolean               @default(true)
+  reviewer    String?
+  reviewedAt  DateTime?
+  metadata    Json                  @default("{}")
+  createdAt   DateTime              @default(now())
+  claim       BlogContentClaim      @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  snapshot    BlogContentSourceSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
 
-  claim    BlogClaim          @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  snapshot BlogSourceSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
-
-  @@unique([claimId, snapshotId, evidenceHash])
-  @@index([snapshotId])
+  @@unique([claimId, snapshotId, locator])
+  @@index([snapshotId, supports])
   @@map("claim_evidence")
   @@schema("blog_content")
 }
 
-model BlogPage {
-  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId         String               @db.Uuid
-  audienceId          String?              @db.Uuid
-  intentId            String?              @db.Uuid
-  slug                String               @db.VarChar(300)
-  canonicalPath       String               @db.VarChar(360)
-  locale              String               @default("en-IN") @db.VarChar(20)
-  primaryKeyword      String?              @db.VarChar(300)
-  uniqueAngle         String               @db.Text
-  userProblem         String               @db.Text
-  expectedOutcome     String               @db.Text
-  lifecycleStatus     BlogLifecycleStatus  @default(DISCOVERED)
-  indexEligibility    BlogIndexEligibility @default(BLOCKED)
-  priority            Int                  @default(0)
-  blueprint           Json                 @default("{}")
-  currentQualityScore Float?
-  currentUniqueScore  Float?
-  nextReviewAt        DateTime?             @db.Timestamptz(6)
-  createdAt           DateTime              @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime              @updatedAt @db.Timestamptz(6)
-
-  workspace    BlogWorkspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  audience     BlogAudience?      @relation(fields: [audienceId], references: [id], onDelete: SetNull)
-  intent       BlogSearchIntent?  @relation(fields: [intentId], references: [id], onDelete: SetNull)
-  topics       BlogPageTopic[]
-  versions     BlogPageVersion[]
-  publications BlogPublication[]
-  refreshJobs  BlogRefreshJob[]
+model BlogContentPage {
+  id                 String                    @id @default(cuid())
+  workspaceId        String
+  slug               String
+  canonicalPath      String
+  title              String
+  primaryKeyword     String?
+  secondaryKeywords  String[]                  @default([])
+  uniqueAngle        String
+  userProblem        String
+  expectedOutcome    String
+  lifecycleStatus    BlogLifecycleStatus       @default(DISCOVERED)
+  indexEligibility   BlogIndexEligibility      @default(BLOCKED)
+  audienceId         String?
+  intentId           String?
+  locale             String                    @default("en-IN")
+  priority           Int                       @default(0)
+  sourceRecordKey    String?
+  publishedVersionId String?                   @unique
+  firstPublishedAt   DateTime?
+  lastPublishedAt    DateTime?
+  lastAuditedAt      DateTime?
+  nextAuditAt        DateTime?
+  metadata           Json                      @default("{}")
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  workspace          BlogContentWorkspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  audience           BlogContentAudience?      @relation(fields: [audienceId], references: [id], onDelete: SetNull)
+  intent             BlogContentSearchIntent?  @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  topics             BlogContentPageTopic[]
+  versions           BlogContentPageVersion[]  @relation("PageVersions")
+  publications       BlogContentPublication[]
+  refreshJobs        BlogContentRefreshJob[]
 
   @@unique([workspaceId, slug])
   @@unique([workspaceId, canonicalPath])
-  @@index([workspaceId, lifecycleStatus, indexEligibility])
-  @@index([workspaceId, priority(sort: Desc), updatedAt(sort: Desc)])
-  @@index([workspaceId, nextReviewAt])
+  @@index([workspaceId, lifecycleStatus, priority])
+  @@index([workspaceId, indexEligibility, nextAuditAt])
+  @@index([audienceId, intentId])
   @@map("pages")
   @@schema("blog_content")
 }
 
-model BlogPageTopic {
-  pageId    String   @db.Uuid
-  topicId   String   @db.Uuid
-  role      String   @default("supporting") @db.VarChar(40)
-  weight    Float    @default(1)
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
+model BlogContentPageTopic {
+  pageId    String
+  topicId   String
+  isPrimary Boolean          @default(false)
+  weight    Float            @default(1)
+  page      BlogContentPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  topic     BlogContentTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
-  page  BlogPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  topic BlogTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-
-  @@id([pageId, topicId, role])
-  @@index([topicId, role])
+  @@id([pageId, topicId])
+  @@index([topicId, isPrimary])
   @@map("page_topics")
   @@schema("blog_content")
 }
 
-model BlogPageVersion {
-  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pageId              String              @db.Uuid
-  version             Int
-  title               String              @db.Text
-  metaTitle           String              @db.Text
-  metaDescription     String              @db.Text
-  h1                  String              @db.Text
-  directAnswer        String              @db.Text
-  summary             String?             @db.Text
-  contentHash         String              @db.Char(64)
-  wordCount           Int                 @default(0)
-  factualClaimCount   Int                 @default(0)
-  sourceCoverage      Float               @default(0)
-  templateRatio       Float               @default(0)
-  uniquenessScore     Float?
-  qualityScore        Float?
-  state               BlogLifecycleStatus @default(WRITING)
-  generatedBy         String?             @db.VarChar(180)
-  generationConfig    Json                @default("{}")
-  createdAt           DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime            @updatedAt @db.Timestamptz(6)
+model BlogContentPageVersion {
+  id                   String                @id @default(cuid())
+  pageId               String
+  versionNumber        Int
+  status               BlogLifecycleStatus  @default(WRITING)
+  origin               BlogContentOrigin
+  title                String
+  metaTitle            String
+  metaDescription      String
+  h1                   String
+  directAnswer         String
+  introduction         String?
+  conclusion           String?
+  authorName           String
+  reviewerName         String?
+  language             String                @default("en-IN")
+  wordCount            Int                   @default(0)
+  readingMinutes       Int                   @default(0)
+  sourceCoverage       Float                 @default(0)
+  originalityScore     Float                 @default(0)
+  qualityScore         Float                 @default(0)
+  exactHash            String
+  normalizedHash       String
+  minHash              String?
+  simHash              BigInt?
+  semanticFingerprint  String?
+  generatedBy          String?
+  generationPromptHash String?
+  notes                String?
+  createdBy            String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  page                 BlogContentPage       @relation("PageVersions", fields: [pageId], references: [id], onDelete: Cascade)
+  sections             BlogContentSection[]
+  faqs                 BlogContentFaq[]
+  fingerprints         BlogContentFingerprint[]
+  leftSimilarities     BlogContentSimilarityMatch[] @relation("SimilarityLeft")
+  rightSimilarities    BlogContentSimilarityMatch[] @relation("SimilarityRight")
+  qualityRuns          BlogContentQualityRun[]
+  reviews              BlogContentEditorialReview[]
+  publications         BlogContentPublication[]
 
-  page             BlogPage                 @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  sections         BlogSection[]
-  faqs             BlogFaq[]
-  fingerprints     BlogContentFingerprint[]
-  similarityLeft   BlogSimilarityMatch[]     @relation("BlogSimilarityLeft")
-  similarityRight  BlogSimilarityMatch[]     @relation("BlogSimilarityRight")
-  qualityRuns      BlogQualityRun[]
-  reviews          BlogEditorialReview[]
-  publications     BlogPublication[]
-
-  @@unique([pageId, version])
-  @@index([pageId, state, createdAt(sort: Desc)])
-  @@index([contentHash])
+  @@unique([pageId, versionNumber])
+  @@unique([exactHash])
+  @@index([normalizedHash])
+  @@index([pageId, status, createdAt])
+  @@index([qualityScore, originalityScore])
   @@map("page_versions")
   @@schema("blog_content")
 }
 
-model BlogSection {
-  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  versionId   String          @db.Uuid
-  stableKey   String          @db.VarChar(180)
-  kind        BlogSectionKind
-  heading     String?         @db.Text
-  bodyMd      String          @db.Text
-  bodyText    String          @db.Text
-  position    Int
-  wordCount   Int             @default(0)
-  checksum    String          @db.Char(64)
-  factual     Boolean         @default(false)
-  metadata    Json            @default("{}")
-  createdAt   DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime        @updatedAt @db.Timestamptz(6)
-
-  version       BlogPageVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  sectionClaims BlogSectionClaim[]
+model BlogContentSection {
+  id             String                  @id @default(cuid())
+  versionId      String
+  stableKey      String
+  kind           BlogSectionKind
+  position       Int
+  heading        String?
+  body           String
+  bodyFormat     String                  @default("markdown")
+  wordCount      Int                     @default(0)
+  exactHash      String
+  normalizedHash String
+  origin         BlogContentOrigin
+  metadata       Json                    @default("{}")
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  version        BlogContentPageVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  claims         BlogContentSectionClaim[]
 
   @@unique([versionId, stableKey])
   @@unique([versionId, position])
-  @@index([checksum])
+  @@index([kind, normalizedHash])
+  @@index([exactHash])
   @@map("sections")
   @@schema("blog_content")
 }
 
-model BlogSectionClaim {
-  sectionId String   @db.Uuid
-  claimId   String   @db.Uuid
-  position  Int?
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-
-  section BlogSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  claim   BlogClaim   @relation(fields: [claimId], references: [id], onDelete: Restrict)
+model BlogContentSectionClaim {
+  sectionId String
+  claimId   String
+  ordinal   Int              @default(0)
+  note      String?
+  section   BlogContentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  claim     BlogContentClaim @relation(fields: [claimId], references: [id], onDelete: Restrict)
 
   @@id([sectionId, claimId])
   @@index([claimId])
@@ -551,191 +561,207 @@ model BlogSectionClaim {
   @@schema("blog_content")
 }
 
-model BlogFaq {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  versionId    String   @db.Uuid
-  position     Int
-  question     String   @db.Text
-  answer       String   @db.Text
-  questionHash String   @db.Char(64)
-  answerHash   String   @db.Char(64)
-  metadata     Json     @default("{}")
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-
-  version BlogPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+model BlogContentFaq {
+  id             String                 @id @default(cuid())
+  versionId      String
+  position       Int
+  question       String
+  answer         String
+  questionHash   String
+  answerHash     String
+  normalizedHash String
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  version        BlogContentPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@unique([versionId, position])
   @@unique([versionId, questionHash])
-  @@index([questionHash])
-  @@index([answerHash])
+  @@index([normalizedHash])
   @@map("faqs")
   @@schema("blog_content")
 }
 
 model BlogContentFingerprint {
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  versionId   String              @db.Uuid
-  scopeKey    String              @db.VarChar(180)
-  kind        BlogFingerprintKind
-  textHash    String?             @db.Char(64)
-  simhash64   BigInt?
-  signature   Json?
-  tokenCount  Int                 @default(0)
-  createdAt   DateTime            @default(now()) @db.Timestamptz(6)
+  id          String                 @id @default(cuid())
+  versionId   String
+  scope       String
+  scopeKey    String?
+  exactHash   String
+  normalizedHash String
+  minHash     String?
+  simHash     BigInt?
+  tokenCount  Int                    @default(0)
+  shingles    Int                    @default(0)
+  metadata    Json                   @default("{}")
+  createdAt   DateTime               @default(now())
+  version     BlogContentPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
-  version BlogPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-
-  @@unique([versionId, scopeKey, kind])
-  @@index([kind, textHash])
-  @@index([kind, simhash64])
+  @@unique([versionId, scope, scopeKey])
+  @@index([scope, exactHash])
+  @@index([scope, normalizedHash])
   @@map("content_fingerprints")
   @@schema("blog_content")
 }
 
-model BlogSimilarityMatch {
-  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  leftVersionId  String              @db.Uuid
-  rightVersionId String              @db.Uuid
-  algorithm      String              @db.VarChar(80)
+model BlogContentSimilarityMatch {
+  id             String                 @id @default(cuid())
+  leftVersionId  String
+  rightVersionId String
+  kind           BlogSimilarityKind
+  scope          String
   score          Float
-  classification BlogSimilarityClass
-  details        Json                @default("{}")
-  comparedAt     DateTime            @default(now()) @db.Timestamptz(6)
+  threshold      Float
+  blocking       Boolean                @default(false)
+  details        Json                   @default("{}")
+  computedAt     DateTime               @default(now())
+  leftVersion    BlogContentPageVersion @relation("SimilarityLeft", fields: [leftVersionId], references: [id], onDelete: Cascade)
+  rightVersion   BlogContentPageVersion @relation("SimilarityRight", fields: [rightVersionId], references: [id], onDelete: Cascade)
 
-  leftVersion  BlogPageVersion @relation("BlogSimilarityLeft", fields: [leftVersionId], references: [id], onDelete: Cascade)
-  rightVersion BlogPageVersion @relation("BlogSimilarityRight", fields: [rightVersionId], references: [id], onDelete: Cascade)
-
-  @@unique([leftVersionId, rightVersionId, algorithm])
-  @@index([classification, score(sort: Desc)])
-  @@index([rightVersionId])
+  @@unique([leftVersionId, rightVersionId, kind, scope])
+  @@index([rightVersionId, blocking])
+  @@index([kind, score])
   @@map("similarity_matches")
   @@schema("blog_content")
 }
 
-model BlogQualityRun {
-  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  versionId    String               @db.Uuid
-  policyVersion String              @db.VarChar(80)
-  status       BlogQualityRunStatus @default(QUEUED)
-  overallScore Float?
-  gatePassed   Boolean              @default(false)
-  metrics      Json                 @default("{}")
-  startedAt    DateTime?            @db.Timestamptz(6)
-  completedAt  DateTime?            @db.Timestamptz(6)
-  createdAt    DateTime             @default(now()) @db.Timestamptz(6)
+model BlogContentQualityRun {
+  id          String                   @id @default(cuid())
+  versionId   String
+  status      BlogQualityRunStatus     @default(QUEUED)
+  policyKey   String
+  policyHash  String
+  score       Float                    @default(0)
+  blockers    Int                      @default(0)
+  warnings    Int                      @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  metadata    Json                     @default("{}")
+  createdAt   DateTime                 @default(now())
+  version     BlogContentPageVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  checks      BlogContentQualityCheck[]
 
-  version BlogPageVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  checks  BlogQualityCheck[]
-
-  @@index([versionId, createdAt(sort: Desc)])
+  @@index([versionId, status, createdAt])
   @@index([status, createdAt])
   @@map("quality_runs")
   @@schema("blog_content")
 }
 
-model BlogQualityCheck {
-  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  runId       String                 @db.Uuid
-  kind        BlogQualityCheckKind
-  status      BlogQualityCheckStatus
-  score       Float?
-  threshold   Float?
-  message     String?                @db.Text
-  evidence    Json                   @default("{}")
-  createdAt   DateTime               @default(now()) @db.Timestamptz(6)
+model BlogContentQualityCheck {
+  id         String               @id @default(cuid())
+  runId      String
+  kind       BlogQualityCheckKind
+  severity   BlogQualitySeverity
+  passed     Boolean
+  score      Float?
+  threshold  Float?
+  message    String
+  details    Json                 @default("{}")
+  createdAt  DateTime             @default(now())
+  run        BlogContentQualityRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
-  run BlogQualityRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-
-  @@unique([runId, kind])
-  @@index([kind, status])
+  @@index([runId, passed, severity])
+  @@index([kind, passed])
   @@map("quality_checks")
   @@schema("blog_content")
 }
 
-model BlogEditorialReview {
-  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  versionId   String           @db.Uuid
-  status      BlogReviewStatus @default(PENDING)
-  reviewerRef String?          @db.VarChar(180)
-  notes       String?          @db.Text
-  checklist   Json             @default("{}")
-  reviewedAt  DateTime?        @db.Timestamptz(6)
-  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+model BlogContentEditorialReview {
+  id          String                 @id @default(cuid())
+  versionId   String
+  reviewerId  String
+  reviewerName String
+  decision    BlogReviewDecision     @default(PENDING)
+  comments    String?
+  checklist   Json                   @default("{}")
+  reviewedAt  DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  version     BlogContentPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
-  version BlogPageVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-
-  @@index([versionId, status, createdAt(sort: Desc)])
+  @@index([versionId, decision])
+  @@index([reviewerId, createdAt])
   @@map("editorial_reviews")
   @@schema("blog_content")
 }
 
-model BlogPublication {
-  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pageId          String                @db.Uuid
-  versionId       String                @db.Uuid
-  status          BlogPublicationStatus @default(STAGED)
-  indexEligibility BlogIndexEligibility
-  publishedUrl    String?               @db.Text
-  canonicalUrl    String?               @db.Text
-  sitemapIncluded Boolean               @default(false)
-  deploymentRef   String?               @db.VarChar(180)
-  publishedAt     DateTime?             @db.Timestamptz(6)
-  unpublishedAt   DateTime?             @db.Timestamptz(6)
-  createdAt       DateTime              @default(now()) @db.Timestamptz(6)
+model BlogContentPublication {
+  id             String                    @id @default(cuid())
+  pageId         String
+  versionId      String
+  status         BlogPublicationStatus     @default(DRAFT)
+  canonicalUrl   String
+  indexable      Boolean                   @default(false)
+  sitemapEligible Boolean                  @default(false)
+  robotsDirective String                   @default("noindex,follow")
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  retiredAt      DateTime?
+  deploymentId   String?
+  failureReason  String?
+  metadata       Json                      @default("{}")
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  page           BlogContentPage           @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  version        BlogContentPageVersion    @relation(fields: [versionId], references: [id], onDelete: Restrict)
 
-  page    BlogPage        @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  version BlogPageVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
-
-  @@index([pageId, status, createdAt(sort: Desc)])
-  @@index([status, indexEligibility, sitemapIncluded])
+  @@unique([pageId, versionId])
+  @@index([status, scheduledAt])
+  @@index([indexable, sitemapEligible, status])
   @@map("publications")
   @@schema("blog_content")
 }
 
-model BlogRefreshJob {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String            @db.Uuid
-  pageId      String?           @db.Uuid
-  sourceId    String?           @db.Uuid
-  status      BlogRefreshStatus @default(QUEUED)
-  reason      String            @db.VarChar(180)
-  dueAt       DateTime          @db.Timestamptz(6)
-  attempts    Int               @default(0)
-  lockedAt    DateTime?         @db.Timestamptz(6)
-  lockedBy    String?           @db.VarChar(180)
-  payload     Json              @default("{}")
-  lastError   String?           @db.Text
-  completedAt DateTime?         @db.Timestamptz(6)
-  createdAt   DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
+model BlogContentRefreshJob {
+  id          String                @id @default(cuid())
+  workspaceId String
+  pageId      String?
+  sourceId    String?
+  reason      String
+  priority    Int                   @default(0)
+  status      BlogRefreshJobStatus  @default(QUEUED)
+  scheduledAt DateTime              @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  attempts    Int                   @default(0)
+  lockedBy    String?
+  lockedAt    DateTime?
+  error       String?
+  payload     Json                  @default("{}")
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  workspace   BlogContentWorkspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  page        BlogContentPage?      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  source      BlogContentSource?    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
-  workspace BlogWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  page      BlogPage?      @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  source    BlogSource?    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-
-  @@index([status, dueAt])
-  @@index([workspaceId, pageId])
-  @@index([workspaceId, sourceId])
+  @@index([status, priority, scheduledAt])
+  @@index([workspaceId, status])
+  @@index([pageId, status])
+  @@index([sourceId, status])
   @@map("refresh_jobs")
   @@schema("blog_content")
 }
 
-model BlogAuditEvent {
-  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String             @db.Uuid
-  entityType  String             @db.VarChar(100)
-  entityId    String             @db.VarChar(180)
-  action      String             @db.VarChar(120)
+model BlogContentAuditEvent {
+  id          String                 @id @default(cuid())
+  workspaceId String
   actorType   BlogAuditActorType
-  actorRef    String?            @db.VarChar(180)
-  requestId   String?            @db.VarChar(180)
-  payload     Json               @default("{}")
-  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String
+  before      Json?
+  after       Json?
+  requestId   String?
+  ipHash      String?
+  userAgent   String?
+  metadata    Json                   @default("{}")
+  createdAt   DateTime               @default(now())
+  workspace   BlogContentWorkspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  workspace BlogWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, entityType, entityId, createdAt(sort: Desc)])
-  @@index([workspaceId, actorType, createdAt(sort: Desc)])
+  @@index([workspaceId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([actorType, actorId, createdAt])
   @@map("audit_events")
   @@schema("blog_content")
 }
