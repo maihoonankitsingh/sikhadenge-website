@@ -3,6 +3,10 @@ set -Eeuo pipefail
 
 SQL="${1:-}"
 OUT="${2:-$(dirname "${SQL:-.}")/transactional-smoke-test}"
+REQUIRED_TABLES="${BLOG_EXPECTED_TABLES:-23}"
+REQUIRED_TYPES="${BLOG_EXPECTED_TYPES:-16}"
+REQUIRED_INDEXES="${BLOG_EXPECTED_INDEXES:-63}"
+REQUIRED_FOREIGN_KEYS="${BLOG_EXPECTED_FOREIGN_KEYS:-33}"
 
 fail() {
   printf 'BLOG_MIGRATION_SMOKE_STATUS=FAIL\nREASON=%s\nREPORT=%s\n' "$1" "$OUT" >&2
@@ -20,8 +24,8 @@ INDEX_LIST="$OUT/expected-indexes.txt"
 LOG="$OUT/psql.log"
 
 sed -nE 's/^CREATE (UNIQUE )?INDEX "([^"]+)".*/\2/p' "$SQL" > "$INDEX_LIST"
-EXPECTED_INDEXES=$(wc -l < "$INDEX_LIST")
-[ "$EXPECTED_INDEXES" -eq 53 ] || fail "expected_index_count_mismatch"
+ACTUAL_EXPECTED_INDEXES=$(wc -l < "$INDEX_LIST")
+[ "$ACTUAL_EXPECTED_INDEXES" -eq "$REQUIRED_INDEXES" ] || fail "expected_index_count_mismatch"
 
 BEFORE_SCHEMA=$(psql "$DATABASE_URL" -X -Atc "SELECT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name='blog_content');")
 BEFORE_PUBLIC_TABLES=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
@@ -39,8 +43,8 @@ BEFORE_PUBLIC_BLOG_OID=$(psql "$DATABASE_URL" -X -Atc "SELECT COALESCE(to_regcla
   cat "$SQL"
   echo 'CREATE TEMP TABLE expected_blog_indexes(name text PRIMARY KEY);'
   printf "\\copy expected_blog_indexes(name) FROM '%s'\n" "$INDEX_LIST"
-  cat <<'PSQL'
-DO $audit$
+  cat <<PSQL
+DO \$audit\$
 DECLARE
   table_count integer;
   enum_count integer;
@@ -93,16 +97,16 @@ BEGIN
     AND source_schema.nspname = 'blog_content'
     AND target_schema.nspname <> 'blog_content';
 
-  IF table_count <> 23 THEN
-    RAISE EXCEPTION 'expected 23 Blog tables, found %', table_count;
+  IF table_count <> $REQUIRED_TABLES THEN
+    RAISE EXCEPTION 'expected $REQUIRED_TABLES Blog tables, found %', table_count;
   END IF;
 
-  IF enum_count <> 16 THEN
-    RAISE EXCEPTION 'expected 16 Blog enum types, found %', enum_count;
+  IF enum_count <> $REQUIRED_TYPES THEN
+    RAISE EXCEPTION 'expected $REQUIRED_TYPES Blog enum types, found %', enum_count;
   END IF;
 
-  IF fk_count <> 33 THEN
-    RAISE EXCEPTION 'expected 33 Blog foreign keys, found %', fk_count;
+  IF fk_count <> $REQUIRED_FOREIGN_KEYS THEN
+    RAISE EXCEPTION 'expected $REQUIRED_FOREIGN_KEYS Blog foreign keys, found %', fk_count;
   END IF;
 
   IF missing_index_count <> 0 THEN
@@ -120,9 +124,9 @@ BEGIN
   RAISE NOTICE 'BLOG_TRANSACTION_TABLES=%', table_count;
   RAISE NOTICE 'BLOG_TRANSACTION_ENUMS=%', enum_count;
   RAISE NOTICE 'BLOG_TRANSACTION_FOREIGN_KEYS=%', fk_count;
-  RAISE NOTICE 'BLOG_TRANSACTION_EXPECTED_INDEXES=53';
+  RAISE NOTICE 'BLOG_TRANSACTION_EXPECTED_INDEXES=$REQUIRED_INDEXES';
 END
-$audit$;
+\$audit\$;
 ROLLBACK;
 PSQL
 } > "$WRAPPER"
@@ -150,10 +154,10 @@ BLOG_SCHEMA_PERSISTED=NO
 PUBLIC_TABLE_COUNT_BEFORE=$BEFORE_PUBLIC_TABLES
 PUBLIC_TABLE_COUNT_AFTER=$AFTER_PUBLIC_TABLES
 PUBLIC_BLOG_OID_UNCHANGED=YES
-EXPECTED_TABLES=23
-EXPECTED_TYPES=16
-EXPECTED_INDEXES=53
-EXPECTED_FOREIGN_KEYS=33
+EXPECTED_TABLES=$REQUIRED_TABLES
+EXPECTED_TYPES=$REQUIRED_TYPES
+EXPECTED_INDEXES=$REQUIRED_INDEXES
+EXPECTED_FOREIGN_KEYS=$REQUIRED_FOREIGN_KEYS
 DATABASE_PERSISTENT_CHANGE=NO
 REPORT=$OUT
 STATUS
