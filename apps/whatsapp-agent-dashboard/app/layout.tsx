@@ -43,7 +43,7 @@ import "./live-header-logo.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-const DASHBOARD_BRAND_ICON = "/sikhadenge-mark.svg";
+const DASHBOARD_FAVICON = "/sikhadenge-live-favicon-aa30502f5ec9.png";
 
 export const metadata: Metadata = {
   title: "SikhaDenge WhatsApp Agent",
@@ -52,13 +52,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: DASHBOARD_BRAND_ICON,
+        url: DASHBOARD_FAVICON,
         type: "image/png",
-        sizes: "512x512",
       },
     ],
-    shortcut: DASHBOARD_BRAND_ICON,
-    apple: DASHBOARD_BRAND_ICON,
+    shortcut: DASHBOARD_FAVICON,
+    apple: DASHBOARD_FAVICON,
   },
 };
 
