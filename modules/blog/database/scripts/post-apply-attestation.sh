@@ -10,7 +10,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 MANIFEST="$ROOT/modules/blog/database/releases/0001-blog-content-foundation.release.json"
 SCHEMA="$ROOT/modules/blog/database/schema.prisma"
 GUARDS="$ROOT/modules/blog/database/sql/0001_post_schema_guards.sql"
-INDEX_LIST="$OUT/expected-indexes.txt"
+EXPECTED_INDEXES="$OUT/expected-indexes.txt"
+ACTUAL_INDEXES="$OUT/actual-blog-indexes.txt"
+MISSING_INDEXES="$OUT/missing-indexes.txt"
 DB_REPORT="$OUT/database-values.txt"
 
 fail() {
@@ -18,7 +20,7 @@ fail() {
   exit 1
 }
 
-for command_name in psql pg_restore sha256sum jq git; do
+for command_name in psql pg_restore sha256sum jq git comm; do
   command -v "$command_name" >/dev/null || fail "${command_name}_not_found"
 done
 
@@ -53,16 +55,24 @@ pg_restore --list "$BACKUP" > "$OUT/backup.restore-list.txt"
 RESTORE_ENTRIES=$(grep -cE '^[0-9]+;' "$OUT/backup.restore-list.txt" || true)
 [ "$RESTORE_ENTRIES" = "$EXPECTED_RESTORE_ENTRIES" ] || fail "backup_restore_entry_count_mismatch"
 
-sed -nE 's/^CREATE (UNIQUE )?INDEX "([^"]+)".*/\2/p' "$SQL" > "$INDEX_LIST"
-sed -nE 's/^CREATE (UNIQUE )?INDEX ([A-Za-z0-9_]+).*/\2/p' "$GUARDS" >> "$INDEX_LIST"
-sort -u -o "$INDEX_LIST" "$INDEX_LIST"
-[ "$(wc -l < "$INDEX_LIST")" -eq 69 ] || fail "expected_named_index_count_mismatch"
+sed -nE 's/^CREATE (UNIQUE )?INDEX "([^"]+)".*/\2/p' "$SQL" > "$EXPECTED_INDEXES"
+sed -nE 's/^CREATE (UNIQUE )?INDEX ([A-Za-z0-9_]+).*/\2/p' "$GUARDS" >> "$EXPECTED_INDEXES"
+sort -u -o "$EXPECTED_INDEXES" "$EXPECTED_INDEXES"
+[ "$(wc -l < "$EXPECTED_INDEXES")" -eq 69 ] || fail "expected_named_index_count_mismatch"
 
-psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -At -F= \
-  -v index_file="$INDEX_LIST" \
-  -c "CREATE TEMP TABLE expected_blog_indexes(name text PRIMARY KEY);" \
-  -c "\\copy expected_blog_indexes(name) FROM :'index_file'" \
-  -c "
+psql "$DATABASE_URL" -X -q -Atc "
+SELECT c.relname
+FROM pg_class c
+JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='blog_content'
+  AND c.relkind='i'
+ORDER BY c.relname;
+" > "$ACTUAL_INDEXES"
+
+comm -23 "$EXPECTED_INDEXES" "$ACTUAL_INDEXES" > "$MISSING_INDEXES"
+MISSING_EXPECTED_INDEXES=$(wc -l < "$MISSING_INDEXES")
+
+psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -At -F= -c "
 WITH values AS (
   SELECT 'BLOG_SCHEMA_EXISTS' AS key, EXISTS (
     SELECT 1 FROM information_schema.schemata WHERE schema_name='blog_content'
@@ -101,16 +111,6 @@ WITH values AS (
   UNION ALL SELECT 'BLOG_GUARD_TRIGGERS', count(*)::text
     FROM pg_trigger
     WHERE tgname='publications_enforce_gate' AND NOT tgisinternal
-  UNION ALL SELECT 'MISSING_EXPECTED_INDEXES', count(*)::text
-    FROM expected_blog_indexes e
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM pg_class c
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname='blog_content'
-        AND c.relkind='i'
-        AND c.relname=e.name
-    )
   UNION ALL SELECT 'INVALID_BLOG_INDEXES', count(*)::text
     FROM pg_index i
     JOIN pg_class c ON c.oid=i.indexrelid
@@ -144,6 +144,7 @@ WITH values AS (
 SELECT key, value FROM values ORDER BY key;
 " > "$DB_REPORT"
 
+echo "MISSING_EXPECTED_INDEXES=$MISSING_EXPECTED_INDEXES" >> "$DB_REPORT"
 eval "$(sed 's/[^A-Za-z0-9_=.-]/_/g' "$DB_REPORT")"
 
 [ "$BLOG_SCHEMA_EXISTS" = "true" ] || fail "blog_content_schema_missing"
@@ -186,7 +187,7 @@ MIGRATION_HASH_VERIFIED=YES
 GUARD_BLOB_VERIFIED=YES
 BACKUP_HASH_VERIFIED=YES
 BACKUP_RESTORE_LIST_VERIFIED=YES
-DATABASE_WRITE_PERFORMED=NO
+DATABASE_PERSISTENT_WRITE_PERFORMED=NO
 REPORT=$OUT
 STATUS
 
