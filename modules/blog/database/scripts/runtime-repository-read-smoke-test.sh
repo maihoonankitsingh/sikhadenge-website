@@ -8,6 +8,8 @@ GENERATED="$ROOT/modules/blog/database/generated/client"
 OUT="${1:-/tmp/blog-runtime-repository-read-$(date +%Y%m%d_%H%M%S)}"
 RUNNER="$OUT/repository-read.ts"
 VALUES="$OUT/repository-values.txt"
+SHIM_NODE_MODULES="$OUT/node_modules"
+SERVER_ONLY_SHIM="$SHIM_NODE_MODULES/server-only"
 
 fail() {
   printf 'BLOG_RUNTIME_REPOSITORY_READ_STATUS=FAIL\nREASON=%s\nREPORT=%s\n' "$1" "$OUT" >&2
@@ -61,6 +63,24 @@ npx --no-install prisma generate --schema "$SCHEMA" >"$OUT/prisma-generate.log" 
 
 test -s "$GENERATED/index.js" || fail "generated_index_js_missing"
 test -s "$GENERATED/index.d.ts" || fail "generated_index_dts_missing"
+
+# Next.js resolves `server-only` as a framework boundary. This standalone tsx
+# smoke runner executes outside Next.js, so provide a private test-only shim in
+# the report directory instead of modifying production node_modules.
+mkdir -p "$SERVER_ONLY_SHIM"
+cat > "$SERVER_ONLY_SHIM/package.json" <<'JSON'
+{
+  "name": "server-only",
+  "version": "0.0.0-blog-smoke-shim",
+  "private": true,
+  "main": "index.js"
+}
+JSON
+printf '%s\n' '"use strict";' 'module.exports = {};' > "$SERVER_ONLY_SHIM/index.js"
+
+NODE_PATH="$SHIM_NODE_MODULES${NODE_PATH:+:$NODE_PATH}" \
+  node -e 'require("server-only")' \
+  || fail "server_only_test_shim_load_failed"
 
 cat > "$RUNNER" <<'TS'
 import fs from "node:fs";
@@ -145,6 +165,7 @@ set +e
 (
   cd "$ROOT"
   BLOG_REPOSITORY_VALUES_PATH="$VALUES" \
+  NODE_PATH="$SHIM_NODE_MODULES${NODE_PATH:+:$NODE_PATH}" \
   NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--conditions=react-server" \
     npx --no-install tsx "$RUNNER"
 ) >"$OUT/repository-read.log" 2>&1
@@ -184,6 +205,7 @@ test "$BLOG_ROWS_BEFORE" = "$BLOG_ROWS_AFTER" || fail "blog_row_count_changed_du
 cat > "$OUT/status.txt" <<STATUS
 BLOG_RUNTIME_REPOSITORY_READ_STATUS=PASS
 SERVER_ONLY_ENTRYPOINT_LOADED=YES
+SERVER_ONLY_TEST_SHIM_USED=YES
 CONTROLLED_REPOSITORY_READ=YES
 CANONICAL_WORKSPACE_INVARIANTS_VERIFIED=YES
 ZERO_CONTENT_BASELINE_VERIFIED=YES
