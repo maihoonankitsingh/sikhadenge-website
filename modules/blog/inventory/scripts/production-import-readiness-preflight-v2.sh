@@ -33,21 +33,24 @@ test "$ACTUAL_BASE_BLOB" = "$EXPECTED_BASE_BLOB" || fail 'base_preflight_script_
 
 python3 - "$BASE_SCRIPT" "$PATCHED_SCRIPT" <<'PY'
 from pathlib import Path
+import re
 import sys
 
 source = Path(sys.argv[1])
 target = Path(sys.argv[2])
 text = source.read_text(encoding="utf-8")
 
-old_commands = (
-    "for command_name in psql pg_restore sha256sum stat find sort head df awk date flock node; do"
-)
-new_commands = (
-    "for command_name in psql pg_restore sha256sum stat find sort head df awk date flock node readlink sleep; do"
-)
-if text.count(old_commands) != 1:
-    raise SystemExit("command_list_patch_anchor_invalid")
-text = text.replace(old_commands, new_commands, 1)
+command_pattern = re.compile(r"^for command_name in ([^;\n]+); do$", re.MULTILINE)
+command_matches = list(command_pattern.finditer(text))
+if len(command_matches) != 1:
+    raise SystemExit(f"command_list_patch_anchor_invalid:{len(command_matches)}")
+
+commands = command_matches[0].group(1).split()
+for required_command in ("readlink", "sleep"):
+    if required_command not in commands:
+        commands.append(required_command)
+new_command_line = f"for command_name in {' '.join(commands)}; do"
+text = command_pattern.sub(new_command_line, text, count=1)
 
 old_block = '''PG_DATA_DIRECTORY="$(psql "$DATABASE_URL" -X -Atc 'SHOW data_directory;')"
 test -d "$PG_DATA_DIRECTORY" || fail 'postgres_data_directory_missing'
