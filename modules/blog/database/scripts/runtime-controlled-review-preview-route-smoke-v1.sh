@@ -15,6 +15,7 @@ RUNNER="$OUT/route-smoke.ts"
 VALUES="$OUT/route-smoke-values.json"
 SHIM_NODE_MODULES="$OUT/node_modules"
 SERVER_ONLY_SHIM="$SHIM_NODE_MODULES/server-only"
+PROJECT_NODE_MODULES="$ROOT/node_modules"
 EXPECTED_ROUTE_BLOB='f7131d88117b11e7585bcfa2ee7ed21067cf0d77'
 EXPECTED_LIVE_BLOG_ROUTE_BLOB='e88506577386c5612215a0e5eebe29037bf76eed'
 EXPECTED_PUBLIC_BLOG_OID='20331'
@@ -35,6 +36,7 @@ test -s "$PACKAGE/manifest.json" || fail 'manifest_missing'
 test -s "$SCHEMA" || fail 'schema_missing'
 test -x "$LOCAL_PRISMA" || fail 'local_prisma_missing'
 test -x "$LOCAL_TSX" || fail 'local_tsx_missing'
+test -d "$PROJECT_NODE_MODULES/next" || fail 'project_next_module_missing'
 test -s "$ROUTE" || fail 'route_missing'
 test -s "$APPROVAL" || fail 'approval_manifest_missing'
 mkdir -p "$OUT"
@@ -106,6 +108,10 @@ cat > "$SERVER_ONLY_SHIM/package.json" <<'JSON'
 {"name":"server-only","version":"0.0.0-blog-preview-route-smoke","private":true,"main":"index.js"}
 JSON
 printf '%s\n' '"use strict";' 'module.exports = {};' > "$SERVER_ONLY_SHIM/index.js"
+
+RESOLUTION_NODE_PATH="$SHIM_NODE_MODULES:$PROJECT_NODE_MODULES${NODE_PATH:+:$NODE_PATH}"
+NODE_PATH="$RESOLUTION_NODE_PATH" node -e 'require.resolve("next/server")' || fail 'next_server_module_resolution_failed'
+NODE_PATH="$RESOLUTION_NODE_PATH" node -e 'require("server-only")' || fail 'server_only_test_shim_load_failed'
 
 FIRST_SLUG="$(node - "$PACKAGE" <<'NODE'
 const fs = require('node:fs');
@@ -256,7 +262,7 @@ set +e
   BLOG_ROUTE_SMOKE_SLUG="$FIRST_SLUG" \
   BLOG_ROUTE_SMOKE_TOKEN="$TEST_TOKEN" \
   BLOG_ROUTE_SMOKE_VALUES="$VALUES" \
-  NODE_PATH="$SHIM_NODE_MODULES${NODE_PATH:+:$NODE_PATH}" \
+  NODE_PATH="$RESOLUTION_NODE_PATH" \
   NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--conditions=react-server" \
     "$LOCAL_TSX" "$RUNNER"
 ) >"$OUT/route-smoke.log" 2>&1
@@ -296,6 +302,7 @@ EXPLICIT_APPROVAL_VERIFIED=YES
 ROUTE_PATH=/api/internal/blog-review-preview/[slug]
 GET_HANDLER_MOUNTED=YES
 NON_GET_HANDLERS_EXPORTED=NO
+NEXT_SERVER_MODULE_RESOLUTION=PROJECT_NODE_MODULES
 TOKEN_CONFIGURATION_MISSING_FAIL_CLOSED=YES
 TOKEN_CONFIGURATION_WEAK_FAIL_CLOSED=YES
 TOKEN_ABSENT_HIDDEN_AS_NOT_FOUND=YES
