@@ -1,0 +1,70 @@
+{
+  "approvalId": "existing-blog-production-import-v1-execution-approval",
+  "releaseId": "existing-blog-production-import-v1",
+  "status": "execution-approved",
+  "approvedAt": "2026-07-29T15:20:00+05:30",
+  "approvalSource": "explicit-user-confirmation",
+  "approvalPhrase": "APPROVE EXISTING BLOG PRODUCTION IMPORT V1",
+  "approvedScope": {
+    "database": "production DATABASE_URL",
+    "schema": "blog_content",
+    "operations": [
+      "INSERT"
+    ],
+    "tables": [
+      "pages",
+      "page_versions",
+      "content_fingerprints"
+    ],
+    "targetRecords": 120097,
+    "targetRows": 360291,
+    "batchCount": 121,
+    "recordsPerFullBatch": 1000,
+    "finalBatchRecords": 97
+  },
+  "importer": {
+    "path": "modules/blog/inventory/scripts/import-existing-blog-batch-package-v1.sh",
+    "gitBlobSha1": "748d449c528033eb439da7c1dad18350de627450",
+    "staticAttestationCommit": "44cfe011e8ffd2c1326af3f70d7a53c84ee8b0df",
+    "staticAttestationStatus": "PASS"
+  },
+  "batchPackage": {
+    "path": "/var/lib/sikhadenge-blog-artifacts/import-batch-package-v1-20260729_145652",
+    "manifestSha256": "5659094b972e2806310cd1a3d72ef19e26f1106df14b6a38b545759fc5d9fe0a",
+    "manifestBytes": 55691,
+    "sourcePlanSha256": "66fa51adf700467f66d8118f0dc979ca2abd24947dceea893d1b4197a6898cca",
+    "sourcePlanBytes": 512082000,
+    "attestationStatus": "PASS"
+  },
+  "readiness": {
+    "report": "/var/lib/sikhadenge-blog-artifacts/production-import-readiness-v4-20260729_145012",
+    "status": "PASS",
+    "targetTablesEmpty": true,
+    "databaseBackupVerified": true,
+    "diskCapacityVerified": true,
+    "publicBlogOid": "20331"
+  },
+  "requiredSafetyState": {
+    "workspaceId": "blog-workspace-sikhadenge-v1",
+    "lifecycleStatus": "DISCOVERED",
+    "versionStatus": "WRITING",
+    "versionOrigin": "MIGRATED",
+    "indexEligibility": "BLOCKED",
+    "sourceCoverage": 0,
+    "originalityScore": 0,
+    "qualityScore": 0,
+    "publications": 0,
+    "qualityRuns": 0,
+    "editorialReviews": 0
+  },
+  "notApproved": {
+    "publication": true,
+    "indexEligibility": true,
+    "sitemapEligibility": true,
+    "websiteRouteCutover": true,
+    "legacySourceDeletion": true,
+    "publicSchemaWrites": true,
+    "updates": true,
+    "deletes": true
+  }
+}
