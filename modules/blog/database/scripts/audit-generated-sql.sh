@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 SQL="${1:-}"
 OUT="${2:-$(dirname "${SQL:-.}")/sql-isolation-audit}"
+EXPECTED_TABLES="${BLOG_EXPECTED_TABLES:-23}"
+EXPECTED_TYPES="${BLOG_EXPECTED_TYPES:-16}"
+EXPECTED_INDEXES="${BLOG_EXPECTED_INDEXES:-63}"
 
 fail() {
   printf 'BLOG_SQL_ISOLATION_STATUS=FAIL\nREASON=%s\nREPORT=%s\n' "$1" "$OUT" >&2
@@ -41,17 +44,17 @@ if ! grep -qE '^CREATE SCHEMA( IF NOT EXISTS)? "blog_content";' "$SQL"; then
   fail "blog_content_schema_creation_missing"
 fi
 
-if [ "$TOTAL_TABLES" -ne 23 ] || [ "$BLOG_TABLES" -ne "$TOTAL_TABLES" ]; then
+if [ "$TOTAL_TABLES" -ne "$EXPECTED_TABLES" ] || [ "$BLOG_TABLES" -ne "$TOTAL_TABLES" ]; then
   grep -nE '^CREATE TABLE ' "$SQL" > "$OUT/create-table-lines.txt" || true
   fail "table_scope_or_count_mismatch"
 fi
 
-if [ "$TOTAL_TYPES" -ne 16 ] || [ "$BLOG_TYPES" -ne "$TOTAL_TYPES" ]; then
+if [ "$TOTAL_TYPES" -ne "$EXPECTED_TYPES" ] || [ "$BLOG_TYPES" -ne "$TOTAL_TYPES" ]; then
   grep -nE '^CREATE TYPE ' "$SQL" > "$OUT/create-type-lines.txt" || true
   fail "type_scope_or_count_mismatch"
 fi
 
-if [ "$TOTAL_INDEXES" -ne 53 ] || [ "$BLOG_INDEXES" -ne "$TOTAL_INDEXES" ]; then
+if [ "$TOTAL_INDEXES" -ne "$EXPECTED_INDEXES" ] || [ "$BLOG_INDEXES" -ne "$TOTAL_INDEXES" ]; then
   grep -nE '^CREATE (UNIQUE )?INDEX ' "$SQL" > "$OUT/create-index-lines.txt" || true
   fail "index_scope_or_count_mismatch"
 fi
@@ -84,9 +87,9 @@ BLOG_SQL_ISOLATION_STATUS=PASS
 BLOG_SCHEMA_ONLY=YES
 PUBLIC_SCHEMA_REFERENCES=0
 DANGEROUS_STATEMENTS=0
-EXPECTED_TABLES=23
-EXPECTED_TYPES=16
-EXPECTED_INDEXES=53
+EXPECTED_TABLES=$EXPECTED_TABLES
+EXPECTED_TYPES=$EXPECTED_TYPES
+EXPECTED_INDEXES=$EXPECTED_INDEXES
 MIGRATION_APPLIED=NO
 DATABASE_CHANGED=NO
 REPORT=$OUT
