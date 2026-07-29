@@ -1,0 +1,46 @@
+{
+  "releaseId": "blog-content-foundation-v1",
+  "status": "validated-not-applied",
+  "validatedSourceCommit": "92d8d54640d6f6afdaa54f762b346b499ca5feed",
+  "readinessCommit": "24079953ff2939a39b4b1f655c9ce19416a4d3a6",
+  "schema": {
+    "path": "modules/blog/database/schema.prisma",
+    "sha256": "9f38d7c4b529e20f127b909a8e7a4444621586547251be5bf9dd4e89d7c91cbb"
+  },
+  "migration": {
+    "sha256": "037a8dc6b087b8cfc6b53c48d127519c42fe4f7934411c239bef2741d4368df0",
+    "lines": 768,
+    "bytes": 31537,
+    "tables": 23,
+    "enumTypes": 16,
+    "indexes": 63,
+    "foreignKeys": 33
+  },
+  "guards": {
+    "path": "modules/blog/database/sql/0001_post_schema_guards.sql",
+    "gitBlobSha1": "0fb7db001434994a486aeaee8be4eaf3a76e1f07",
+    "constraints": 17,
+    "indexes": 6,
+    "triggers": 1
+  },
+  "productionReadiness": {
+    "backupSha256": "46000397cd979cdafb7a3179e860c1741b9cc1669f1d2e40b19c2b5f445d0a4a",
+    "backupBytes": 3765375,
+    "restoreEntryCount": 292,
+    "publicTableCount": 43,
+    "publicBlogTablePresent": true,
+    "blogContentSchemaPresent": false
+  },
+  "qualityGateEvidence": {
+    "schemaValidation": "PASS",
+    "sqlIsolation": "PASS",
+    "transactionalMigration": "PASS",
+    "publicationGuards": "PASS",
+    "allTransactionsRolledBack": true,
+    "databasePersistentChange": false
+  },
+  "authorization": {
+    "productionApplyApproved": false,
+    "requiresExplicitApplyCommand": true
+  }
+}
