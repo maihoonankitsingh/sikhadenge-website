@@ -95,8 +95,8 @@ contracts = {
     "OLD_NEXT_MOVED=1": 1,
     "MALFORMED_UNAUTH_STATUS=": 1,
     "MALFORMED_AUTH_STATUS=": 1,
-    "unauthenticated_malformed_slug_status_invalid": 1,
-    "authenticated_malformed_slug_status_invalid": 1,
+    'fail "unauthenticated_malformed_slug_status_invalid"': 1,
+    'fail "authenticated_malformed_slug_status_invalid"': 1,
     "UNAUTHENTICATED_MALFORMED_SLUG_STATUS=": 1,
     "AUTHENTICATED_MALFORMED_SLUG_STATUS=": 1,
 }
