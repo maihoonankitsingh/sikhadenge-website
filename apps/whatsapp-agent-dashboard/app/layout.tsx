@@ -43,6 +43,7 @@ import "./live-header-logo.css";
 import "./dashboard-refinement.css";
 import "./all-modules-advanced.css";
 import "./unified-sidebar.css";
+import "./module-content-redesign.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
