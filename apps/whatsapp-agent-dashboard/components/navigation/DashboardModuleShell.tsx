@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import LogoutButton from "../auth/LogoutButton";
+import CoreWorkflowShortcuts from "./CoreWorkflowShortcuts";
 import MetaConnectionStatus from "./MetaConnectionStatus";
 import SidebarMenuIcon, { type SidebarMenuTitle } from "./SidebarMenuIcon";
 
@@ -106,6 +107,7 @@ export default function DashboardModuleShell({
       <a className="sx-skip-link" href="#dashboard-main">
         Skip to dashboard content
       </a>
+      <CoreWorkflowShortcuts />
 
       <aside className="sx-side rail" aria-label="Primary navigation">
         <Link className="brand-mark" href="/inbox" aria-label="Open inbox">
