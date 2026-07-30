@@ -6,22 +6,7 @@ import MetaConnectionStatus from "./MetaConnectionStatus";
 import SidebarMenuIcon, { type SidebarMenuTitle } from "./SidebarMenuIcon";
 
 type DashboardModuleShellProps = {
-  activeTitle:
-    | "Inbox"
-    | "Contacts"
-    | "Leads"
-    | "Team"
-    | "Engagement"
-    | "Analytics"
-    | "Knowledge"
-    | "Agent Training"
-    | "Campaigns"
-    | "Automation"
-    | "Templates"
-    | "Integrations"
-    | "Admin"
-    | "Cutover"
-    | "Settings";
+  activeTitle: SidebarMenuTitle;
   eyebrow: string;
   title: string;
   description: string;
@@ -30,7 +15,12 @@ type DashboardModuleShellProps = {
   children: ReactNode;
 };
 
-const PRIMARY_NAV: ReadonlySet<string> = new Set([
+type NavItem = {
+  title: SidebarMenuTitle;
+  href: string;
+};
+
+const PRIMARY_NAV: ReadonlySet<SidebarMenuTitle> = new Set([
   "Inbox",
   "Contacts",
   "Leads",
@@ -39,10 +29,7 @@ const PRIMARY_NAV: ReadonlySet<string> = new Set([
   "Analytics",
 ]);
 
-const navItems: ReadonlyArray<{
-  title: Exclude<SidebarMenuTitle, "Settings">;
-  href: string;
-}> = [
+const navItems: ReadonlyArray<NavItem> = [
   { title: "Inbox", href: "/inbox" },
   { title: "Contacts", href: "/contacts" },
   { title: "Leads", href: "/leads" },
@@ -59,8 +46,44 @@ const navItems: ReadonlyArray<{
   { title: "Cutover", href: "/cutover" },
 ];
 
-const primaryItems = navItems.filter((i) => PRIMARY_NAV.has(i.title));
-const operationsItems = navItems.filter((i) => !PRIMARY_NAV.has(i.title));
+const settingsItem: NavItem = { title: "Settings", href: "/settings" };
+const primaryItems = navItems.filter((item) => PRIMARY_NAV.has(item.title));
+const operationsItems = navItems.filter((item) => !PRIMARY_NAV.has(item.title));
+const mobileDockItems: ReadonlyArray<NavItem> = [
+  navItems[0],
+  navItems[1],
+  navItems[2],
+  navItems[8],
+  settingsItem,
+];
+
+function NavigationLink({
+  item,
+  activeTitle,
+  className = "",
+}: {
+  item: NavItem;
+  activeTitle: SidebarMenuTitle;
+  className?: string;
+}) {
+  const isActive = activeTitle === item.title;
+
+  return (
+    <Link
+      className={`rail-button sx-navitem ${isActive ? "is-active" : ""} ${className}`.trim()}
+      title={item.title}
+      aria-label={item.title}
+      aria-current={isActive ? "page" : undefined}
+      data-nav-title={item.title}
+      href={item.href}
+    >
+      <span className="sx-navic">
+        <SidebarMenuIcon title={item.title} />
+      </span>
+      <span className="sx-navlabel">{item.title}</span>
+    </Link>
+  );
+}
 
 export default function DashboardModuleShell({
   activeTitle,
@@ -74,12 +97,16 @@ export default function DashboardModuleShell({
   const initials = userName
     .split(/\s+/)
     .slice(0, 2)
-    .map((w) => w[0])
+    .map((word) => word[0])
     .join("")
     .toUpperCase();
 
   return (
     <div className="sx-module">
+      <a className="sx-skip-link" href="#dashboard-main">
+        Skip to dashboard content
+      </a>
+
       <aside className="sx-side rail" aria-label="Primary navigation">
         <Link className="brand-mark" href="/inbox" aria-label="Open inbox">
           <span className="sx-brand-logo">
@@ -91,64 +118,37 @@ export default function DashboardModuleShell({
         </Link>
 
         <div className="sx-side-scroll">
-          <nav className="sx-nav">
+          <nav className="sx-nav" aria-label="Core modules">
             {primaryItems.map((item) => (
-              <Link
+              <NavigationLink
                 key={item.title}
-                className={`rail-button sx-navitem ${activeTitle === item.title ? "is-active" : ""}`}
-                title={item.title}
-                aria-label={item.title}
-                aria-current={activeTitle === item.title ? "page" : undefined}
-                href={item.href}
-              >
-                <span className="sx-navic">
-                  <SidebarMenuIcon title={item.title} />
-                </span>
-                <span className="sx-navlabel">{item.title}</span>
-              </Link>
+                item={item}
+                activeTitle={activeTitle}
+              />
             ))}
           </nav>
 
           <div className="sx-side-group">
             <p className="sx-side-label">Operations</p>
-            <nav className="sx-nav">
+            <nav className="sx-nav" aria-label="Operations modules">
               {operationsItems.map((item) => (
-                <Link
+                <NavigationLink
                   key={item.title}
-                  className={`rail-button sx-navitem ${activeTitle === item.title ? "is-active" : ""}`}
-                  title={item.title}
-                  aria-label={item.title}
-                  aria-current={
-                    activeTitle === item.title ? "page" : undefined
-                  }
-                  href={item.href}
-                >
-                  <span className="sx-navic">
-                    <SidebarMenuIcon title={item.title} />
-                  </span>
-                  <span className="sx-navlabel">{item.title}</span>
-                </Link>
+                  item={item}
+                  activeTitle={activeTitle}
+                />
               ))}
             </nav>
           </div>
         </div>
 
         <div className="sx-side-foot">
-          <Link
-            className={`rail-button sx-navitem ${activeTitle === "Settings" ? "is-active" : ""}`}
-            title="Settings"
-            aria-label="Settings"
-            aria-current={activeTitle === "Settings" ? "page" : undefined}
-            href="/settings"
-          >
-            <span className="sx-navic">
-              <SidebarMenuIcon title="Settings" />
-            </span>
-            <span className="sx-navlabel">Settings</span>
-          </Link>
+          <NavigationLink item={settingsItem} activeTitle={activeTitle} />
 
           <div className="sx-account">
-            <span className="sx-acc-avatar">{initials}</span>
+            <span className="sx-acc-avatar" aria-hidden="true">
+              {initials}
+            </span>
             <div className="sx-acc-copy">
               <strong>{userName}</strong>
               <small>{userRole.toLowerCase()}</small>
@@ -158,15 +158,42 @@ export default function DashboardModuleShell({
         </div>
       </aside>
 
-      <main className="sx-workspace">
+      <main id="dashboard-main" className="sx-workspace" tabIndex={-1}>
         <header className="sx-workspace-head">
           <div className="sx-workspace-head-left">
+            <details className="sx-mobile-nav">
+              <summary aria-label="Open all dashboard modules">
+                <SidebarMenuIcon title={activeTitle} size={20} />
+                <span>Menu</span>
+              </summary>
+              <div className="sx-mobile-nav-panel">
+                <div className="sx-mobile-nav-heading">
+                  <div>
+                    <strong>All modules</strong>
+                    <span>{userName}</span>
+                  </div>
+                  <MetaConnectionStatus />
+                </div>
+                <nav aria-label="All dashboard modules">
+                  {[...navItems, settingsItem].map((item) => (
+                    <NavigationLink
+                      key={item.title}
+                      item={item}
+                      activeTitle={activeTitle}
+                      className="sx-mobile-menu-link"
+                    />
+                  ))}
+                </nav>
+              </div>
+            </details>
+
             <span className="sx-workspace-icon">
               <SidebarMenuIcon title={activeTitle} size={22} />
             </span>
             <div className="sx-workspace-copy">
               <p className="sx-workspace-eyebrow">{eyebrow}</p>
               <h1>{title}</h1>
+              <p className="sx-workspace-description">{description}</p>
             </div>
           </div>
           <div className="sx-workspace-head-right">
@@ -177,6 +204,17 @@ export default function DashboardModuleShell({
 
         <div className="sx-workspace-body">{children}</div>
       </main>
+
+      <nav className="sx-mobile-dock" aria-label="Mobile quick navigation">
+        {mobileDockItems.map((item) => (
+          <NavigationLink
+            key={item.title}
+            item={item}
+            activeTitle={activeTitle}
+            className="sx-mobile-dock-link"
+          />
+        ))}
+      </nav>
     </div>
   );
 }
