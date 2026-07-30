@@ -34,7 +34,7 @@ fail() {
   exit 1
 }
 
-for cmd in git jq pm2 ss nginx grep awk sed find stat df pgrep; do
+for cmd in git jq pm2 ss nginx grep awk sed find stat df pgrep ps curl sort cmp; do
   command -v "$cmd" >/dev/null 2>&1 || fail "${cmd}_not_found"
 done
 
@@ -84,9 +84,45 @@ test "$PM2_STATUS" = "online" || fail "production_pm2_not_online"
 test "$PM2_PID" != "0" && test "$PM2_PID" != "null" || fail "production_pm2_pid_invalid"
 test "$PM2_CWD" = "$ROOT" || fail "production_pm2_cwd_mismatch"
 
+# Resolve the complete PM2 child process tree. The listening socket is normally
+# owned by next-server/node, not by the PM2 wrapper PID itself.
+printf '%s\n' "$PM2_PID" > "$OUT/pm2-process-pids.txt"
+frontier="$PM2_PID"
+for _depth in 1 2 3 4 5 6 7 8; do
+  next_frontier=""
+  for parent_pid in $frontier; do
+    children="$(pgrep -P "$parent_pid" 2>/dev/null || true)"
+    if test -n "$children"; then
+      printf '%s\n' $children >> "$OUT/pm2-process-pids.txt"
+      next_frontier="$next_frontier $children"
+    fi
+  done
+  frontier="$next_frontier"
+  test -n "${frontier// /}" || break
+done
+sort -n -u "$OUT/pm2-process-pids.txt" -o "$OUT/pm2-process-pids.txt"
+
+: > "$OUT/pm2-process-tree-safe.txt"
+while IFS= read -r process_pid; do
+  ps -p "$process_pid" -o pid=,ppid=,etime=,comm=,args= >> "$OUT/pm2-process-tree-safe.txt" 2>/dev/null || true
+done < "$OUT/pm2-process-pids.txt"
+
+test -s "$OUT/pm2-process-tree-safe.txt" || fail "production_pm2_process_tree_missing"
+
 ss -H -ltnp > "$OUT/listeners-all.txt" 2>/dev/null || true
-grep -F "pid=$PM2_PID," "$OUT/listeners-all.txt" > "$OUT/production-listeners.txt" || true
-test -s "$OUT/production-listeners.txt" || fail "production_listener_not_found"
+: > "$OUT/production-listeners.txt"
+while IFS= read -r process_pid; do
+  grep -E "pid=${process_pid}," "$OUT/listeners-all.txt" >> "$OUT/production-listeners.txt" || true
+done < "$OUT/pm2-process-pids.txt"
+sort -u "$OUT/production-listeners.txt" -o "$OUT/production-listeners.txt"
+test -s "$OUT/production-listeners.txt" || fail "production_listener_not_found_in_pm2_process_tree"
+
+# Extract discovered TCP ports without exposing unrelated environment values.
+awk '{print $4}' "$OUT/production-listeners.txt" |
+  sed -E 's/^.*:([0-9]+)$/\1/' |
+  grep -E '^[0-9]+$' |
+  sort -n -u > "$OUT/production-listener-ports.txt"
+test -s "$OUT/production-listener-ports.txt" || fail "production_listener_port_not_found"
 
 NGINX_FILES="$OUT/nginx-site-files.txt"
 grep -RIlE 'server_name[[:space:]].*sikhadenge\.in' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | sort -u > "$NGINX_FILES" || true
@@ -122,6 +158,8 @@ test -z "$ROOT_BUILD_PROCESSES" || fail "production_build_process_active"
   echo "PM2_PID=$PM2_PID"
   echo "PM2_STATUS=$PM2_STATUS"
   echo "PM2_CWD=$PM2_CWD"
+  echo "PM2_PROCESS_TREE_SIZE=$(wc -l < "$OUT/pm2-process-pids.txt" | tr -d ' ')"
+  echo "LISTENER_PORTS=$(paste -sd, "$OUT/production-listener-ports.txt")"
   echo "PREVIEW_TOKEN_ENTRY_COUNT=$TOKEN_LINES"
   echo "PREVIEW_TOKEN_LENGTH=$TOKEN_LENGTH"
 } > "$OUT/preflight-facts.txt"
@@ -148,6 +186,7 @@ done
   echo "CANDIDATE_RUNTIME_SMOKE_STATUS=PASS"
   echo "PRODUCTION_PM2_STATUS=ONLINE"
   echo "PRODUCTION_PM2_CWD_MATCH=YES"
+  echo "PRODUCTION_PM2_PROCESS_TREE_DISCOVERED=YES"
   echo "PRODUCTION_LISTENER_DISCOVERED=YES"
   echo "NGINX_SITE_CONFIG_DISCOVERED=YES"
   echo "NGINX_CONFIG_TEST=PASS"
@@ -161,6 +200,8 @@ done
 } | tee "$STATUS"
 
 cat "$OUT/pm2-safe.json"
+echo "--- PM2 PROCESS TREE ---"
+cat "$OUT/pm2-process-tree-safe.txt"
 echo "--- PRODUCTION LISTENER ---"
 cat "$OUT/production-listeners.txt"
 echo "--- NGINX ROUTING ---"
