@@ -1,6 +1,7 @@
 import AgentTrainingManager from "../../components/training/AgentTrainingManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
+import "../dashboard-system.css";
 
 export const dynamic = "force-dynamic";
 

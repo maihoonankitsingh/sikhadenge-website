@@ -30,7 +30,19 @@ type DashboardModuleShellProps = {
   children: ReactNode;
 };
 
-const navItems: ReadonlyArray<{ title: Exclude<SidebarMenuTitle, "Settings">; href: string }> = [
+const PRIMARY_NAV: ReadonlySet<string> = new Set([
+  "Inbox",
+  "Contacts",
+  "Leads",
+  "Team",
+  "Engagement",
+  "Analytics",
+]);
+
+const navItems: ReadonlyArray<{
+  title: Exclude<SidebarMenuTitle, "Settings">;
+  href: string;
+}> = [
   { title: "Inbox", href: "/inbox" },
   { title: "Contacts", href: "/contacts" },
   { title: "Leads", href: "/leads" },
@@ -47,23 +59,8 @@ const navItems: ReadonlyArray<{ title: Exclude<SidebarMenuTitle, "Settings">; hr
   { title: "Cutover", href: "/cutover" },
 ];
 
-const moduleIcons: Record<DashboardModuleShellProps["activeTitle"], string> = {
-  Inbox: "/dashboard-icons/02-conversations.png",
-  Contacts: "/dashboard-icons/03-contacts.png",
-  Leads: "/dashboard-icons/05-qualified-leads.png",
-  Team: "/dashboard-icons/04-ai-managed.png",
-  Engagement: "/dashboard-icons/03-contacts.png",
-  Analytics: "/dashboard-icons/07-analytics.png",
-  Knowledge: "/dashboard-icons/08-knowledge.png",
-  "Agent Training": "/dashboard-icons/08-knowledge.png",
-  Campaigns: "/dashboard-icons/09-automation.png",
-  Automation: "/dashboard-icons/09-automation.png",
-  Templates: "/dashboard-icons/04-ai-managed.png",
-  Integrations: "/dashboard-icons/10-settings.png",
-  Admin: "/dashboard-icons/10-settings.png",
-  Cutover: "/dashboard-icons/10-settings.png",
-  Settings: "/dashboard-icons/10-settings.png",
-};
+const primaryItems = navItems.filter((i) => PRIMARY_NAV.has(i.title));
+const operationsItems = navItems.filter((i) => !PRIMARY_NAV.has(i.title));
 
 export default function DashboardModuleShell({
   activeTitle,
@@ -74,84 +71,112 @@ export default function DashboardModuleShell({
   userRole,
   children,
 }: DashboardModuleShellProps) {
-  const moduleKey = activeTitle.toLowerCase();
+  const initials = userName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
   return (
-    <>
-      <div className="session-toolbar" aria-label="Signed-in account">
-        <span>
-          <strong>{userName}</strong>
-          <small>{userRole.toLowerCase()}</small>
-        </span>
-        <LogoutButton />
-      </div>
+    <div className="sx-module">
+      <aside className="sx-side rail" aria-label="Primary navigation">
+        <Link className="brand-mark" href="/inbox" aria-label="Open inbox">
+          <span className="sx-brand-logo">
+            <SidebarMenuIcon title="Inbox" size={20} />
+          </span>
+          <span className="sx-brand-name">
+            SikhaDenge<small>Dashboard</small>
+          </span>
+        </Link>
 
-      <main className="dashboard-shell">
-        <aside className="rail" aria-label="Primary navigation">
-          <Link className="brand-mark" href="/inbox" aria-label="Open inbox">
-            S
-          </Link>
-          <nav>
-            {navItems.map((item) => (
+        <div className="sx-side-scroll">
+          <nav className="sx-nav">
+            {primaryItems.map((item) => (
               <Link
                 key={item.title}
-                className={`rail-button ${activeTitle === item.title ? "active" : ""}`}
+                className={`rail-button sx-navitem ${activeTitle === item.title ? "is-active" : ""}`}
                 title={item.title}
                 aria-label={item.title}
                 aria-current={activeTitle === item.title ? "page" : undefined}
                 href={item.href}
               >
-                <span className="sidebar-menu-icon">
+                <span className="sx-navic">
                   <SidebarMenuIcon title={item.title} />
                 </span>
-                <span className="sidebar-menu-label">{item.title}</span>
+                <span className="sx-navlabel">{item.title}</span>
               </Link>
             ))}
           </nav>
+
+          <div className="sx-side-group">
+            <p className="sx-side-label">Operations</p>
+            <nav className="sx-nav">
+              {operationsItems.map((item) => (
+                <Link
+                  key={item.title}
+                  className={`rail-button sx-navitem ${activeTitle === item.title ? "is-active" : ""}`}
+                  title={item.title}
+                  aria-label={item.title}
+                  aria-current={
+                    activeTitle === item.title ? "page" : undefined
+                  }
+                  href={item.href}
+                >
+                  <span className="sx-navic">
+                    <SidebarMenuIcon title={item.title} />
+                  </span>
+                  <span className="sx-navlabel">{item.title}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        <div className="sx-side-foot">
           <Link
-            className={`rail-button rail-bottom ${activeTitle === "Settings" ? "active" : ""}`}
+            className={`rail-button sx-navitem ${activeTitle === "Settings" ? "is-active" : ""}`}
             title="Settings"
             aria-label="Settings"
             aria-current={activeTitle === "Settings" ? "page" : undefined}
             href="/settings"
           >
-            <span className="sidebar-menu-icon">
+            <span className="sx-navic">
               <SidebarMenuIcon title="Settings" />
             </span>
-            <span className="sidebar-menu-label">Settings</span>
+            <span className="sx-navlabel">Settings</span>
           </Link>
-        </aside>
 
-        <section className="workspace module-workspace">
-          <header className="topbar">
-            <div>
-              <p className="eyebrow">SikhaDenge owned system</p>
-              <h1>WhatsApp AI Agent</h1>
+          <div className="sx-account">
+            <span className="sx-acc-avatar">{initials}</span>
+            <div className="sx-acc-copy">
+              <strong>{userName}</strong>
+              <small>{userRole.toLowerCase()}</small>
             </div>
-            <div className="topbar-actions">
-              <div className="system-status"><span /> Database connected</div>
-              <MetaConnectionStatus />
-            </div>
-          </header>
+            <LogoutButton />
+          </div>
+        </div>
+      </aside>
 
-          <section className="module-page-card" data-module={moduleKey}>
-            <header className="module-page-header">
-              <div className="module-page-heading">
-                <div className="module-page-icon" aria-hidden="true">
-                  <img src={moduleIcons[activeTitle]} alt="" />
-                </div>
-                <div className="module-page-copy">
-                  <p className="eyebrow">{eyebrow}</p>
-                  <h2>{title}</h2>
-                  <p>{description}</p>
-                </div>
-              </div>
-              <span className="module-page-badge">{activeTitle} module</span>
-            </header>
-            <div className="module-page-content">{children}</div>
-          </section>
-        </section>
+      <main className="sx-workspace">
+        <header className="sx-workspace-head">
+          <div className="sx-workspace-head-left">
+            <span className="sx-workspace-icon">
+              <SidebarMenuIcon title={activeTitle} size={22} />
+            </span>
+            <div className="sx-workspace-copy">
+              <p className="sx-workspace-eyebrow">{eyebrow}</p>
+              <h1>{title}</h1>
+            </div>
+          </div>
+          <div className="sx-workspace-head-right">
+            <MetaConnectionStatus />
+            <span className="sx-workspace-badge">{activeTitle} module</span>
+          </div>
+        </header>
+
+        <div className="sx-workspace-body">{children}</div>
       </main>
-    </>
+    </div>
   );
 }
