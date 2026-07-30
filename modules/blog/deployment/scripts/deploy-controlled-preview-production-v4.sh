@@ -44,6 +44,7 @@ def prefix_index(prefix: str) -> int:
         raise SystemExit(f"deployment_v4_prefix_marker_failed:{len(matches)}:{prefix}")
     return matches[0]
 
+
 # Harden rollback for the state where the old .next has moved but the staged
 # candidate rename fails before SWAPPED_NEXT can be set.
 mutated_i = exact_index("MUTATED=0")
@@ -89,24 +90,40 @@ lines[status_i:status_i + 1] = [
     '  echo "AUTHENTICATED_MALFORMED_SLUG_STATUS=$MALFORMED_AUTH_STATUS"\n',
 ]
 
-text = "".join(lines)
-contracts = {
-    "OLD_NEXT_MOVED=0": 1,
-    "OLD_NEXT_MOVED=1": 1,
-    "MALFORMED_UNAUTH_STATUS=": 1,
-    "MALFORMED_AUTH_STATUS=": 1,
-    'fail "unauthenticated_malformed_slug_status_invalid"': 1,
-    'fail "authenticated_malformed_slug_status_invalid"': 1,
-    "UNAUTHENTICATED_MALFORMED_SLUG_STATUS=": 1,
-    "AUTHENTICATED_MALFORMED_SLUG_STATUS=": 1,
-}
-for marker, expected in contracts.items():
-    actual = text.count(marker)
-    if actual != expected:
+# Validate generated script by exact complete lines or unambiguous line
+# prefixes. Raw substring counting is intentionally forbidden because
+# AUTHENTICATED_* is a suffix of UNAUTHENTICATED_*.
+stripped = [line.rstrip("\n") for line in lines]
+exact_contracts = [
+    "OLD_NEXT_MOVED=0",
+    "OLD_NEXT_MOVED=1",
+    'test "$MALFORMED_UNAUTH_STATUS" = "404" || fail "unauthenticated_malformed_slug_status_invalid"',
+    'jq -e \'.ok == false and .error == "NOT_FOUND"\' "$OUT/malformed-unauth.json" >/dev/null || fail "unauthenticated_malformed_slug_body_invalid"',
+    'test "$MALFORMED_AUTH_STATUS" = "400" || fail "authenticated_malformed_slug_status_invalid"',
+    'jq -e \'.ok == false and .error == "INVALID_SLUG"\' "$OUT/malformed-auth.json" >/dev/null || fail "authenticated_malformed_slug_body_invalid"',
+    '  echo "UNAUTHENTICATED_MALFORMED_SLUG_STATUS=$MALFORMED_UNAUTH_STATUS"',
+    '  echo "AUTHENTICATED_MALFORMED_SLUG_STATUS=$MALFORMED_AUTH_STATUS"',
+]
+for value in exact_contracts:
+    actual = stripped.count(value)
+    if actual != 1:
         raise SystemExit(
-            f"deployment_v4_postpatch_contract_failed:{actual}:{expected}:{marker}"
+            f"deployment_v4_exact_postpatch_contract_failed:{actual}:1:{value}"
         )
 
+prefix_contracts = [
+    'MALFORMED_UNAUTH_STATUS="$(curl ',
+    'MALFORMED_AUTH_STATUS="$(curl ',
+    'AUTH_STATUS="$(curl ',
+]
+for prefix in prefix_contracts:
+    actual = sum(1 for line in stripped if line.startswith(prefix))
+    if actual != 1:
+        raise SystemExit(
+            f"deployment_v4_prefix_postpatch_contract_failed:{actual}:1:{prefix}"
+        )
+
+text = "".join(lines)
 if 'MALFORMED_STATUS=' in text or 'MALFORMED_SLUG_STATUS=$MALFORMED_STATUS' in text:
     raise SystemExit("deployment_v4_legacy_malformed_contract_remains")
 
@@ -122,6 +139,7 @@ if test "$PATCH_ONLY" = "1"; then
   echo "SOURCE_BLOB=$SOURCE_BLOB"
   echo "ROLLBACK_HARDENING=PASS"
   echo "ACCESS_ORDER_VERIFICATION=PASS"
+  echo "EXACT_LINE_CONTRACT_VALIDATION=PASS"
   echo "PRODUCTION_DEPLOYMENT_PERFORMED=NO"
   echo "PM2_RESTART_PERFORMED=NO"
   echo "PREVIEW_TOKEN_CREATED=NO"
