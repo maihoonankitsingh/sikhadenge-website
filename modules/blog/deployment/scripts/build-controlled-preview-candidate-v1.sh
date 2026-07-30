@@ -2,6 +2,11 @@
 set -Eeuo pipefail
 umask 077
 
+# systemd transient services do not always provide HOME. Pin PM2 to the
+# production root account state so `pm2 jlist` never falls back to /etc/.pm2.
+export HOME="${HOME:-/root}"
+export PM2_HOME="${PM2_HOME:-$HOME/.pm2}"
+
 ROOT="${ROOT:-/var/www/sikhadenge.in/sikhadenge-website-space}"
 BASE_COMMIT="${BASE_COMMIT:-be9476bddb9b2091c37eab69049e2efef9c31879}"
 TARGET_COMMIT="${TARGET_COMMIT:-74af60d3a3026646a0b66feb869e5b7ce60bd229}"
@@ -35,9 +40,11 @@ fail() {
   exit 1
 }
 
-for command_name in git tar npm node psql sha256sum curl jq pm2 flock find stat; do
+for command_name in git tar npm node psql sha256sum curl jq pm2 flock find stat findmnt cmp awk cut sort wc du; do
   command -v "$command_name" >/dev/null 2>&1 || fail "${command_name}_not_found"
 done
+
+test -d "$PM2_HOME" || fail "pm2_home_missing"
 
 exec 9>"$LOCK_FILE"
 flock -n 9 || fail "candidate_build_lock_busy"
@@ -51,9 +58,13 @@ LIVE_HEAD_BEFORE="$(git -C "$ROOT" rev-parse HEAD)"
 LIVE_BRANCH_BEFORE="$(git -C "$ROOT" branch --show-current)"
 LIVE_STATUS_BEFORE="$(git -C "$ROOT" status --porcelain)"
 LIVE_BUILD_ID_BEFORE="$(cat "$ROOT/.next/BUILD_ID" 2>/dev/null || true)"
-PM2_BEFORE="$(pm2 jlist | jq -c --arg name "$PM2_NAME" '.[] | select(.name==$name) | {pid,status:.pm2_env.status,restarts:.pm2_env.restart_time}')"
+PM2_JSON_BEFORE="$(pm2 jlist 2>"$OUT/pm2-before.stderr.log")" || fail "production_pm2_snapshot_before_failed"
+printf '%s' "$PM2_JSON_BEFORE" | jq -e 'type == "array"' >/dev/null || fail "production_pm2_json_before_invalid"
+PM2_BEFORE="$(printf '%s' "$PM2_JSON_BEFORE" | jq -c --arg name "$PM2_NAME" '.[] | select(.name==$name) | {pid,status:.pm2_env.status,restarts:.pm2_env.restart_time}')"
 
 {
+  echo "HOME=$HOME"
+  echo "PM2_HOME=$PM2_HOME"
   echo "LIVE_HEAD_BEFORE=$LIVE_HEAD_BEFORE"
   echo "LIVE_BRANCH_BEFORE=$LIVE_BRANCH_BEFORE"
   echo "LIVE_BUILD_ID_BEFORE=$LIVE_BUILD_ID_BEFORE"
@@ -201,7 +212,9 @@ LIVE_HEAD_AFTER="$(git -C "$ROOT" rev-parse HEAD)"
 LIVE_BRANCH_AFTER="$(git -C "$ROOT" branch --show-current)"
 LIVE_STATUS_AFTER="$(git -C "$ROOT" status --porcelain)"
 LIVE_BUILD_ID_AFTER="$(cat "$ROOT/.next/BUILD_ID" 2>/dev/null || true)"
-PM2_AFTER="$(pm2 jlist | jq -c --arg name "$PM2_NAME" '.[] | select(.name==$name) | {pid,status:.pm2_env.status,restarts:.pm2_env.restart_time}')"
+PM2_JSON_AFTER="$(pm2 jlist 2>"$OUT/pm2-after.stderr.log")" || fail "production_pm2_snapshot_after_failed"
+printf '%s' "$PM2_JSON_AFTER" | jq -e 'type == "array"' >/dev/null || fail "production_pm2_json_after_invalid"
+PM2_AFTER="$(printf '%s' "$PM2_JSON_AFTER" | jq -c --arg name "$PM2_NAME" '.[] | select(.name==$name) | {pid,status:.pm2_env.status,restarts:.pm2_env.restart_time}')"
 
 test "$LIVE_HEAD_AFTER" = "$LIVE_HEAD_BEFORE" || fail "production_head_changed"
 test "$LIVE_BRANCH_AFTER" = "$LIVE_BRANCH_BEFORE" || fail "production_branch_changed"
