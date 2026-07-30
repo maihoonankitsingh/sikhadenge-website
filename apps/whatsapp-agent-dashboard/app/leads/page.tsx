@@ -1,5 +1,4 @@
 import LeadManager from "../../components/leads/LeadManager";
-import CoreWorkflowShortcuts from "../../components/navigation/CoreWorkflowShortcuts";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
@@ -19,7 +18,6 @@ export default async function LeadsPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <CoreWorkflowShortcuts />
       <LeadManager userRole={user.role} />
     </DashboardModuleShell>
   );

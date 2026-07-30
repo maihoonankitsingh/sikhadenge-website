@@ -41,6 +41,7 @@ import "./sidebar-icons-final.css";
 import "./sidebar-scroll-clarity.css";
 import "./live-header-logo.css";
 import "./dashboard-refinement.css";
+import "./all-modules-advanced.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
