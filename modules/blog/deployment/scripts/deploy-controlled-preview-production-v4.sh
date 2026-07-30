@@ -6,6 +6,7 @@ ROOT="${ROOT:-/var/www/sikhadenge.in/sikhadenge-website-space}"
 SOURCE_COMMIT="${SOURCE_COMMIT:-38e4f3949fc258d8c8c9d6b1d250a4e53a154a3e}"
 SOURCE_BLOB="${SOURCE_BLOB:-4a7de18b310590fc16a8ed0e41514ac08fb94961}"
 SOURCE_PATH="modules/blog/deployment/scripts/deploy-controlled-preview-production-v1.sh"
+PATCH_ONLY="${PATCH_ONLY:-0}"
 TMP="/tmp/deploy-controlled-preview-production-v4-$PPID-$$.sh"
 
 cleanup() {
@@ -17,6 +18,7 @@ command -v git >/dev/null 2>&1
 command -v python3 >/dev/null 2>&1
 
 test -d "$ROOT/.git"
+test "$PATCH_ONLY" = "0" || test "$PATCH_ONLY" = "1"
 test "$(git -C "$ROOT" rev-parse "$SOURCE_COMMIT:$SOURCE_PATH")" = "$SOURCE_BLOB"
 
 git -C "$ROOT" show "$SOURCE_COMMIT:$SOURCE_PATH" > "$TMP"
@@ -113,6 +115,18 @@ PY
 
 chmod 700 "$TMP"
 bash -n "$TMP"
+
+if test "$PATCH_ONLY" = "1"; then
+  echo "BLOG_REVIEW_PREVIEW_DEPLOYMENT_PATCH_VALIDATION=PASS"
+  echo "SOURCE_COMMIT=$SOURCE_COMMIT"
+  echo "SOURCE_BLOB=$SOURCE_BLOB"
+  echo "ROLLBACK_HARDENING=PASS"
+  echo "ACCESS_ORDER_VERIFICATION=PASS"
+  echo "PRODUCTION_DEPLOYMENT_PERFORMED=NO"
+  echo "PM2_RESTART_PERFORMED=NO"
+  echo "PREVIEW_TOKEN_CREATED=NO"
+  exit 0
+fi
 
 export HOME="${HOME:-/root}"
 export PM2_HOME="${PM2_HOME:-/root/.pm2}"
