@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0.0",
+  "releaseId": "controlled-blog-review-preview-production-readiness-v1",
+  "recordedAt": "2026-07-30T10:25:20+05:30",
+  "scope": "internal GET-only controlled Blog review preview production readiness",
+  "repository": {
+    "name": "maihoonankitsingh/sikhadenge-website",
+    "productionBranch": "live-clean-sync-20260424",
+    "deploymentBranch": "deploy/blog-review-preview-prod-20260729",
+    "productionBaseCommit": "be9476bddb9b2091c37eab69049e2efef9c31879",
+    "minimalRuntimeCommit": "74af60d3a3026646a0b66feb869e5b7ce60bd229",
+    "candidateBuildScriptCommit": "c199300aebd7d84366d73726c52feae8f3f71898",
+    "runtimeSmokeScriptCommit": "b9fcc83cd332ecb0284f90ce4b950eb40c6e4e00"
+  },
+  "priorEvidence": {
+    "routeSmokeRelease": "0013-controlled-blog-review-preview-route-smoke-v1",
+    "productionDeploymentApprovalRelease": "0014-controlled-blog-review-preview-production-deployment-approval-v1"
+  },
+  "candidateBuild": {
+    "status": "PASS",
+    "buildId": "rmOFYZtEaWPw35Ygy2l7q",
+    "candidateDirectory": "/var/www/sikhadenge.in/_candidate-builds/blog-review-preview-prod-v1-20260730_094918",
+    "reportDirectory": "/var/lib/sikhadenge-blog-artifacts/blog-review-preview-candidate-build-v1-20260730_094918",
+    "standaloneCandidateDirectory": true,
+    "sharedNodeModulesSymlink": false,
+    "npmCi": "PASS",
+    "nextPackageIntegrity": "PASS",
+    "isolatedPrismaGenerate": "PASS",
+    "nextProductionBuild": "PASS",
+    "controlledPreviewRouteArtifact": "PASS",
+    "databaseSignatureUnchanged": true,
+    "databaseWritePerformed": false,
+    "productionHeadUnchanged": true,
+    "productionBuildIdUnchanged": true,
+    "productionPm2StateUnchanged": true,
+    "productionHttpBaseline": "PASS"
+  },
+  "isolatedRuntimeSmoke": {
+    "status": "PASS",
+    "reportDirectory": "/var/lib/sikhadenge-blog-artifacts/blog-review-preview-candidate-runtime-smoke-v1-20260730_102517",
+    "bind": "127.0.0.1",
+    "port": 3310,
+    "localRootStatus": 200,
+    "localBlogStatus": 200,
+    "localExistingBlogStatus": 200,
+    "unauthenticatedPreviewStatus": 404,
+    "wrongTokenPreviewStatus": 404,
+    "malformedSlugStatus": 400,
+    "authenticatedPreviewStatus": 200,
+    "authenticatedRecordState": "DISCOVERED_WRITING_MIGRATED_BLOCKED",
+    "reviewOnlySafetyContract": "PASS",
+    "noindexNofollowNoarchiveHeaders": "PASS",
+    "privateNoStoreHeaders": "PASS",
+    "canonicalHeaderPresent": false,
+    "ephemeralTokenReturned": false,
+    "ephemeralTokenStored": false,
+    "ephemeralTokenLeakedToArtifacts": false,
+    "databaseSignatureUnchanged": true,
+    "databaseWritePerformed": false,
+    "productionHeadUnchanged": true,
+    "productionBuildIdUnchanged": true,
+    "productionPm2StateUnchanged": true,
+    "productionHttpBaseline": "PASS"
+  },
+  "productionStateAtReadiness": {
+    "head": "be9476bddb9b2091c37eab69049e2efef9c31879",
+    "buildId": "QoIU-RyXUuhyOX2WOMKtk",
+    "pm2ProcessName": "sikhadenge-in",
+    "pm2Pid": 2516160,
+    "pm2Status": "online",
+    "pm2RestartCount": 45
+  },
+  "safety": {
+    "liveBlogRouteModified": false,
+    "productionDeploymentPerformed": false,
+    "productionPm2RestartPerformed": false,
+    "persistentPreviewTokenCreated": false,
+    "publicationApproved": false,
+    "indexEligibilityApproved": false,
+    "databaseWriteAllowed": false,
+    "readyForControlledDeploymentExecution": true
+  }
+}
