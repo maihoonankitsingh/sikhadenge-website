@@ -1,5 +1,4 @@
 import ContactManager from "../../components/contacts/ContactManager";
-import CoreWorkflowShortcuts from "../../components/navigation/CoreWorkflowShortcuts";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
@@ -19,7 +18,6 @@ export default async function ContactsPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <CoreWorkflowShortcuts />
       <ContactManager userRole={user.role} />
     </DashboardModuleShell>
   );
