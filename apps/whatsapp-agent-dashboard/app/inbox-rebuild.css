@@ -447,7 +447,7 @@
 .sx-msg-video, .sx-msg-audio { max-width: 260px; border-radius: 12px; }
 .sx-msg-doc { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.16); color: inherit; }
 .sx-msgrow.inbound .sx-msg-doc { background: #fff; border: 1px solid var(--line); }
-.sx-msg-doc span { font-size: 10px; font-weight: 800; opacity: 0.7; }
+.sx-msg-doc span { font-size: 10px; font-weight: 700; opacity: 0.7; }
 
 .sx-agentnote { display: flex; align-items: flex-start; gap: 10px; margin: 12px auto 0; max-width: 92%; padding: 12px 14px; border-radius: 14px; background: #f5f8ff; border: 1px solid #e2ebff; }
 .sx-agentnote-dot { flex: none; width: 8px; height: 8px; margin-top: 5px; border-radius: 999px; background: var(--blue); box-shadow: 0 0 0 4px rgba(59, 109, 246, 0.12); }
@@ -456,26 +456,84 @@
 .sx-agentnote p { font-size: 12.5px; color: var(--ink-2); }
 .sx-agentnote button { flex: none; align-self: center; padding: 6px 12px; border: 1px solid #cdddff; border-radius: 9px; background: #fff; color: var(--blue-600); font-size: 12px; font-weight: 600; }
 
-.sx-composer { flex: none; padding: 14px 20px 18px; border-top: 1px solid var(--line); background: #fff; }
+.sx-composer { flex: none; padding: 14px 20px 20px; border-top: 1px solid var(--line); background: #fff; }
 .sx-file-input { display: none; }
-.sx-composer-media { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.sx-composer-media { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
 .sx-composer-media img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }
-.sx-composer-mediatype { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: #e6ecff; color: var(--blue-600); font-size: 10px; font-weight: 800; }
+.sx-composer-mediatype { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: #e6ecff; color: var(--blue-600); font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
 .sx-composer-media div { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-.sx-composer-media strong { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-composer-media strong { font-size: 12.5px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sx-composer-media small { font-size: 11px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sx-composer-media button { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: #eef0f4; color: var(--muted); }
+.sx-composer-media button { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: #eef0f4; color: var(--muted); transition: background-color 120ms ease, color 120ms ease; }
+.sx-composer-media button:hover { background: #e3e6ec; color: var(--ink); }
 .sx-composer-note { margin-bottom: 8px; font-size: 12px; color: var(--muted); }
-.sx-composer-row { display: flex; align-items: flex-end; gap: 6px; padding: 6px; border: 1px solid var(--line-2); border-radius: 15px; background: var(--panel-2); transition: border-color 130ms ease, box-shadow 130ms ease, background-color 130ms ease; }
-.sx-composer-row:focus-within { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59, 109, 246, 0.1); }
-.sx-composer-tool { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 0; border-radius: 10px; background: transparent; color: var(--muted); transition: background-color 120ms ease, color 120ms ease; }
-.sx-composer-tool:hover:not(:disabled) { background: #eef0f4; color: var(--ink); }
-.sx-composer-tool:disabled { opacity: 0.5; cursor: default; }
-.sx-composer-row textarea { flex: 1 1 auto; min-width: 0; align-self: center; max-height: 120px; padding: 9px 4px; border: 0; background: transparent; outline: none; resize: none; color: var(--ink); font-size: 14px; line-height: 1.4; }
+
+/* composer row: clean rounded input with grouped, well-spaced controls */
+.sx-composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 7px 8px 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--panel-2);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+.sx-composer-row:focus-within {
+  border-color: var(--blue);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 109, 246, 0.12);
+}
+.sx-composer-tools { display: flex; align-items: center; gap: 2px; flex: none; align-self: flex-end; }
+.sx-composer-tool {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  align-self: flex-end;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.sx-composer-tool:hover:not(:disabled) { background: #e9edf3; color: var(--ink); }
+.sx-composer-tool:active:not(:disabled) { background: #dfe4ec; }
+.sx-composer-tool:disabled { opacity: 0.45; cursor: default; }
+.sx-composer-row textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  max-height: 132px;
+  padding: 10px 6px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  resize: none;
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
 .sx-composer-row textarea::placeholder { color: var(--faint); }
-.sx-send { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 0; border-radius: 11px; background: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(59, 109, 246, 0.32); transition: background-color 130ms ease, opacity 130ms ease; }
-.sx-send:hover:not(:disabled) { background: var(--blue-600); }
-.sx-send:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
+.sx-composer-divider { flex: none; align-self: center; width: 1px; height: 24px; margin: 0 2px; background: var(--line-2); }
+.sx-send {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-self: flex-end;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(160deg, var(--blue), var(--blue-600));
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(59, 109, 246, 0.34);
+  transition: transform 120ms ease, box-shadow 130ms ease, filter 130ms ease, background-color 130ms ease;
+}
+.sx-send:hover:not(:disabled) { filter: brightness(1.05); box-shadow: 0 8px 20px rgba(59, 109, 246, 0.42); transform: translateY(-1px); }
+.sx-send:active:not(:disabled) { transform: translateY(0); box-shadow: 0 4px 12px rgba(59, 109, 246, 0.34); }
+.sx-send:disabled { background: #c8ccd4; color: #fff; box-shadow: none; cursor: default; }
 .sx-spin { font-size: 16px; }
 
 /* ======================================================== details column */
@@ -578,6 +636,15 @@
   .sx-chat-person { flex: 1 1 auto; min-width: 0; }
   .sx-chat-actions { flex-basis: 100%; justify-content: space-between; }
   .sx-avatar-lg { width: 40px; height: 40px; }
+
+  /* composer: give the input priority on narrow screens by dropping the
+     divider and tightening spacing — every control (attach, template picker,
+     Template Centre, send) stays reachable. */
+  .sx-composer { padding: 12px 14px 14px; }
+  .sx-composer-row { gap: 4px; padding: 6px 6px 6px 8px; }
+  .sx-composer-divider { display: none; }
+  .sx-composer-tool { width: 38px; height: 38px; }
+  .sx-composer-row textarea { padding: 9px 4px; }
 
   /* sidebar → fixed bottom bar (icon nav); hooks remain in the DOM */
   .sx-inbox .sx-side {

@@ -424,6 +424,8 @@ function Ic({ name, size = 18 }: { name: string; size?: number }) {
       return (<svg {...p}><path d="m22 2-7 20-4-9-9-4 20-7z" /><path d="M22 2 11 13" /></svg>);
     case "plus":
       return (<svg {...p}><path d="M12 5v14" /><path d="M5 12h14" /></svg>);
+    case "paperclip":
+      return (<svg {...p}><path d="m21.44 11.05-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.49" /></svg>);
     case "sparkle":
       return (<svg {...p}><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z" /></svg>);
     case "grid":
@@ -1164,10 +1166,7 @@ export default function InboxDashboardV2({
           {composerNotice ? <div className="sx-composer-note">{composerNotice}</div> : null}
           <div className="sx-composer-row">
             <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
-              {uploading ? <span className="sx-spin">…</span> : <Ic name="plus" />}
-            </button>
-            <button className="sx-composer-tool" type="button" title="Open templates and targeted campaigns">
-              <Ic name="grid" />
+              {uploading ? <span className="sx-spin">…</span> : <Ic name="paperclip" />}
             </button>
             <textarea
               value={draft}
@@ -1182,9 +1181,15 @@ export default function InboxDashboardV2({
                 }
               }}
             />
-            <button className="sx-composer-tool" type="button" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>
-              <Ic name="sparkle" />
-            </button>
+            <div className="sx-composer-tools">
+              <button className="sx-composer-tool" type="button" title="Open templates and targeted campaigns">
+                <Ic name="grid" />
+              </button>
+              <button className="sx-composer-tool" type="button" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>
+                <Ic name="sparkle" />
+              </button>
+            </div>
+            <span className="sx-composer-divider" aria-hidden="true" />
             <button
               className="sx-send"
               type="button"
