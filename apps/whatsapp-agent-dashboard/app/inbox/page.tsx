@@ -1,21 +1,26 @@
 import InboxDashboardV2 from "../../components/inbox/InboxDashboardV2";
+import CoreWorkflowShortcuts from "../../components/navigation/CoreWorkflowShortcuts";
 import { requireDashboardUser } from "../../lib/auth/session";
 import {
   getInboxConversation,
   listInboxConversations,
 } from "../../lib/inbox/conversation-repository";
 import "../inbox-rebuild.css";
+import "../core-workflows-refinement.css";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams?: { conversation?: string };
+  searchParams?: { conversation?: string; conversationId?: string };
 }) {
   const user = await requireDashboardUser();
   const conversations = await listInboxConversations();
-  const requestedId = searchParams?.conversation?.trim() || null;
+  const requestedId =
+    searchParams?.conversation?.trim() ||
+    searchParams?.conversationId?.trim() ||
+    null;
   const initialId =
     requestedId && conversations.some((item) => item.id === requestedId)
       ? requestedId
@@ -25,11 +30,14 @@ export default async function InboxPage({
     : null;
 
   return (
-    <InboxDashboardV2
-      initialConversations={conversations}
-      initialConversation={initialConversation}
-      userName={user.name}
-      userRole={user.role.toLowerCase()}
-    />
+    <>
+      <CoreWorkflowShortcuts />
+      <InboxDashboardV2
+        initialConversations={conversations}
+        initialConversation={initialConversation}
+        userName={user.name}
+        userRole={user.role.toLowerCase()}
+      />
+    </>
   );
 }
