@@ -1,7 +1,7 @@
 import { MessageActor } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
-import { normalizeContextualCustomerMessage } from "./contextual-message";
+import { contextualizeAgentConversation } from "./contextual-message";
 import { getAgentPolicy } from "./policy";
 import type { AgentInput } from "./types";
 
@@ -86,16 +86,18 @@ export async function buildAgentInputFromConversation(input: {
       ];
     });
 
+  const contextualConversation = contextualizeAgentConversation({
+    customerMessage: input.customerMessage,
+    history,
+  });
+
   return {
     conversationId: conversation.id,
-    customerMessage: normalizeContextualCustomerMessage({
-      customerMessage: input.customerMessage,
-      history,
-    }),
+    customerMessage: contextualConversation.customerMessage,
     languageHint:
       conversation.detectedLanguage ?? conversation.contact.language ?? null,
     conversationSummary: conversation.aiSummary,
-    history,
+    history: contextualConversation.history,
     contact: {
       name:
         conversation.contact.displayName ?? conversation.contact.profileName ?? null,
