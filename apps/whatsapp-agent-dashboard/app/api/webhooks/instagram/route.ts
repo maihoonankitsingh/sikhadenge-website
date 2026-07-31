@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { syncInstagramProfilesFromWebhook } from "../../../../lib/instagram/profile-sync";
 import { processInstagramWebhook } from "../../../../lib/instagram/webhook-processor";
 import {
   getInstagramAppSecret,
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await processInstagramWebhook(payload, rawBody);
+    await syncInstagramProfilesFromWebhook(payload);
     return NextResponse.json(
       { received: true, ...result },
       { status: 200, headers: NO_STORE_HEADERS },
