@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { processSocialWebhookAgentBridge } from "../../../../lib/agent/social-webhook-agent-bridge";
 import { syncInstagramProfilesFromWebhook } from "../../../../lib/instagram/profile-sync";
 import { processInstagramWebhook } from "../../../../lib/instagram/webhook-processor";
 import {
@@ -90,8 +91,27 @@ export async function POST(request: Request) {
   try {
     const result = await processInstagramWebhook(payload, rawBody);
     await syncInstagramProfilesFromWebhook(payload);
+
+    let agent: Awaited<ReturnType<typeof processSocialWebhookAgentBridge>> | null = null;
+    try {
+      agent = await processSocialWebhookAgentBridge({
+        payload,
+        channel: "instagram",
+      });
+    } catch {
+      agent = {
+        matched: 0,
+        analyzed: 0,
+        queued: 0,
+        sent: 0,
+        handoffs: 0,
+        skipped: 0,
+        failed: 1,
+      };
+    }
+
     return NextResponse.json(
-      { received: true, ...result },
+      { received: true, ...result, agent },
       { status: 200, headers: NO_STORE_HEADERS },
     );
   } catch {
