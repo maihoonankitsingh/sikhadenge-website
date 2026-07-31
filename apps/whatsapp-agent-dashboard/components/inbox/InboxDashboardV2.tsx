@@ -803,9 +803,15 @@ export default function InboxDashboardV2({
       if (!response.ok) throw new Error(body.error || "Message could not be sent.");
       setDraft("");
       setUploadedMedia(null);
+      const sentChannel = selectedSummary
+        ? channelOf(selectedSummary)
+        : "whatsapp";
+
       setComposerNotice(
         body.outboundSent
-          ? "Message sent through Meta WhatsApp Cloud API."
+          ? sentChannel === "instagram"
+            ? "Message sent through Instagram Messaging API."
+            : "Message sent through Meta WhatsApp Cloud API."
           : body.dispatchError
             ? `Message queued, but delivery failed: ${body.dispatchError}`
             : "Message queued. Open Cutover to activate live outbound delivery.",
@@ -1167,6 +1173,11 @@ export default function InboxDashboardV2({
             </div>
           ) : null}
           {composerNotice ? <div className="sx-composer-note">{composerNotice}</div> : null}
+          <div className="sx-composer-channel-note">
+            {selectedSummary && channelOf(selectedSummary) === "instagram"
+              ? "Messages are sent through Instagram Messaging API."
+              : "Messages are sent through Meta WhatsApp Cloud API."}
+          </div>
           <div className="sx-composer-row">
             <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
               {uploading ? <span className="sx-spin">…</span> : <Ic name="paperclip" />}
@@ -1197,7 +1208,11 @@ export default function InboxDashboardV2({
               className="sx-send"
               type="button"
               disabled={!selected || sending || uploading || (!draft.trim() && !uploadedMedia)}
-              title="Send through the current WhatsApp Cloud API runtime mode"
+              title={
+                selectedSummary && channelOf(selectedSummary) === "instagram"
+                  ? "Send through Instagram Messaging API"
+                  : "Send through Meta WhatsApp Cloud API"
+              }
               onClick={() => void sendMessage()}
             >
               {sending ? <span className="sx-spin">…</span> : <Ic name="send" size={19} />}
