@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import { generateAdmissionConversationReply } from "../lib/agent/admission-conversation-flow";
 import {
   contextualizeAgentConversation,
   normalizeContextualCustomerMessage,
@@ -73,8 +74,8 @@ assert.equal(
 );
 assert.equal(
   recovered.history.filter((item) => item.role === "assistant").at(-1)?.text,
-  linkQuestion.text,
-  "The pending demo-link question must become the active assistant context.",
+  "Main Free Demo Class ka link share kar doon?",
+  "The recovered prompt must be canonicalized as a link-sharing question, not a demo-watched question.",
 );
 assert.equal(
   recovered.history.at(-1),
@@ -82,4 +83,37 @@ assert.equal(
   "The current customer message must remain the final chronological history item.",
 );
 
-console.log("Contextual demo link confirmation tests passed: 8 cases.");
+const directLinkDecision = generateAdmissionConversationReply({
+  agentInput: {
+    customerMessage: recovered.customerMessage,
+    languageHint: "hinglish",
+    conversationSummary: null,
+    history: recovered.history,
+    contact: { name: "Rahul Kumar" },
+    lead: { stage: "DISCOVERY" },
+  },
+  classification: {
+    language: "hinglish",
+    intent: "DEMO_CLASS",
+    confidence: 0.99,
+    requiresHuman: false,
+    handoffReason: null,
+  },
+});
+
+assert.ok(
+  directLinkDecision,
+  "The recovered live sequence must produce an admission-flow reply.",
+);
+assert.match(
+  directLinkDecision.reply,
+  /https:\/\/www\.sikhadenge\.in/u,
+  "The recovered live sequence must send the verified demo link.",
+);
+assert.doesNotMatch(
+  directLinkDecision.reply,
+  /Fee, current offer|call ke liye/iu,
+  "A demo-link confirmation must not be routed into fee or call scheduling.",
+);
+
+console.log("Contextual demo link confirmation tests passed: 11 cases.");

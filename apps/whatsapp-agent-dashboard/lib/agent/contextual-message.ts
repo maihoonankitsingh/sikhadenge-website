@@ -1,6 +1,8 @@
 import type { AgentHistoryMessage } from "./types";
 
 const RECENT_CONTEXT_WINDOW = 12;
+const CANONICAL_DEMO_LINK_QUESTION =
+  "Main Free Demo Class ka link share kar doon?";
 
 const DEMO_LINK_QUESTION =
   /(?:main\s+(?:free\s+)?demo\s+(?:class\s+)?ka\s+link\s+share\s+kar\s+doon|main\s+link\s+share\s+kar\s+doon|demo\s+(?:class\s+)?ka\s+link\s+(?:share|bhej)|link\s+(?:share|bhej)\s+kar\s+doon)/iu;
@@ -75,12 +77,16 @@ export function contextualizeAgentConversation(input: {
   const withoutRecoveredQuestion = withoutCurrent.filter(
     (_item, index) => index !== demoQuestionIndex,
   );
+  const recoveredDemoQuestion: AgentHistoryMessage = {
+    ...demoQuestion,
+    text: CANONICAL_DEMO_LINK_QUESTION,
+  };
 
   return {
     customerMessage,
     history: [
       ...withoutRecoveredQuestion,
-      demoQuestion,
+      recoveredDemoQuestion,
       ...(currentCustomer ? [currentCustomer] : []),
     ],
   };
