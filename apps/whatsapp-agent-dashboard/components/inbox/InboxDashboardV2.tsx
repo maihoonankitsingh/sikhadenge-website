@@ -772,6 +772,13 @@ export default function InboxDashboardV2({
 
   async function sendMessage() {
     if (!selectedId || sending || (!draft.trim() && !uploadedMedia)) return;
+    const selectedChannel = selectedSummary
+      ? channelOf(selectedSummary)
+      : "whatsapp";
+    if (selectedChannel === "messenger" && uploadedMedia) {
+      setError("Messenger currently supports text replies only.");
+      return;
+    }
     setSending(true);
     setError(null);
     setComposerNotice(null);
@@ -807,15 +814,15 @@ export default function InboxDashboardV2({
       if (!response.ok) throw new Error(body.error || "Message could not be sent.");
       setDraft("");
       setUploadedMedia(null);
-      const sentChannel = selectedSummary
-        ? channelOf(selectedSummary)
-        : "whatsapp";
+      const sentChannel = selectedChannel;
 
       setComposerNotice(
         body.outboundSent
           ? sentChannel === "instagram"
             ? "Message sent through Instagram Messaging API."
-            : "Message sent through Meta WhatsApp Cloud API."
+            : sentChannel === "messenger"
+              ? "Message sent through Facebook Messenger Send API."
+              : "Message sent through Meta WhatsApp Cloud API."
           : body.dispatchError
             ? `Message queued, but delivery failed: ${body.dispatchError}`
             : "Message queued. Open Cutover to activate live outbound delivery.",
@@ -1181,7 +1188,7 @@ export default function InboxDashboardV2({
             {selectedSummary && channelOf(selectedSummary) === "instagram"
               ? "Messages are sent through Instagram Messaging API."
               : selectedSummary && channelOf(selectedSummary) === "messenger"
-                ? "Messenger incoming sync is live. Dashboard replies are being enabled next."
+                ? "Text replies are sent through Facebook Messenger Send API. Attachments are not enabled yet."
                 : "Messages are sent through Meta WhatsApp Cloud API."}
           </div>
           <div className="sx-composer-row">
@@ -1193,7 +1200,7 @@ export default function InboxDashboardV2({
               onChange={(event) => setDraft(event.target.value)}
               placeholder={uploadedMedia ? "Add an optional caption…" : "Write a message…"}
               rows={1}
-              disabled={!selected || sending || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false)}
+              disabled={!selected || sending}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -1213,12 +1220,22 @@ export default function InboxDashboardV2({
             <button
               className="sx-send"
               type="button"
-              disabled={!selected || sending || uploading || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false) || (!draft.trim() && !uploadedMedia)}
+              disabled={
+                !selected ||
+                sending ||
+                uploading ||
+                (!draft.trim() && !uploadedMedia) ||
+                Boolean(
+                  selectedSummary &&
+                    channelOf(selectedSummary) === "messenger" &&
+                    uploadedMedia,
+                )
+              }
               title={
                 selectedSummary && channelOf(selectedSummary) === "instagram"
                   ? "Send through Instagram Messaging API"
                   : selectedSummary && channelOf(selectedSummary) === "messenger"
-                    ? "Messenger replies are not enabled yet"
+                    ? "Send text through Facebook Messenger Send API"
                     : "Send through Meta WhatsApp Cloud API"
               }
               onClick={() => void sendMessage()}
