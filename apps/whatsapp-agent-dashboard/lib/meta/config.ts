@@ -39,3 +39,19 @@ export function getInstagramWebhookMaxBytes(): number {
   }
   return Math.min(Math.floor(configured), 10_000_000);
 }
+
+export function getMessengerVerifyToken(): string {
+  return requiredEnvironmentValue("MESSENGER_VERIFY_TOKEN");
+}
+
+export function getMessengerAppSecret(): string {
+  return requiredEnvironmentValue("MESSENGER_APP_SECRET");
+}
+
+export function getMessengerWebhookMaxBytes(): number {
+  const configured = Number(process.env.MESSENGER_WEBHOOK_MAX_BYTES);
+  if (!Number.isFinite(configured) || configured < 1_024) {
+    return DEFAULT_MAX_WEBHOOK_BYTES;
+  }
+  return Math.min(Math.floor(configured), 10_000_000);
+}
