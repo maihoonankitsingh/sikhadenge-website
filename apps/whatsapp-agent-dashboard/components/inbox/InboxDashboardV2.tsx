@@ -143,12 +143,12 @@ type ChannelDef = {
   connected: boolean;
 };
 
-// WhatsApp and Instagram are connected live transports.
+// WhatsApp, Instagram, and Messenger have live inbound transports.
 // Remaining channels stay disabled until their transport is implemented.
 const CHANNELS: ChannelDef[] = [
   { id: "whatsapp", label: "WhatsApp", connected: true },
   { id: "instagram", label: "Instagram", connected: true },
-  { id: "messenger", label: "Messenger", connected: false },
+  { id: "messenger", label: "Messenger", connected: true },
   { id: "telegram", label: "Telegram", connected: false },
   { id: "linkedin", label: "LinkedIn", connected: false },
   { id: "twitter", label: "X / Twitter", connected: false },
@@ -163,6 +163,10 @@ function channelOf(conversation: InboxConversationSummary): ChannelId {
 
   if (source === "instagram") {
     return "instagram";
+  }
+
+  if (source === "messenger") {
+    return "messenger";
   }
 
   return "whatsapp";
@@ -993,7 +997,7 @@ export default function InboxDashboardV2({
         <div className="sx-convos">
           {filteredConversations.length === 0 ? (
             activeChannel.connected ? (
-              <div className="sx-empty"><strong>No conversations found</strong><p>New WhatsApp messages appear here automatically.</p></div>
+              <div className="sx-empty"><strong>No conversations found</strong><p>New {activeChannel.label} messages appear here automatically.</p></div>
             ) : (
               <div className="sx-empty">
                 <strong>No {activeChannel.label} conversations yet</strong>
@@ -1176,10 +1180,12 @@ export default function InboxDashboardV2({
           <div className="sx-composer-channel-note">
             {selectedSummary && channelOf(selectedSummary) === "instagram"
               ? "Messages are sent through Instagram Messaging API."
-              : "Messages are sent through Meta WhatsApp Cloud API."}
+              : selectedSummary && channelOf(selectedSummary) === "messenger"
+                ? "Messenger incoming sync is live. Dashboard replies are being enabled next."
+                : "Messages are sent through Meta WhatsApp Cloud API."}
           </div>
           <div className="sx-composer-row">
-            <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
+            <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false)} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
               {uploading ? <span className="sx-spin">…</span> : <Ic name="paperclip" />}
             </button>
             <textarea
@@ -1187,7 +1193,7 @@ export default function InboxDashboardV2({
               onChange={(event) => setDraft(event.target.value)}
               placeholder={uploadedMedia ? "Add an optional caption…" : "Write a message…"}
               rows={1}
-              disabled={!selected || sending}
+              disabled={!selected || sending || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -1207,11 +1213,13 @@ export default function InboxDashboardV2({
             <button
               className="sx-send"
               type="button"
-              disabled={!selected || sending || uploading || (!draft.trim() && !uploadedMedia)}
+              disabled={!selected || sending || uploading || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false) || (!draft.trim() && !uploadedMedia)}
               title={
                 selectedSummary && channelOf(selectedSummary) === "instagram"
                   ? "Send through Instagram Messaging API"
-                  : "Send through Meta WhatsApp Cloud API"
+                  : selectedSummary && channelOf(selectedSummary) === "messenger"
+                    ? "Messenger replies are not enabled yet"
+                    : "Send through Meta WhatsApp Cloud API"
               }
               onClick={() => void sendMessage()}
             >
