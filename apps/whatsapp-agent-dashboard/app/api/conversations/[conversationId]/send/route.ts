@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
 import { prisma } from "../../../../../lib/db/prisma";
 import { sendInstagramConversationMessage } from "../../../../../lib/instagram/outbound-service";
+import { sendMessengerConversationMessage } from "../../../../../lib/messenger/outbound-service";
 import {
   dispatchOutboundMessage,
   queueOutboundMessage,
@@ -155,18 +156,20 @@ export async function POST(
     }
 
     const source = conversation.source?.trim().toLowerCase();
+
     if (source === "messenger") {
-      return NextResponse.json(
-        {
-          error:
-            "Messenger incoming sync is live, but dashboard replies are not enabled yet.",
-          outboundSent: false,
-        },
-        {
-          status: 422,
-          headers: { "Cache-Control": "no-store" },
-        },
-      );
+      const result = await sendMessengerConversationMessage({
+        conversationId: context.params.conversationId,
+        actor: MessageActor.COUNSELOR,
+        sentById: user.id,
+        content,
+        idempotencyKey,
+      });
+
+      return NextResponse.json(result, {
+        status: result.duplicate ? 200 : 201,
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     if (source === "instagram") {
