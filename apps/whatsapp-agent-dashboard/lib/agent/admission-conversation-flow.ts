@@ -294,7 +294,7 @@ function demoFlow(input: AgentInput): AdmissionFlowReply | null {
     if (NEGATIVE_DEMO_FEEDBACK.test(message)) {
       return flowReply({
         reply:
-          "Bilkul, aap apna doubt normal message mein likh dijiye. Main pehle wahi clear karungi. 😊",
+          "Bilkul, aap apna doubt normal message mein likh dijiye. Main pehle wahi clear karungi. 😊\n\nDemo Class mein exactly kis point par doubt hua?",
         summary: "Invited the learner to explain a demo-related doubt in free text.",
         nextQuestion: "Demo Class mein exactly kis point par doubt hua?",
         intent: "DEMO_CLASS",
