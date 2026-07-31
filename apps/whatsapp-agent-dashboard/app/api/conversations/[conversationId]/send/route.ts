@@ -154,7 +154,22 @@ export async function POST(
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
     }
 
-    if (conversation.source?.trim().toLowerCase() === "instagram") {
+    const source = conversation.source?.trim().toLowerCase();
+    if (source === "messenger") {
+      return NextResponse.json(
+        {
+          error:
+            "Messenger incoming sync is live, but dashboard replies are not enabled yet.",
+          outboundSent: false,
+        },
+        {
+          status: 422,
+          headers: { "Cache-Control": "no-store" },
+        },
+      );
+    }
+
+    if (source === "instagram") {
       const result = await sendInstagramConversationMessage({
         conversationId: context.params.conversationId,
         actor: MessageActor.COUNSELOR,
