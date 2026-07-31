@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 
-import { normalizeContextualCustomerMessage } from "../lib/agent/contextual-message";
+import {
+  contextualizeAgentConversation,
+  normalizeContextualCustomerMessage,
+} from "../lib/agent/contextual-message";
 import type { AgentHistoryMessage } from "../lib/agent/types";
 
 function message(
@@ -44,4 +47,39 @@ assert.equal(
   "The phrase must not be rewritten outside a demo-link question context.",
 );
 
-console.log("Contextual demo link confirmation tests passed: 5 cases.");
+const repeatedCustomerMessage = message("customer", "link bhej do");
+const recovered = contextualizeAgentConversation({
+  customerMessage: repeatedCustomerMessage.text,
+  history: [
+    linkQuestion,
+    message("customer", "yes link"),
+    message(
+      "assistant",
+      "Bilkul ji. Main program aur admission ke baare mein guide karunga. Aapka current background kya hai?",
+    ),
+    message("customer", "yes link"),
+    message(
+      "assistant",
+      "Bilkul ji. Main course details mein guide karunga. Aapka main goal kya hai?",
+    ),
+    repeatedCustomerMessage,
+  ],
+});
+
+assert.equal(
+  recovered.customerMessage,
+  "yes",
+  "A pending demo-link confirmation must be recovered after intervening fallback replies.",
+);
+assert.equal(
+  recovered.history.filter((item) => item.role === "assistant").at(-1)?.text,
+  linkQuestion.text,
+  "The pending demo-link question must become the active assistant context.",
+);
+assert.equal(
+  recovered.history.at(-1),
+  repeatedCustomerMessage,
+  "The current customer message must remain the final chronological history item.",
+);
+
+console.log("Contextual demo link confirmation tests passed: 8 cases.");
