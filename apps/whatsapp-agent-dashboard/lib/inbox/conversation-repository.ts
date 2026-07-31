@@ -84,6 +84,7 @@ export async function listInboxConversations(
       status: conversation.status,
       agentMode: conversation.agentMode,
       unreadCount: conversation.unreadCount,
+      source: conversation.source,
       lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
       lastMessage: lastMessage
         ? {

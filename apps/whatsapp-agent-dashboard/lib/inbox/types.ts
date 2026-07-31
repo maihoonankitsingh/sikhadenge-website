@@ -10,6 +10,7 @@ export type InboxConversationSummary = {
   status: string;
   agentMode: string;
   unreadCount: number;
+  source: string | null;
   lastMessageAt: string | null;
   lastMessage: {
     text: string | null;
@@ -53,7 +54,6 @@ export type InboxMessage = {
 };
 
 export type InboxConversationDetail = InboxConversationSummary & {
-  source: string | null;
   campaign: string | null;
   currentIntent: string | null;
   detectedLanguage: string | null;

@@ -55,8 +55,8 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Test admission conversation flow
-        run: npm run test:admission-flow
+      - name: Test human conversation and learning flow
+        run: npm run test:agent
 
       - name: Capture TypeScript diagnostics
         run: |
