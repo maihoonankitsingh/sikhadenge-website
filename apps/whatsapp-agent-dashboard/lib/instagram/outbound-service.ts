@@ -48,6 +48,9 @@ export async function sendInstagramConversationMessage(input: {
     throw new Error("Instagram inbox currently supports text replies only.");
   }
 
+  const text = input.content.text.trim().slice(0, 4_096);
+  const replyToMetaMessageId =
+    input.content.replyToMetaMessageId?.trim().slice(0, 300) || null;
   const now = new Date();
   const conversation = await prisma.whatsAppConversation.findUnique({
     where: { id: input.conversationId },
@@ -138,9 +141,8 @@ export async function sendInstagramConversationMessage(input: {
           actor: input.actor,
           type: MessageType.TEXT,
           status: MessageStatus.QUEUED,
-          text: input.content.text.trim().slice(0, 4_096),
-          replyToMetaMessageId:
-            input.content.replyToMetaMessageId?.trim().slice(0, 300) || null,
+          text,
+          replyToMetaMessageId,
           rawPayload: toJson({
             channel: "instagram",
             outbound: {
@@ -188,7 +190,7 @@ export async function sendInstagramConversationMessage(input: {
   try {
     const sent = await sendInstagramTextMessage({
       recipientId: instagramScopedId,
-      text: input.content.text.trim(),
+      text,
     });
     const sentAt = new Date();
 
