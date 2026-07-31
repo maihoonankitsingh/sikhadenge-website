@@ -23,3 +23,19 @@ export function getWhatsAppWebhookMaxBytes(): number {
   }
   return Math.min(Math.floor(configured), 10_000_000);
 }
+
+export function getInstagramVerifyToken(): string {
+  return requiredEnvironmentValue("INSTAGRAM_VERIFY_TOKEN");
+}
+
+export function getInstagramAppSecret(): string {
+  return requiredEnvironmentValue("INSTAGRAM_APP_SECRET");
+}
+
+export function getInstagramWebhookMaxBytes(): number {
+  const configured = Number(process.env.INSTAGRAM_WEBHOOK_MAX_BYTES);
+  if (!Number.isFinite(configured) || configured < 1_024) {
+    return DEFAULT_MAX_WEBHOOK_BYTES;
+  }
+  return Math.min(Math.floor(configured), 10_000_000);
+}
