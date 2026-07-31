@@ -8,6 +8,8 @@
     "start": "next start -p 3100",
     "typecheck": "tsc --noEmit",
     "test:admission-flow": "tsx tests/admission-conversation-flow.test.ts",
+    "test:learning-feedback": "tsx tests/conversation-feedback.test.ts",
+    "test:agent": "npm run test:admission-flow && npm run test:learning-feedback",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
