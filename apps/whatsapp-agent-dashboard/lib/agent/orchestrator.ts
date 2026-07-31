@@ -1,4 +1,5 @@
 import { getAgentRuntimePolicy } from "../observability/runtime-policy";
+import { generateAdmissionConversationReply } from "./admission-conversation-flow";
 import { retrieveApprovedKnowledge } from "./knowledge";
 import { requestModelDecision } from "./openai-responses";
 import { generateOwnedReply } from "./owned-reply-engine";
@@ -238,6 +239,27 @@ export async function generateAgentDecision(
         classification.intent === "COUNSELOR_REQUEST"
           ? { counselorRequested: true }
           : {},
+      telemetry: runtimeTelemetry("rule", startedAt),
+    });
+  }
+
+  const admissionFlow = generateAdmissionConversationReply({
+    agentInput: input,
+    classification,
+  });
+  if (admissionFlow) {
+    return buildDecision({
+      reply: admissionFlow.reply,
+      language: classification.language,
+      intent: admissionFlow.intent ?? classification.intent,
+      confidence: admissionFlow.confidence,
+      decisionSummary: admissionFlow.decisionSummary,
+      requiresHuman: admissionFlow.requiresHuman,
+      handoffReason: admissionFlow.handoffReason,
+      nextQuestion: admissionFlow.nextQuestion,
+      leadUpdates: admissionFlow.leadUpdates,
+      safety,
+      model: "sikhadenge-admission-flow-v1",
       telemetry: runtimeTelemetry("rule", startedAt),
     });
   }
