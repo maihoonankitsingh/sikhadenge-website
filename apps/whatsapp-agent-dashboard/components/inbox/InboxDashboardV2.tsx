@@ -143,12 +143,11 @@ type ChannelDef = {
   connected: boolean;
 };
 
-// WhatsApp is the live transport for every conversation in this system today.
-// Instagram, Messenger and Telegram are shown as part of the unified multi-
-// channel inbox and are flagged as not-yet-connected so nothing is faked.
+// WhatsApp and Instagram are connected live transports.
+// Remaining channels stay disabled until their transport is implemented.
 const CHANNELS: ChannelDef[] = [
   { id: "whatsapp", label: "WhatsApp", connected: true },
-  { id: "instagram", label: "Instagram", connected: false },
+  { id: "instagram", label: "Instagram", connected: true },
   { id: "messenger", label: "Messenger", connected: false },
   { id: "telegram", label: "Telegram", connected: false },
   { id: "linkedin", label: "LinkedIn", connected: false },
@@ -159,9 +158,13 @@ const CHANNELS: ChannelDef[] = [
   { id: "contact-form", label: "Contact Form", connected: false },
 ];
 
-// Every stored conversation arrives over WhatsApp Cloud API, so its channel is
-// WhatsApp. Centralised here so the badge and channel filter stay truthful.
-function channelOf(_conversation: InboxConversationSummary): ChannelId {
+function channelOf(conversation: InboxConversationSummary): ChannelId {
+  const source = conversation.source?.trim().toLowerCase();
+
+  if (source === "instagram") {
+    return "instagram";
+  }
+
   return "whatsapp";
 }
 
