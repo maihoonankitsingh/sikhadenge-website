@@ -23,7 +23,7 @@ const DEMO_URL = "https://www.sikhadenge.in";
 const FEE_QUERY =
   /(?:\bfee(?:s)?\b|\bprice\b|\bcost\b|\bcharge\b|\bpayment\s+kitna\b|\bkitna\s+(?:charge|paisa|amount)\b|₹|\brupees?\b)/iu;
 const FEE_INSISTENCE =
-  /(?:fee\s+(?:pehle|hi|bata)|sirf\s+(?:fee|price)|bas\s+(?:fee|price)|price\s+hi|itna\s+kyu\s+chhupa|direct\s+(?:fee|price))/iu;
+  /(?:fee\s+(?:pehle|hi|bata)|sirf\s+(?:fee|price)|bas\s+(?:fee|price)|price\s+hi|direct\s+(?:fee|price))/iu;
 const DEMO_QUERY = /(?:\bdemo\b|masterclass|free\s+class)/iu;
 const DEMO_DONE =
   /^\s*(?:done|complete|completed|demo\s+(?:dekh\s+li|dekh\s+liya|complete)|dekh\s+li|dekh\s+liya|ho\s+gaya)\s*[.!😊💙🌸]*\s*$/iu;
@@ -66,13 +66,14 @@ function lastAssistantMessage(input: AgentInput): string {
 
 function firstName(input: AgentInput): string | null {
   const name = normalize(input.contact?.name ?? "");
-  if (!name) return null;
-  return name.split(" ")[0]?.slice(0, 40) || null;
+  return name ? name.split(" ")[0]?.slice(0, 40) || null : null;
 }
 
 function stableVariant(value: string, count: number): number {
   let hash = 0;
-  for (const character of value) hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
+  for (const character of value) {
+    hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
+  }
   return count > 0 ? hash % count : 0;
 }
 
@@ -136,7 +137,7 @@ function inferJoiningTimeline(message: string): string | undefined {
   if (/aaj|abhi|immediate|jaldi|asap|turant|start\s+karna/iu.test(message)) {
     return "IMMEDIATELY";
   }
-  if (/is\s+month|this\s+month|mahine\s+me|month\s+ke\s+andar/iu.test(message)) {
+  if (/is\s+month|this\s+month|isi\s+month|mahine\s+me|month\s+ke\s+andar/iu.test(message)) {
     return "THIS_MONTH";
   }
   if (/next\s+month|agle\s+mahine/iu.test(message)) return "NEXT_MONTH";
@@ -148,7 +149,6 @@ function inferredLeadUpdates(message: string): AgentLeadUpdates {
   const experienceLevel = inferExperience(message);
   const goal = inferGoal(message);
   const joiningTimeline = inferJoiningTimeline(message);
-
   return {
     interestedCourse: PROGRAM_NAME,
     ...(experienceLevel ? { experienceLevel } : {}),
@@ -205,13 +205,11 @@ function flowReply(input: {
 
 function callSchedulingFlow(input: AgentInput): AdmissionFlowReply | null {
   const message = normalize(input.customerMessage);
-  const lastAssistant = lastAssistantMessage(input);
-  if (!asksCallTime(lastAssistant)) return null;
+  if (!asksCallTime(lastAssistantMessage(input))) return null;
 
   if (CALL_TIME.test(message)) {
     return flowReply({
-      reply:
-        `${acknowledgement(input, message)}\n\nAapka preferred call time note kar liya hai. Admission Team isi time window mein aapse contact karegi. 💙`,
+      reply: `${acknowledgement(input, message)}\n\nAapka preferred call time note kar liya hai. Admission Team isi time window mein aapse contact karegi. 💙`,
       summary: "Captured the preferred admission-call time in a natural free-text flow.",
       intent: "COUNSELOR_REQUEST",
       leadUpdates: {
@@ -233,6 +231,61 @@ function callSchedulingFlow(input: AgentInput): AdmissionFlowReply | null {
   });
 }
 
+function feeFlow(input: AgentInput): AdmissionFlowReply | null {
+  const message = normalize(input.customerMessage);
+  const lastAssistant = lastAssistantMessage(input);
+
+  if (asksDemoWatched(lastAssistant)) {
+    if (YES_REPLY.test(message)) {
+      return flowReply({
+        reply:
+          "Great 😊 Fee, current offer aur available payment options Admission Team latest batch ke according confirm karti hai. Aaj call ke liye kaunsa time convenient rahega—11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM?",
+        summary: "Moved a demo-watched learner to a fee-confirmation call.",
+        nextQuestion:
+          "Aaj call ke liye 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
+        intent: "FEES",
+        leadUpdates: {
+          interestedCourse: PROGRAM_NAME,
+          feeUnderstood: true,
+          counselorRequested: true,
+        },
+      });
+    }
+    if (NO_REPLY.test(message)) {
+      return flowReply({
+        reply:
+          "Koi baat nahi 😊 Pehle Demo Class dekh lena better rahega, kyunki usse course quality aur teaching style ka clear idea mil jayega. Main Demo Class ka link share kar doon?",
+        summary: "Recommended demo before fee discussion and asked one link question.",
+        nextQuestion: "Main Demo Class ka link share kar doon?",
+        intent: "FEES",
+        leadUpdates: { interestedCourse: PROGRAM_NAME },
+      });
+    }
+  }
+
+  if (!FEE_QUERY.test(message)) return null;
+  if (feeRequestCount(input) >= 3 || FEE_INSISTENCE.test(message)) {
+    return flowReply({
+      reply:
+        "Samajh sakti hoon 😊 Main galat ya outdated amount share nahi karna chahti. Fee aur current offer clear karne ke liye short Admission Team call best rahegi. Aaj 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
+      summary: "Repeated fee request moved transparently to an admission call.",
+      nextQuestion:
+        "Aaj 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
+      intent: "FEES",
+      leadUpdates: { interestedCourse: PROGRAM_NAME, counselorRequested: true },
+    });
+  }
+
+  return flowReply({
+    reply:
+      "Bilkul bata dungi 😊 Usse pehle bas ek cheez confirm karni thi—kya aapne hamari Free Demo Class dekh li hai?",
+    summary: "Fee amount was not invented; one demo-status question was asked.",
+    nextQuestion: "Kya aapne hamari Free Demo Class dekh li hai?",
+    intent: "FEES",
+    leadUpdates: { interestedCourse: PROGRAM_NAME },
+  });
+}
+
 function demoFlow(input: AgentInput): AdmissionFlowReply | null {
   const message = normalize(input.customerMessage);
   const lastAssistant = lastAssistantMessage(input);
@@ -248,11 +301,9 @@ function demoFlow(input: AgentInput): AdmissionFlowReply | null {
         leadUpdates: { interestedCourse: PROGRAM_NAME },
       });
     }
-
     if (POSITIVE_DEMO_FEEDBACK.test(message)) {
       return flowReply({
-        reply:
-          `${acknowledgement(input, message)}\n\nAb aap sabse pehle kis cheez ki information lena chahenge—course details, fee/current offer, batch timing ya job support?`,
+        reply: `${acknowledgement(input, message)}\n\nAb aap sabse pehle kis cheez ki information lena chahenge—course details, fee/current offer, batch timing ya job support?`,
         summary: "Acknowledged positive demo feedback and asked one natural next-step question.",
         nextQuestion:
           "Aap sabse pehle course details, fee/current offer, batch timing ya job support mein se kya clear karna chahenge?",
@@ -295,8 +346,7 @@ function demoFlow(input: AgentInput): AdmissionFlowReply | null {
 
   if (YES_REPLY.test(message) && /(?:link\s+share|link\s+bhej|demo\s+ka\s+link)/iu.test(lastAssistant)) {
     return flowReply({
-      reply:
-        `Great! 😊 Aap ${DEMO_URL} par Free Demo Class dekh sakte hain. Demo complete hone ke baad bas “Done” likh dijiyega; phir main aapka feedback lekar aage guide kar dungi. 🌸`,
+      reply: `Great! 😊 Aap ${DEMO_URL} par Free Demo Class dekh sakte hain. Demo complete hone ke baad bas “Done” likh dijiyega; phir main aapka feedback lekar aage guide kar dungi. 🌸`,
       summary: "Shared the verified demo website and requested DONE after completion.",
       intent: "DEMO_CLASS",
       leadUpdates: { interestedCourse: PROGRAM_NAME },
@@ -317,70 +367,8 @@ function demoFlow(input: AgentInput): AdmissionFlowReply | null {
   return null;
 }
 
-function feeFlow(input: AgentInput): AdmissionFlowReply | null {
-  const message = normalize(input.customerMessage);
-  const lastAssistant = lastAssistantMessage(input);
-
-  if (asksDemoWatched(lastAssistant)) {
-    if (YES_REPLY.test(message)) {
-      return flowReply({
-        reply:
-          "Great 😊 Fee, current offer aur available payment options Admission Team latest batch ke according confirm karti hai. Aaj call ke liye kaunsa time convenient rahega—11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM?",
-        summary: "Moved a demo-watched learner to a fee-confirmation call.",
-        nextQuestion:
-          "Aaj call ke liye 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
-        intent: "FEES",
-        leadUpdates: {
-          interestedCourse: PROGRAM_NAME,
-          feeUnderstood: true,
-          counselorRequested: true,
-        },
-      });
-    }
-
-    if (NO_REPLY.test(message)) {
-      return flowReply({
-        reply:
-          "Koi baat nahi 😊 Pehle Demo Class dekh lena better rahega, kyunki usse course quality aur teaching style ka clear idea mil jayega. Main Demo Class ka link share kar doon?",
-        summary: "Recommended demo before fee discussion and asked one link question.",
-        nextQuestion: "Main Demo Class ka link share kar doon?",
-        intent: "FEES",
-        leadUpdates: { interestedCourse: PROGRAM_NAME },
-      });
-    }
-  }
-
-  if (!FEE_QUERY.test(message)) return null;
-
-  const count = feeRequestCount(input);
-  if (count >= 3 || FEE_INSISTENCE.test(message)) {
-    return flowReply({
-      reply:
-        "Samajh sakti hoon 😊 Main galat ya outdated amount share nahi karna chahti. Fee aur current offer clear karne ke liye short Admission Team call best rahegi. Aaj 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
-      summary: "Repeated fee request moved transparently to an admission call.",
-      nextQuestion:
-        "Aaj 11 AM–2 PM, 2 PM–5 PM ya 5 PM–8 PM mein se kaunsa time convenient rahega?",
-      intent: "FEES",
-      leadUpdates: {
-        interestedCourse: PROGRAM_NAME,
-        counselorRequested: true,
-      },
-    });
-  }
-
-  return flowReply({
-    reply:
-      "Bilkul bata dungi 😊 Usse pehle bas ek cheez confirm karni thi—kya aapne hamari Free Demo Class dekh li hai?",
-    summary: "Fee amount was not invented; one demo-status question was asked.",
-    nextQuestion: "Kya aapne hamari Free Demo Class dekh li hai?",
-    intent: "FEES",
-    leadUpdates: { interestedCourse: PROGRAM_NAME },
-  });
-}
-
 function jobFlow(input: AgentInput): AdmissionFlowReply | null {
   const message = normalize(input.customerMessage);
-
   if (JOB_GUARANTEE.test(message)) {
     return flowReply({
       reply:
@@ -390,7 +378,6 @@ function jobFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: { goal: "JOB", interestedCourse: PROGRAM_NAME },
     });
   }
-
   if (JOB_ONLY.test(message)) {
     return flowReply({
       reply:
@@ -401,7 +388,6 @@ function jobFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: { goal: "JOB", interestedCourse: PROGRAM_NAME },
     });
   }
-
   if (JOB_QUERY.test(message)) {
     return flowReply({
       reply:
@@ -411,7 +397,6 @@ function jobFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: { goal: "JOB", interestedCourse: PROGRAM_NAME },
     });
   }
-
   return null;
 }
 
@@ -422,8 +407,7 @@ function qualificationCompletion(
   const name = firstName(input);
   const personal = name && stableVariant(input.customerMessage, 3) === 0 ? `${name} ji, ` : "";
   return flowReply({
-    reply:
-      `${personal}thank you 😊 Mujhe aapki requirement clear ho gayi hai. Aapke goal ke according AI Expert Program relevant rahega. Admission se pehle ek baar Free Demo Class dekhna best rahega—main link share kar doon?`,
+    reply: `${personal}thank you 😊 Mujhe aapki requirement clear ho gayi hai. Aapke goal ke according AI Expert Program relevant rahega. Admission se pehle ek baar Free Demo Class dekhna best rahega—main link share kar doon?`,
     summary: "Completed dynamic qualification and recommended the demo as the next natural step.",
     nextQuestion: "Main Free Demo Class ka link share kar doon?",
     intent: "DEMO_CLASS",
@@ -435,44 +419,36 @@ function qualificationFlow(input: AgentInput): AdmissionFlowReply | null {
   const message = normalize(input.customerMessage);
   const assistantHistory = assistantMessages(input);
   const lastAssistant = lastAssistantMessage(input);
-  const name = firstName(input);
   const updates = inferredLeadUpdates(message);
   const source = inferSource(message);
+
+  const isQualificationContext =
+    assistantHistory.length === 0 ||
+    /Facebook\/Instagram|student\s+ne\s+recommend|AI\s+mein\s+bilkul\s+beginner|ChatGPT\/Gemini|mainly\s+online\s+earning|online\s+earning.*freelancing.*job|kab\s+tak\s+(?:join|start)|learning\s+kab\s+tak\s+start|details\s+explore/iu.test(
+      lastAssistant,
+    );
+  if (!isQualificationContext) return null;
 
   const currentExperience = updates.experienceLevel ?? input.lead?.experienceLevel ?? undefined;
   const currentGoal = updates.goal ?? input.lead?.goal ?? undefined;
   const currentTimeline = updates.joiningTimeline ?? input.lead?.joiningTimeline ?? undefined;
 
-  const isQualificationContext =
-    assistantHistory.length === 0 ||
-    /Facebook\/Instagram|student\s+ne\s+recommend|AI\s+tool|bilkul\s+beginner|main\s+goal\s+kya|online\s+earning.*freelancing.*job|kab\s+tak\s+join|sirf\s+details\s+dekh/iu.test(
-      lastAssistant,
-    );
-
-  if (!isQualificationContext) return null;
-
-  if (assistantHistory.length === 0 && (input.lead?.stage ?? "NEW") === "NEW") {
-    const greeting = name ? `Hi ${name} ji 😊` : "Hi 😊";
-
-    if (!source) {
-      return flowReply({
-        reply:
-          `${greeting}\n\nThank you! Aapki enquiry mujhe receive ho gayi hai. Bas kuch chhoti details samajhni hain, phir main aapko properly guide kar dungi.\n\nWaise aapne hamare program ke baare mein Facebook/Instagram par dekha tha ya kisi ne recommend kiya?`,
-        summary: "Started a natural free-text qualification conversation.",
-        nextQuestion:
-          "Aapne hamare program ke baare mein Facebook/Instagram par dekha tha ya kisi ne recommend kiya?",
-        intent: "COURSE_DISCOVERY",
-        leadUpdates: updates,
-      });
-    }
+  if (assistantHistory.length === 0 && (input.lead?.stage ?? "NEW") === "NEW" && !source) {
+    const greeting = firstName(input) ? `Hi ${firstName(input)} ji 😊` : "Hi 😊";
+    return flowReply({
+      reply: `${greeting}\n\nThank you! Aapki enquiry mujhe receive ho gayi hai. Bas kuch chhoti details samajhni hain, phir main aapko properly guide kar dungi.\n\nWaise aapne hamare program ke baare mein Facebook/Instagram par dekha tha ya kisi ne recommend kiya?`,
+      summary: "Started a natural free-text qualification conversation.",
+      nextQuestion:
+        "Aapne hamare program ke baare mein Facebook/Instagram par dekha tha ya kisi ne recommend kiya?",
+      intent: "COURSE_DISCOVERY",
+      leadUpdates: updates,
+    });
   }
 
   const ack = assistantHistory.length > 0 ? `${acknowledgement(input, message)}\n\n` : "";
-
   if (!currentExperience) {
     return flowReply({
-      reply:
-        `${ack}Aap AI mein bilkul beginner hain, ya ChatGPT/Gemini jaise tools pehle thoda use kiye hain?`,
+      reply: `${ack}Aap AI mein bilkul beginner hain, ya ChatGPT/Gemini jaise tools pehle thoda use kiye hain?`,
       summary: "Asked only the next missing qualification detail: experience.",
       nextQuestion:
         "Aap AI mein bilkul beginner hain, ya ChatGPT/Gemini jaise tools pehle thoda use kiye hain?",
@@ -480,11 +456,9 @@ function qualificationFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: updates,
     });
   }
-
   if (!currentGoal) {
     return flowReply({
-      reply:
-        `${ack}Aap AI mainly online earning, freelancing, job ya apne business ke liye seekhna chahte hain?`,
+      reply: `${ack}Aap AI mainly online earning, freelancing, job ya apne business ke liye seekhna chahte hain?`,
       summary: "Skipped known details and asked only the missing goal question.",
       nextQuestion:
         "Aap AI mainly online earning, freelancing, job ya apne business ke liye seekhna chahte hain?",
@@ -492,11 +466,9 @@ function qualificationFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: updates,
     });
   }
-
   if (!currentTimeline) {
     return flowReply({
-      reply:
-        `${ack}Agar program aapki expectation ke according hua, to aap learning kab tak start karna chahenge—abhi, is month, next month, ya filhaal details explore kar rahe hain?`,
+      reply: `${ack}Agar program aapki expectation ke according hua, to aap learning kab tak start karna chahenge—abhi, is month, next month, ya filhaal details explore kar rahe hain?`,
       summary: "Skipped known details and asked only the missing joining timeline.",
       nextQuestion:
         "Aap learning kab tak start karna chahenge—abhi, is month, next month, ya filhaal details explore kar rahe hain?",
@@ -504,7 +476,6 @@ function qualificationFlow(input: AgentInput): AdmissionFlowReply | null {
       leadUpdates: updates,
     });
   }
-
   return qualificationCompletion(input, updates);
 }
 
@@ -513,7 +484,6 @@ export function generateAdmissionConversationReply(input: {
   classification: RuleClassification;
 }): AdmissionFlowReply | null {
   const { agentInput } = input;
-
   return (
     callSchedulingFlow(agentInput) ??
     feeFlow(agentInput) ??
