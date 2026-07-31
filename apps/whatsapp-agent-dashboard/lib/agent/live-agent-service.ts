@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import { captureConversationFeedback } from "../learning/conversation-feedback";
 import { captureDecisionLearningCandidate } from "../learning/learning-repository";
 import { getOutboundMode } from "../meta/outbound-client";
 import {
@@ -159,6 +160,13 @@ async function markReviewRequired(input: {
   });
 }
 
+function isSupportedConversationText(type: MessageType, text: string | null): boolean {
+  return (
+    (type === MessageType.TEXT || type === MessageType.INTERACTIVE) &&
+    Boolean(text?.trim())
+  );
+}
+
 export async function processInboundAgentLifecycle(input: {
   messageId: string;
 }): Promise<LiveAgentLifecycleResult> {
@@ -259,7 +267,7 @@ export async function processInboundAgentLifecycle(input: {
       return result;
     }
 
-    if (message.type !== MessageType.TEXT || !message.text?.trim()) {
+    if (!isSupportedConversationText(message.type, message.text)) {
       await markReviewRequired({
         messageId: message.id,
         conversationId: message.conversationId,
@@ -280,16 +288,27 @@ export async function processInboundAgentLifecycle(input: {
       return result;
     }
 
+    try {
+      await captureConversationFeedback({
+        sourceMessageId: message.id,
+        userMessage: message.text!,
+      });
+    } catch (error) {
+      console.warn(
+        `[agent-learning-feedback] ${compactOperationalError(error).slice(0, 300)}`,
+      );
+    }
+
     const intelligence = await analyzeAndPersistConversation({
       conversationId: message.conversationId,
-      customerMessage: message.text,
+      customerMessage: message.text!,
       actorId: null,
     });
     const decision = intelligence.decision;
 
     await captureDecisionLearningCandidate({
       decision,
-      userQuestion: message.text,
+      userQuestion: message.text!,
       sourceMessageId: message.id,
       actorId: null,
     });
