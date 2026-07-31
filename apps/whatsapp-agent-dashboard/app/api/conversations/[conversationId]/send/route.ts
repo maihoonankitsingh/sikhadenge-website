@@ -2,6 +2,8 @@ import { DashboardRole, MessageActor } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
+import { prisma } from "../../../../../lib/db/prisma";
+import { sendInstagramConversationMessage } from "../../../../../lib/instagram/outbound-service";
 import {
   dispatchOutboundMessage,
   queueOutboundMessage,
@@ -143,6 +145,29 @@ export async function POST(
       conversationId: context.params.conversationId,
       actor: { id: user.id, role: user.role },
     });
+
+    const conversation = await prisma.whatsAppConversation.findUnique({
+      where: { id: context.params.conversationId },
+      select: { source: true },
+    });
+    if (!conversation) {
+      return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
+    }
+
+    if (conversation.source?.trim().toLowerCase() === "instagram") {
+      const result = await sendInstagramConversationMessage({
+        conversationId: context.params.conversationId,
+        actor: MessageActor.COUNSELOR,
+        sentById: user.id,
+        content,
+        idempotencyKey,
+      });
+
+      return NextResponse.json(result, {
+        status: result.duplicate ? 200 : 201,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
 
     const queued = await queueOutboundMessage({
       conversationId: context.params.conversationId,
