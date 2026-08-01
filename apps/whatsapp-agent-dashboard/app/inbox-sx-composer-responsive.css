@@ -1,16 +1,17 @@
 /*
  * Current Inbox composer viewport repair.
  *
- * Some tablets request a desktop-sized CSS viewport, so width-only responsive
- * rules are not sufficient. The current sx-prefixed Inbox is therefore bounded
- * to the visible viewport at every width: the chat header and composer remain
- * fixed inside the chat column while only the message history scrolls.
+ * Tablet browsers can request desktop-sized CSS viewports and some older
+ * layout layers still allow the long Agent context card to push the manual
+ * composer below the visible screen. Keep the chat panel bounded and dock the
+ * composer to its bottom edge at every effective viewport width.
  */
 
 body .sx-inbox {
   height: 100vh !important;
   height: 100dvh !important;
-  max-height: 100dvh !important;
+  height: 100svh !important;
+  max-height: 100svh !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
@@ -24,27 +25,30 @@ body .sx-inbox > .sx-details {
 }
 
 body .sx-inbox .sx-chat {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
   height: 100% !important;
   min-height: 0 !important;
   min-width: 0 !important;
   max-height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
+  padding-bottom: 104px !important;
   overflow: hidden !important;
 }
 
 body .sx-inbox .sx-chat-head,
 body .sx-inbox .sx-context,
-body .sx-inbox .sx-error,
-body .sx-inbox .sx-composer {
+body .sx-inbox .sx-error {
   flex: 0 0 auto !important;
 }
 
 body .sx-inbox .sx-messages {
-  flex: 1 1 0 !important;
-  height: 0 !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
   min-height: 0 !important;
   min-width: 0 !important;
+  padding-bottom: 16px !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
@@ -52,31 +56,45 @@ body .sx-inbox .sx-messages {
 }
 
 body .sx-inbox .sx-composer {
-  position: relative !important;
-  z-index: 120 !important;
-  inset: auto !important;
+  position: absolute !important;
+  z-index: 240 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
   display: block !important;
-  flex: 0 0 auto !important;
-  width: 100% !important;
+  box-sizing: border-box !important;
+  width: auto !important;
   min-width: 0 !important;
   height: auto !important;
-  min-height: 64px !important;
-  max-height: none !important;
+  min-height: 88px !important;
+  max-height: 42svh !important;
   margin: 0 !important;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
   visibility: visible !important;
   opacity: 1 !important;
   transform: none !important;
-  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   border-top: 1px solid #e2e8f0 !important;
   background: #ffffff !important;
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.13) !important;
+}
+
+body .sx-inbox .sx-composer-channel-note,
+body .sx-inbox .sx-composer-note,
+body .sx-inbox .sx-composer-media {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 100% !important;
 }
 
 body .sx-inbox .sx-composer-row {
+  position: relative !important;
+  z-index: 2 !important;
   display: grid !important;
   grid-template-columns: auto minmax(0, 1fr) auto auto auto !important;
-  align-items: end !important;
+  align-items: center !important;
   gap: 6px !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -134,10 +152,12 @@ body .sx-inbox .sx-send {
     display: flex !important;
     height: 100% !important;
     min-height: 0 !important;
+    padding-bottom: 72px !important;
   }
 
   body .sx-inbox .sx-composer {
-    min-height: 60px !important;
+    min-height: 64px !important;
+    max-height: 50svh !important;
     padding: 6px 7px calc(6px + env(safe-area-inset-bottom)) !important;
   }
 
@@ -166,5 +186,13 @@ body .sx-inbox .sx-send {
   body .sx-inbox .sx-context,
   body .sx-inbox .sx-composer-channel-note {
     display: none !important;
+  }
+
+  body .sx-inbox .sx-chat {
+    padding-bottom: 72px !important;
+  }
+
+  body .sx-inbox .sx-composer {
+    min-height: 64px !important;
   }
 }
