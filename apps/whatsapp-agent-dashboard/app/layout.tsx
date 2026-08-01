@@ -44,6 +44,7 @@ import "./dashboard-refinement.css";
 import "./all-modules-advanced.css";
 import "./unified-sidebar.css";
 import "./module-content-redesign.css";
+import "./inbox-sx-composer-responsive.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
