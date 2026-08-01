@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import SidebarNavigationBridge from "../components/navigation/SidebarNavigationBridge";
 import InboxTemplatePickerBridge from "../components/templates/InboxTemplatePickerBridge";
+import InboxComposerDockBridge from "../components/inbox/InboxComposerDockBridge";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <SidebarNavigationBridge />
         <InboxTemplatePickerBridge />
+        <InboxComposerDockBridge />
         {children}
       </body>
     </html>
