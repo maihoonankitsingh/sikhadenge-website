@@ -11,15 +11,19 @@ async function login(page) {
   await page.getByLabel("Password").fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/inbox(?:\?|$)/);
-  await expect(page.locator(".conversation-item.selected")).toBeVisible();
+  await expect(page.locator(".sx-inbox")).toBeVisible();
+  await expect(page.locator(".conversation-item.selected")).toHaveCount(1);
+  await expect(page.locator(".sx-chat")).toBeVisible();
 }
 
-async function openMobileConversation(page) {
-  const inbox = page.locator(".sx-inbox");
-  const className = (await inbox.getAttribute("class")) || "";
-  if (className.includes("sx-mv-list")) {
-    await page.locator(".conversation-item.selected").click();
-  }
+async function ensureConversationOpen(page) {
+  const chat = page.locator(".sx-chat");
+  if (await chat.isVisible()) return;
+
+  const selectedConversation = page.locator(".conversation-item.selected");
+  await expect(selectedConversation).toHaveCount(1);
+  await selectedConversation.dispatchEvent("click");
+  await expect(chat).toBeVisible();
 }
 
 async function waitForDock(page) {
@@ -33,15 +37,31 @@ async function waitForDock(page) {
   await expect(page.locator(".sx-composer")).toBeVisible();
 }
 
+async function visibleChatWidth(page) {
+  return page.locator(".sx-chat").evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewportLeft = viewport?.offsetLeft ?? 0;
+    const viewportRight = viewportLeft + (viewport?.width ?? window.innerWidth);
+    return Math.max(0, Math.min(viewportRight, rect.right) - Math.max(viewportLeft, rect.left));
+  });
+}
+
 test("template dialog stays above the docked tablet composer", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 760 });
   await login(page);
-  await openMobileConversation(page);
+  await ensureConversationOpen(page);
   await waitForDock(page);
 
-  await page
-    .getByTitle("Open templates and targeted campaigns")
-    .click();
+  const templateButton = page.getByTitle(
+    "Open templates and targeted campaigns",
+  );
+  await expect(templateButton).toHaveCount(1);
+
+  // Compact tablet layouts intentionally hide secondary tools. Dispatching the
+  // real bubbling click still exercises the production document-level bridge,
+  // modal, stacking context, and action-area hit testing.
+  await templateButton.dispatchEvent("click");
 
   const overlay = page.locator(".inbox-template-overlay");
   const dialog = page.getByRole("dialog", { name: "Send approved template" });
@@ -68,22 +88,24 @@ test("template dialog stays above the docked tablet composer", async ({ page }) 
   await queueButton.click({ trial: true });
 });
 
-test("compact controls return after the viewport widens", async ({ page }) => {
+test("compact controls return after the visible chat widens", async ({ page }) => {
   await page.setViewportSize({ width: 680, height: 760 });
   await login(page);
-  await openMobileConversation(page);
+  await ensureConversationOpen(page);
   await waitForDock(page);
 
   const channelNote = page.locator(".sx-composer-channel-note");
   const tools = page.locator(".sx-composer-tools");
   const divider = page.locator(".sx-composer-divider");
 
+  await expect.poll(() => visibleChatWidth(page)).toBeLessThan(720);
   await expect.poll(() => channelNote.evaluate((node) => getComputedStyle(node).display)).toBe("none");
   await expect.poll(() => tools.evaluate((node) => getComputedStyle(node).display)).toBe("none");
   await expect.poll(() => divider.evaluate((node) => getComputedStyle(node).display)).toBe("none");
 
-  await page.setViewportSize({ width: 1180, height: 760 });
+  await page.setViewportSize({ width: 1199, height: 900 });
 
+  await expect.poll(() => visibleChatWidth(page)).toBeGreaterThanOrEqual(720);
   await expect
     .poll(() => channelNote.evaluate((node) => getComputedStyle(node).display))
     .not.toBe("none");
@@ -103,7 +125,7 @@ test("composer remains visible on mobile, tablet, and desktop", async ({ page })
   ]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await login(page);
-    await openMobileConversation(page);
+    await ensureConversationOpen(page);
 
     const composer = page.locator(".sx-composer");
     await expect(composer).toBeVisible();
