@@ -135,7 +135,6 @@ jobs:
       DASHBOARD_ADMIN_NAME: CI Admin
       DASHBOARD_ADMIN_EMAIL: admin@example.invalid
       DASHBOARD_ADMIN_PASSWORD: CI-only-password-12345
-      NODE_ENV: production
 
     steps:
       - name: Checkout repository
@@ -147,7 +146,7 @@ jobs:
           node-version: 20
 
       - name: Install application dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --include=dev --no-audit --no-fund
 
       - name: Install browser regression tooling
         run: |
@@ -156,16 +155,16 @@ jobs:
 
       - name: Prepare isolated browser database
         run: |
-          npx prisma migrate deploy
+          npx prisma db push --skip-generate
           npm run db:seed
           npx tsx tests/fixtures/seed-inbox-browser.ts
 
       - name: Build production application
-        run: npm run build
+        run: NODE_ENV=production npm run build
 
       - name: Start production application
         run: |
-          nohup npm run start > browser-server.log 2>&1 &
+          NODE_ENV=test nohup npm run start > browser-server.log 2>&1 &
           echo $! > browser-server.pid
 
       - name: Wait for login route
