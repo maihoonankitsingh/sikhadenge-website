@@ -122,8 +122,10 @@ jobs:
           git merge-base --is-ancestor HEAD "$TARGET_SHA"
 
           git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
-          ln -s "$LIVE_APP/node_modules" "$STAGE_APP/node_modules"
           ln -s "$LIVE_APP/.env" "$STAGE_APP/.env"
+
+          cd "$STAGE_APP"
+          npm install --include=dev --no-audit --no-fund
 
           LIVE_APP="$LIVE_APP" \
           STAGE_APP="$STAGE_APP" \
@@ -162,7 +164,7 @@ jobs:
               "$SSH_USER@$SSH_HOST:/root/sikhadenge-backups/engageos-${PRODUCTION_RUN_ID}/${file_name}" \
               "production-evidence/${file_name}" >/dev/null 2>&1 || true
           done
-          find production-evidence -type f -maxdepth 1 -print -exec chmod 600 {} \;
+          find production-evidence -maxdepth 1 -type f -print -exec chmod 600 {} \;
           exit 0
 
       - name: Upload production evidence
