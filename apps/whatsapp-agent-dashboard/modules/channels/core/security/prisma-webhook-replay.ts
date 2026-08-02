@@ -20,12 +20,72 @@ export type WebhookReplayReservation = {
   replayKey?: string;
 };
 
+export class WebhookReplayConfigurationError extends Error {
+  readonly code = "WEBHOOK_REPLAY_CONFIGURATION_ERROR";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookReplayConfigurationError";
+  }
+}
+
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
 export function deriveWebhookExternalEventId(rawBody: string): string {
   return `payload-sha256:${sha256(rawBody)}`;
+}
+
+async function resolveReplayConnection(channel: ChannelType): Promise<{
+  id: string;
+  workspaceId: string;
+} | null> {
+  const enabledWorkspaces = await prisma.engageWorkspace.findMany({
+    where: {
+      isActive: true,
+      featureFlags: {
+        some: {
+          key: SECURITY_FEATURE_FLAGS.webhookReplay,
+          enabled: true,
+        },
+      },
+    },
+    select: {
+      id: true,
+      connections: {
+        where: {
+          channel,
+          status: { in: ["CONNECTED", "DEGRADED"] },
+        },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: 2,
+        select: {
+          id: true,
+          workspaceId: true,
+        },
+      },
+    },
+    take: 2,
+  });
+
+  if (enabledWorkspaces.length === 0) return null;
+
+  const candidates = enabledWorkspaces.flatMap(
+    (workspace) => workspace.connections,
+  );
+  if (candidates.length === 0) {
+    throw new WebhookReplayConfigurationError(
+      `Replay protection is enabled but no active ${channel} connection is configured.`,
+    );
+  }
+  if (enabledWorkspaces.length > 1 || candidates.length > 1) {
+    throw new WebhookReplayConfigurationError(
+      `Replay protection requires one unambiguous active ${channel} connection.`,
+    );
+  }
+
+  return candidates[0] ?? null;
 }
 
 export async function reservePersistedWebhookReplay(input: {
@@ -41,27 +101,7 @@ export async function reservePersistedWebhookReplay(input: {
     return { enforced: false, duplicate: false };
   }
 
-  const connection = await prisma.engageChannelConnection.findFirst({
-    where: {
-      channel: input.channel,
-      status: { in: ["CONNECTED", "DEGRADED"] },
-      workspace: {
-        isActive: true,
-        featureFlags: {
-          some: {
-            key: SECURITY_FEATURE_FLAGS.webhookReplay,
-            enabled: true,
-          },
-        },
-      },
-    },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: {
-      id: true,
-      workspaceId: true,
-    },
-  });
-
+  const connection = await resolveReplayConnection(input.channel);
   if (!connection) {
     return { enforced: false, duplicate: false };
   }
