@@ -165,6 +165,9 @@ jobs:
           npx prisma db push --schema prisma/phase-base.prisma --skip-generate
           npm run db:seed
 
+      - name: Baseline existing Prisma schema
+        run: npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+
       - name: Apply committed Prisma migration
         run: npx prisma migrate deploy
 
