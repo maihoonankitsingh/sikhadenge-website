@@ -110,7 +110,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16
@@ -204,6 +204,9 @@ jobs:
 
       - name: Test persisted security behavior
         run: npm run test:security-persistence:integration
+
+      - name: Test production-like legacy migration lineage
+        run: npm run test:production-migration-lineage:integration
 
   browser-regression:
     needs: validate
