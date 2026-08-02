@@ -124,13 +124,14 @@ model DashboardUser {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  sessions             DashboardSession[]
+  sessions              DashboardSession[]
   assignedConversations WhatsAppConversation[] @relation("ConversationAssignee")
   assignedLeads         Lead[]                 @relation("LeadAssignee")
   sentMessages          WhatsAppMessage[]      @relation("MessageSender")
   leadNotes             LeadNote[]
   reviewedLearning      LearningSuggestion[]   @relation("LearningReviewer")
-  auditLogs              AuditLog[]             @relation("AuditActor")
+  auditLogs             AuditLog[]             @relation("AuditActor")
+  workspaceMemberships  EngageWorkspaceMembership[] @relation("EngageMembershipUser")
 
   @@index([role, isActive])
 }
@@ -164,21 +165,21 @@ model LoginAttempt {
 }
 
 model WhatsAppContact {
-  id                 String        @id @default(cuid())
-  waId               String        @unique
-  phone              String        @unique
-  displayName        String?
-  profileName        String?
-  email              String?
-  city               String?
-  language           String?
-  consentStatus      ConsentStatus @default(UNKNOWN)
-  marketingOptInAt   DateTime?
+  id                   String        @id @default(cuid())
+  waId                 String        @unique
+  phone                String        @unique
+  displayName          String?
+  profileName          String?
+  email                String?
+  city                 String?
+  language             String?
+  consentStatus        ConsentStatus @default(UNKNOWN)
+  marketingOptInAt     DateTime?
   marketingOptInSource String?
-  optedOutAt         DateTime?
-  metadata           Json?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  optedOutAt           DateTime?
+  metadata             Json?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   conversations WhatsAppConversation[]
   lead          Lead?
@@ -188,27 +189,27 @@ model WhatsAppContact {
 }
 
 model WhatsAppConversation {
-  id                         String             @id @default(cuid())
-  contactId                  String
-  assignedToId               String?
-  status                     ConversationStatus @default(OPEN)
-  agentMode                  AgentMode          @default(AI)
-  source                     String?
-  campaign                   String?
-  currentIntent              String?
-  detectedLanguage           String?
-  aiConfidence               Float?
-  aiSummary                  String?
-  unreadCount                Int                @default(0)
-  lastMessageAt              DateTime?
-  serviceWindowExpiresAt     DateTime?
-  humanTakeoverAt            DateTime?
-  humanTakeoverReason        String?
-  createdAt                  DateTime           @default(now())
-  updatedAt                  DateTime           @updatedAt
+  id                     String             @id @default(cuid())
+  contactId              String
+  assignedToId           String?
+  status                 ConversationStatus @default(OPEN)
+  agentMode              AgentMode          @default(AI)
+  source                 String?
+  campaign               String?
+  currentIntent          String?
+  detectedLanguage       String?
+  aiConfidence           Float?
+  aiSummary              String?
+  unreadCount            Int                @default(0)
+  lastMessageAt          DateTime?
+  serviceWindowExpiresAt DateTime?
+  humanTakeoverAt        DateTime?
+  humanTakeoverReason    String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  contact    WhatsAppContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  assignedTo DashboardUser?  @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  contact    WhatsAppContact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedTo DashboardUser?       @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   messages   WhatsAppMessage[]
   lead       Lead?
   tags       ConversationTagLink[]
@@ -226,7 +227,7 @@ model WhatsAppMessage {
   metaMessageId        String?          @unique
   direction            MessageDirection
   actor                 MessageActor
-  type                  MessageType     @default(TEXT)
+  type                  MessageType      @default(TEXT)
   status                MessageStatus
   text                  String?
   mediaId               String?
@@ -241,12 +242,12 @@ model WhatsAppMessage {
   failureReason         String?
   rawPayload            Json?
   messageTimestamp      DateTime
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
-  conversation WhatsAppConversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sentBy       DashboardUser?             @relation("MessageSender", fields: [sentById], references: [id], onDelete: SetNull)
-  statusEvents WhatsAppMessageStatusEvent[]
+  conversation        WhatsAppConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sentBy              DashboardUser?              @relation("MessageSender", fields: [sentById], references: [id], onDelete: SetNull)
+  statusEvents        WhatsAppMessageStatusEvent[]
   learningSuggestions LearningSuggestion[]
 
   @@index([conversationId, messageTimestamp])
@@ -268,26 +269,26 @@ model WhatsAppMessageStatusEvent {
 }
 
 model Lead {
-  id               String          @id @default(cuid())
-  contactId        String          @unique
-  conversationId   String          @unique
-  assignedToId     String?
-  stage            LeadStage       @default(NEW)
-  temperature      LeadTemperature @default(COLD)
-  score            Int             @default(0)
-  occupation       String?
-  experienceLevel  String?
-  goal             String?
-  interestedCourse String?
-  joiningTimeline  String?
-  classAvailability String?
-  feeUnderstood    Boolean         @default(false)
-  counselorRequested Boolean       @default(false)
-  nextFollowUpAt   DateTime?
-  qualifiedAt      DateTime?
-  closedAt         DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                  String          @id @default(cuid())
+  contactId           String          @unique
+  conversationId      String          @unique
+  assignedToId        String?
+  stage               LeadStage       @default(NEW)
+  temperature         LeadTemperature @default(COLD)
+  score               Int             @default(0)
+  occupation          String?
+  experienceLevel     String?
+  goal                String?
+  interestedCourse    String?
+  joiningTimeline     String?
+  classAvailability   String?
+  feeUnderstood       Boolean         @default(false)
+  counselorRequested  Boolean         @default(false)
+  nextFollowUpAt      DateTime?
+  qualifiedAt         DateTime?
+  closedAt             DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   contact      WhatsAppContact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
   conversation WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -408,15 +409,15 @@ model WhatsAppTemplate {
 }
 
 model WebhookEvent {
-  id            String   @id @default(cuid())
-  eventKey      String   @unique
-  eventType     String
-  payload       Json
-  processedAt   DateTime?
+  id              String   @id @default(cuid())
+  eventKey        String   @unique
+  eventType       String
+  payload         Json
+  processedAt     DateTime?
   processingError String?
-  attemptCount  Int      @default(0)
-  receivedAt    DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  attemptCount    Int      @default(0)
+  receivedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([processedAt, receivedAt])
   @@index([eventType])
@@ -438,4 +439,219 @@ model AuditLog {
 
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
+}
+
+model EngageWorkspace {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  timezone  String   @default("Asia/Kolkata")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships   EngageWorkspaceMembership[]
+  connections   EngageChannelConnection[]
+  consentEvents EngageCustomerConsentEvent[]
+  suppressions  EngageCustomerSuppression[]
+  killSwitches  EngageKillSwitch[]
+  replayRecords EngageWebhookReplayRecord[]
+  auditEvents   EngageSecurityAuditEvent[]
+  featureFlags  EngageFeatureFlag[]
+
+  @@index([isActive, createdAt])
+}
+
+model EngageWorkspaceMembership {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        DashboardUser   @relation("EngageMembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  permissions EngagePermissionGrant[]
+
+  @@unique([workspaceId, userId])
+  @@index([userId, isActive])
+  @@index([workspaceId, role, isActive])
+}
+
+model EngagePermissionGrant {
+  id           String   @id @default(cuid())
+  membershipId String
+  permission   String
+  createdAt    DateTime @default(now())
+
+  membership EngageWorkspaceMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, permission])
+  @@index([permission])
+}
+
+model EngageChannelConnection {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  channel           String
+  externalAccountId String
+  displayName       String?
+  status            String   @default("PENDING")
+  capabilities      Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace     EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  credentials   EngageConnectionCredential[]
+  consentEvents EngageCustomerConsentEvent[]
+  suppressions  EngageCustomerSuppression[]
+  killSwitches  EngageKillSwitch[]
+  replayRecords EngageWebhookReplayRecord[]
+
+  @@unique([workspaceId, channel, externalAccountId])
+  @@index([workspaceId, channel, status])
+}
+
+model EngageConnectionCredential {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  connectionId         String
+  kind                 String
+  algorithm            String   @default("AES_256_GCM")
+  keyVersion           String
+  initializationVector String
+  authenticationTag    String
+  ciphertext           String
+  expiresAt            DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  connection EngageChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, kind])
+  @@index([workspaceId, expiresAt])
+}
+
+model EngageCustomerConsentEvent {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  customerRef  String
+  connectionId String?
+  channel      String
+  purpose      String
+  state        String
+  source       String
+  evidence     Json?
+  occurredAt   DateTime
+  recordedAt   DateTime @default(now())
+
+  workspace  EngageWorkspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection EngageChannelConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, customerRef, channel, purpose, occurredAt])
+  @@index([connectionId, occurredAt])
+}
+
+model EngageCustomerSuppression {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  customerRef  String?
+  connectionId String?
+  channel      String?
+  purposes     Json
+  reason       String
+  startsAt     DateTime @default(now())
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace  EngageWorkspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection EngageChannelConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, customerRef, startsAt])
+  @@index([workspaceId, channel, startsAt])
+  @@index([connectionId, startsAt])
+}
+
+model EngageKillSwitch {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  connectionId   String?
+  scopeType      String
+  channel        String?
+  automationId   String?
+  campaignId     String?
+  blockedActions Json
+  reason         String
+  active         Boolean  @default(true)
+  activatedById  String?
+  activatedAt    DateTime @default(now())
+  deactivatedAt  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace  EngageWorkspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection EngageChannelConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, active, scopeType])
+  @@index([connectionId, active])
+  @@index([channel, active])
+}
+
+model EngageWebhookReplayRecord {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  connectionId    String
+  replayKey       String   @unique
+  signatureDigest String
+  receivedAt      DateTime @default(now())
+  expiresAt       DateTime
+
+  workspace  EngageWorkspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection EngageChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, expiresAt])
+  @@index([connectionId, receivedAt])
+}
+
+model EngageSecurityAuditEvent {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  actorId       String?
+  action        String
+  outcome       String
+  entityType    String
+  entityId      String?
+  reasonCode    String?
+  requestId     String?
+  correlationId String?
+  metadata      Json?
+  occurredAt    DateTime
+  createdAt     DateTime @default(now())
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, occurredAt])
+  @@index([workspaceId, action, outcome, occurredAt])
+  @@index([actorId, occurredAt])
+  @@index([entityType, entityId, occurredAt])
+}
+
+model EngageFeatureFlag {
+  id          String   @id @default(cuid())
+  workspaceId String
+  key         String
+  enabled     Boolean  @default(false)
+  config      Json?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+  @@index([key, enabled])
 }
