@@ -161,11 +161,18 @@ jobs:
           git show "$base_sha:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
           test -s prisma/phase-base.prisma
 
-          : > prisma/phase-base-migrations.txt
-          if git cat-file -e "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations" 2>/dev/null; then
-            git ls-tree -d --name-only "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations" \
-              | sort > prisma/phase-base-migrations.txt
-          fi
+          git ls-tree -r --name-only "$base_sha" \
+            apps/whatsapp-agent-dashboard/prisma/migrations \
+            | awk -F/ '$NF == "migration.sql" { print $(NF-1) }' \
+            | sort -u > prisma/phase-base-migrations.txt
+
+          while IFS= read -r migration_name; do
+            test -n "$migration_name"
+            test -d "prisma/migrations/$migration_name"
+          done < prisma/phase-base-migrations.txt
+
+          printf 'Pull request base migrations:\n'
+          cat prisma/phase-base-migrations.txt
 
       - name: Create database from pull request base and seed data
         run: |
@@ -176,7 +183,6 @@ jobs:
         run: |
           if [[ -s prisma/phase-base-migrations.txt ]]; then
             while IFS= read -r migration_name; do
-              test -n "$migration_name"
               npx prisma migrate resolve --applied "$migration_name"
             done < prisma/phase-base-migrations.txt
           elif [[ -d prisma/migrations/20260802000000_baseline_existing_schema ]]; then
