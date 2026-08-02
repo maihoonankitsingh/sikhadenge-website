@@ -34,6 +34,7 @@ The script validates:
 - expected legacy application tables
 - at least one `DashboardUser`
 - Prisma migration history and unfinished/rolled-back records
+- the deployed legacy migration `20260723160037_init_whatsapp_agent`
 - known Phase 2 baseline and additive migration state
 - EngageOS schema completeness when already migrated
 - dashboard-user and workspace-membership count parity
@@ -41,6 +42,20 @@ The script validates:
 - schema-only `pg_dump` connectivity probe
 - PM2 process existence
 - production `/login` HTTP 200
+
+## Recognized migration lineage
+
+The production database may contain only the following recognized migration names during this Phase 2 window:
+
+```text
+20260723160037_init_whatsapp_agent
+20260802000000_baseline_existing_schema
+20260802174500_add_engageos_security_persistence
+```
+
+`20260723160037_init_whatsapp_agent` is the original production migration that created the existing WhatsApp Agent schema. It is expected to be applied exactly once before the Phase 2 baseline is recorded.
+
+The Phase 2 baseline and additive migrations must never be recorded or deployed by the preflight script.
 
 ## Required production directory
 
@@ -76,13 +91,11 @@ VERIFY_PG_DUMP=1
 
 ## Production command
 
-After the preflight PR is merged and the VPS checkout has been intentionally moved to that merged release SHA, run:
+After the preflight PR is merged, run from an isolated worktree at the exact merged release SHA. Do not move the live production checkout merely to execute a read-only preflight.
 
 ```bash
-cd /var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard
-
 EXPECTED_RELEASE_SHA=<MERGED_RELEASE_SHA> \
-ENV_FILE=.env \
+ENV_FILE=/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard/.env \
 PM2_PROCESS_NAME=sikhadenge-whatsapp-agent \
 CHECK_HTTP_URL=https://whatsapp.sikhadenge.in \
 VERIFY_PG_DUMP=1 \
@@ -111,6 +124,8 @@ PASS: Prisma schema validates
 PASS: EngageOS security master is inactive
 PASS: PostgreSQL connection is reachable
 PASS: Prisma migration history has no unfinished or rolled-back rows
+PASS: deployed legacy Prisma migration is applied exactly once
+PASS: Prisma history contains only recognized migration lineage
 PASS: schema-only pg_dump probe succeeded
 PASS: PM2 process exists: sikhadenge-whatsapp-agent
 PASS: login route returned HTTP 200
@@ -118,25 +133,29 @@ PASS: login route returned HTTP 200
 
 ## Accepted database states
 
-### State A — migration not started
-
-Expected evidence:
-
-```text
-PRISMA_MIGRATION_TABLE_EXISTS=false
-BASELINE_APPLIED_COUNT=0
-ADDITIVE_MIGRATION_APPLIED_COUNT=0
-ENGAGE_WORKSPACE_TABLE_EXISTS=false
-```
-
-This means the existing application schema is present but Prisma Migrate adoption has not started.
-
-### State B — Phase 2 already completed with controls inactive
+### State A — current production before Phase 2 migration
 
 Expected evidence:
 
 ```text
 PRISMA_MIGRATION_TABLE_EXISTS=true
+LEGACY_INIT_APPLIED_COUNT=1
+UNKNOWN_MIGRATION_COUNT=0
+BASELINE_APPLIED_COUNT=0
+ADDITIVE_MIGRATION_APPLIED_COUNT=0
+ENGAGE_WORKSPACE_TABLE_EXISTS=false
+```
+
+This is the expected live state before the Phase 2 baseline and additive migration are executed.
+
+### State B — Phase 2 completed with controls inactive
+
+Expected evidence:
+
+```text
+PRISMA_MIGRATION_TABLE_EXISTS=true
+LEGACY_INIT_APPLIED_COUNT=1
+UNKNOWN_MIGRATION_COUNT=0
 BASELINE_APPLIED_COUNT=1
 ADDITIVE_MIGRATION_APPLIED_COUNT=1
 ENGAGE_WORKSPACE_TABLE_EXISTS=true
@@ -155,12 +174,17 @@ The output must additionally show:
 Possible evidence:
 
 ```text
+LEGACY_INIT_APPLIED_COUNT=1
 BASELINE_APPLIED_COUNT=1
 ADDITIVE_MIGRATION_APPLIED_COUNT=0
 ENGAGE_WORKSPACE_TABLE_EXISTS=false
 ```
 
 Do not proceed blindly. Confirm that this state resulted from the current approved migration window and that no earlier attempt failed.
+
+### Migration history absent
+
+A database with the legacy application tables but no `_prisma_migrations` table is not the currently observed production state. Treat it as a separate environment requiring explicit migration-history reconciliation before using the production procedure.
 
 ## Automatic blockers
 
@@ -174,8 +198,10 @@ Any of these results block migration or deployment:
 - missing legacy table
 - no dashboard user
 - unfinished or rolled-back migration
+- deployed legacy migration missing or duplicated
 - unknown migration record
 - additive migration recorded while EngageOS tables are absent
+- EngageOS tables present without both Phase 2 migration records
 - partially present EngageOS schema
 - membership count mismatch
 - missing or enabled EngageOS flags
@@ -194,7 +220,7 @@ Retain these identifiers together:
 - preflight UTC timestamp
 - PostgreSQL database name and version
 - `DashboardUser` count
-- migration-state counts
+- legacy, baseline, additive, and unknown migration counts
 - schema-dump probe SHA-256
 - PM2 PID
 - login HTTP status
