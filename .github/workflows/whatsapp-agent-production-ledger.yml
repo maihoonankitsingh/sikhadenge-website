@@ -141,25 +141,32 @@ jobs:
 
       - name: Write deployment ledger entry
         shell: bash
+        env:
+          RUN_ID_VALUE: ${{ steps.resolve.outputs.run_id }}
+          RUN_URL_VALUE: ${{ steps.resolve.outputs.run_url }}
+          RUN_SHA_VALUE: ${{ steps.resolve.outputs.run_sha }}
+          RUN_STATUS_VALUE: ${{ steps.resolve.outputs.run_status }}
+          RUN_CONCLUSION_VALUE: ${{ steps.resolve.outputs.run_conclusion }}
+          JOB_RESULT_VALUE: ${{ steps.job.outputs.job_result }}
+          FAILED_STEP_VALUE: ${{ steps.job.outputs.failed_step }}
         run: |
           set -Eeuo pipefail
 
-          job_result="${{ steps.job.outputs.job_result }}"
-          failed_step="${{ steps.job.outputs.failed_step }}"
-          [[ -n "$job_result" ]] || job_result="not_found"
-          [[ -n "$failed_step" ]] || failed_step="none"
+          [[ -n "$RUN_ID_VALUE" ]] || RUN_ID_VALUE="not_found"
+          [[ -n "$JOB_RESULT_VALUE" ]] || JOB_RESULT_VALUE="not_found"
+          [[ -n "$FAILED_STEP_VALUE" ]] || FAILED_STEP_VALUE="none"
 
           cat > ledger-entry.md <<EOF
           ## Production workflow report
 
-          - Release SHA: `${{ steps.resolve.outputs.run_sha }}`
-          - Workflow run: ${{ steps.resolve.outputs.run_url }}
-          - Run ID: `${{ steps.resolve.outputs.run_id || 'not_found' }}`
-          - Run status: `${{ steps.resolve.outputs.run_status }}`
-          - Run conclusion: `${{ steps.resolve.outputs.run_conclusion }}`
-          - Production job result: `${job_result}`
-          - Failed step: `${failed_step}`
-          - Reported UTC: `$(date -u +'%Y-%m-%dT%H:%M:%SZ')`
+          - Release SHA: $RUN_SHA_VALUE
+          - Workflow run: $RUN_URL_VALUE
+          - Run ID: $RUN_ID_VALUE
+          - Run status: $RUN_STATUS_VALUE
+          - Run conclusion: $RUN_CONCLUSION_VALUE
+          - Production job result: $JOB_RESULT_VALUE
+          - Failed step: $FAILED_STEP_VALUE
+          - Reported UTC: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           This entry contains no production secrets, database URLs, provider credentials, or backup contents.
           EOF
