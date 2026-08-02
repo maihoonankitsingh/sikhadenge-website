@@ -602,12 +602,10 @@ function safeDate(value?: string) {
   return Number.isNaN(date.getTime()) ? RELEASE_DATE_ISO : date.toISOString().slice(0, 10);
 }
 
-export async function generateStaticParams() {
-  return getTypedBlogs().slice(0, 300).map((post) => ({ slug: post.slug }));
-}
 
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-export const revalidate = 2592000;
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = getTypedBlogBySlug(params.slug);

@@ -36,20 +36,6 @@ const RELEASE_DATE_LABEL = "July 28, 2026";
 
 // ISR — top entries are pre-rendered at build time, the rest render on
 // first request and are cached, matching the scale of the generated dataset.
-export async function generateStaticParams() {
-  const seen = new Set<string>();
-  return [
-    ...skillsData.map((skill) => ({ skill: skill.slug })),
-    ...getAllGeneratedEntries().slice(0, 500).map((entry) => ({ skill: entry.slug })),
-  ].filter(({ skill }) => {
-    if (seen.has(skill)) return false;
-    seen.add(skill);
-    return true;
-  });
-}
-
-export const dynamicParams = true;
-export const revalidate = 86400;
 
 function getPageData(slug: string) {
   const skillInfo = skillsData.find((item) => item.slug === slug);
@@ -71,6 +57,10 @@ function getPageData(slug: string) {
 
   return { skillInfo, entry: effectiveEntry, fields };
 }
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+export const revalidate = 0;
 
 export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
   const data = getPageData(params.skill);
