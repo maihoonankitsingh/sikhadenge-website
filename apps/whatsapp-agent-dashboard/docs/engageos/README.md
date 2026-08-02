@@ -14,13 +14,13 @@ It does not authorize changes to unrelated applications, domains, repositories, 
 
 ## Current execution status
 
-- Planning branch: `agent/engageos-foundation-plan`
-- Planning base: `deploy/whatsapp-live-combined-20260727`
-- Production deployment: not changed
-- Database: not changed
-- VPS: not changed
-- PM2/Nginx: not changed
-- Feature implementation: not started
+- Canonical release branch: `release/whatsapp-instagram-agent-flow-20260731`
+- Phase 0 production SHA: `a17a92761bebc93eea76c7c443933b5a0c3443e3`
+- Phase 0 build ID: `9uuYV4kVWB0HoeRWv25kX`
+- Phase 0: stabilization and source-of-truth gate complete
+- Active repository phase: Phase 1 — omnichannel domain foundation
+- Production database/schema in Phase 0: unchanged
+- Next implementation rule: additive contracts first; existing WhatsApp behavior remains unchanged
 
 ## Locked engineering direction
 
@@ -40,6 +40,8 @@ It does not authorize changes to unrelated applications, domains, repositories, 
 | `ARCHITECTURE.md` | Target system architecture, boundaries, dependency rules, runtime flow, security, and observability. |
 | `FILE_STRUCTURE.md` | Locked target folder structure and ownership of every major file group. |
 | `PHASES.md` | Phase-by-phase execution roadmap with deliverables and completion gates. |
+| `PHASE_0_CHECKLIST.md` | Original execution checklist for stabilization and truth reconciliation. |
+| `PHASE_0_COMPLETION.md` | Verified GitHub, VPS, CI, rollback, build, and production evidence used to close Phase 0. |
 | `MIGRATION_MAP.md` | Safe migration from the current WhatsApp-centric code and Prisma schema to the omnichannel model. |
 | `ENGINEERING_STANDARDS.md` | Branching, pull requests, code quality, API, database, test, security, and release rules. |
 | `adr/0001-modular-monolith.md` | Architecture decision record for starting with a modular monolith. |
