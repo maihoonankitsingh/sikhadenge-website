@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuxo pipefail
-PS4='+${LINENO}: '
+set -Eeuo pipefail
 
 workflow_path="../../.github/workflows/whatsapp-agent-production-batch1.yml"
 script_root="scripts"
@@ -116,7 +115,7 @@ fi
 
 grep -Fq 'test -z "$(git status --porcelain --untracked-files=no)"' "$workflow_path"
 grep -Fq 'git merge-base --is-ancestor HEAD "$TARGET_SHA"' "$workflow_path"
-grep -Fq 'git worktree remove --force' "$workflow_path"
+grep -Fq 'git -C "$LIVE_APP" worktree remove --force' "$workflow_path"
 
 grep -Fq 'a17a92761bebc93eea76c7c443933b5a0c3443e3' "$lineage_test"
 grep -Fq '20260723160037_init_whatsapp_agent' "$lineage_test"
