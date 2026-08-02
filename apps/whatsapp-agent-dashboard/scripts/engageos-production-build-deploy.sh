@@ -45,9 +45,14 @@ test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$OLD_SOURCE_SHA"
 test -z "$(git -C "$LIVE_APP" status --porcelain --untracked-files=no)"
 git -C "$LIVE_APP" merge-base --is-ancestor "$OLD_SOURCE_SHA" "$RELEASE_SHA"
 
-git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SHA"
-git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
-test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
+if [[ -e "$OLD_NEXT" ]]; then
+  printf 'FAIL: rollback build path already exists: %s\n' "$OLD_NEXT" >&2
+  exit 1
+fi
+if [[ -e "$FAILED_NEXT" ]]; then
+  printf 'FAIL: failed-build path already exists: %s\n' "$FAILED_NEXT" >&2
+  exit 1
+fi
 
 ERROR_LOG="/root/.pm2/logs/${PM2_PROCESS_NAME}-error.log"
 if [[ -f "$ERROR_LOG" ]]; then
@@ -55,14 +60,6 @@ if [[ -f "$ERROR_LOG" ]]; then
 else
   printf '0\n' > "$BACKUP_DIR/error-log-size-before.txt"
 fi
-
-if [[ -e "$OLD_NEXT" ]]; then
-  printf 'FAIL: rollback build path already exists: %s\n' "$OLD_NEXT" >&2
-  exit 1
-fi
-
-mv "$LIVE_APP/.next" "$OLD_NEXT"
-mv "$STAGED_NEXT" "$LIVE_APP/.next"
 
 cat > "$BACKUP_DIR/deploy-state.txt" <<EOF
 LIVE_APP=$LIVE_APP
@@ -73,9 +70,17 @@ NEW_BUILD_ID=$NEW_BUILD_ID
 OLD_NEXT=$OLD_NEXT
 FAILED_NEXT=$FAILED_NEXT
 PM2_PROCESS_NAME=$PM2_PROCESS_NAME
-ACTIVATED_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+PREPARED_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 EOF
 chmod 600 "$BACKUP_DIR/deploy-state.txt"
+
+git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SHA"
+git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
+test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
+
+mv "$LIVE_APP/.next" "$OLD_NEXT"
+mv "$STAGED_NEXT" "$LIVE_APP/.next"
+printf 'ACTIVATED_UTC=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$BACKUP_DIR/deploy-state.txt"
 
 pm2 restart "$PM2_PROCESS_NAME"
 sleep 5
