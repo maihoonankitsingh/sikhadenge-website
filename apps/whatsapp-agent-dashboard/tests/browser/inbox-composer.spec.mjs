@@ -88,33 +88,45 @@ test("template dialog stays above the docked tablet composer", async ({ page }) 
   await queueButton.click({ trial: true });
 });
 
-test("compact controls return after the visible chat widens", async ({ page }) => {
-  await page.setViewportSize({ width: 680, height: 760 });
-  await login(page);
-  await ensureConversationOpen(page);
-  await waitForDock(page);
+test("compact controls return after a touch viewport widens", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 680, height: 760 },
+    hasTouch: true,
+  });
+  const page = await context.newPage();
 
-  const channelNote = page.locator(".sx-composer-channel-note");
-  const tools = page.locator(".sx-composer-tools");
-  const divider = page.locator(".sx-composer-divider");
+  try {
+    await login(page);
+    await ensureConversationOpen(page);
+    await waitForDock(page);
 
-  await expect.poll(() => visibleChatWidth(page)).toBeLessThan(720);
-  await expect.poll(() => channelNote.evaluate((node) => getComputedStyle(node).display)).toBe("none");
-  await expect.poll(() => tools.evaluate((node) => getComputedStyle(node).display)).toBe("none");
-  await expect.poll(() => divider.evaluate((node) => getComputedStyle(node).display)).toBe("none");
+    const channelNote = page.locator(".sx-composer-channel-note");
+    const tools = page.locator(".sx-composer-tools");
+    const divider = page.locator(".sx-composer-divider");
 
-  await page.setViewportSize({ width: 1199, height: 900 });
+    await expect.poll(() => visibleChatWidth(page)).toBeLessThan(720);
+    await expect.poll(() => channelNote.evaluate((node) => getComputedStyle(node).display)).toBe("none");
+    await expect.poll(() => tools.evaluate((node) => getComputedStyle(node).display)).toBe("none");
+    await expect.poll(() => divider.evaluate((node) => getComputedStyle(node).display)).toBe("none");
 
-  await expect.poll(() => visibleChatWidth(page)).toBeGreaterThanOrEqual(720);
-  await expect
-    .poll(() => channelNote.evaluate((node) => getComputedStyle(node).display))
-    .not.toBe("none");
-  await expect
-    .poll(() => tools.evaluate((node) => getComputedStyle(node).display))
-    .not.toBe("none");
-  await expect
-    .poll(() => divider.evaluate((node) => getComputedStyle(node).display))
-    .not.toBe("none");
+    // Touch/coarse-pointer devices keep the runtime dock enabled even when a
+    // browser is switched into a wide desktop-mode viewport.
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect.poll(() => visibleChatWidth(page)).toBeGreaterThanOrEqual(720);
+    await waitForDock(page);
+    await expect
+      .poll(() => channelNote.evaluate((node) => getComputedStyle(node).display))
+      .not.toBe("none");
+    await expect
+      .poll(() => tools.evaluate((node) => getComputedStyle(node).display))
+      .not.toBe("none");
+    await expect
+      .poll(() => divider.evaluate((node) => getComputedStyle(node).display))
+      .not.toBe("none");
+  } finally {
+    await context.close();
+  }
 });
 
 test("composer remains visible on mobile, tablet, and desktop", async ({ page }) => {
