@@ -13,6 +13,9 @@ import {
   getBlogs,
   type BlogItem as BaseBlogItem,
 } from "@/lib/blogs";
+import {
+  getBlogRedirectTarget,
+} from "@/lib/blog-redirects";
 
 const BASE_URL = "https://sikhadenge.in";
 const RELEASE_DATE_ISO = "2026-07-24";
@@ -678,7 +681,17 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
-  const post = getTypedBlogBySlug(params.slug);
+  const redirectTarget =
+    getBlogRedirectTarget(params.slug);
+
+  if (redirectTarget) {
+    permanentRedirect(
+      `/blog/${redirectTarget}`,
+    );
+  }
+
+  const post =
+    getTypedBlogBySlug(params.slug);
 
   if (!post) {
     const canonicalSlug = getYearCanonicalSlug(params.slug);

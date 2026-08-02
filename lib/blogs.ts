@@ -1,6 +1,10 @@
 import fs from "fs";
 import path from "path";
 
+import {
+  isBlogRedirectSource,
+} from "./blog-redirects";
+
 export type BlogFaq = { q: string; a: string };
 
 export type BlogItem = {
@@ -152,8 +156,18 @@ export function getBlogs(forceRefresh = false): BlogItem[] {
     cachedSlugIndex = null;
   }
 
-  cachedBlogs = sanitizeBlogs(readRawBlogs());
-  cachedBlogBySlug = new Map(cachedBlogs.map((item) => [item.slug, item]));
+  cachedBlogs = sanitizeBlogs(
+    readRawBlogs(),
+  ).filter(
+    (item) =>
+      !isBlogRedirectSource(item.slug),
+  );
+
+  cachedBlogBySlug = new Map(
+    cachedBlogs.map(
+      (item) => [item.slug, item],
+    ),
+  );
   return cachedBlogs;
 }
 
@@ -181,7 +195,12 @@ export function getBlogCandidatesForSlug(slug: string) {
     return getBlogs().slice(0, 1000);
   }
 
-  return readShardBlogs(shardFile);
+  return readShardBlogs(
+    shardFile,
+  ).filter(
+    (item) =>
+      !isBlogRedirectSource(item.slug),
+  );
 }
 
 export function getBlogSlugs() {

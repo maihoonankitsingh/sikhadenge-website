@@ -97,7 +97,7 @@ const BLOG_FAQS = [
   {
     question: "How large is the Sikhadenge Blog library?",
     answer:
-      "The Blog hub displays its article count dynamically. It currently contains more than 120,000 practical AI pages organised across 51 topic categories.",
+      "The Blog hub displays its article count dynamically. It currently contains more than 119,000 public practical AI pages organised across 51 topic categories.",
   },
   {
     question: "What should I do after reading a Blog guide?",
