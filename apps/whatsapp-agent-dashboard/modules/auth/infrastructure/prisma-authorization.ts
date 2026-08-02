@@ -15,6 +15,8 @@ import { prisma } from "@/lib/db/prisma";
 export const ENGAGEOS_SECURITY_MASTER_ENV =
   "ENGAGEOS_SECURITY_PERSISTENCE_ENABLED";
 
+export type EnvironmentMap = Readonly<Record<string, string | undefined>>;
+
 export const SECURITY_FEATURE_FLAGS = {
   routePermissions: "engageos.route_permissions",
   outboundPolicy: "engageos.outbound_policy",
@@ -49,7 +51,7 @@ export class SecurityPersistenceConfigurationError extends Error {
 }
 
 export function isSecurityPersistenceMasterEnabled(
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvironmentMap = process.env,
 ): boolean {
   return env[ENGAGEOS_SECURITY_MASTER_ENV]?.trim().toLowerCase() === "true";
 }
@@ -109,7 +111,11 @@ export async function loadPersistedWorkspaceSecurityContext(
 
   const flags = emptyFeatureFlags();
   for (const flag of record.workspace.featureFlags) {
-    if (Object.values(SECURITY_FEATURE_FLAGS).includes(flag.key as SecurityFeatureFlag)) {
+    if (
+      Object.values(SECURITY_FEATURE_FLAGS).includes(
+        flag.key as SecurityFeatureFlag,
+      )
+    ) {
       flags[flag.key as SecurityFeatureFlag] = flag.enabled;
     }
   }
@@ -143,7 +149,7 @@ export async function loadPersistedWorkspaceSecurityContext(
 export async function resolveDashboardAuthorization(input: {
   userId: string;
   permission: Permission;
-  env?: NodeJS.ProcessEnv;
+  env?: EnvironmentMap;
 }): Promise<DashboardAuthorizationResolution> {
   if (!isSecurityPersistenceMasterEnabled(input.env)) {
     return { mode: "LEGACY", securityContext: null };
