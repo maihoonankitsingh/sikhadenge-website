@@ -110,8 +110,9 @@ test("compact controls return after a touch viewport widens", async ({ browser }
     await expect.poll(() => divider.evaluate((node) => getComputedStyle(node).display)).toBe("none");
 
     // Touch/coarse-pointer devices keep the runtime dock enabled even when a
-    // browser is switched into a wide desktop-mode viewport.
-    await page.setViewportSize({ width: 1440, height: 900 });
+    // browser is switched into a very wide desktop-mode viewport. This width
+    // crosses the real chat-column breakpoint after the details panel opens.
+    await page.setViewportSize({ width: 1920, height: 1080 });
 
     await expect.poll(() => visibleChatWidth(page)).toBeGreaterThanOrEqual(720);
     await waitForDock(page);
