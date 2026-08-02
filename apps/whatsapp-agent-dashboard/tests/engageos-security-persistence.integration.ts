@@ -97,9 +97,25 @@ async function main() {
   await prisma.engageChannelConnection.deleteMany({
     where: {
       workspaceId: workspace.id,
-      externalAccountId: "ci-security-whatsapp",
+      channel: "WHATSAPP",
     },
   });
+
+  const rawBody = JSON.stringify({ object: "whatsapp_business_account", ci: 1 });
+  await assert.rejects(
+    () =>
+      reservePersistedWebhookReplay({
+        channel: "WHATSAPP",
+        rawBody,
+        signatureHeader: "sha256=ci",
+        env: securityEnv,
+      }),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code: string }).code ===
+        "WEBHOOK_REPLAY_CONFIGURATION_ERROR",
+  );
 
   const connection = await prisma.engageChannelConnection.create({
     data: {
@@ -236,7 +252,48 @@ async function main() {
     data: { active: false, deactivatedAt: new Date() },
   });
 
-  const rawBody = JSON.stringify({ object: "whatsapp_business_account", ci: 1 });
+  const ambiguousConnection = await prisma.engageChannelConnection.create({
+    data: {
+      workspaceId: workspace.id,
+      channel: "WHATSAPP",
+      externalAccountId: "ci-security-whatsapp-secondary",
+      displayName: "CI WhatsApp Secondary",
+      status: "CONNECTED",
+      capabilities: {
+        WEBHOOK_VERIFY: true,
+        INBOUND_MESSAGE: true,
+        OUTBOUND_TEXT: false,
+        OUTBOUND_MEDIA: false,
+        DELIVERY_STATUS: false,
+        READ_STATUS: false,
+        COMMENT_EVENTS: false,
+        PUBLIC_COMMENT_REPLY: false,
+        PRIVATE_COMMENT_REPLY: false,
+        STORY_REPLY: false,
+        MENTION_EVENTS: false,
+      },
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      reservePersistedWebhookReplay({
+        channel: "WHATSAPP",
+        rawBody,
+        signatureHeader: "sha256=ci",
+        env: securityEnv,
+      }),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code: string }).code ===
+        "WEBHOOK_REPLAY_CONFIGURATION_ERROR",
+  );
+
+  await prisma.engageChannelConnection.delete({
+    where: { id: ambiguousConnection.id },
+  });
+
   const firstReplay = await reservePersistedWebhookReplay({
     channel: "WHATSAPP",
     rawBody,
@@ -265,7 +322,7 @@ async function main() {
   assert.equal(retriedReplay.duplicate, false);
   await releasePersistedWebhookReplay(retriedReplay);
 
-  console.log("EngageOS security persistence integration tests passed: 26 assertions.");
+  console.log("EngageOS security persistence integration tests passed: 28 assertions.");
 }
 
 main()
