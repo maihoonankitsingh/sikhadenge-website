@@ -161,15 +161,15 @@ jobs:
           git show "$base_sha:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
           test -s prisma/phase-base.prisma
 
-          git ls-tree -r --name-only "$base_sha" \
-            apps/whatsapp-agent-dashboard/prisma/migrations \
-            | awk -F/ '$NF == "migration.sql" { print $(NF-1) }' \
-            | sort -u > prisma/phase-base-migrations.txt
-
-          while IFS= read -r migration_name; do
-            test -n "$migration_name"
-            test -d "prisma/migrations/$migration_name"
-          done < prisma/phase-base-migrations.txt
+          : > prisma/phase-base-migrations.txt
+          for migration_dir in prisma/migrations/*; do
+            [[ -d "$migration_dir" ]] || continue
+            migration_name="$(basename "$migration_dir")"
+            if git cat-file -e "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations/$migration_name/migration.sql" 2>/dev/null; then
+              printf '%s\n' "$migration_name" >> prisma/phase-base-migrations.txt
+            fi
+          done
+          sort -u -o prisma/phase-base-migrations.txt prisma/phase-base-migrations.txt
 
           printf 'Pull request base migrations:\n'
           cat prisma/phase-base-migrations.txt
@@ -183,6 +183,7 @@ jobs:
         run: |
           if [[ -s prisma/phase-base-migrations.txt ]]; then
             while IFS= read -r migration_name; do
+              test -n "$migration_name"
               npx prisma migrate resolve --applied "$migration_name"
             done < prisma/phase-base-migrations.txt
           elif [[ -d prisma/migrations/20260802000000_baseline_existing_schema ]]; then
