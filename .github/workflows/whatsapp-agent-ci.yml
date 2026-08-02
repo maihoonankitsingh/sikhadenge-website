@@ -136,6 +136,9 @@ jobs:
       INITIAL_ADMIN_EMAIL: admin@example.invalid
       INITIAL_ADMIN_PASSWORD: CI-only-password-12345
       INITIAL_ADMIN_NAME: CI Admin
+      DASHBOARD_ADMIN_NAME: CI Admin
+      DASHBOARD_ADMIN_EMAIL: admin@example.invalid
+      DASHBOARD_ADMIN_PASSWORD: CI-only-password-12345
       ENGAGEOS_SECURITY_PERSISTENCE_ENABLED: "true"
 
     steps:
