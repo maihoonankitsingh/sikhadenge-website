@@ -53,7 +53,7 @@ NODE
 }
 
 psql_scalar() {
-  psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "$1"
+  psql "$DATABASE_CLI_URL" -X -v ON_ERROR_STOP=1 -Atqc "$1"
 }
 
 printf 'ENGAGEOS_PRODUCTION_PREFLIGHT_BEGIN\n'
@@ -70,9 +70,43 @@ fi
 if [[ ! -f package.json || ! -f prisma/schema.prisma ]]; then
   fail "run from apps/whatsapp-agent-dashboard"
 fi
-
 if [[ -z "$EXPECTED_RELEASE_SHA" ]]; then
   fail "EXPECTED_RELEASE_SHA is required"
+fi
+
+if [[ -f "$ENV_FILE" ]]; then
+  pass "environment file found: $ENV_FILE"
+  persisted_master="$(read_env_value ENGAGEOS_SECURITY_PERSISTENCE_ENABLED "$ENV_FILE")"
+else
+  warn "environment file not found: $ENV_FILE"
+  persisted_master=""
+fi
+
+runtime_master="${ENGAGEOS_SECURITY_PERSISTENCE_ENABLED:-$persisted_master}"
+normalized_master="$(printf '%s' "$runtime_master" | tr '[:upper:]' '[:lower:]' | xargs)"
+printf 'ENGAGEOS_SECURITY_MASTER=%s\n' "${normalized_master:-absent}"
+if [[ -z "$normalized_master" || "$normalized_master" == "false" || "$normalized_master" == "0" ]]; then
+  pass "EngageOS security master is inactive"
+else
+  fail "EngageOS security master must be absent or false before migration/deploy"
+fi
+
+if [[ -z "${DATABASE_URL:-}" && -f "$ENV_FILE" ]]; then
+  DATABASE_URL="$(read_env_value DATABASE_URL "$ENV_FILE")"
+fi
+
+DATABASE_CLI_URL=""
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  fail "DATABASE_URL is not exported and was not found in ENV_FILE"
+else
+  export DATABASE_URL
+  if DATABASE_CLI_URL="$(node scripts/prisma-postgres-cli-url.mjs "$DATABASE_URL" 2>/tmp/engageos-database-url-error.log)"; then
+    export DATABASE_CLI_URL
+    pass "PostgreSQL CLI connection URL prepared without Prisma-only parameters"
+  else
+    fail "DATABASE_URL could not be prepared for PostgreSQL CLI tools"
+    sed -n '1,20p' /tmp/engageos-database-url-error.log
+  fi
 fi
 
 if command -v git >/dev/null 2>&1; then
@@ -100,7 +134,7 @@ fi
 if command -v npm >/dev/null 2>&1; then
   printf 'NPM_VERSION=%s\n' "$(npm --version)"
 fi
-if command -v npx >/dev/null 2>&1 && [[ -f prisma/schema.prisma ]]; then
+if command -v npx >/dev/null 2>&1 && [[ -f prisma/schema.prisma ]] && [[ -n "${DATABASE_URL:-}" ]]; then
   if npx prisma validate >/tmp/engageos-prisma-validate.log 2>&1; then
     pass "Prisma schema validates"
   else
@@ -109,32 +143,9 @@ if command -v npx >/dev/null 2>&1 && [[ -f prisma/schema.prisma ]]; then
   fi
 fi
 
-if [[ -f "$ENV_FILE" ]]; then
-  pass "environment file found: $ENV_FILE"
-  persisted_master="$(read_env_value ENGAGEOS_SECURITY_PERSISTENCE_ENABLED "$ENV_FILE")"
-else
-  warn "environment file not found: $ENV_FILE"
-  persisted_master=""
-fi
-runtime_master="${ENGAGEOS_SECURITY_PERSISTENCE_ENABLED:-$persisted_master}"
-normalized_master="$(printf '%s' "$runtime_master" | tr '[:upper:]' '[:lower:]' | xargs)"
-printf 'ENGAGEOS_SECURITY_MASTER=%s\n' "${normalized_master:-absent}"
-if [[ -z "$normalized_master" || "$normalized_master" == "false" || "$normalized_master" == "0" ]]; then
-  pass "EngageOS security master is inactive"
-else
-  fail "EngageOS security master must be absent or false before migration/deploy"
-fi
-
-if [[ -z "${DATABASE_URL:-}" && -f "$ENV_FILE" ]]; then
-  DATABASE_URL="$(read_env_value DATABASE_URL "$ENV_FILE")"
-  export DATABASE_URL
-fi
-
-if [[ -z "${DATABASE_URL:-}" ]]; then
-  fail "DATABASE_URL is not exported and was not found in ENV_FILE"
-elif command -v psql >/dev/null 2>&1; then
+if [[ -n "$DATABASE_CLI_URL" ]] && command -v psql >/dev/null 2>&1; then
   database_reachable=false
-  if database_identity="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database() || '|' || current_user || '|' || current_setting('server_version');" 2>/tmp/engageos-psql-error.log)"; then
+  if database_identity="$(psql "$DATABASE_CLI_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database() || '|' || current_user || '|' || current_setting('server_version');" 2>/tmp/engageos-psql-error.log)"; then
     IFS='|' read -r database_name database_user database_version <<<"$database_identity"
     printf 'DATABASE_NAME=%s\n' "$database_name"
     printf 'DATABASE_USER=%s\n' "$database_user"
@@ -236,7 +247,7 @@ elif command -v psql >/dev/null 2>&1; then
 
     if [[ "$VERIFY_PG_DUMP" == "1" ]] && command -v pg_dump >/dev/null 2>&1; then
       dump_probe="$(mktemp /tmp/engageos-schema-probe.XXXXXX.sql)"
-      if pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" >"$dump_probe" 2>/tmp/engageos-pg-dump-error.log && [[ -s "$dump_probe" ]]; then
+      if pg_dump --schema-only --no-owner --no-privileges "$DATABASE_CLI_URL" >"$dump_probe" 2>/tmp/engageos-pg-dump-error.log && [[ -s "$dump_probe" ]]; then
         printf 'SCHEMA_DUMP_PROBE_SHA256=%s\n' "$(sha256sum "$dump_probe" | awk '{print $1}')"
         pass "schema-only pg_dump probe succeeded"
       else
