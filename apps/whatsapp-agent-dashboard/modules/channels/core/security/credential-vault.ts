@@ -61,18 +61,31 @@ export function toCredentialPublicView(
   };
 }
 
+const SECRET_FIELD_NAMES = new Set([
+  "encrypted",
+  "ciphertext",
+  "authenticationtag",
+  "initializationvector",
+  "accesstoken",
+  "refreshtoken",
+  "appsecret",
+  "webhooksecret",
+  "apikey",
+]);
+
+function normalizeFieldName(field: string): string {
+  return field.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function containsUsableCredentialMaterial(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
 
-  const serialized = JSON.stringify(value).toLowerCase();
-  return [
-    "ciphertext",
-    "authenticationtag",
-    "initializationvector",
-    "access_token",
-    "refresh_token",
-    "app_secret",
-    "webhook_secret",
-    "api_key",
-  ].some((field) => serialized.includes(`\"${field}\"`));
+  for (const [key, child] of Object.entries(value)) {
+    if (SECRET_FIELD_NAMES.has(normalizeFieldName(key))) return true;
+    if (child && typeof child === "object") {
+      if (containsUsableCredentialMaterial(child)) return true;
+    }
+  }
+
+  return false;
 }
