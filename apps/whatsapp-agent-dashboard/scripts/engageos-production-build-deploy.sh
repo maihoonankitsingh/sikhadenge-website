@@ -78,6 +78,9 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
+cd "$LIVE_APP"
+npx prisma generate
+
 mv "$LIVE_APP/.next" "$OLD_NEXT"
 mv "$STAGED_NEXT" "$LIVE_APP/.next"
 printf 'ACTIVATED_UTC=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$BACKUP_DIR/deploy-state.txt"
