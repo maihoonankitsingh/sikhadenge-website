@@ -158,14 +158,14 @@ jobs:
       - name: Materialize pull request base schema and migration list
         run: |
           base_sha="${{ github.event.pull_request.base.sha }}"
-          git show "$base_sha:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
+          git show "${base_sha}:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
           test -s prisma/phase-base.prisma
 
           : > prisma/phase-base-migrations.txt
           for migration_dir in prisma/migrations/*; do
             [[ -d "$migration_dir" ]] || continue
             migration_name="$(basename "$migration_dir")"
-            if git cat-file -e "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations/$migration_name/migration.sql" 2>/dev/null; then
+            if git show "${base_sha}:apps/whatsapp-agent-dashboard/prisma/migrations/${migration_name}/migration.sql" >/dev/null 2>&1; then
               printf '%s\n' "$migration_name" >> prisma/phase-base-migrations.txt
             fi
           done
