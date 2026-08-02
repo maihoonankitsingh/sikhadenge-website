@@ -59,7 +59,9 @@ NEW_FAQS = '''  const dedupeFaqs = (items: GeneratedFaq[]) =>
 
 
 def git(root: Path, *args: str) -> str:
-    return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
+    # Preserve the leading status-column space emitted by `git status --short`.
+    # Only trim the terminal newline; `.strip()` corrupts porcelain status output.
+    return subprocess.check_output(["git", "-C", str(root), *args], text=True).rstrip("\n")
 
 
 def main() -> int:
