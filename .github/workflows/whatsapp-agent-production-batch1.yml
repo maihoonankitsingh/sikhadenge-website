@@ -1,0 +1,177 @@
+name: WhatsApp Agent Production Batch 1
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact merged release SHA to deploy
+        required: true
+        type: string
+      execute:
+        description: Execute the guarded production batch
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches:
+      - release/whatsapp-instagram-agent-flow-20260731
+    paths:
+      - ".github/workflows/whatsapp-agent-production-batch1.yml"
+      - "apps/whatsapp-agent-dashboard/scripts/engageos-production-*.sh"
+      - "apps/whatsapp-agent-dashboard/scripts/prisma-postgres-cli-url.mjs"
+      - "apps/whatsapp-agent-dashboard/prisma/migrations/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-agent-production
+  cancel-in-progress: false
+
+jobs:
+  production-batch-1:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.execute == true) ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[production-batch1]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      TARGET_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+      PRODUCTION_RUN_ID: github-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout exact release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Validate release and production secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+
+          missing=0
+          for variable_name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_HOST_KEY; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              printf 'Missing required production secret: %s\n' "$variable_name" >&2
+              missing=1
+            fi
+          done
+          test "$missing" = "0"
+
+          if [[ -z "${SSH_PORT:-}" ]]; then
+            printf 'SSH_PORT=22\n' >> "$GITHUB_ENV"
+          fi
+          printf 'PASS: RELEASE_AND_SECRET_GATE_COMPLETE\n'
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/whatsapp-production"
+          chmod 600 "$HOME/.ssh/whatsapp-production"
+          printf '%s\n' "$SSH_HOST_KEY" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -l -f "$HOME/.ssh/whatsapp-production" >/dev/null
+          test -s "$HOME/.ssh/known_hosts"
+          printf 'PASS: SSH_IDENTITY_CONFIGURED\n'
+
+      - name: Execute five-step production batch
+        id: production
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +e
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "TARGET_SHA='$TARGET_SHA' RUN_ID='$PRODUCTION_RUN_ID' bash -s" <<'REMOTE' 2>&1 | tee production-batch.log
+          set -Eeuo pipefail
+
+          LIVE_APP=/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard
+          RELEASE_REF=refs/remotes/origin/release/whatsapp-instagram-agent-flow-20260731
+          STAGE_ROOT="/tmp/sikhadenge-github-production-${RUN_ID}"
+          STAGE_APP="$STAGE_ROOT/apps/whatsapp-agent-dashboard"
+
+          cleanup() {
+            git -C "$LIVE_APP" worktree remove --force "$STAGE_ROOT" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          cd "$LIVE_APP"
+          git fetch origin \
+            +refs/heads/release/whatsapp-instagram-agent-flow-20260731:refs/remotes/origin/release/whatsapp-instagram-agent-flow-20260731
+
+          test "$(git rev-parse "$RELEASE_REF")" = "$TARGET_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test -d "$LIVE_APP/node_modules"
+          git merge-base --is-ancestor HEAD "$TARGET_SHA"
+
+          git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
+          ln -s "$LIVE_APP/node_modules" "$STAGE_APP/node_modules"
+          ln -s "$LIVE_APP/.env" "$STAGE_APP/.env"
+
+          LIVE_APP="$LIVE_APP" \
+          STAGE_APP="$STAGE_APP" \
+          RELEASE_SHA="$TARGET_SHA" \
+          RUN_ID="$RUN_ID" \
+          PM2_PROCESS_NAME=sikhadenge-whatsapp-agent \
+          PUBLIC_URL=https://whatsapp.sikhadenge.in \
+          BACKUP_ROOT=/root/sikhadenge-backups \
+          ENV_FILE="$LIVE_APP/.env" \
+          bash "$STAGE_APP/scripts/engageos-production-batch1.sh"
+          REMOTE
+          ssh_code=${PIPESTATUS[0]}
+          set -e
+          printf 'SSH_EXIT_CODE=%s\n' "$ssh_code" | tee -a production-batch.log
+          exit "$ssh_code"
+
+      - name: Collect non-sensitive production evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p production-evidence
+          for file_name in \
+            manifest.txt \
+            migration-evidence.txt \
+            deploy-state.txt \
+            post-deploy-evidence.txt \
+            rollback-evidence.txt \
+            batch-result.txt; do
+            scp \
+              -P "$SSH_PORT" \
+              -i "$HOME/.ssh/whatsapp-production" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              "$SSH_USER@$SSH_HOST:/root/sikhadenge-backups/engageos-${PRODUCTION_RUN_ID}/${file_name}" \
+              "production-evidence/${file_name}" >/dev/null 2>&1 || true
+          done
+          find production-evidence -type f -maxdepth 1 -print -exec chmod 600 {} \;
+          exit 0
+
+      - name: Upload production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsapp-agent-production-${{ env.PRODUCTION_RUN_ID }}
+          path: |
+            production-batch.log
+            production-evidence
+          if-no-files-found: error
+          retention-days: 14
