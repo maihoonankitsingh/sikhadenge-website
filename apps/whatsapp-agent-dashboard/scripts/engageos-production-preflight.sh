@@ -7,6 +7,10 @@ PM2_PROCESS_NAME="${PM2_PROCESS_NAME:-sikhadenge-whatsapp-agent}"
 CHECK_HTTP_URL="${CHECK_HTTP_URL:-https://whatsapp.sikhadenge.in}"
 VERIFY_PG_DUMP="${VERIFY_PG_DUMP:-1}"
 
+LEGACY_INIT_MIGRATION="20260723160037_init_whatsapp_agent"
+PHASE2_BASELINE_MIGRATION="20260802000000_baseline_existing_schema"
+PHASE2_ADDITIVE_MIGRATION="20260802174500_add_engageos_security_persistence"
+
 failures=0
 warnings=0
 
@@ -187,28 +191,40 @@ if [[ -n "$DATABASE_CLI_URL" ]] && command -v psql >/dev/null 2>&1; then
         fail "Prisma migration history contains unfinished or rolled-back rows"
       fi
 
-      baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802000000_baseline_existing_schema' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-      additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802174500_add_engageos_security_persistence' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-      unknown_migration_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('20260802000000_baseline_existing_schema','20260802174500_add_engageos_security_persistence');")"
+      legacy_init_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${LEGACY_INIT_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+      baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE2_BASELINE_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+      additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE2_ADDITIVE_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+      unknown_migration_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('${LEGACY_INIT_MIGRATION}','${PHASE2_BASELINE_MIGRATION}','${PHASE2_ADDITIVE_MIGRATION}');")"
+
+      printf 'LEGACY_INIT_APPLIED_COUNT=%s\n' "$legacy_init_count"
       printf 'UNKNOWN_MIGRATION_COUNT=%s\n' "$unknown_migration_count"
+
+      if [[ "$legacy_init_count" == "1" ]]; then
+        pass "deployed legacy Prisma migration is applied exactly once"
+      else
+        fail "deployed legacy Prisma migration is missing or duplicated"
+      fi
+
       if [[ "$unknown_migration_count" == "0" ]]; then
-        pass "Prisma history contains only recognized Phase 2 migrations"
+        pass "Prisma history contains only recognized migration lineage"
       else
         fail "Prisma history contains unrecognized migrations"
       fi
     else
+      legacy_init_count=0
       baseline_count=0
       additive_count=0
       info "Prisma migration history is absent; one-time baseline is still pending"
     fi
+
     printf 'BASELINE_APPLIED_COUNT=%s\n' "$baseline_count"
     printf 'ADDITIVE_MIGRATION_APPLIED_COUNT=%s\n' "$additive_count"
 
     engage_workspace_exists="$(psql_scalar "SELECT CASE WHEN to_regclass('public.\"EngageWorkspace\"') IS NULL THEN 'false' ELSE 'true' END;")"
     printf 'ENGAGE_WORKSPACE_TABLE_EXISTS=%s\n' "$engage_workspace_exists"
     if [[ "$engage_workspace_exists" == "true" ]]; then
-      if [[ "$additive_count" != "1" ]]; then
-        fail "EngageOS tables exist without one completed additive migration record"
+      if [[ "$baseline_count" != "1" || "$additive_count" != "1" ]]; then
+        fail "EngageOS tables exist without completed Phase 2 baseline and additive migration records"
       fi
       engage_tables=(EngageWorkspace EngageWorkspaceMembership EngagePermissionGrant EngageChannelConnection EngageConnectionCredential EngageCustomerConsentEvent EngageCustomerSuppression EngageKillSwitch EngageWebhookReplayRecord EngageSecurityAuditEvent EngageFeatureFlag)
       for table_name in "${engage_tables[@]}"; do
