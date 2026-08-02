@@ -186,9 +186,11 @@ function buildHighlights(post: BlogItem, parsed: ParsedSlug): GeneratedHighlight
 function buildSteps(post: BlogItem, parsed: ParsedSlug): GeneratedStep[] {
   const supplied = post.practicalSteps?.filter(Boolean).slice(0, 6) || [];
   if (supplied.length >= 4) {
+    // BLOG_D1E_RENDERER_SPECIFICITY_V1: render the page-specific source step
+    // as the visible explanation instead of repeating one generic sentence.
     return supplied.map((step, index) => ({
-      title: step,
-      description: `Complete this stage with a visible output and review it before moving to step ${index + 2}.`,
+      title: `Step ${index + 1}`,
+      description: step,
       meta: index === 0 ? "Define the goal" : index === supplied.length - 1 ? "Measure and improve" : "Build and review",
     }));
   }
@@ -342,8 +344,20 @@ function buildFaqs(post: BlogItem, parsed: ParsedSlug): GeneratedFaq[] {
     },
   ];
 
-  const merged = [...supplied, ...generated];
-  return merged.filter((faq, index, all) => all.findIndex((item) => item.q === faq.q) === index).slice(0, 15);
+  const dedupeFaqs = (items: GeneratedFaq[]) =>
+    items.filter(
+      (faq, index, all) =>
+        all.findIndex((item) => item.q.trim().toLowerCase() === faq.q.trim().toLowerCase()) === index,
+    );
+
+  // BLOG_D1E_RENDERER_SPECIFICITY_V1: complete source FAQs are authoritative.
+  // Appending the same generic FAQ set to every page inflated template
+  // dominance and weakened intent differentiation across otherwise distinct URLs.
+  if (supplied.length >= 4) {
+    return dedupeFaqs(supplied).slice(0, 8);
+  }
+
+  return dedupeFaqs([...supplied, ...generated]).slice(0, 6);
 }
 
 
