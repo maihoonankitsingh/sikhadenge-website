@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 workflow_path="../../.github/workflows/whatsapp-agent-production-batch1.yml"
 script_root="scripts"
+lineage_test="tests/engageos-production-migration-lineage.integration.sh"
 
 scripts=(
   "$script_root/engageos-production-backup.sh"
@@ -13,7 +14,7 @@ scripts=(
   "$script_root/engageos-production-batch1.sh"
 )
 
-for script_path in "${scripts[@]}"; do
+for script_path in "${scripts[@]}" "$lineage_test"; do
   test -f "$script_path"
   bash -n "$script_path"
 done
@@ -60,6 +61,7 @@ grep -Fq 'merge --ff-only' "$build_script"
 grep -Fq 'backup/vps-before-engageos-' "$build_script"
 grep -Fq 'mv "$LIVE_APP/.next" "$OLD_NEXT"' "$build_script"
 grep -Fq 'pm2 restart "$PM2_PROCESS_NAME"' "$build_script"
+grep -Fq 'npx prisma generate' "$build_script"
 state_line="$(grep -nF 'cat > "$BACKUP_DIR/deploy-state.txt"' "$build_script" | cut -d: -f1)"
 merge_line="$(grep -nF 'merge --ff-only' "$build_script" | cut -d: -f1)"
 test -n "$state_line"
@@ -76,6 +78,7 @@ grep -Fq 'PASS: POST_DEPLOY_VERIFICATION_COMPLETE' "$verify_script"
 rollback_script="$script_root/engageos-production-rollback.sh"
 grep -Fq 'git -C "$LIVE_APP" reset --hard "$OLD_SOURCE_SHA"' "$rollback_script"
 grep -Fq 'mv "$OLD_NEXT" "$LIVE_APP/.next"' "$rollback_script"
+grep -Fq 'npx prisma generate' "$rollback_script"
 grep -Fq 'DATABASE_SCHEMA_ROLLBACK=NOT_ATTEMPTED_ADDITIVE_FLAGS_OFF' "$rollback_script"
 if grep -Eqi 'DROP[[:space:]]+TABLE|TRUNCATE[[:space:]]+TABLE|DELETE[[:space:]]+FROM|ALTER[[:space:]]+TABLE' "$rollback_script"; then
   printf 'Rollback script must not destructively mutate the database.\n' >&2
@@ -100,12 +103,22 @@ for required_text in \
   'WHATSAPP_PROD_SSH_PRIVATE_KEY' \
   'WHATSAPP_PROD_SSH_HOST_KEY' \
   'StrictHostKeyChecking=yes' \
+  'npm install --include=dev --no-audit --no-fund' \
   'actions/upload-artifact@v4'; do
   grep -Fq "$required_text" "$workflow_path"
 done
 
+if grep -Fq 'ln -s "$LIVE_APP/node_modules"' "$workflow_path"; then
+  printf 'Production stage must not share live node_modules.\n' >&2
+  exit 1
+fi
+
 grep -Fq 'test -z "$(git status --porcelain --untracked-files=no)"' "$workflow_path"
 grep -Fq 'git merge-base --is-ancestor HEAD "$TARGET_SHA"' "$workflow_path"
 grep -Fq 'git worktree remove --force' "$workflow_path"
+
+grep -Fq 'a17a92761bebc93eea76c7c443933b5a0c3443e3' "$lineage_test"
+grep -Fq '20260723160037_init_whatsapp_agent' "$lineage_test"
+grep -Fq 'npm run test:production-migration-lineage:integration' ../../.github/workflows/whatsapp-agent-ci.yml
 
 printf 'EngageOS production batch 1 policy test passed.\n'
