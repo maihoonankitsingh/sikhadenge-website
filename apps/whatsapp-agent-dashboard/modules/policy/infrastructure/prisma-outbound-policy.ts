@@ -215,12 +215,16 @@ function mapSuppression(record: {
   expiresAt: Date | null;
   revokedAt: Date | null;
 }): CustomerSuppression {
-  const channel = record.channel;
-  if (channel && !isChannelType(channel)) {
+  const rawChannel = record.channel;
+  if (rawChannel && !isChannelType(rawChannel)) {
     throw new PersistedOutboundPolicyError(
-      `Unsupported suppression channel: ${channel}.`,
+      `Unsupported suppression channel: ${rawChannel}.`,
     );
   }
+  const channel: ChannelType | undefined = rawChannel
+    ? (rawChannel as ChannelType)
+    : undefined;
+
   if (!isSuppressionReason(record.reason)) {
     throw new PersistedOutboundPolicyError(
       `Unsupported suppression reason: ${record.reason}.`,
