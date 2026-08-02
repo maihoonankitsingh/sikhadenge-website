@@ -155,20 +155,35 @@ jobs:
       - name: Install dependencies
         run: npm install --include=dev --no-audit --no-fund
 
-      - name: Materialize pull request base schema
+      - name: Materialize pull request base schema and migration list
         run: |
-          git show "${{ github.event.pull_request.base.sha }}:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          git show "$base_sha:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
           test -s prisma/phase-base.prisma
 
-      - name: Create pre-migration database and seed legacy data
+          : > prisma/phase-base-migrations.txt
+          if git cat-file -e "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations" 2>/dev/null; then
+            git ls-tree -d --name-only "$base_sha:apps/whatsapp-agent-dashboard/prisma/migrations" \
+              | sort > prisma/phase-base-migrations.txt
+          fi
+
+      - name: Create database from pull request base and seed data
         run: |
           npx prisma db push --schema prisma/phase-base.prisma --skip-generate
           npm run db:seed
 
-      - name: Baseline existing Prisma schema
-        run: npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+      - name: Record pull request base migration history
+        run: |
+          if [[ -s prisma/phase-base-migrations.txt ]]; then
+            while IFS= read -r migration_name; do
+              test -n "$migration_name"
+              npx prisma migrate resolve --applied "$migration_name"
+            done < prisma/phase-base-migrations.txt
+          elif [[ -d prisma/migrations/20260802000000_baseline_existing_schema ]]; then
+            npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+          fi
 
-      - name: Apply committed Prisma migration
+      - name: Apply head-only committed Prisma migrations
         run: npx prisma migrate deploy
 
       - name: Verify migration status
