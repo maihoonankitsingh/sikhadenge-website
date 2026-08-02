@@ -8,6 +8,7 @@ import {
 import {
   isSecurityPersistenceMasterEnabled,
   SECURITY_FEATURE_FLAGS,
+  type EnvironmentMap,
 } from "@/modules/auth/infrastructure/prisma-authorization";
 import { webhookReplayKey } from "@/modules/channels/core/security/webhook-security";
 import { prisma } from "@/lib/db/prisma";
@@ -34,7 +35,7 @@ export async function reservePersistedWebhookReplay(input: {
   externalEventId?: string | null;
   now?: Date;
   ttlSeconds?: number;
-  env?: NodeJS.ProcessEnv;
+  env?: EnvironmentMap;
 }): Promise<WebhookReplayReservation> {
   if (!isSecurityPersistenceMasterEnabled(input.env)) {
     return { enforced: false, duplicate: false };
