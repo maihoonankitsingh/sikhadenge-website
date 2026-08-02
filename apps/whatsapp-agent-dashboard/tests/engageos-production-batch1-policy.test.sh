@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
+set -Eeuxo pipefail
+PS4='+${LINENO}: '
 
 workflow_path="../../.github/workflows/whatsapp-agent-production-batch1.yml"
 script_root="scripts"
