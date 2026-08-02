@@ -17,7 +17,7 @@ FAILED_NEXT="$LIVE_APP/.next-failed-engageos-${RUN_ID}"
 
 cleanup_staged_next() {
   if [[ -d "$STAGED_NEXT" ]]; then
-    rm -rf "$STAGED_NEXT"
+    find "$STAGED_NEXT" -depth -delete
   fi
 }
 trap cleanup_staged_next ERR
