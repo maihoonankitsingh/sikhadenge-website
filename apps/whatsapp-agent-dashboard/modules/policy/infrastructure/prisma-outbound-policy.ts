@@ -215,9 +215,10 @@ function mapSuppression(record: {
   expiresAt: Date | null;
   revokedAt: Date | null;
 }): CustomerSuppression {
-  if (record.channel && !isChannelType(record.channel)) {
+  const channel = record.channel;
+  if (channel && !isChannelType(channel)) {
     throw new PersistedOutboundPolicyError(
-      `Unsupported suppression channel: ${record.channel}.`,
+      `Unsupported suppression channel: ${channel}.`,
     );
   }
   if (!isSuppressionReason(record.reason)) {
@@ -245,7 +246,7 @@ function mapSuppression(record: {
     ...(record.connectionId
       ? { connectionId: channelConnectionId(record.connectionId) }
       : {}),
-    ...(record.channel ? { channel: record.channel } : {}),
+    ...(channel ? { channel } : {}),
     purposes,
     reason: record.reason,
     startsAt: record.startsAt,
