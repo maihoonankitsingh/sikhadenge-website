@@ -106,6 +106,77 @@ jobs:
           cat build.log
           test "$(cat build.exit)" = "0"
 
+  migration-regression:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: sikhadenge_whatsapp_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ci_user -d sikhadenge_whatsapp_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    defaults:
+      run:
+        working-directory: apps/whatsapp-agent-dashboard
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/sikhadenge_whatsapp_ci?schema=public
+      SHADOW_DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/sikhadenge_whatsapp_ci_shadow?schema=public
+      SESSION_SECRET: ci-only-session-secret-please-replace-in-production-1234567890
+      APP_URL: http://127.0.0.1:3100
+      INITIAL_ADMIN_EMAIL: admin@example.invalid
+      INITIAL_ADMIN_PASSWORD: CI-only-password-12345
+      INITIAL_ADMIN_NAME: CI Admin
+      DASHBOARD_ADMIN_NAME: CI Admin
+      DASHBOARD_ADMIN_EMAIL: admin@example.invalid
+      DASHBOARD_ADMIN_PASSWORD: CI-only-password-12345
+      ENGAGEOS_SECURITY_PERSISTENCE_ENABLED: "true"
+
+    steps:
+      - name: Checkout repository and base history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --include=dev --no-audit --no-fund
+
+      - name: Materialize pull request base schema
+        run: |
+          git show "${{ github.event.pull_request.base.sha }}:apps/whatsapp-agent-dashboard/prisma/schema.prisma" > prisma/phase-base.prisma
+          test -s prisma/phase-base.prisma
+
+      - name: Create pre-migration database and seed legacy data
+        run: |
+          npx prisma db push --schema prisma/phase-base.prisma --skip-generate
+          npm run db:seed
+
+      - name: Baseline existing Prisma schema
+        run: npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+
+      - name: Apply committed Prisma migration
+        run: npx prisma migrate deploy
+
+      - name: Verify migration status
+        run: npx prisma migrate status
+
+      - name: Test persisted security behavior
+        run: npm run test:security-persistence:integration
+
   browser-regression:
     needs: validate
     runs-on: ubuntu-latest

@@ -36,7 +36,7 @@ export type Permission =
   | "audit.read"
   | "security.manage";
 
-const ALL_PERMISSIONS: readonly Permission[] = [
+export const ALL_PERMISSIONS: readonly Permission[] = [
   "workspace.read",
   "workspace.manage",
   "members.read",
@@ -59,6 +59,14 @@ const ALL_PERMISSIONS: readonly Permission[] = [
   "analytics.read",
   "audit.read",
   "security.manage",
+];
+
+export const WORKSPACE_ROLES: readonly WorkspaceRole[] = [
+  "ADMIN",
+  "MANAGER",
+  "COUNSELOR",
+  "ANALYST",
+  "VIEWER",
 ];
 
 export const ROLE_PERMISSIONS: Readonly<
@@ -121,6 +129,7 @@ export type WorkspaceMembership = {
   userId: WorkspaceActorId;
   role: WorkspaceRole;
   isActive: boolean;
+  grantedPermissions?: readonly Permission[];
 };
 
 export class AuthorizationError extends Error {
@@ -136,13 +145,22 @@ export class AuthorizationError extends Error {
   }
 }
 
+export function isWorkspaceRole(value: string): value is WorkspaceRole {
+  return WORKSPACE_ROLES.includes(value as WorkspaceRole);
+}
+
+export function isPermission(value: string): value is Permission {
+  return ALL_PERMISSIONS.includes(value as Permission);
+}
+
 export function hasPermission(
   membership: WorkspaceMembership,
   permission: Permission,
 ): boolean {
   return (
     membership.isActive &&
-    ROLE_PERMISSIONS[membership.role].includes(permission)
+    (ROLE_PERMISSIONS[membership.role].includes(permission) ||
+      membership.grantedPermissions?.includes(permission) === true)
   );
 }
 

@@ -1,8 +1,10 @@
 export * from "@/modules/workspaces/domain/workspace";
 export * from "@/modules/auth/domain/permissions";
+export * from "@/modules/auth/infrastructure/prisma-authorization";
 export * from "@/modules/channels/core/contracts/channel";
 export * from "@/modules/channels/core/security/credential-vault";
 export * from "@/modules/channels/core/security/webhook-security";
+export * from "@/modules/channels/core/security/prisma-webhook-replay";
 export * from "@/modules/customers/domain/customer";
 export * from "@/modules/inbox/domain/conversation";
 export * from "@/modules/inbox/application/repositories";
@@ -10,5 +12,6 @@ export * from "@/modules/events/domain/channel-event";
 export * from "@/modules/policy/domain/consent";
 export * from "@/modules/policy/domain/kill-switch";
 export * from "@/modules/policy/application/outbound-safety";
+export * from "@/modules/policy/infrastructure/prisma-outbound-policy";
 export * from "@/modules/audit/domain/security-audit-event";
 export * from "@/modules/channels/whatsapp/mapping/legacy-whatsapp-contracts";

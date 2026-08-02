@@ -14,6 +14,11 @@ import type {
   OutboundMediaType,
 } from "../../../../../lib/outbound/types";
 import { assertManualSendOwnership } from "../../../../../lib/team/team-chat-service";
+import { resolveDashboardAuthorization } from "@/modules/auth/infrastructure/prisma-authorization";
+import {
+  assertPersistedManualOutboundAllowed,
+  resolveManualOutboundPurpose,
+} from "@/modules/policy/infrastructure/prisma-outbound-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,13 +49,33 @@ type SendPayload = {
   filename?: unknown;
 };
 
+function errorCode(error: unknown): string | null {
+  return error && typeof error === "object" && "code" in error
+    ? String((error as { code?: unknown }).code ?? "") || null
+    : null;
+}
+
 export async function POST(
   request: Request,
   context: { params: { conversationId: string } },
 ) {
   const user = await getCurrentDashboardUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (!ALLOWED_ROLES.has(user.role)) {
+
+  let authorization: Awaited<ReturnType<typeof resolveDashboardAuthorization>>;
+  try {
+    authorization = await resolveDashboardAuthorization({
+      userId: user.id,
+      permission: "inbox.reply",
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Insufficient workspace permission." },
+      { status: 403 },
+    );
+  }
+
+  if (authorization.mode === "LEGACY" && !ALLOWED_ROLES.has(user.role)) {
     return NextResponse.json({ error: "Insufficient permission." }, { status: 403 });
   }
 
@@ -149,11 +174,44 @@ export async function POST(
 
     const conversation = await prisma.whatsAppConversation.findUnique({
       where: { id: context.params.conversationId },
-      select: { source: true },
+      select: {
+        source: true,
+        contactId: true,
+        contact: {
+          select: {
+            consentStatus: true,
+            updatedAt: true,
+          },
+        },
+      },
     });
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
     }
+
+    const templateCategory =
+      content.kind === "template"
+        ? (
+            await prisma.whatsAppTemplate.findUnique({
+              where: { id: content.templateId },
+              select: { category: true },
+            })
+          )?.category ?? null
+        : null;
+
+    await assertPersistedManualOutboundAllowed({
+      securityContext: authorization.securityContext,
+      customerRef: conversation.contactId,
+      source: conversation.source,
+      contentKind: content.kind === "media" ? "MEDIA" : "TEXT",
+      purpose: resolveManualOutboundPurpose({
+        kind: content.kind,
+        templateCategory,
+      }),
+      queueState: "NEW",
+      legacyConsentStatus: conversation.contact.consentStatus,
+      legacyConsentChangedAt: conversation.contact.updatedAt,
+    });
 
     const source = conversation.source?.trim().toLowerCase();
 
@@ -220,11 +278,26 @@ export async function POST(
     );
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Queueing failed.";
-    const status = detail.includes("not found")
-      ? 404
-      : detail.includes("owned") || detail.includes("Claim") || detail.includes("Human mode")
-        ? 409
-        : 422;
+    const code = errorCode(error);
+    const status =
+      code === "UNAUTHENTICATED" ||
+      code === "FORBIDDEN" ||
+      code === "MEMBERSHIP_INACTIVE"
+        ? 403
+        : code === "SUPPRESSED" ||
+            code === "CONSENT_REQUIRED" ||
+            code === "CONSENT_REVOKED" ||
+            code === "KILL_SWITCH_ACTIVE" ||
+            code === "CHANNEL_CAPABILITY_UNAVAILABLE" ||
+            code === "PERSISTED_OUTBOUND_POLICY_ERROR"
+          ? 409
+          : detail.includes("not found")
+            ? 404
+            : detail.includes("owned") ||
+                detail.includes("Claim") ||
+                detail.includes("Human mode")
+              ? 409
+              : 422;
     return NextResponse.json({ error: detail, outboundSent: false }, { status });
   }
 }
