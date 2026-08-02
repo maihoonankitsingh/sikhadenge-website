@@ -15,9 +15,9 @@ import {
 } from "@/modules/channels/core/security/prisma-webhook-replay";
 
 const prisma = new PrismaClient();
-const securityEnv: NodeJS.ProcessEnv = {
+const securityEnv = {
   ENGAGEOS_SECURITY_PERSISTENCE_ENABLED: "true",
-};
+} as const;
 
 async function main() {
   const adminEmail = process.env.INITIAL_ADMIN_EMAIL ?? "admin@example.invalid";
