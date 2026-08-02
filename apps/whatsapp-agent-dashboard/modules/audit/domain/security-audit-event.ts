@@ -30,7 +30,7 @@ export type SecurityAuditEvent = Readonly<{
   occurredAt: Date;
 }>;
 
-const FORBIDDEN_METADATA_KEYS = [
+const FORBIDDEN_METADATA_KEY_FRAGMENTS = [
   "token",
   "secret",
   "password",
@@ -38,6 +38,10 @@ const FORBIDDEN_METADATA_KEYS = [
   "ciphertext",
   "rawpayload",
 ];
+
+function normalizeMetadataKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 export function createSecurityAuditEvent(
   event: SecurityAuditEvent,
@@ -49,7 +53,12 @@ export function createSecurityAuditEvent(
   }
 
   for (const key of Object.keys(event.metadata ?? {})) {
-    if (FORBIDDEN_METADATA_KEYS.includes(key.toLowerCase())) {
+    const normalized = normalizeMetadataKey(key);
+    if (
+      FORBIDDEN_METADATA_KEY_FRAGMENTS.some((fragment) =>
+        normalized.includes(fragment),
+      )
+    ) {
       throw new Error(`Sensitive audit metadata key is not allowed: ${key}.`);
     }
   }
