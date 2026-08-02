@@ -43,16 +43,12 @@ test "$(cat "$LIVE_APP/.next/BUILD_ID")" = "$OLD_BUILD_ID"
 pm2 restart "$PM2_PROCESS_NAME"
 sleep 5
 
-pm2_status="$(pm2 jlist | node - "$PM2_PROCESS_NAME" <<'NODE'
-let raw = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { raw += chunk; });
-process.stdin.on('end', () => {
-  const name = process.argv[2];
-  const entry = JSON.parse(raw).find((item) => item.name === name);
-  if (!entry) process.exit(1);
-  process.stdout.write(String(entry.pm2_env?.status || ''));
-});
+pm2_json="$(pm2 jlist)"
+pm2_status="$(node - "$PM2_PROCESS_NAME" "$pm2_json" <<'NODE'
+const [name, raw] = process.argv.slice(2);
+const entry = JSON.parse(raw).find((item) => item.name === name);
+if (!entry) process.exit(1);
+process.stdout.write(String(entry.pm2_env?.status || ''));
 NODE
 )"
 test "$pm2_status" = "online"
