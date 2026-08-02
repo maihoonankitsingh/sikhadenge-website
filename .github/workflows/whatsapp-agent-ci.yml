@@ -105,3 +105,98 @@ jobs:
         run: |
           cat build.log
           test "$(cat build.exit)" = "0"
+
+  browser-regression:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: sikhadenge_whatsapp_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ci_user -d sikhadenge_whatsapp_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    defaults:
+      run:
+        working-directory: apps/whatsapp-agent-dashboard
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/sikhadenge_whatsapp_ci?schema=public
+      SHADOW_DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/sikhadenge_whatsapp_ci_shadow?schema=public
+      SESSION_SECRET: ci-only-session-secret-please-replace-in-production-1234567890
+      APP_URL: http://127.0.0.1:3100
+      DASHBOARD_ADMIN_NAME: CI Admin
+      DASHBOARD_ADMIN_EMAIL: admin@example.invalid
+      DASHBOARD_ADMIN_PASSWORD: CI-only-password-12345
+      NODE_ENV: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install application dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install browser regression tooling
+        run: |
+          npm install --no-save --no-audit --no-fund @playwright/test@1.54.2
+          npx playwright install --with-deps chromium
+
+      - name: Prepare isolated browser database
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+          npx tsx tests/fixtures/seed-inbox-browser.ts
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Start production application
+        run: |
+          nohup npm run start > browser-server.log 2>&1 &
+          echo $! > browser-server.pid
+
+      - name: Wait for login route
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3100/login > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat browser-server.log
+          exit 1
+
+      - name: Run authenticated Inbox browser regression
+        run: npx playwright test --config=playwright.config.mjs
+
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsapp-agent-browser-regression
+          path: |
+            apps/whatsapp-agent-dashboard/playwright-report
+            apps/whatsapp-agent-dashboard/test-results
+            apps/whatsapp-agent-dashboard/browser-server.log
+          if-no-files-found: warn
+          retention-days: 5
+
+      - name: Stop production application
+        if: always()
+        run: |
+          if [ -f browser-server.pid ]; then
+            kill "$(cat browser-server.pid)" || true
+          fi
