@@ -40,6 +40,9 @@ git -C "$LIVE_APP" reset --hard "$OLD_SOURCE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$OLD_SOURCE_SHA"
 test "$(cat "$LIVE_APP/.next/BUILD_ID")" = "$OLD_BUILD_ID"
 
+cd "$LIVE_APP"
+npx prisma generate
+
 pm2 restart "$PM2_PROCESS_NAME"
 sleep 5
 
