@@ -26,9 +26,36 @@ EngageFeatureFlag
 
 Existing WhatsApp contacts, conversations, messages, templates, webhook events, users, sessions, leads, knowledge, learning, and audit tables are not renamed, altered, or dropped.
 
+## Prisma Migrate adoption baseline
+
+The application previously had a populated Prisma-managed PostgreSQL schema but no committed Prisma migration history. Prisma Migrate therefore requires a one-time baseline before the first additive migration can be deployed to an existing database.
+
+The repository contains:
+
+```text
+20260802000000_baseline_existing_schema
+```
+
+This baseline migration is intentionally non-mutating. It records that the existing schema represented by release commit `4f44a1176d5da201ca6c917489f3cd0a3ad4b95a` already exists.
+
+For an existing verified database, the one-time baseline command is:
+
+```bash
+npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+```
+
+This command must run only after confirming:
+
+- the database contains the expected legacy application schema
+- the baseline is not already recorded in `_prisma_migrations`
+- no unknown or partially applied migration exists
+- a verified database backup identifier has been captured
+
+The baseline migration is not a greenfield database provisioning mechanism. Empty development and browser-test databases continue to use the existing schema setup workflow.
+
 ## Default workspace and membership backfill
 
-The migration creates one internal workspace:
+The additive migration creates one internal workspace:
 
 ```text
 id: engagews_default
@@ -151,6 +178,7 @@ The GitHub Actions migration job tests the real additive upgrade path:
 pull-request base schema
   -> empty PostgreSQL 16 database
   -> legacy seed
+  -> mark existing-schema baseline applied
   -> committed prisma migrate deploy
   -> prisma migrate status
   -> security persistence integration tests
@@ -170,17 +198,27 @@ The integration test verifies:
 
 ## Production migration prerequisites
 
-Before `prisma migrate deploy` on production:
+Before the first `prisma migrate deploy` on production:
 
-1. capture exact Git SHA
+1. capture the exact Git SHA
 2. create and verify a PostgreSQL backup identifier
-3. verify migration history and current database reachability
-4. run migration on a recent database copy
-5. verify row counts for `DashboardUser` and backfilled memberships
-6. keep `ENGAGEOS_SECURITY_PERSISTENCE_ENABLED` absent or false
-7. verify all three database flags remain false
-8. deploy code and run normal smoke tests
-9. activate one flag at a time in a separate change window
+3. inspect `_prisma_migrations` and confirm there is no unknown or partial history
+4. verify the live database matches the expected legacy Prisma schema
+5. run the migration sequence on a recent database copy
+6. execute the one-time baseline command:
+   ```bash
+   npx prisma migrate resolve --applied 20260802000000_baseline_existing_schema
+   ```
+7. confirm the baseline row is recorded successfully
+8. execute `npx prisma migrate deploy`
+9. execute `npx prisma migrate status`
+10. compare `DashboardUser` count with backfilled membership count
+11. verify all three database feature flags remain `false`
+12. keep `ENGAGEOS_SECURITY_PERSISTENCE_ENABLED` absent or `false`
+13. deploy application code and run normal smoke tests
+14. activate one control at a time in a separate approved change window
+
+The baseline command must not be repeated blindly. If it is already applied, migration status—not a second resolve command—is the source of truth.
 
 ## Rollback
 
@@ -189,6 +227,8 @@ Application rollback is the primary rollback mechanism.
 Because all new tables are additive, rolling application code back does not require dropping the tables. The environment master switch should be disabled first.
 
 Do not drop `Engage*` tables after they begin receiving consent, suppression, replay, audit, or credential data. Physical schema removal requires a later destructive-migration approval and data-retention review.
+
+If the additive migration fails after the baseline has been recorded, do not delete migration history or retry blindly. Capture the failed migration name and database state, then use Prisma's documented resolve/recovery workflow after reviewing the exact SQL failure.
 
 ## Current limitations
 
