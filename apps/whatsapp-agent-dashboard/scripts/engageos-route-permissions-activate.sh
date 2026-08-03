@@ -11,7 +11,6 @@ ENV_FILE="${ENV_FILE:-${LIVE_APP}/.env}"
 BACKUP_ROOT="${BACKUP_ROOT:-/root/sikhadenge-backups}"
 BACKUP_DIR="${BACKUP_ROOT}/route-permissions-${RUN_ID}"
 RESULT_FILE="${BACKUP_DIR}/route-permissions-result.txt"
-FLAG_KEY="engageos.route_permissions"
 MASTER_KEY="ENGAGEOS_SECURITY_PERSISTENCE_ENABLED"
 ROLLBACK_REQUIRED=0
 
@@ -78,18 +77,20 @@ normalize_boolean() {
   esac
 }
 
-pm2_master_value() {
-  pm2 jlist | node - "$PM2_PROCESS_NAME" <<'NODE'
+pm2_field() {
+  local field="$1"
+  pm2 jlist | node -e '
 let input = "";
-const processName = process.argv[2];
+const [processName, field] = process.argv.slice(1);
 process.stdin.on("data", (chunk) => input += chunk);
 process.stdin.on("end", () => {
-  const list = JSON.parse(input);
-  const app = list.find((item) => item?.name === processName);
-  const value = app?.pm2_env?.ENGAGEOS_SECURITY_PERSISTENCE_ENABLED ?? "";
-  process.stdout.write(String(value));
+  const app = JSON.parse(input).find((item) => item?.name === processName);
+  const value = field === "master"
+    ? app?.pm2_env?.ENGAGEOS_SECURITY_PERSISTENCE_ENABLED
+    : app?.pm2_env?.status;
+  process.stdout.write(String(value ?? ""));
 });
-NODE
+' "$PM2_PROCESS_NAME" "$field"
 }
 
 prepare_database_url() {
@@ -143,12 +144,12 @@ test -f "$ENV_FILE"
 cd "$LIVE_APP"
 test "$(git rev-parse HEAD)" = "$EXPECTED_LIVE_SHA"
 test -z "$(git status --porcelain --untracked-files=no)"
-test "$(pm2 jlist | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const a=JSON.parse(s).find(x=>x?.name==="sikhadenge-whatsapp-agent");process.stdout.write(a?.pm2_env?.status??"")})')" = "online"
+test "$(pm2_field status)" = "online"
 
 prepare_database_url
 
 file_master="$(normalize_boolean "$(read_env_value "$MASTER_KEY" "$ENV_FILE")")"
-pm2_master="$(normalize_boolean "$(pm2_master_value)")"
+pm2_master="$(normalize_boolean "$(pm2_field master)")"
 test "$file_master" = "false"
 test "$pm2_master" = "false"
 
@@ -227,19 +228,10 @@ ENGAGEOS_SECURITY_PERSISTENCE_ENABLED=true \
 sleep 5
 
 file_master_after="$(normalize_boolean "$(read_env_value "$MASTER_KEY" "$ENV_FILE")")"
-pm2_master_after="$(normalize_boolean "$(pm2_master_value)")"
+pm2_master_after="$(normalize_boolean "$(pm2_field master)")"
 route_enabled="$(psql_scalar 'SELECT COUNT(*) FROM "EngageFeatureFlag" WHERE "workspaceId" = '\''engagews_default'\'' AND "key" = '\''engageos.route_permissions'\'' AND "enabled" = true;')"
 other_enabled="$(psql_scalar 'SELECT COUNT(*) FROM "EngageFeatureFlag" WHERE "workspaceId" = '\''engagews_default'\'' AND "key" IN ('\''engageos.outbound_policy'\'','\''engageos.webhook_replay'\'') AND "enabled" = true;')"
-pm2_status="$(pm2 jlist | node - "$PM2_PROCESS_NAME" <<'NODE'
-let input = "";
-const processName = process.argv[2];
-process.stdin.on("data", (chunk) => input += chunk);
-process.stdin.on("end", () => {
-  const app = JSON.parse(input).find((item) => item?.name === processName);
-  process.stdout.write(String(app?.pm2_env?.status ?? ""));
-});
-NODE
-)"
+pm2_status="$(pm2_field status)"
 login_http="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBLIC_URL%/}/login")"
 inbox_http="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBLIC_URL%/}/inbox")"
 
