@@ -465,7 +465,47 @@ model VideoAccessLog {
 
 ---
 
-## 10. Recommended Start
+## 10. Additional Modules (business + production readiness)
+
+> Ye "learning features" nahi hain, par ek real ed-tech **business** chalane ke liye utne hi zaroori hain.
+> Log inhe bhool jaate hain aur baad me pachhtate hain.
+
+### 10.1 Conversion funnel (lead → paid student) — connects existing lead/admission system
+- **Free demo / trial class** — log free dekhein → paid me convert (biggest conversion lever)
+- **Onboarding funnel** — lead → demo → counselor call → payment → active student
+- **Abandoned cart recovery** — enroll kiya par pay nahi kiya → WhatsApp/email reminder
+- **Sales counselor CRM** — existing `Lead`/`Admission` ko pipeline + follow-up + call-log de do (leads already DB me hain, sirf workflow add karna hai)
+
+### 10.2 Career / Outcomes (skill-course ka main USP) ⭐
+- **Placement assistance** — job board, apply, company referrals (`companies` page already marketing me hai — product me laao)
+- **Freelance / gig board** — design/video/AI students ko real paying clients se connect
+- **Resume builder + interview prep + mock interviews**
+- **Portfolio → recruiter share** (portfolio builder section 5.3 se link)
+
+### 10.3 Growth loops
+- **Student referral program** — student apne dost ko laaye, dono ko reward (influencer system se alag)
+- **In-product ratings & reviews** — real students course rate karein → marketing `reviews` page ko feed
+- **Email drip / webinar / free masterclass** — lead-gen loops
+
+### 10.4 Support
+- **Help center / FAQ / chatbot**
+- **Ticket system** — student issue raise + track + resolve
+
+### 10.5 Offline (India low-data)
+- **Encrypted offline download** — PW app jaisa: download hota hai par encrypted, sirf app ke andar chalta hai, bahar nahi. Piracy-safe.
+
+### 10.6 Production-readiness & compliance (India)
+- **GST invoicing** — legal requirement (invoices with GST)
+- **DPDP Act 2023 compliance** — India data-privacy law (consent, data deletion, privacy policy — page already hai)
+- **Monitoring & logging** — Sentry (error tracking), uptime alerts
+- **Backups & disaster recovery** — DB + video backups, restore plan
+- **Rate limiting & security** — OTP abuse block, DDoS, OWASP basics, brute-force protection
+- **Admin audit logs** — kis staff ne kya badla (accountability)
+- **CI/CD + automated tests** — safe deploys, regression na aaye
+
+---
+
+## 11. Recommended Start
 
 Phase 1 se shuru — Student auth + DB migration + dashboard + enrollment.
 Ye ban gaya to LMS "jinda" ho jaata hai; phir Phase 2 (content+DRM) aur Phase 3 (live+recording) layer-by-layer.
