@@ -103,6 +103,10 @@ for required_text in \
   'WHATSAPP_PROD_SSH_PRIVATE_KEY' \
   'WHATSAPP_PROD_SSH_HOST_KEY' \
   'StrictHostKeyChecking=yes' \
+  'Verify pinned SSH transport' \
+  'ConnectTimeout=15' \
+  'PASS: PINNED_SSH_TRANSPORT_VERIFIED' \
+  ': > production-batch.log' \
   'npm install --include=dev --no-audit --no-fund' \
   'actions/upload-artifact@v4'; do
   grep -Fq "$required_text" "$workflow_path"
