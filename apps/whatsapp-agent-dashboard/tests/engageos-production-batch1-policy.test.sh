@@ -123,6 +123,7 @@ grep -Fq 'test -z "$(git status --porcelain --untracked-files=no)"' "$workflow_p
 grep -Fq 'git merge-base --is-ancestor HEAD "$TARGET_SHA"' "$workflow_path"
 grep -Fq 'git -C "$LIVE_APP" worktree remove --force' "$workflow_path"
 grep -Fq 'Retry marker: Base64 production SSH key configured on 2026-08-03' "$workflow_path"
+grep -Fq 'Retry marker: corrected public ED25519 host key configured on 2026-08-03' "$workflow_path"
 
 grep -Fq 'a17a92761bebc93eea76c7c443933b5a0c3443e3' "$lineage_test"
 grep -Fq '20260723160037_init_whatsapp_agent' "$lineage_test"
