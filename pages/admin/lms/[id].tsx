@@ -139,8 +139,171 @@ export default function AdminCourseEdit() {
         <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="New module title" style={{ ...input, flex: 1 }} />
         <button type="submit" style={primaryBtn}>+ Module</button>
       </form>
+
+      {/* Batches & Live classes */}
+      <div style={{ marginTop: 30, paddingTop: 20, borderTop: "1px solid #e2e8f0" }}>
+        <BatchesLive courseId={course.id} />
+      </div>
     </Shell>
   );
+}
+
+// ---------------- Batches + Live class scheduling ----------------
+
+type LiveClassRow = { id: string; title: string; scheduledAt: string; status: string; recordingReady: boolean; hmsRoomId: string | null };
+type BatchRow = { id: string; name: string; startDate: string | null; liveClasses: LiveClassRow[] };
+
+function BatchesLive({ courseId }: { courseId: string }) {
+  const [batches, setBatches] = useState<BatchRow[]>([]);
+  const [batchName, setBatchName] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+
+  async function load() {
+    const r = await fetch(`/api/admin/lms/batch?courseId=${courseId}`);
+    const j = await r.json().catch(() => null);
+    if (j?.ok) setBatches(j.batches || []);
+  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
+
+  async function addBatch(e: React.FormEvent) {
+    e.preventDefault();
+    if (batchName.trim().length < 2) return;
+    await fetch("/api/admin/lms/batch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId, name: batchName.trim() }),
+    });
+    setBatchName("");
+    await load();
+  }
+
+  async function hostJoin(liveClassId: string) {
+    const r = await fetch("/api/admin/lms/live", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liveClassId }),
+    });
+    const j = await r.json().catch(() => null);
+    if (r.ok && j?.ok && j.url) window.open(j.url, "_blank");
+    else setNote(j?.error || "Could not start (check 100ms config)");
+    await load();
+  }
+
+  async function endClass(liveClassId: string) {
+    await fetch("/api/admin/lms/live", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liveClassId, action: "end" }),
+    });
+    await load();
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 16, fontWeight: 900, marginBottom: 4 }}>Batches & Live Classes</h2>
+      <div style={{ fontSize: 12.5, color: "#64748b", marginBottom: 12 }}>
+        Batch banao, live class schedule karo. Class end hone par recording apne aap
+        &quot;Class Recordings&quot; module me lesson ban jaati hai.
+      </div>
+      {note && <div style={{ color: "#b91c1c", fontSize: 12.5, marginBottom: 10 }}>{note}</div>}
+
+      <form onSubmit={addBatch} style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <input value={batchName} onChange={(e) => setBatchName(e.target.value)} placeholder="New batch name (e.g. Aug 2026)" style={{ ...input, flex: 1 }} />
+        <button type="submit" style={primaryBtn}>+ Batch</button>
+      </form>
+
+      {batches.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: "#94a3b8" }}>No batches yet.</div>
+      ) : (
+        batches.map((b) => (
+          <div key={b.id} style={{ border: "1px solid #e2e8f0", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+            <div style={{ padding: "10px 14px", background: "#f8fafc", fontWeight: 800, fontSize: 14 }}>{b.name}</div>
+            <div style={{ padding: "8px 14px" }}>
+              {b.liveClasses.map((lc) => (
+                <div key={lc.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 0", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 13 }}>
+                    <span style={{ ...liveBadge(lc.status) }}>{lc.status}</span>
+                    <span style={{ marginLeft: 8 }}>{lc.title}</span>
+                    <span style={{ marginLeft: 8, fontSize: 11.5, color: "#94a3b8" }}>{new Date(lc.scheduledAt).toLocaleString()}</span>
+                    {lc.recordingReady && <span style={{ marginLeft: 8, fontSize: 11, color: "#16a34a", fontWeight: 800 }}>● Recording ready</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {lc.status !== "ENDED" && (
+                      <>
+                        <button onClick={() => hostJoin(lc.id)} style={{ ...smallBtn, background: "#dcfce7", color: "#166534" }}>Start / Join (host)</button>
+                        <button onClick={() => endClass(lc.id)} style={{ ...smallBtn, background: "#fee2e2", color: "#991b1b" }}>End</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <ScheduleLive batchId={b.id} onScheduled={load} />
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+function ScheduleLive({ batchId, onScheduled }: { batchId: string; onScheduled: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [when, setWhen] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (title.trim().length < 2 || !when) return;
+    const r = await fetch("/api/admin/lms/live", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId, title: title.trim(), scheduledAt: new Date(when).toISOString() }),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j?.ok) {
+      setErr(j?.error || "Schedule failed");
+      return;
+    }
+    setTitle("");
+    setWhen("");
+    setOpen(false);
+    onScheduled();
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ ...smallBtn, marginTop: 8, background: "#eef2ff", color: "#3730a3" }}>
+        + Schedule live class
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} style={{ display: "grid", gap: 6, marginTop: 8, padding: 10, background: "#f8fafc", borderRadius: 10 }}>
+      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Class title" style={input} autoFocus />
+      <input value={when} onChange={(e) => setWhen(e.target.value)} type="datetime-local" style={input} />
+      {err && <div style={{ color: "#b91c1c", fontSize: 12 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" style={primaryBtn}>Schedule</button>
+        <button type="button" onClick={() => setOpen(false)} style={smallBtn}>Cancel</button>
+      </div>
+    </form>
+  );
+}
+
+function liveBadge(status: string): React.CSSProperties {
+  const map: Record<string, { bg: string; c: string }> = {
+    SCHEDULED: { bg: "#fef3c7", c: "#92400e" },
+    LIVE: { bg: "#fee2e2", c: "#991b1b" },
+    ENDED: { bg: "#e2e8f0", c: "#475569" },
+  };
+  const s = map[status] || map.SCHEDULED;
+  return { fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 999, background: s.bg, color: s.c };
 }
 
 async function delLesson(lessonId: string, reload: () => void) {

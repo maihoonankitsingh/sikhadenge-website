@@ -13,10 +13,22 @@ type Course = {
   _count?: { modules: number };
 };
 
+type LiveClass = {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  status: string;
+  recordingReady: boolean;
+  batchName: string;
+  courseTitle: string;
+  courseSlug: string;
+};
+
 export default function StudentDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [enrolled, setEnrolled] = useState<Course[]>([]);
   const [available, setAvailable] = useState<Course[]>([]);
+  const [live, setLive] = useState<LiveClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -29,6 +41,13 @@ export default function StudentDashboard() {
       setEnrolled(j.enrolled || []);
       setAvailable(j.available || []);
     }
+  }
+
+  async function loadLive() {
+    const r = await fetch("/api/student/live");
+    if (!r.ok) return;
+    const j = await r.json().catch(() => null);
+    if (j?.ok) setLive(j.classes || []);
   }
 
   useEffect(() => {
@@ -44,10 +63,21 @@ export default function StudentDashboard() {
         return;
       }
       setUser(j.user);
-      await loadCourses();
+      await Promise.all([loadCourses(), loadLive()]);
       setLoading(false);
     })();
   }, []);
+
+  async function joinLive(liveClassId: string) {
+    setMsg(null);
+    const r = await fetch(`/api/student/live/${liveClassId}/join`, { method: "POST" });
+    const j = await r.json().catch(() => null);
+    if (r.ok && j?.ok && j.url) {
+      window.open(j.url, "_blank");
+    } else {
+      setMsg(j?.error || "Could not join the class");
+    }
+  }
 
   async function logout() {
     await fetch("/api/student/logout", { method: "POST" }).catch(() => null);
@@ -116,6 +146,55 @@ export default function StudentDashboard() {
           </div>
         )}
 
+        {/* Live & upcoming */}
+        {live.length > 0 && (
+          <Section title="Live & Upcoming Classes">
+            <div style={{ display: "grid", gap: 10 }}>
+              {live.map((lc) => (
+                <div
+                  key={lc.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,.1)",
+                    background: "#111827",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <LiveDot status={lc.status} />
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>{lc.title}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginTop: 3 }}>
+                      {lc.courseTitle} · {lc.batchName} · {new Date(lc.scheduledAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    {lc.status === "ENDED" ? (
+                      lc.recordingReady ? (
+                        <a href={`/student/learn/${lc.courseSlug}`} style={primaryBtn}>
+                          Watch Recording →
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>Recording processing…</span>
+                      )
+                    ) : (
+                      <button onClick={() => joinLive(lc.id)} style={{ ...primaryBtn, border: "none", cursor: "pointer", width: "auto", padding: "10px 18px" }}>
+                        {lc.status === "LIVE" ? "🔴 Join Live" : "Join"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* My courses */}
         <Section title="My Courses">
           {enrolled.length === 0 ? (
@@ -155,6 +234,22 @@ export default function StudentDashboard() {
         </Section>
       </div>
     </div>
+  );
+}
+
+function LiveDot({ status }: { status: string }) {
+  const color = status === "LIVE" ? "#ef4444" : status === "ENDED" ? "#64748b" : "#f59e0b";
+  return (
+    <span
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: 999,
+        background: color,
+        display: "inline-block",
+        boxShadow: status === "LIVE" ? "0 0 0 3px rgba(239,68,68,.25)" : "none",
+      }}
+    />
   );
 }
 

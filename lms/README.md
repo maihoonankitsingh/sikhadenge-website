@@ -11,6 +11,7 @@ lms/
 ├── types.ts             # shared TypeScript types + ServiceResult helpers
 ├── http.ts              # API route helpers (methodGuard, sendOk, sendFail, normPhone)
 ├── auth.ts              # student session (login cookie banana/clear/verify)
+├── hms.ts               # 100ms helper (room, room-codes, prebuilt URL, webhook verify)
 ├── components/          # LMS ke React UI components (reusable)
 │   └── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
 └── services/            # asli business logic (DB queries yahin, HTTP nahi)
@@ -19,6 +20,7 @@ lms/
     ├── enrollment.ts    # enrollStudent
     ├── content.ts       # getCourseContentForStudent (enrolled tree + progress)
     ├── progress.ts      # saveProgress (resume + mark complete)
+    ├── live.ts          # live class: batch, schedule, join, webhook auto-recording
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -82,22 +84,42 @@ alias use kar sakte ho.)
 - ✅ Admin course-builder: course → module → lesson banana + publish (`/admin/lms`)
 - ✅ Student learn page: video player + module sidebar + progress (`/student/learn/[slug]`)
 - ✅ Video player: HLS/mp4, resume, playback speed, **moving phone-number watermark** (anti-piracy)
-- ✅ Progress tracking: resume from last position + mark complete + course % 
+- ✅ Progress tracking: resume from last position + mark complete + course %
+
+**Phase 3 — live classes + auto-recording (100ms)**
+- ✅ Admin: batch banao → live class schedule karo → host se Start/Join → End
+- ✅ Student dashboard: "Live & Upcoming Classes" + Join button + attendance
+- ✅ **Auto-recording:** class end → 100ms webhook → recording apne aap "Class Recordings"
+  module me `LIVE_RECORDING` lesson ban jaati hai (bina manual upload)
 
 ### Routes map
 | Route | Kya |
 |---|---|
 | `pages/api/student/content/[slug]` | enrolled course ka content + progress |
 | `pages/api/student/progress` | progress save |
+| `pages/api/student/live` | student ki live/upcoming classes |
+| `pages/api/student/live/[id]/join` | join URL + attendance |
 | `pages/api/admin/lms/courses` | list / create course |
 | `pages/api/admin/lms/course/[id]` | course tree / update (publish, price) |
 | `pages/api/admin/lms/module` | module create / delete |
 | `pages/api/admin/lms/lesson` | lesson create / delete |
+| `pages/api/admin/lms/batch` | batch list / create |
+| `pages/api/admin/lms/live` | schedule / host-join / end |
+| `pages/api/webhooks/hms` | 100ms recording-ready → auto lesson |
+
+### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
+```
+HMS_ACCESS_KEY=...      HMS_SECRET=...      HMS_TEMPLATE_ID=...
+HMS_SUBDOMAIN=yourname.app.100ms.live      HMS_WEBHOOK_SECRET=...(optional)
+```
+> 100ms template me **recording enabled** hona chahiye. Webhook URL:
+> `https://<domain>/api/webhooks/hms`. Keys na ho to bhi scheduling chalti hai
+> (room provision skip ho jaata hai).
 
 ## Aage kya aayega (usi structure me plug hoga)
 
-- Phase 3: `services/live.ts` (100ms live class), recording webhook → auto lesson
 - Phase 4: `services/quiz.ts`, `services/assignment.ts`, doubt
 - Phase 5: `services/payments.ts` (Razorpay) — `enrollment.ts` ka paid-course TODO yahin judega
+- Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note)
 
 > Poora roadmap: `docs/LMS-BUILD-PLAN.md`

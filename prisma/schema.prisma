@@ -89,6 +89,7 @@ model User {
   enrollments   Enrollment[]
   progress      LessonProgress[]
   taughtBatches Batch[]          @relation("InstructorBatches")
+  attendance    Attendance[]
 
   @@index([role])
 }
@@ -176,6 +177,7 @@ model Batch {
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   instructor  User?        @relation("InstructorBatches", fields: [instructorId], references: [id])
   enrollments Enrollment[]
+  liveClasses LiveClass[]
 
   @@index([courseId])
   @@index([instructorId])
@@ -217,4 +219,46 @@ model LessonProgress {
 
   @@unique([userId, lessonId])
   @@index([lessonId])
+}
+
+// ===================== LMS live classes (Phase 3 · 100ms) =====================
+
+enum LiveStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+model LiveClass {
+  id             String     @id @default(cuid())
+  batchId        String
+  title          String
+  scheduledAt    DateTime
+  status         LiveStatus @default(SCHEDULED)
+  hmsRoomId      String? // 100ms room id
+  hostCode       String? // 100ms room code for instructor/host
+  guestCode      String? // 100ms room code for students
+  recordingUrl   String? // 100ms webhook se aata hai jab recording ready hoti hai
+  recordingReady Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  batch      Batch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  attendance Attendance[]
+
+  @@index([batchId])
+  @@index([status])
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  liveClassId String
+  userId      String
+  joinedAt    DateTime @default(now())
+
+  liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([liveClassId, userId])
+  @@index([userId])
 }
