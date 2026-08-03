@@ -79,11 +79,19 @@ jobs:
         run: |
           set -Eeuo pipefail
           install -d -m 700 "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/whatsapp-production"
-          chmod 600 "$HOME/.ssh/whatsapp-production"
+
+          private_key_file="$HOME/.ssh/whatsapp-production"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$private_key_file"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
+          fi
+
+          chmod 600 "$private_key_file"
           printf '%s\n' "$SSH_HOST_KEY" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-          ssh-keygen -l -f "$HOME/.ssh/whatsapp-production" >/dev/null
+
+          ssh-keygen -y -f "$private_key_file" >/dev/null
           test -s "$HOME/.ssh/known_hosts"
           printf 'PASS: SSH_IDENTITY_CONFIGURED\n'
 
