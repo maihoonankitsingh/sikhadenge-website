@@ -91,6 +91,8 @@ model User {
   taughtBatches Batch[]          @relation("InstructorBatches")
   attendance    Attendance[]
   payments      Payment[]
+  quizAttempts  QuizAttempt[]
+  submissions   Submission[]
 
   @@index([role])
 }
@@ -161,8 +163,10 @@ model Lesson {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  module   Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress LessonProgress[]
+  module     Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress   LessonProgress[]
+  quiz       Quiz?
+  assignment Assignment?
 
   @@index([moduleId])
 }
@@ -289,5 +293,76 @@ model Payment {
 
   @@index([userId])
   @@index([courseId])
+  @@index([status])
+}
+
+// ===================== LMS assessments (Phase 4) =====================
+
+model Quiz {
+  id          String     @id @default(cuid())
+  lessonId    String     @unique
+  passPercent Int        @default(60)
+  createdAt   DateTime   @default(now())
+
+  lesson    Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  QuizAttempt[]
+}
+
+model Question {
+  id           String @id @default(cuid())
+  quizId       String
+  text         String
+  options      Json // string[] — choices
+  correctIndex Int
+  order        Int    @default(0)
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  quizId    String
+  userId    String
+  score     Int
+  total     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, userId])
+}
+
+model Assignment {
+  id           String   @id @default(cuid())
+  lessonId     String   @unique
+  instructions String?
+  dueAt        DateTime?
+  createdAt    DateTime @default(now())
+
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  assignmentId String
+  userId       String
+  fileUrl      String?
+  text         String?
+  grade        Int? // 0-100
+  feedback     String?
+  status       String   @default("submitted") // submitted | graded
+  submittedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
   @@index([status])
 }

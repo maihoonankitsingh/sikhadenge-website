@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import QuizEditor from "../../../lms/components/QuizEditor";
+import AssignmentEditor from "../../../lms/components/AssignmentEditor";
 
 type Lesson = { id: string; title: string; type: string; videoUrl: string | null; isPreview: boolean };
 type Module = { id: string; title: string; lessons: Lesson[] };
@@ -121,13 +123,7 @@ export default function AdminCourseEdit() {
           <div style={{ padding: "8px 14px" }}>
             {m.lessons.length === 0 && <div style={{ fontSize: 12.5, color: "#94a3b8", padding: "6px 0" }}>No lessons yet.</div>}
             {m.lessons.map((l) => (
-              <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: "#64748b", marginRight: 8 }}>{l.type}</span>
-                  {l.title}
-                </div>
-                <button onClick={() => delLesson(l.id, load)} style={linkDanger}>✕</button>
-              </div>
+              <LessonRow key={l.id} lesson={l} onDelete={() => delLesson(l.id, load)} />
             ))}
             <AddLesson moduleId={m.id} onAdded={load} />
           </div>
@@ -314,6 +310,31 @@ async function delLesson(lessonId: string, reload: () => void) {
     body: JSON.stringify({ lessonId }),
   });
   reload();
+}
+
+function LessonRow({ lesson, onDelete }: { lesson: Lesson; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const editable = lesson.type === "QUIZ" || lesson.type === "ASSIGNMENT";
+  return (
+    <div style={{ padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 13 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: "#64748b", marginRight: 8 }}>{lesson.type}</span>
+          {lesson.title}
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {editable && (
+            <button onClick={() => setOpen((o) => !o)} style={{ ...linkDanger, color: "#3730a3" }}>
+              {open ? "Close" : lesson.type === "QUIZ" ? "Questions" : "Details"}
+            </button>
+          )}
+          <button onClick={onDelete} style={linkDanger}>✕</button>
+        </div>
+      </div>
+      {open && lesson.type === "QUIZ" && <QuizEditor lessonId={lesson.id} />}
+      {open && lesson.type === "ASSIGNMENT" && <AssignmentEditor lessonId={lesson.id} />}
+    </div>
+  );
 }
 
 function AddLesson({ moduleId, onAdded }: { moduleId: string; onAdded: () => void }) {

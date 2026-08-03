@@ -55,7 +55,12 @@ export default function AdminLmsCourses() {
 
   return (
     <Shell>
-      <h1 style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>LMS · Courses</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>LMS · Courses</h1>
+        <Link href="/admin/lms/submissions" style={{ fontSize: 12.5, fontWeight: 800, color: "#3730a3", textDecoration: "none" }}>
+          Grade submissions →
+        </Link>
+      </div>
       <div style={{ fontSize: 12.5, color: "#64748b", marginBottom: 18 }}>Create and manage course content</div>
 
       <form onSubmit={createCourse} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>

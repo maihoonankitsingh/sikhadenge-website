@@ -15,7 +15,11 @@ lms/
 ├── razorpay.ts          # Razorpay helper (order create REST + signature verify)
 ├── components/          # LMS ke React UI components (reusable)
 │   ├── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
-│   └── CheckoutModal.tsx# Razorpay checkout (coupon + pay + verify)
+│   ├── CheckoutModal.tsx# Razorpay checkout (coupon + pay + verify)
+│   ├── QuizPanel.tsx    # student: quiz lena + auto-grade result
+│   ├── AssignmentPanel.tsx # student: project/assignment submit + grade dekhna
+│   ├── QuizEditor.tsx   # admin: quiz questions add/delete
+│   └── AssignmentEditor.tsx # admin: assignment instructions + due date
 └── services/            # asli business logic (DB queries yahin, HTTP nahi)
     ├── users.ts         # signupStudent, loginStudent
     ├── courses.ts       # listCoursesForStudent
@@ -24,6 +28,8 @@ lms/
     ├── progress.ts      # saveProgress (resume + mark complete)
     ├── live.ts          # live class: batch, schedule, join, webhook auto-recording
     ├── payments.ts      # createCourseOrder (coupon) + verifyAndEnroll (paid courses)
+    ├── quiz.ts          # quiz: get (no answers), auto-grade attempt, admin questions
+    ├── assignments.ts   # assignment: get, submit, admin update + grade submissions
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -101,6 +107,13 @@ alias use kar sakte ho.)
 - ✅ Coupon = influencer promo code → discount (REFERRAL_DISCOUNT_PERCENT, default 10%)
 - ✅ Har payment DB me record (created/paid/failed) + attribution (couponCode)
 
+**Phase 4 — assessment (quiz + assignment)**
+- ✅ Quiz: QUIZ lesson me MCQ, learn-page pe attempt, **auto-grade** + pass/fail,
+  correct answers submit ke baad reveal (pehle nahi — cheating roke)
+- ✅ Assignment: ASSIGNMENT lesson me student file-link/text submit kare
+- ✅ Admin: course-builder me quiz questions + assignment details; `/admin/lms/submissions`
+  pe grade + feedback do
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -117,6 +130,11 @@ alias use kar sakte ho.)
 | `pages/api/webhooks/hms` | 100ms recording-ready → auto lesson |
 | `pages/api/student/payment/create-order` | Razorpay order (coupon apply) |
 | `pages/api/student/payment/verify` | signature verify → enroll |
+| `pages/api/student/quiz/[lessonId]` | quiz get (no answers) / submit attempt |
+| `pages/api/student/assignment/[lessonId]` | assignment get / submit |
+| `pages/api/admin/lms/quiz` | admin quiz question add / delete |
+| `pages/api/admin/lms/assignment` | admin assignment create / update |
+| `pages/api/admin/lms/submissions` | admin submissions list / grade |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
@@ -137,7 +155,7 @@ REFERRAL_DISCOUNT_PERCENT=10   # optional, coupon discount %
 
 ## Aage kya aayega (usi structure me plug hoga)
 
-- Phase 4: `services/quiz.ts`, `services/assignment.ts`, doubt
+- Phase 4b: doubt / discussion forum (`services/doubts.ts`)
 - Phase 6+: certificate, notifications (WhatsApp/email), portfolio
 - Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note);
   Razorpay webhook (idempotent) add karna payment reliability ke liye

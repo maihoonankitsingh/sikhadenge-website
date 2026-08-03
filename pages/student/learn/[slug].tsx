@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import VideoPlayer from "../../../lms/components/VideoPlayer";
+import QuizPanel from "../../../lms/components/QuizPanel";
+import AssignmentPanel from "../../../lms/components/AssignmentPanel";
 
 type Lesson = {
   id: string;
@@ -127,6 +129,10 @@ export default function LearnPage() {
                 <div style={{ background: "#111827", borderRadius: 12, padding: 18, whiteSpace: "pre-wrap", lineHeight: 1.6, fontSize: 14 }}>
                   {active.contentMd}
                 </div>
+              ) : active.type === "QUIZ" ? (
+                <QuizPanel key={active.id} lessonId={active.id} />
+              ) : active.type === "ASSIGNMENT" ? (
+                <AssignmentPanel key={active.id} lessonId={active.id} />
               ) : (
                 <div style={{ background: "#111827", borderRadius: 12, padding: 40, textAlign: "center", color: "rgba(255,255,255,.5)" }}>
                   Content coming soon for this lesson.
