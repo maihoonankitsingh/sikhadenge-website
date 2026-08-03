@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Retry marker: dedicated GitHub Actions SSH port 2222 configured on 2026-08-03
 set -Eeuo pipefail
 
 : "${LIVE_APP:?LIVE_APP is required}"
