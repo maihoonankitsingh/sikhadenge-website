@@ -4,6 +4,7 @@
 > Live classes, recordings, student dashboard, auto-recording updates, assessments, certificates.
 >
 > **Streaming choice:** [100ms](https://www.100ms.live) (recording built-in, India-based, LMS-grade).
+> **Content security:** DRM + dynamic watermark + signed URLs — Telegram/piracy leak roke (section 9).
 > **Status:** Planning doc. Code build phase-wise hoga.
 
 ---
@@ -385,10 +386,92 @@ zod                                             # API validation
 
 ---
 
-## 9. Recommended Start
+## 9. Content Security / Anti-Piracy (Telegram leak roko) 🔒
+
+> **India ki #1 ed-tech problem:** premium course Telegram pe ₹100-200 me bikte hain.
+> **Honest truth:** 100% piracy koi nahi rok sakta — jo screen pe dikhe use camera/screen-record se copy kiya ja sakta hai.
+> **Strategy:** "Layered defense" — chori itni **mushkil** aur itni **traceable** bana do ki (1) casual leak ruk jaye,
+> (2) jo leak kare uska **exact phone number** pakda jaye. Traceability = sabse bada deterrent.
+
+### 9.1 Encrypted, expiring video delivery (base layer)
+- Video kabhi bhi ek simple downloadable `.mp4` URL na ho. **HLS streaming** — video chhote encrypted chunks (`.ts`/`fMP4`) me toota rehta hai.
+- **Signed, short-expiry URLs** — har chunk ka URL 5-10 min me expire. URL copy karke share karo to kaam nahi karega.
+- URL **user + IP + session bound** — dusre device pe wahi URL na chale.
+- **AES-128 / DRM encryption** — chunks encrypted, key alag endpoint se milti hai (login + enrollment check ke baad). Advanced: **Widevine/FairPlay DRM** (Mux/Cloudflare Stream support karte hain) — isse browser khud download block karta hai.
+
+### 9.2 Dynamic watermarking (sabse strong deterrent) ⭐
+- Har video pe **student ka phone number + email** overlay — **halka, semi-transparent, screen pe move karta hua** (position har 10 sec me badle).
+- Isse ye faayda: agar koi screen-record karke Telegram pe daale, to **recording me uska hi number chhpa hoga** → turant pata chal jayega kaun leak kar raha hai → account ban + legal action.
+- Do tareeke: (a) **server-side burn-in** (permanent, sabse pukka) ya (b) **client-side moving overlay** (sasta, live class ke liye). Dono use karenge.
+- Live class me bhi same watermark (100ms overlay support karta hai).
+
+### 9.3 Device & session limits
+- **1-2 device limit per account** — 3rd device login pe purana logout ya OTP verify. (Log/pass share karke gang chalana rok deta hai.)
+- **Concurrent stream limit** — ek account se ek hi video ek time pe. 2 jagah chale to block.
+- Naya device = **OTP verification** phone pe.
+- Suspicious pattern detect (bahut zyada IP/city change) → auto-flag admin ko.
+
+### 9.4 Download & screen-record deterrents
+- **No download button** — sab streaming-only.
+- **`oncontextmenu` disable, DevTools deterrent**, `Save-As` block (bypass ho sakta hai, par casual users rukte hain).
+- Mobile app me **FLAG_SECURE** (Android) — screenshot/screen-record OS level pe block ho jaata hai. **Ye app me sabse powerful hai** (web me possible nahi).
+- Web pe **Encrypted Media Extensions (EME) + DRM** — DRM content ko OS-level screen capture bhi black kar deta hai (Widevine L1).
+
+### 9.5 Traceability & forensics (leak ke baad pakadna)
+- Har video-play event log: `userId, IP, device, timestamp` → `VideoAccessLog` table.
+- **Invisible forensic watermark** (advanced) — har user ki copy me imperceptible unique signature; leaked video milne pe usse trace kar sakte ho even agar visible watermark crop ho.
+- **Telegram/web monitoring** — periodic search apne course naam ka; leak mile to visible watermark se number nikaalo → ban + FIR.
+
+### 9.6 Legal + account layer
+- Signup pe **T&C**: piracy = account ban + legal action (IT Act, Copyright Act).
+- Leak detect → account permanent ban + blacklist device/phone.
+- Ek "report piracy" button, aur DMCA-style takedown process Telegram ke liye.
+
+### 9.7 New DB models (anti-piracy)
+```prisma
+model Device {
+  id         String   @id @default(cuid())
+  userId     String
+  fingerprint String  // device hash
+  lastIp     String?
+  lastSeenAt DateTime @default(now())
+  isBlocked  Boolean  @default(false)
+  user       User     @relation(fields: [userId], references: [id])
+  @@index([userId])
+}
+
+model VideoAccessLog {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  ip        String?
+  deviceId  String?
+  createdAt DateTime @default(now())
+  @@index([userId, lessonId])
+}
+```
+
+### 9.8 Recommended stack for security
+| Layer | Tool |
+|---|---|
+| Encrypted HLS + DRM | **Mux** ya **Cloudflare Stream** (Widevine/FairPlay built-in, signed URLs) |
+| Watermark burn-in | FFmpeg (server) + 100ms overlay (live) |
+| Device fingerprint | `@fingerprintjs/fingerprintjs` |
+| Signed URLs | Short-lived JWT per chunk |
+| Mobile screenshot block | React Native / Flutter `FLAG_SECURE` |
+
+> **Realistic goal:** Mux/Cloudflare DRM + moving phone-number watermark + 2-device limit + access logs.
+> Isse 95% casual piracy ruk jaati hai, aur jo bacha wo **traceable** ho jaata hai. Yahi PW/Unacademy bhi karte hain.
+
+---
+
+## 10. Recommended Start
 
 Phase 1 se shuru — Student auth + DB migration + dashboard + enrollment.
 Ye ban gaya to LMS "jinda" ho jaata hai; phir Phase 2 (content+DRM) aur Phase 3 (live+recording) layer-by-layer.
 
 **Skill-course note:** exam-style test series / All-India-rank ki zaroorat nahi (wo exam-prep platforms ke liye hai).
 Yahan focus **projects, portfolio, recordings, live doubt, certificates** pe hai.
+
+**Security note:** anti-piracy (section 9) ko Phase 2 (content delivery) ke saath hi build karenge — video system banate waqt hi
+DRM + watermark + signed URLs daal denge, baad me retrofit karna mushkil hota hai.
