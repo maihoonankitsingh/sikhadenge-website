@@ -25,7 +25,7 @@ type MasterclassConfig = {
 };
 
 const MASTERCLASS_CONTEXT =
-  /(?:become\s+ai\s+expert|free\s+(?:ai\s+)?master\s*class|free\s+(?:ai\s+)?masterclass|ai\s+tools\s+workshop|build\s+your\s+career\s+in\s+ai|masterclass\s+community|whatsapp\s+community)/iu;
+  /(?:become\s+ai\s+expert|free\s+(?:ai\s+)?master\s*class|free\s+(?:ai\s+)?masterclass|ai\s+tools\s+workshop|build\s+your\s+career\s+in\s+ai|master\s*class|masterclass\s+community|whatsapp\s+community)/iu;
 const JOINED_REPLY =
   /^\s*(?:joined|join\s+ho\s+gaya|join\s+ho\s+gayi|community\s+join(?:ed)?|maine\s+join\s+kar\s+liya|maine\s+join\s+kar\s+li|done)\s*[.!✅😊🎉]*\s*$/iu;
 const INTEREST_REPLY =
@@ -162,6 +162,7 @@ export function generateMasterclassCommunityReply(input: {
   const fullContext = contextText(agentInput);
   const active =
     MASTERCLASS_CONTEXT.test(fullContext) ||
+    LINK_ISSUE.test(message) ||
     (JOINED_REPLY.test(message) && /community|JOINED/iu.test(lastAssistant)) ||
     isGoalQuestion(lastAssistant);
   if (!active) return null;

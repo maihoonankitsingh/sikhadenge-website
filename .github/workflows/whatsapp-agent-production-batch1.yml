@@ -1,5 +1,6 @@
 # Retry marker: Base64 production SSH key configured on 2026-08-03
 # Retry marker: corrected public ED25519 host key configured on 2026-08-03
+# Retry marker: canonical pinned host entry for alternate SSH port on 2026-08-03
 name: WhatsApp Agent Production Batch 1
 
 on:
@@ -88,13 +89,28 @@ jobs:
           else
             printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
           fi
-
           chmod 600 "$private_key_file"
-          printf '%s\n' "$SSH_HOST_KEY" > "$HOME/.ssh/known_hosts"
+
+          [[ "$SSH_HOST" =~ ^[^[:space:]/]+$ ]]
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
+          (( SSH_PORT >= 1 && SSH_PORT <= 65535 ))
+
+          read -r _ supplied_key_type supplied_key_material _ <<< "$SSH_HOST_KEY"
+          test "$supplied_key_type" = "ssh-ed25519"
+          test -n "$supplied_key_material"
+          printf '%s %s\n' "$supplied_key_type" "$supplied_key_material" |
+            ssh-keygen -lf - -E sha256 >/dev/null
+
+          canonical_host="[$SSH_HOST]:$SSH_PORT"
+          printf '%s %s %s\n' \
+            "$canonical_host" \
+            "$supplied_key_type" \
+            "$supplied_key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
           ssh-keygen -y -f "$private_key_file" >/dev/null
-          test -s "$HOME/.ssh/known_hosts"
+          ssh-keygen -F "$canonical_host" -f "$HOME/.ssh/known_hosts" >/dev/null
+          printf 'PASS: PINNED_HOST_KEY_CANONICALIZED\n'
           printf 'PASS: SSH_IDENTITY_CONFIGURED\n'
 
       - name: Verify pinned SSH transport
