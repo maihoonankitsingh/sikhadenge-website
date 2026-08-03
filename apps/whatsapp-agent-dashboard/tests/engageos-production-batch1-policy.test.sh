@@ -107,6 +107,8 @@ for required_text in \
   'ConnectTimeout=15' \
   'PASS: PINNED_SSH_TRANSPORT_VERIFIED' \
   ': > production-batch.log' \
+  'base64 --decode' \
+  'ssh-keygen -y -f' \
   'npm install --include=dev --no-audit --no-fund' \
   'actions/upload-artifact@v4'; do
   grep -Fq "$required_text" "$workflow_path"
