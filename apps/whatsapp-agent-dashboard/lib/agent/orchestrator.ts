@@ -1,6 +1,7 @@
 import { getAgentRuntimePolicy } from "../observability/runtime-policy";
 import { generateAdmissionConversationReply } from "./admission-conversation-flow";
 import { retrieveApprovedKnowledge } from "./knowledge";
+import { generateMasterclassCommunityReply } from "./masterclass-community-flow";
 import { requestModelDecision } from "./openai-responses";
 import { generateOwnedReply } from "./owned-reply-engine";
 import {
@@ -243,6 +244,27 @@ export async function generateAgentDecision(
     });
   }
 
+  const masterclassFlow = generateMasterclassCommunityReply({
+    agentInput: input,
+    classification,
+  });
+  if (masterclassFlow) {
+    return buildDecision({
+      reply: masterclassFlow.reply,
+      language: classification.language,
+      intent: masterclassFlow.intent,
+      confidence: masterclassFlow.confidence,
+      decisionSummary: masterclassFlow.decisionSummary,
+      requiresHuman: masterclassFlow.requiresHuman,
+      handoffReason: masterclassFlow.handoffReason,
+      nextQuestion: masterclassFlow.nextQuestion,
+      leadUpdates: masterclassFlow.leadUpdates,
+      safety,
+      model: "sikhadenge-masterclass-community-v1",
+      telemetry: runtimeTelemetry("rule", startedAt),
+    });
+  }
+
   const admissionFlow = generateAdmissionConversationReply({
     agentInput: input,
     classification,
@@ -316,6 +338,7 @@ export async function generateAgentDecision(
       classification,
       knowledge,
     });
+
     if (!modelResult) {
       return buildDecision({
         reply: fallbackReply(classification.language, classification.intent),
