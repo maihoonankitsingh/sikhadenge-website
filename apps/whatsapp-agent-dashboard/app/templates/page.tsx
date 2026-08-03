@@ -5,6 +5,7 @@ import TemplateManager from "../../components/templates/TemplateManager";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
 import "./template-studio.css";
+import "./template-studio-polish.css";
 
 export const dynamic = "force-dynamic";
 
