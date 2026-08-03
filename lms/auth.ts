@@ -1,6 +1,13 @@
+// =============================================================
+// LMS student authentication — cookie-based sessions.
+// Pattern intentionally same as lib/influencerAuth.ts & lib/auth.ts
+// taaki poore codebase me auth ek jaisa rahe.
+// =============================================================
+
 import crypto from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "./prisma";
+import { prisma } from "../lib/prisma";
+import type { PublicUser } from "./types";
 
 const COOKIE_NAME = "sd_student";
 const SESSION_DAYS = 30;
@@ -13,6 +20,7 @@ function newToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+/** Login/signup ke baad session cookie set karta hai. */
 export async function createStudentSession(res: NextApiResponse, userId: string) {
   const token = newToken();
   const tokenHash = sha256(token);
@@ -28,6 +36,7 @@ export async function createStudentSession(res: NextApiResponse, userId: string)
   );
 }
 
+/** Logout: session DB se delete + cookie clear. */
 export async function clearStudentSession(req: NextApiRequest, res: NextApiResponse) {
   const token = readCookie(req, COOKIE_NAME);
   if (token) {
@@ -40,7 +49,14 @@ export async function clearStudentSession(req: NextApiRequest, res: NextApiRespo
   );
 }
 
-export async function requireStudent(req: NextApiRequest, res: NextApiResponse) {
+/**
+ * Protected route guard. Valid session ho to user return karta hai,
+ * warna khud 401 bhej deta hai aur null return karta hai.
+ */
+export async function requireStudent(
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<PublicUser | null> {
   const token = readCookie(req, COOKIE_NAME);
   if (!token) {
     res.status(401).json({ ok: false, error: "Unauthorized" });
@@ -68,7 +84,8 @@ export async function requireStudent(req: NextApiRequest, res: NextApiResponse) 
     return null;
   }
 
-  return user;
+  const { isActive, ...publicUser } = user;
+  return publicUser;
 }
 
 function readCookie(req: NextApiRequest, name: string) {

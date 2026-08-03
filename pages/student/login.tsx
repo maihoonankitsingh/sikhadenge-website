@@ -42,8 +42,8 @@ export default function StudentLogin() {
       const j = await res.json().catch(() => null);
       if (!res.ok || !j?.ok) throw new Error(j?.error || "Something went wrong");
       window.location.href = "/student";
-    } catch (e: any) {
-      setErr(e?.message || "Something went wrong");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
     }
@@ -200,8 +200,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
           alignItems: "center",
         }}
       >
-        {React.isValidElement(children)
-          ? React.cloneElement(children as any, {
+        {React.isValidElement<{ style?: React.CSSProperties }>(children)
+          ? React.cloneElement(children, {
               style: {
                 width: "100%",
                 border: "none",

@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { clearStudentSession } from "../../../lib/studentAuth";
+import { methodGuard, sendOk } from "../../../lms/http";
+import { clearStudentSession } from "../../../lms/auth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return res.status(405).json({ ok: false });
+  if (!methodGuard(req, res, ["POST"])) return;
   await clearStudentSession(req, res);
-  return res.json({ ok: true });
+  return sendOk(res);
 }

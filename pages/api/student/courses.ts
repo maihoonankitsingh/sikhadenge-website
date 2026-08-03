@@ -1,38 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
-import { requireStudent } from "../../../lib/studentAuth";
+import { sendOk, sendFail } from "../../../lms/http";
+import { requireStudent } from "../../../lms/auth";
+import { listCoursesForStudent } from "../../../lms/services/courses";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const user = await requireStudent(req, res);
   if (!user) return;
 
-  const [courses, enrollments] = await Promise.all([
-    prisma.course.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        thumbnail: true,
-        priceInr: true,
-        _count: { select: { modules: true } },
-      },
-    }),
-    prisma.enrollment.findMany({
-      where: { userId: user.id },
-      select: { courseId: true, status: true },
-    }),
-  ]);
+  const result = await listCoursesForStudent(user.id);
+  if (!result.ok) return sendFail(res, result.status, result.error);
 
-  const enrolledMap = new Map(enrollments.map((e) => [e.courseId, e.status]));
-
-  const enrolled = courses
-    .filter((c) => enrolledMap.has(c.id))
-    .map((c) => ({ ...c, enrollmentStatus: enrolledMap.get(c.id) }));
-
-  const available = courses.filter((c) => !enrolledMap.has(c.id));
-
-  return res.json({ ok: true, enrolled, available });
+  return sendOk(res, result.data); // { enrolled, available }
 }

@@ -67,8 +67,8 @@ export default function StudentDashboard() {
       if (!r.ok || !j?.ok) throw new Error(j?.error || "Enroll failed");
       await loadCourses();
       setMsg("Enrolled successfully!");
-    } catch (e: any) {
-      setMsg(e?.message || "Enroll failed");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Enroll failed");
     } finally {
       setEnrolling(null);
     }

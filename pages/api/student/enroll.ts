@@ -1,40 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
-import { requireStudent } from "../../../lib/studentAuth";
+import { methodGuard, sendOk, sendFail } from "../../../lms/http";
+import { requireStudent } from "../../../lms/auth";
+import { enrollStudent } from "../../../lms/services/enrollment";
 
-// Phase 1: free/direct enroll. Payment gateway (Razorpay) plugs in here in Phase 5 —
-// paid courses will require a verified Payment before this creates the Enrollment.
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const user = await requireStudent(req, res);
   if (!user) return;
+  if (!methodGuard(req, res, ["POST"])) return;
 
-  if (req.method !== "POST") return res.status(405).json({ ok: false });
+  const result = await enrollStudent(user.id, (req.body || {}).courseId);
+  if (!result.ok) return sendFail(res, result.status, result.error);
 
-  const { courseId } = req.body || {};
-  if (typeof courseId !== "string" || !courseId) {
-    return res.status(400).json({ ok: false, error: "courseId required" });
-  }
-
-  const course = await prisma.course.findFirst({
-    where: { id: courseId, isPublished: true },
-    select: { id: true, priceInr: true },
-  });
-  if (!course) return res.status(404).json({ ok: false, error: "Course not found" });
-
-  // Guard: paid courses cannot be free-enrolled until payment flow (Phase 5) is wired.
-  if (course.priceInr > 0) {
-    return res.status(402).json({ ok: false, error: "Payment required (coming soon)" });
-  }
-
-  const existing = await prisma.enrollment.findUnique({
-    where: { userId_courseId: { userId: user.id, courseId: course.id } },
-    select: { id: true },
-  });
-  if (existing) return res.json({ ok: true, alreadyEnrolled: true });
-
-  await prisma.enrollment.create({
-    data: { userId: user.id, courseId: course.id, status: "ACTIVE" },
-  });
-
-  return res.json({ ok: true, enrolled: true });
+  return sendOk(res, result.data); // { enrolled, alreadyEnrolled? }
 }
