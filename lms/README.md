@@ -11,10 +11,16 @@ lms/
 ├── types.ts             # shared TypeScript types + ServiceResult helpers
 ├── http.ts              # API route helpers (methodGuard, sendOk, sendFail, normPhone)
 ├── auth.ts              # student session (login cookie banana/clear/verify)
+├── components/          # LMS ke React UI components (reusable)
+│   └── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
 └── services/            # asli business logic (DB queries yahin, HTTP nahi)
     ├── users.ts         # signupStudent, loginStudent
     ├── courses.ts       # listCoursesForStudent
-    └── enrollment.ts    # enrollStudent
+    ├── enrollment.ts    # enrollStudent
+    ├── content.ts       # getCourseContentForStudent (enrolled tree + progress)
+    ├── progress.ts      # saveProgress (resume + mark complete)
+    └── admin/
+        └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
 
 Routes aur UI Next.js ke rule ki wajah se `pages/` me rehte hain (waha se move nahi
@@ -64,17 +70,34 @@ route usko `sendOk` / `sendFail` se HTTP me badal deta hai.
 (Abhi routes relative path use karte hain kyunki wo `lms/` ke bahar hain; naye code me
 alias use kar sakte ho.)
 
-## Abhi kya bana hai (Phase 1)
+## Abhi kya bana hai (Phase 1 + Phase 2)
 
+**Phase 1 — auth & enrollment**
 - ✅ Student signup / login (email ya phone) / logout / me
 - ✅ Course listing (enrolled vs available)
 - ✅ Free enrollment (paid course payment tak blocked)
 - ✅ Student dashboard UI
 
+**Phase 2 — content delivery**
+- ✅ Admin course-builder: course → module → lesson banana + publish (`/admin/lms`)
+- ✅ Student learn page: video player + module sidebar + progress (`/student/learn/[slug]`)
+- ✅ Video player: HLS/mp4, resume, playback speed, **moving phone-number watermark** (anti-piracy)
+- ✅ Progress tracking: resume from last position + mark complete + course % 
+
+### Routes map
+| Route | Kya |
+|---|---|
+| `pages/api/student/content/[slug]` | enrolled course ka content + progress |
+| `pages/api/student/progress` | progress save |
+| `pages/api/admin/lms/courses` | list / create course |
+| `pages/api/admin/lms/course/[id]` | course tree / update (publish, price) |
+| `pages/api/admin/lms/module` | module create / delete |
+| `pages/api/admin/lms/lesson` | lesson create / delete |
+
 ## Aage kya aayega (usi structure me plug hoga)
 
-- Phase 2: `services/lessons.ts`, `services/progress.ts`, video player, admin course-builder
-- Phase 3: `services/live.ts` (100ms), recording webhook → auto lesson
+- Phase 3: `services/live.ts` (100ms live class), recording webhook → auto lesson
+- Phase 4: `services/quiz.ts`, `services/assignment.ts`, doubt
 - Phase 5: `services/payments.ts` (Razorpay) — `enrollment.ts` ka paid-course TODO yahin judega
 
 > Poora roadmap: `docs/LMS-BUILD-PLAN.md`
