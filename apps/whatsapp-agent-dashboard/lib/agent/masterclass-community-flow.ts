@@ -162,6 +162,7 @@ export function generateMasterclassCommunityReply(input: {
   const fullContext = contextText(agentInput);
   const active =
     MASTERCLASS_CONTEXT.test(fullContext) ||
+    LINK_ISSUE.test(message) ||
     (JOINED_REPLY.test(message) && /community|JOINED/iu.test(lastAssistant)) ||
     isGoalQuestion(lastAssistant);
   if (!active) return null;
