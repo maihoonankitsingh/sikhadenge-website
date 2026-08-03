@@ -4,6 +4,7 @@ import DashboardModuleShell from "../../components/navigation/DashboardModuleShe
 import TemplateManager from "../../components/templates/TemplateManager";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./template-studio.css";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export default async function TemplatesPage() {
     <DashboardModuleShell
       activeTitle="Templates"
       eyebrow="Meta-approved outreach content"
-      title="Template Centre"
-      description="Create controlled WhatsApp template drafts, submit them to Meta for review, sync approval status and make approved templates available to Inbox and Campaigns."
+      title="WhatsApp Template Studio"
+      description="Build image-based WhatsApp templates, preview the final message, upload the approval sample, submit directly to Meta and track approval status from one page."
       userName={user.name}
       userRole={user.role}
     >
