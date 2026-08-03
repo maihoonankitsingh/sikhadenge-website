@@ -28,7 +28,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       LEDGER_ISSUE: "65"
-      BOOTSTRAP_PRODUCTION_SHA: "a05182dc3b026f194d35ca8ae25c9299785fddee"
+      BOOTSTRAP_PRODUCTION_SHA: "fdbf6d9401a4101314b18b2e930b097262e673bd"
 
     steps:
       - name: Resolve production workflow run
