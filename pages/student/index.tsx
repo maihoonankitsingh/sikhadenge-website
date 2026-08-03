@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CheckoutModal from "../../lms/components/CheckoutModal";
 
 type User = { id: string; name: string; email: string | null; phone: string | null; role: string };
 
@@ -31,6 +32,7 @@ export default function StudentDashboard() {
   const [live, setLive] = useState<LiveClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<Course | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function loadCourses() {
@@ -221,7 +223,7 @@ export default function StudentDashboard() {
               {available.map((c) => (
                 <CourseCard key={c.id} course={c}>
                   <button
-                    onClick={() => enroll(c.id)}
+                    onClick={() => (c.priceInr > 0 ? setCheckout(c) : enroll(c.id))}
                     disabled={enrolling === c.id}
                     style={{ ...primaryBtn, opacity: enrolling === c.id ? 0.6 : 1, cursor: "pointer", border: "none" }}
                   >
@@ -233,6 +235,19 @@ export default function StudentDashboard() {
           )}
         </Section>
       </div>
+
+      {checkout && user && (
+        <CheckoutModal
+          course={{ id: checkout.id, title: checkout.title, priceInr: checkout.priceInr }}
+          user={{ name: user.name, email: user.email, phone: user.phone }}
+          onClose={() => setCheckout(null)}
+          onSuccess={async () => {
+            setCheckout(null);
+            setMsg("Payment successful! You are enrolled.");
+            await loadCourses();
+          }}
+        />
+      )}
     </div>
   );
 }

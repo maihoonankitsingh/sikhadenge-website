@@ -12,15 +12,18 @@ lms/
 ├── http.ts              # API route helpers (methodGuard, sendOk, sendFail, normPhone)
 ├── auth.ts              # student session (login cookie banana/clear/verify)
 ├── hms.ts               # 100ms helper (room, room-codes, prebuilt URL, webhook verify)
+├── razorpay.ts          # Razorpay helper (order create REST + signature verify)
 ├── components/          # LMS ke React UI components (reusable)
-│   └── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
+│   ├── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
+│   └── CheckoutModal.tsx# Razorpay checkout (coupon + pay + verify)
 └── services/            # asli business logic (DB queries yahin, HTTP nahi)
     ├── users.ts         # signupStudent, loginStudent
     ├── courses.ts       # listCoursesForStudent
-    ├── enrollment.ts    # enrollStudent
+    ├── enrollment.ts    # enrollStudent (free courses)
     ├── content.ts       # getCourseContentForStudent (enrolled tree + progress)
     ├── progress.ts      # saveProgress (resume + mark complete)
     ├── live.ts          # live class: batch, schedule, join, webhook auto-recording
+    ├── payments.ts      # createCourseOrder (coupon) + verifyAndEnroll (paid courses)
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -92,6 +95,12 @@ alias use kar sakte ho.)
 - ✅ **Auto-recording:** class end → 100ms webhook → recording apne aap "Class Recordings"
   module me `LIVE_RECORDING` lesson ban jaati hai (bina manual upload)
 
+**Phase 5 — payments (Razorpay)**
+- ✅ Paid course → CheckoutModal → Razorpay → signature verify → auto-enroll
+- ✅ Free course direct enroll; paid course sirf verified payment ke baad
+- ✅ Coupon = influencer promo code → discount (REFERRAL_DISCOUNT_PERCENT, default 10%)
+- ✅ Har payment DB me record (created/paid/failed) + attribution (couponCode)
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -106,6 +115,8 @@ alias use kar sakte ho.)
 | `pages/api/admin/lms/batch` | batch list / create |
 | `pages/api/admin/lms/live` | schedule / host-join / end |
 | `pages/api/webhooks/hms` | 100ms recording-ready → auto lesson |
+| `pages/api/student/payment/create-order` | Razorpay order (coupon apply) |
+| `pages/api/student/payment/verify` | signature verify → enroll |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
@@ -116,10 +127,19 @@ HMS_SUBDOMAIN=yourname.app.100ms.live      HMS_WEBHOOK_SECRET=...(optional)
 > `https://<domain>/api/webhooks/hms`. Keys na ho to bhi scheduling chalti hai
 > (room provision skip ho jaata hai).
 
+### Phase 5 env (Razorpay)
+```
+RAZORPAY_KEY_ID=...    RAZORPAY_SECRET=...
+REFERRAL_DISCOUNT_PERCENT=10   # optional, coupon discount %
+```
+> Keys na ho to paid course checkout "Payments not configured" dega
+> (free course tab bhi enroll hota hai).
+
 ## Aage kya aayega (usi structure me plug hoga)
 
 - Phase 4: `services/quiz.ts`, `services/assignment.ts`, doubt
-- Phase 5: `services/payments.ts` (Razorpay) — `enrollment.ts` ka paid-course TODO yahin judega
-- Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note)
+- Phase 6+: certificate, notifications (WhatsApp/email), portfolio
+- Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note);
+  Razorpay webhook (idempotent) add karna payment reliability ke liye
 
 > Poora roadmap: `docs/LMS-BUILD-PLAN.md`
