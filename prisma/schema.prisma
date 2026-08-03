@@ -93,6 +93,8 @@ model User {
   payments      Payment[]
   quizAttempts  QuizAttempt[]
   submissions   Submission[]
+  doubts        Doubt[]
+  doubtReplies  DoubtReply[]
 
   @@index([role])
 }
@@ -125,6 +127,7 @@ model Course {
   batches     Batch[]
   enrollments Enrollment[]
   payments    Payment[]
+  doubts      Doubt[]
 
   @@index([isPublished])
 }
@@ -365,4 +368,41 @@ model Submission {
 
   @@unique([assignmentId, userId])
   @@index([status])
+}
+
+// ===================== LMS doubts / discussion (Phase 4b) =====================
+
+model Doubt {
+  id         String   @id @default(cuid())
+  courseId   String
+  lessonId   String? // optional: kis lesson pe doubt hai
+  userId     String
+  authorName String // denormalized taaki list me join na karna pade
+  title      String
+  body       String
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies DoubtReply[]
+
+  @@index([courseId])
+  @@index([resolved])
+}
+
+model DoubtReply {
+  id         String   @id @default(cuid())
+  doubtId    String
+  userId     String? // staff (admin) reply ke liye null
+  authorName String
+  isStaff    Boolean  @default(false)
+  body       String
+  createdAt  DateTime @default(now())
+
+  doubt Doubt @relation(fields: [doubtId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([doubtId])
 }

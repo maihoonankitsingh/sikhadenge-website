@@ -19,7 +19,8 @@ lms/
 │   ├── QuizPanel.tsx    # student: quiz lena + auto-grade result
 │   ├── AssignmentPanel.tsx # student: project/assignment submit + grade dekhna
 │   ├── QuizEditor.tsx   # admin: quiz questions add/delete
-│   └── AssignmentEditor.tsx # admin: assignment instructions + due date
+│   ├── AssignmentEditor.tsx # admin: assignment instructions + due date
+│   └── DoubtsPanel.tsx  # student: course doubts (ask / reply / resolve)
 └── services/            # asli business logic (DB queries yahin, HTTP nahi)
     ├── users.ts         # signupStudent, loginStudent
     ├── courses.ts       # listCoursesForStudent
@@ -30,6 +31,7 @@ lms/
     ├── payments.ts      # createCourseOrder (coupon) + verifyAndEnroll (paid courses)
     ├── quiz.ts          # quiz: get (no answers), auto-grade attempt, admin questions
     ├── assignments.ts   # assignment: get, submit, admin update + grade submissions
+    ├── doubts.ts        # doubts: list/post/reply/resolve; admin staff-reply
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -114,6 +116,11 @@ alias use kar sakte ho.)
 - ✅ Admin: course-builder me quiz questions + assignment details; `/admin/lms/submissions`
   pe grade + feedback do
 
+**Phase 4b — doubts / discussion**
+- ✅ Student learn page pe "Doubts & Discussion": doubt pucho, reply karo, apna resolve karo
+- ✅ Peer replies + **Team (staff) replies highlighted**; staff reply se doubt resolved
+- ✅ Admin `/admin/lms/doubts` pe answer + resolve (filter: open/resolved/all)
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -135,6 +142,9 @@ alias use kar sakte ho.)
 | `pages/api/admin/lms/quiz` | admin quiz question add / delete |
 | `pages/api/admin/lms/assignment` | admin assignment create / update |
 | `pages/api/admin/lms/submissions` | admin submissions list / grade |
+| `pages/api/student/doubts` | doubts list / post |
+| `pages/api/student/doubts/[id]/reply` | reply / resolve own doubt |
+| `pages/api/admin/lms/doubts` | admin list / staff-reply / resolve |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
@@ -155,7 +165,6 @@ REFERRAL_DISCOUNT_PERCENT=10   # optional, coupon discount %
 
 ## Aage kya aayega (usi structure me plug hoga)
 
-- Phase 4b: doubt / discussion forum (`services/doubts.ts`)
 - Phase 6+: certificate, notifications (WhatsApp/email), portfolio
 - Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note);
   Razorpay webhook (idempotent) add karna payment reliability ke liye

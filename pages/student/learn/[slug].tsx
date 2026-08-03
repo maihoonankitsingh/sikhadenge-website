@@ -4,6 +4,7 @@ import Link from "next/link";
 import VideoPlayer from "../../../lms/components/VideoPlayer";
 import QuizPanel from "../../../lms/components/QuizPanel";
 import AssignmentPanel from "../../../lms/components/AssignmentPanel";
+import DoubtsPanel from "../../../lms/components/DoubtsPanel";
 
 type Lesson = {
   id: string;
@@ -151,6 +152,9 @@ export default function LearnPage() {
           ) : (
             <div style={{ color: "rgba(255,255,255,.6)" }}>Select a lesson from the right.</div>
           )}
+
+          {/* Doubts & discussion (course-level) */}
+          <DoubtsPanel courseId={course.id} lessonId={active?.id} />
         </div>
 
         {/* Sidebar */}
