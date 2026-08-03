@@ -1,0 +1,205 @@
+name: WhatsApp Agent Route Permissions Activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Enable or disable persisted route permissions
+        required: true
+        type: choice
+        options:
+          - enable
+          - disable
+      expected_live_sha:
+        description: Exact SHA currently deployed on the VPS
+        required: true
+        type: string
+      execute:
+        description: Execute the guarded production change
+        required: true
+        default: false
+        type: boolean
+      confirmation:
+        description: ENABLE_ROUTE_PERMISSIONS or DISABLE_ROUTE_PERMISSIONS
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-agent-production
+  cancel-in-progress: false
+
+jobs:
+  route-permissions-change:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    env:
+      OPERATION: ${{ inputs.operation }}
+      EXPECTED_LIVE_SHA: ${{ inputs.expected_live_sha }}
+      EXECUTE: ${{ inputs.execute }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      ACTIVATION_RUN_ID: github-route-permissions-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout audited activation automation
+        uses: actions/checkout@v4
+        with:
+          ref: release/whatsapp-instagram-agent-flow-20260731
+          fetch-depth: 1
+
+      - name: Validate guarded activation request
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_LIVE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$EXECUTE" = "true"
+
+          case "$OPERATION" in
+            enable)
+              expected_confirmation=ENABLE_ROUTE_PERMISSIONS
+              script_path=apps/whatsapp-agent-dashboard/scripts/engageos-route-permissions-activate.sh
+              ;;
+            disable)
+              expected_confirmation=DISABLE_ROUTE_PERMISSIONS
+              script_path=apps/whatsapp-agent-dashboard/scripts/engageos-route-permissions-disable.sh
+              ;;
+            *)
+              printf 'Unsupported operation: %s\n' "$OPERATION" >&2
+              exit 1
+              ;;
+          esac
+
+          test "$CONFIRMATION" = "$expected_confirmation"
+          test -f "$script_path"
+          bash -n "$script_path"
+          printf 'SCRIPT_PATH=%s\n' "$script_path" >> "$GITHUB_ENV"
+
+          missing=0
+          for variable_name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_HOST_KEY; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              printf 'Missing required production secret: %s\n' "$variable_name" >&2
+              missing=1
+            fi
+          done
+          test "$missing" = "0"
+
+          if [[ -z "${SSH_PORT:-}" ]]; then
+            printf 'SSH_PORT=22\n' >> "$GITHUB_ENV"
+          fi
+
+          printf 'PASS: GUARDED_ACTIVATION_REQUEST_VALIDATED\n'
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+
+          private_key_file="$HOME/.ssh/whatsapp-production"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$private_key_file"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
+          fi
+          chmod 600 "$private_key_file"
+
+          [[ "$SSH_HOST" =~ ^[^[:space:]/]+$ ]]
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
+          (( SSH_PORT >= 1 && SSH_PORT <= 65535 ))
+
+          read -r _ supplied_key_type supplied_key_material _ <<< "$SSH_HOST_KEY"
+          test "$supplied_key_type" = "ssh-ed25519"
+          test -n "$supplied_key_material"
+          printf '%s %s\n' "$supplied_key_type" "$supplied_key_material" |
+            ssh-keygen -lf - -E sha256 >/dev/null
+
+          canonical_host="[$SSH_HOST]:$SSH_PORT"
+          printf '%s %s %s\n' \
+            "$canonical_host" \
+            "$supplied_key_type" \
+            "$supplied_key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh-keygen -y -f "$private_key_file" >/dev/null
+          ssh-keygen -F "$canonical_host" -f "$HOME/.ssh/known_hosts" >/dev/null
+          printf 'PASS: PINNED_ACTIVATION_SSH_CONFIGURED\n'
+
+      - name: Verify pinned SSH transport
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" \
+            'test "$(id -u)" = "0" && printf "PASS: PINNED_SSH_TRANSPORT_VERIFIED\n"'
+
+      - name: Execute guarded route-permissions change
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : > route-permissions-change.log
+          set +e
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "LIVE_APP='/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard' EXPECTED_LIVE_SHA='$EXPECTED_LIVE_SHA' RUN_ID='$ACTIVATION_RUN_ID' PM2_PROCESS_NAME='sikhadenge-whatsapp-agent' PUBLIC_URL='https://whatsapp.sikhadenge.in' BACKUP_ROOT='/root/sikhadenge-backups' bash -s" \
+            < "$SCRIPT_PATH" 2>&1 | tee route-permissions-change.log
+          ssh_code=${PIPESTATUS[0]}
+          set -e
+          printf 'SSH_EXIT_CODE=%s\n' "$ssh_code" | tee -a route-permissions-change.log
+          exit "$ssh_code"
+
+      - name: Collect non-sensitive activation evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p route-permissions-evidence
+          for file_name in \
+            route-permissions-result.txt \
+            flags-before.txt \
+            flags-before-disable.txt \
+            live-source-before.sha \
+            live-source-before-disable.sha \
+            build-before.id \
+            build-before-disable.id \
+            rollback-result.txt; do
+            scp \
+              -P "$SSH_PORT" \
+              -i "$HOME/.ssh/whatsapp-production" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              "$SSH_USER@$SSH_HOST:/root/sikhadenge-backups/route-permissions-${ACTIVATION_RUN_ID}/${file_name}" \
+              "route-permissions-evidence/${file_name}" >/dev/null 2>&1 || true
+          done
+          find route-permissions-evidence -maxdepth 1 -type f -exec chmod 600 {} \;
+          exit 0
+
+      - name: Upload route-permissions evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsapp-agent-route-permissions-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            route-permissions-change.log
+            route-permissions-evidence
+          if-no-files-found: error
+          retention-days: 14
