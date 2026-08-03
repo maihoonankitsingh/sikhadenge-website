@@ -56,6 +56,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          : > production-batch.log
           [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
@@ -85,6 +86,20 @@ jobs:
           ssh-keygen -l -f "$HOME/.ssh/whatsapp-production" >/dev/null
           test -s "$HOME/.ssh/known_hosts"
           printf 'PASS: SSH_IDENTITY_CONFIGURED\n'
+
+      - name: Verify pinned SSH transport
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" \
+            'test "$(id -u)" = "0" && printf "PASS: PINNED_SSH_TRANSPORT_VERIFIED\n"'
 
       - name: Execute five-step production batch
         id: production
