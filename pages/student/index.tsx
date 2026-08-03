@@ -25,11 +25,17 @@ type LiveClass = {
   courseSlug: string;
 };
 
+type Notification = { id: string; type: string; title: string; body: string | null; link: string | null; read: boolean; createdAt: string };
+type Certificate = { serial: string; issuedAt: string; course: { title: string } };
+
 export default function StudentDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [enrolled, setEnrolled] = useState<Course[]>([]);
   const [available, setAvailable] = useState<Course[]>([]);
   const [live, setLive] = useState<LiveClass[]>([]);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<Course | null>(null);
@@ -52,6 +58,32 @@ export default function StudentDashboard() {
     if (j?.ok) setLive(j.classes || []);
   }
 
+  async function loadNotifs() {
+    const r = await fetch("/api/student/notifications");
+    if (!r.ok) return;
+    const j = await r.json().catch(() => null);
+    if (j?.ok) {
+      setNotifs(j.items || []);
+      setUnread(j.unread || 0);
+    }
+  }
+
+  async function loadCerts() {
+    const r = await fetch("/api/student/certificates");
+    if (!r.ok) return;
+    const j = await r.json().catch(() => null);
+    if (j?.ok) setCerts(j.certificates || []);
+  }
+
+  async function markAllRead() {
+    await fetch("/api/student/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "all" }),
+    }).catch(() => null);
+    await loadNotifs();
+  }
+
   useEffect(() => {
     (async () => {
       const r = await fetch("/api/student/me");
@@ -65,7 +97,7 @@ export default function StudentDashboard() {
         return;
       }
       setUser(j.user);
-      await Promise.all([loadCourses(), loadLive()]);
+      await Promise.all([loadCourses(), loadLive(), loadNotifs(), loadCerts()]);
       setLoading(false);
     })();
   }, []);
@@ -126,6 +158,11 @@ export default function StudentDashboard() {
           Sikhadenge <span style={{ color: "#ff6b5a" }}>LMS</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {unread > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#fff", background: "#ff6b5a", borderRadius: 999, padding: "3px 9px" }}>
+              🔔 {unread}
+            </span>
+          )}
           <span style={{ fontSize: 13, color: "rgba(255,255,255,.75)" }}>Hi, {user?.name}</span>
           <button onClick={logout} style={ghostBtn}>Logout</button>
         </div>
@@ -146,6 +183,50 @@ export default function StudentDashboard() {
           >
             {msg}
           </div>
+        )}
+
+        {/* Notifications */}
+        {notifs.length > 0 && (
+          <Section title="Notifications">
+            <div style={{ display: "grid", gap: 8 }}>
+              {unread > 0 && (
+                <button onClick={markAllRead} style={{ ...ghostBtn, justifySelf: "start" }}>Mark all read</button>
+              )}
+              {notifs.slice(0, 6).map((n) => {
+                const inner = (
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: n.read ? "#0f172a" : "#111827" }}>
+                    {!n.read && <span style={{ width: 8, height: 8, borderRadius: 999, background: "#ff6b5a", marginTop: 6, flexShrink: 0 }} />}
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 13.5 }}>{n.title}</div>
+                      {n.body && <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)", marginTop: 2 }}>{n.body}</div>}
+                    </div>
+                  </div>
+                );
+                return n.link ? (
+                  <a key={n.id} href={n.link} style={{ textDecoration: "none", color: "#fff" }}>{inner}</a>
+                ) : (
+                  <div key={n.id}>{inner}</div>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
+        {/* Certificates */}
+        {certs.length > 0 && (
+          <Section title="My Certificates">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 12 }}>
+              {certs.map((c) => (
+                <a key={c.serial} href={`/certificate/${c.serial}`} style={{ textDecoration: "none" }}>
+                  <div style={{ padding: 16, borderRadius: 14, border: "1px solid rgba(255,255,255,.12)", background: "linear-gradient(135deg,#1f2937,#111827)", color: "#fff" }}>
+                    <div style={{ fontSize: 22 }}>🏆</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, marginTop: 6 }}>{c.course.title}</div>
+                    <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.5)", marginTop: 4 }}>Certificate · {c.serial}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </Section>
         )}
 
         {/* Live & upcoming */}

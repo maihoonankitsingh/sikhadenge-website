@@ -95,6 +95,8 @@ model User {
   submissions   Submission[]
   doubts        Doubt[]
   doubtReplies  DoubtReply[]
+  certificates  Certificate[]
+  notifications Notification[]
 
   @@index([role])
 }
@@ -125,9 +127,10 @@ model Course {
 
   modules     Module[]
   batches     Batch[]
-  enrollments Enrollment[]
-  payments    Payment[]
-  doubts      Doubt[]
+  enrollments  Enrollment[]
+  payments     Payment[]
+  doubts       Doubt[]
+  certificates Certificate[]
 
   @@index([isPublished])
 }
@@ -405,4 +408,35 @@ model DoubtReply {
   user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([doubtId])
+}
+
+// ===================== LMS certificates + notifications (Phase 6) =====================
+
+model Certificate {
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  serial   String   @unique // public verify id
+  issuedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // enrollment | payment | recording | grade | doubt | certificate | live
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }

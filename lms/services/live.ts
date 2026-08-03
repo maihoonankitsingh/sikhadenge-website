@@ -13,6 +13,7 @@
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
 import { isHmsConfigured, createRoom, createRoomCodes, pickCodes, prebuiltUrl } from "../hms";
+import { notifyMany } from "../notify";
 
 const RECORDINGS_MODULE_TITLE = "Class Recordings";
 
@@ -259,6 +260,19 @@ export async function handleRecordingWebhook(payload: HmsWebhookPayload): Promis
         videoUrl: url,
       },
     });
+
+    // Enrolled students ko notify: recording ready.
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true, slug: true } });
+    const enrolled = await prisma.enrollment.findMany({ where: { courseId }, select: { userId: true } });
+    await notifyMany(
+      enrolled.map((e) => e.userId),
+      {
+        type: "recording",
+        title: "New recording available 🎥",
+        body: `"${live.title}" recording is now in ${course?.title || "your course"}.`,
+        link: course?.slug ? `/student/learn/${course.slug}` : "/student",
+      }
+    ).catch(() => null);
   }
 
   return serviceOk({ handled: true });

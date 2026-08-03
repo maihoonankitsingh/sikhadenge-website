@@ -7,6 +7,7 @@
 
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
+import { notify } from "../notify";
 
 export type EnrollResult = { enrolled: boolean; alreadyEnrolled?: boolean };
 
@@ -17,7 +18,7 @@ export async function enrollStudent(userId: string, courseId: unknown): Promise<
 
   const course = await prisma.course.findFirst({
     where: { id: courseId, isPublished: true },
-    select: { id: true, priceInr: true },
+    select: { id: true, priceInr: true, title: true, slug: true },
   });
   if (!course) return serviceFail(404, "Course not found");
 
@@ -33,6 +34,14 @@ export async function enrollStudent(userId: string, courseId: unknown): Promise<
   await prisma.enrollment.create({
     data: { userId, courseId: course.id, status: "ACTIVE" },
   });
+
+  await notify({
+    userId,
+    type: "enrollment",
+    title: "Enrolled successfully 🎓",
+    body: `You are now enrolled in "${course.title}".`,
+    link: `/student/learn/${course.slug}`,
+  }).catch(() => null);
 
   return serviceOk({ enrolled: true });
 }

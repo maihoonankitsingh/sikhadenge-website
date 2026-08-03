@@ -6,6 +6,7 @@
 
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
+import { notify } from "../notify";
 
 const STAFF_NAME = "Sikhadenge Team";
 
@@ -123,7 +124,10 @@ export async function staffReply(doubtId: unknown, body: unknown) {
   if (typeof doubtId !== "string" || !doubtId) return serviceFail(400, "doubtId required");
   if (typeof body !== "string" || body.trim().length < 1) return serviceFail(400, "Reply cannot be empty");
 
-  const doubt = await prisma.doubt.findUnique({ where: { id: doubtId }, select: { id: true } });
+  const doubt = await prisma.doubt.findUnique({
+    where: { id: doubtId },
+    select: { id: true, userId: true, title: true, course: { select: { slug: true } } },
+  });
   if (!doubt) return serviceFail(404, "Doubt not found");
 
   await prisma.doubtReply.create({
@@ -131,6 +135,15 @@ export async function staffReply(doubtId: unknown, body: unknown) {
   });
   // Staff ke jawab dene par doubt ko resolved maan lo.
   await prisma.doubt.update({ where: { id: doubtId }, data: { resolved: true } });
+
+  await notify({
+    userId: doubt.userId,
+    type: "doubt",
+    title: "Your doubt was answered 💬",
+    body: `Team replied to "${doubt.title}".`,
+    link: `/student/learn/${doubt.course.slug}`,
+  }).catch(() => null);
+
   return serviceOk({ replied: true });
 }
 

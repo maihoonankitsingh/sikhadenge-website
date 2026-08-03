@@ -13,6 +13,7 @@ lms/
 ├── auth.ts              # student session (login cookie banana/clear/verify)
 ├── hms.ts               # 100ms helper (room, room-codes, prebuilt URL, webhook verify)
 ├── razorpay.ts          # Razorpay helper (order create REST + signature verify)
+├── notify.ts            # notification helper: in-app + optional email(Resend)/WhatsApp
 ├── components/          # LMS ke React UI components (reusable)
 │   ├── VideoPlayer.tsx  # hls.js player + resume + speed + watermark (anti-piracy)
 │   ├── CheckoutModal.tsx# Razorpay checkout (coupon + pay + verify)
@@ -32,6 +33,8 @@ lms/
     ├── quiz.ts          # quiz: get (no answers), auto-grade attempt, admin questions
     ├── assignments.ts   # assignment: get, submit, admin update + grade submissions
     ├── doubts.ts        # doubts: list/post/reply/resolve; admin staff-reply
+    ├── certificates.ts  # course 100% -> auto-issue; list mine; public verify
+    ├── notifications.ts # in-app notifications list + mark read
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -121,6 +124,13 @@ alias use kar sakte ho.)
 - ✅ Peer replies + **Team (staff) replies highlighted**; staff reply se doubt resolved
 - ✅ Admin `/admin/lms/doubts` pe answer + resolve (filter: open/resolved/all)
 
+**Phase 6 — certificates + notifications**
+- ✅ Course 100% complete → certificate **auto-issue** (unique serial)
+- ✅ Public verify + printable page: `/certificate/[serial]`
+- ✅ In-app notifications (bell + list, mark read) — enroll, payment, recording ready,
+  grade, doubt answered, certificate
+- ✅ notify() se optional **email (Resend)** + **WhatsApp (Meta Cloud API)** (keys ho to)
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -145,6 +155,9 @@ alias use kar sakte ho.)
 | `pages/api/student/doubts` | doubts list / post |
 | `pages/api/student/doubts/[id]/reply` | reply / resolve own doubt |
 | `pages/api/admin/lms/doubts` | admin list / staff-reply / resolve |
+| `pages/api/student/notifications` | in-app notifications list / mark read |
+| `pages/api/student/certificates` | my certificates |
+| `pages/api/certificate/[serial]` | **public** certificate verify |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
@@ -163,10 +176,17 @@ REFERRAL_DISCOUNT_PERCENT=10   # optional, coupon discount %
 > Keys na ho to paid course checkout "Payments not configured" dega
 > (free course tab bhi enroll hota hai).
 
+### Phase 6 env (notifications — sab optional; in-app hamesha chalta hai)
+```
+RESEND_API_KEY=...   EMAIL_FROM="Sikhadenge <noreply@sikhadenge.com>"
+WHATSAPP_TOKEN=...   WHATSAPP_PHONE_ID=...
+```
+> Keys na ho to sirf in-app notification banti hai (email/WhatsApp skip).
+
 ## Aage kya aayega (usi structure me plug hoga)
 
-- Phase 6+: certificate, notifications (WhatsApp/email), portfolio
+- Portfolio (completed projects → public page), analytics dashboard, gamification
 - Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note);
-  Razorpay webhook (idempotent) add karna payment reliability ke liye
+  Razorpay webhook (idempotent); live-class reminder cron (notify before class)
 
 > Poora roadmap: `docs/LMS-BUILD-PLAN.md`

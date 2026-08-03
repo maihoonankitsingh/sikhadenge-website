@@ -6,6 +6,7 @@
 
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
+import { issueIfComplete } from "./certificates";
 
 export type SaveProgressInput = {
   lessonId?: unknown;
@@ -52,6 +53,11 @@ export async function saveProgress(
     },
     select: { completed: true, lastPosSec: true },
   });
+
+  // Lesson complete hua -> agar course 100% ho gaya to certificate auto-issue.
+  if (isCompleted) {
+    await issueIfComplete(userId, lesson.module.courseId).catch(() => null);
+  }
 
   return serviceOk(saved);
 }

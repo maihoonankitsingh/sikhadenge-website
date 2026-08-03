@@ -6,6 +6,7 @@
 
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
+import { notify } from "../notify";
 
 async function courseIdIfEnrolled(userId: string, lessonId: string): Promise<string | null> {
   const lesson = await prisma.lesson.findUnique({
@@ -113,9 +114,22 @@ export async function gradeSubmission(input: { submissionId?: unknown; grade?: u
   const grade = Number(input.grade);
   if (!Number.isInteger(grade) || grade < 0 || grade > 100) return serviceFail(400, "Grade must be 0-100");
 
-  await prisma.submission.update({
+  const updated = await prisma.submission.update({
     where: { id: submissionId },
     data: { grade, feedback: typeof input.feedback === "string" ? input.feedback.trim() || null : null, status: "graded" },
+    select: {
+      userId: true,
+      assignment: { select: { lesson: { select: { title: true, module: { select: { course: { select: { slug: true } } } } } } } },
+    },
   });
+
+  await notify({
+    userId: updated.userId,
+    type: "grade",
+    title: "Assignment graded ✅",
+    body: `"${updated.assignment.lesson.title}" — you scored ${grade}/100.`,
+    link: `/student/learn/${updated.assignment.lesson.module.course.slug}`,
+  }).catch(() => null);
+
   return serviceOk({ graded: true });
 }

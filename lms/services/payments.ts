@@ -13,6 +13,7 @@
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
 import { isRazorpayConfigured, razorpayKeyId, createOrder, verifyPaymentSignature } from "../razorpay";
+import { notify } from "../notify";
 
 function referralDiscountPercent(): number {
   const p = parseInt(process.env.REFERRAL_DISCOUNT_PERCENT || "10", 10);
@@ -141,6 +142,15 @@ export async function verifyAndEnroll(
     where: { id: payment.id },
     data: { status: "paid", razorpayPaymentId: paymentId, enrollmentId: enrollment.id },
   });
+
+  const course = await prisma.course.findUnique({ where: { id: payment.courseId }, select: { title: true, slug: true } });
+  await notify({
+    userId,
+    type: "payment",
+    title: "Payment successful 🎉",
+    body: `You are enrolled in "${course?.title || "the course"}". Start learning now!`,
+    link: course?.slug ? `/student/learn/${course.slug}` : "/student",
+  }).catch(() => null);
 
   return serviceOk({ enrolled: true, courseId: payment.courseId });
 }
