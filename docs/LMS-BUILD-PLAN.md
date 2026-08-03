@@ -307,20 +307,55 @@ lib/
 
 ---
 
-## 5. Build Phases (sequence)
+## 5. COMPLETE Feature Set (full LMS — nothing missing)
 
-| Phase | Deliverable | Key work |
-|---|---|---|
-| **1. Foundation** | Student login + dashboard + enrollment | User/Role models, `studentAuth.ts`, dashboard UI, enroll API |
-| **2. Content** | Course player + video + progress | Course builder (admin), HLS player, LessonProgress, resume |
-| **3. Live + Recording** | Live class + auto-recording | 100ms integration, schedule, join, webhook auto-update |
-| **4. Assessment** | Quiz + assignment + attendance | Quiz engine, submissions, grading, attendance |
-| **5. Growth** | Payments + certificates + notifications | Razorpay, coupon↔influencer, cert PDF, reminders |
-| **6. Scale** | Analytics, gamification, AI, DRM, PWA | Dashboards, leaderboard, doubt-AI, video protection |
+> Platform type: **Skill courses** (Graphic Design, Video Editing, Motion Graphics, AI).
+> Isliye priority: recordings, projects/portfolio, live doubt, certificates > exam-style test series.
+
+### 5.1 Four user roles — har role ke features
+
+| Role | Features |
+|---|---|
+| **Student** | Dashboard, my courses, live class join, recordings (auto-updated), video player (resume/speed/quality), notes & bookmarks, assignments/projects submit, doubt post, quizzes, progress %, certificate, downloads (PDF/assets), community, notifications, streak/badges |
+| **Instructor/Mentor** | Host live class, schedule, upload lessons/content, review & grade project submissions, answer doubts, view batch analytics, announcements |
+| **Admin** | Course builder, batch mgmt, students CRUD, payments+refunds, coupons (influencer link), staff/instructor mgmt, reports/revenue, bulk upload (CSV), content protection settings |
+| **Parent** (optional/later) | Child progress report, attendance, performance emails |
+
+### 5.2 Cross-cutting systems (har feature ko touch karte hain)
+
+- **Payments & EMI** — Razorpay (UPI/card/EMI), invoices, coupons ↔ influencer promoCode, refunds (refund-policy page already hai)
+- **Notifications** — Email (Resend) + WhatsApp/SMS (MSG91) + Web Push. Events: class reminder, "class live now", "recording ready", assignment due, project graded, test result
+- **Content protection (DRM)** — student phone-number watermark overlay on video, signed expiring URLs, download-block, screen-record deterrent. **Phase 2-3 me hi zaroori** (piracy roke)
+- **Analytics** — student progress, batch completion, instructor performance, revenue dashboards
+- **Gamification** — streaks, badges/XP, leaderboard, rewards (retention ke liye)
+- **Multi-language & a11y** — Hindi/English toggle, video captions/subtitles, quality selector (low-data mode)
+- **Search & discovery** — course search, filters, categories
+
+### 5.3 Skill-course specific (important for design/video/AI)
+
+- **Project-based assignments** — student apna design/video submit kare (file upload to R2)
+- **Portfolio builder** — completed projects se student ka public portfolio page
+- **Peer review / feedback** on projects
+- **Resource library** — brushes, presets, templates, sample files download
+- **Software/tool guides** — Ps/Ai/Pr setup lessons
 
 ---
 
-## 6. Environment Variables (naye)
+## 6. Build Phases (skill-course prioritized)
+
+| Phase | Deliverable | Key work |
+|---|---|---|
+| **1. Foundation** | Student login + dashboard + enrollment | User/Role models, `studentAuth.ts` (OTP), dashboard UI, enroll API |
+| **2. Content + Protection** | Course player + video + progress + basic DRM | Course builder (admin), HLS player (resume/speed/quality), LessonProgress, phone-number watermark, signed URLs |
+| **3. Live + Auto-Recording** | Live class + recording auto-update | 100ms integration, schedule, join, webhook → auto lesson create |
+| **4. Skill work** | Projects + submissions + doubt + notes | Project assignments, file upload, grading, doubt forum, notes/bookmarks |
+| **5. Growth** | Payments + certificates + notifications | Razorpay + coupon↔influencer + refunds, cert PDF, reminders (WhatsApp/email) |
+| **6. Engagement** | Portfolio + community + gamification + analytics | Portfolio pages, announcements, streaks/badges, dashboards |
+| **7. Scale** | Multi-language, PWA/app, AI doubt-solver, advanced DRM | i18n, mobile, `ai-expert` real, quality/captions |
+
+---
+
+## 7. Environment Variables (naye)
 
 ```
 DATABASE_URL=...                 # already
@@ -336,7 +371,7 @@ RESEND_API_KEY=...   MSG91_AUTH_KEY=...
 
 ---
 
-## 7. New Dependencies
+## 8. New Dependencies
 
 ```
 @100mslive/server-sdk   @100mslive/react-sdk   # live classes
@@ -350,7 +385,10 @@ zod                                             # API validation
 
 ---
 
-## 8. Recommended Start
+## 9. Recommended Start
 
 Phase 1 se shuru — Student auth + DB migration + dashboard + enrollment.
-Ye ban gaya to LMS "jinda" ho jaata hai; phir Phase 2 (content) aur Phase 3 (live) layer-by-layer.
+Ye ban gaya to LMS "jinda" ho jaata hai; phir Phase 2 (content+DRM) aur Phase 3 (live+recording) layer-by-layer.
+
+**Skill-course note:** exam-style test series / All-India-rank ki zaroorat nahi (wo exam-prep platforms ke liye hai).
+Yahan focus **projects, portfolio, recordings, live doubt, certificates** pe hai.
