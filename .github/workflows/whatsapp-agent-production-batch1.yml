@@ -1,6 +1,7 @@
 # Retry marker: Base64 production SSH key configured on 2026-08-03
 # Retry marker: corrected public ED25519 host key configured on 2026-08-03
 # Retry marker: canonical pinned host entry for alternate SSH port on 2026-08-03
+# Retry marker: suppress generated staging package lock on 2026-08-03
 name: WhatsApp Agent Production Batch 1
 
 on:
@@ -166,7 +167,7 @@ jobs:
           ln -s "$LIVE_APP/.env" "$STAGE_APP/.env"
 
           cd "$STAGE_APP"
-          npm install --include=dev --no-audit --no-fund
+          npm install --include=dev --no-audit --no-fund --package-lock=false
 
           LIVE_APP="$LIVE_APP" \
           STAGE_APP="$STAGE_APP" \
