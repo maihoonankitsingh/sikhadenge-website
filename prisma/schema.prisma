@@ -82,6 +82,11 @@ model User {
   role         Role     @default(STUDENT)
   avatarUrl    String?
   isActive     Boolean  @default(true)
+  // Portfolio (Phase 7)
+  handle          String?  @unique // public portfolio URL: /portfolio/<handle>
+  headline        String? // e.g. "Graphic Designer & Video Editor"
+  bio             String?
+  portfolioPublic Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -363,6 +368,7 @@ model Submission {
   grade        Int? // 0-100
   feedback     String?
   status       String   @default("submitted") // submitted | graded
+  showcased    Boolean  @default(false) // portfolio pe dikhana hai?
   submittedAt  DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

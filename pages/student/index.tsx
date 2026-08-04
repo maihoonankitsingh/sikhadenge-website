@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import CheckoutModal from "../../lms/components/CheckoutModal";
 
 type User = { id: string; name: string; email: string | null; phone: string | null; role: string };
@@ -163,6 +164,7 @@ export default function StudentDashboard() {
               🔔 {unread}
             </span>
           )}
+          <Link href="/student/portfolio" style={{ fontSize: 12.5, fontWeight: 800, color: "#ff9d90", textDecoration: "none" }}>Portfolio</Link>
           <span style={{ fontSize: 13, color: "rgba(255,255,255,.75)" }}>Hi, {user?.name}</span>
           <button onClick={logout} style={ghostBtn}>Logout</button>
         </div>

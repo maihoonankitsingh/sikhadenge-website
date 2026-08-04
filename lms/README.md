@@ -35,6 +35,7 @@ lms/
     ├── doubts.ts        # doubts: list/post/reply/resolve; admin staff-reply
     ├── certificates.ts  # course 100% -> auto-issue; list mine; public verify
     ├── notifications.ts # in-app notifications list + mark read
+    ├── portfolio.ts     # public portfolio: profile, showcase projects, certs
     └── admin/
         └── courses.ts   # course-builder: create/update/publish course, module, lesson
 ```
@@ -131,6 +132,12 @@ alias use kar sakte ho.)
   grade, doubt answered, certificate
 - ✅ notify() se optional **email (Resend)** + **WhatsApp (Meta Cloud API)** (keys ho to)
 
+**Phase 7 — portfolio (skill-course USP)**
+- ✅ Student apna **public portfolio** banaye: `/portfolio/<handle>` (handle, headline, bio)
+- ✅ Graded projects me se choose karke showcase; certificates auto-shown
+- ✅ Public/private toggle; recruiter/client ko link bhej sake
+- ✅ Editor: `/student/portfolio` (dashboard header se link)
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -158,6 +165,8 @@ alias use kar sakte ho.)
 | `pages/api/student/notifications` | in-app notifications list / mark read |
 | `pages/api/student/certificates` | my certificates |
 | `pages/api/certificate/[serial]` | **public** certificate verify |
+| `pages/api/student/portfolio` | portfolio get / update / toggle showcase |
+| `pages/api/portfolio/[handle]` | **public** portfolio by handle |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
