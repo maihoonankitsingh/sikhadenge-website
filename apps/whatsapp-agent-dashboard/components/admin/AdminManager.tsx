@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import { validateAdminPasswordReset } from "./admin-password-reset";
+
 type User = {
   id: string;
   name: string;
@@ -67,6 +69,8 @@ function humanise(value: string) {
 export default function AdminManager() {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "COUNSELOR" });
+  const [passwordResetUser, setPasswordResetUser] = useState<User | null>(null);
+  const [passwordForm, setPasswordForm] = useState({ password: "", confirmation: "" });
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -121,6 +125,59 @@ export default function AdminManager() {
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "User update failed.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function openPasswordReset(user: User) {
+    setPasswordResetUser(user);
+    setPasswordForm({ password: "", confirmation: "" });
+    setError("");
+    setSuccess("");
+  }
+
+  function closePasswordReset() {
+    if (busy.startsWith("password:")) return;
+    setPasswordResetUser(null);
+    setPasswordForm({ password: "", confirmation: "" });
+  }
+
+  async function resetPassword(event: FormEvent) {
+    event.preventDefault();
+    if (!passwordResetUser) return;
+
+    const validation = validateAdminPasswordReset(
+      passwordForm.password,
+      passwordForm.confirmation,
+    );
+    if (!validation.ok) {
+      setError(validation.error);
+      return;
+    }
+
+    const target = passwordResetUser;
+    setBusy(`password:${target.id}`);
+    setError("");
+    setSuccess("");
+    try {
+      await readJson(
+        await fetch(`/api/admin/users/${encodeURIComponent(target.id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword: passwordForm.password }),
+        }),
+      );
+      setPasswordResetUser(null);
+      setPasswordForm({ password: "", confirmation: "" });
+      setSuccess(`Password reset for ${target.name}. All active sessions were revoked.`);
+      try {
+        await load();
+      } catch {
+        window.location.assign("/login");
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Password reset failed.");
     } finally {
       setBusy("");
     }
@@ -192,6 +249,7 @@ export default function AdminManager() {
               <div className="admin-user-stats"><span>{user._count.assignedConversations} chats</span><span>{user._count.assignedLeads} leads</span><span>{user._count.sessions} sessions</span></div>
               <select value={user.role} disabled={busy === `user:${user.id}`} onChange={(event) => void updateUser(user.id, { role: event.target.value })}>{roles.map((role) => <option key={role}>{role}</option>)}</select>
               <button type="button" className={user.isActive ? "danger" : "secondary"} disabled={busy === `user:${user.id}`} onClick={() => void updateUser(user.id, { isActive: !user.isActive })}>{user.isActive ? "Deactivate" : "Activate"}</button>
+              <button type="button" className="secondary" disabled={Boolean(busy)} onClick={() => openPasswordReset(user)}>Reset password</button>
               <button type="button" className="secondary" disabled={busy === `revoke:${user.id}`} onClick={() => void revoke(user.id)}>Revoke sessions</button>
             </article>
           ))}
@@ -216,6 +274,81 @@ export default function AdminManager() {
           </div>
         </div>
       </section>
+
+      {passwordResetUser ? (
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePasswordReset();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1600,
+            display: "grid",
+            placeItems: "center",
+            padding: 16,
+            background: "rgba(15, 23, 42, 0.48)",
+            backdropFilter: "blur(3px)",
+          }}
+        >
+          <form
+            className="suite-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-password-reset-title"
+            onSubmit={resetPassword}
+            style={{
+              width: "min(460px, calc(100vw - 32px))",
+              maxHeight: "calc(100vh - 32px)",
+              overflowY: "auto",
+              boxShadow: "0 24px 80px rgba(15, 23, 42, 0.28)",
+            }}
+          >
+            <header>
+              <div>
+                <span>Credential security</span>
+                <h3 id="admin-password-reset-title">Reset password for {passwordResetUser.name}</h3>
+              </div>
+              <button type="button" className="secondary" onClick={closePasswordReset} disabled={busy.startsWith("password:")}>Close</button>
+            </header>
+            <div className="suite-form-grid">
+              <label>
+                <span>New password</span>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordForm.password}
+                  onChange={(event) => setPasswordForm((current) => ({ ...current, password: event.target.value }))}
+                  minLength={12}
+                  required
+                  autoFocus
+                />
+              </label>
+              <label>
+                <span>Confirm new password</span>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordForm.confirmation}
+                  onChange={(event) => setPasswordForm((current) => ({ ...current, confirmation: event.target.value }))}
+                  minLength={12}
+                  required
+                />
+              </label>
+              <small style={{ color: "#6f7783", lineHeight: 1.55 }}>
+                Minimum 12 characters with uppercase, lowercase and number. The existing password is never displayed. A successful reset immediately revokes every active session for this account.
+              </small>
+            </div>
+            <footer>
+              <button type="button" className="secondary" onClick={closePasswordReset} disabled={busy.startsWith("password:")}>Cancel</button>
+              <button type="submit" disabled={busy === `password:${passwordResetUser.id}`}>
+                {busy === `password:${passwordResetUser.id}` ? "Resetting…" : "Reset & revoke sessions"}
+              </button>
+            </footer>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
