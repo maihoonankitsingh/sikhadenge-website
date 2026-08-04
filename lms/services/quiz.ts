@@ -5,6 +5,9 @@
 
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
+import { awardXp, touchStreak } from "./gamification";
+
+const XP_QUIZ_PASS = 20;
 
 /** lesson -> course -> enrollment check. Enrolled ho to courseId, warna null. */
 async function courseIdIfEnrolled(userId: string, lessonId: string): Promise<string | null> {
@@ -77,7 +80,15 @@ export async function submitQuizAttempt(
   });
   const passed = Math.round((score / total) * 100) >= quiz.passPercent;
 
+  // XP sirf pehli baar pass hone pe.
+  const alreadyPassed = await prisma.quizAttempt.findFirst({
+    where: { quizId: quiz.id, userId, passed: true },
+    select: { id: true },
+  });
+
   await prisma.quizAttempt.create({ data: { quizId: quiz.id, userId, score, total, passed } });
+  await touchStreak(userId).catch(() => null);
+  if (passed && !alreadyPassed) await awardXp(userId, XP_QUIZ_PASS).catch(() => null);
 
   return serviceOk({ score, total, passed, passPercent: quiz.passPercent, correct });
 }

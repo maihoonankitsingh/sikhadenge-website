@@ -28,6 +28,9 @@ type LiveClass = {
 
 type Notification = { id: string; type: string; title: string; body: string | null; link: string | null; read: boolean; createdAt: string };
 type Certificate = { serial: string; issuedAt: string; course: { title: string } };
+type Badge = { key: string; label: string; emoji: string; desc: string; earned: boolean };
+type Stats = { xp: number; streakDays: number; rank: number; badges: Badge[] };
+type LeaderRow = { rank: number; name: string; xp: number; streakDays: number; isMe: boolean };
 
 export default function StudentDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +40,8 @@ export default function StudentDashboard() {
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [certs, setCerts] = useState<Certificate[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<Course | null>(null);
@@ -76,6 +81,16 @@ export default function StudentDashboard() {
     if (j?.ok) setCerts(j.certificates || []);
   }
 
+  async function loadGame() {
+    const r = await fetch("/api/student/gamification");
+    if (!r.ok) return;
+    const j = await r.json().catch(() => null);
+    if (j?.ok) {
+      setStats(j.stats);
+      setLeaderboard(j.leaderboard || []);
+    }
+  }
+
   async function markAllRead() {
     await fetch("/api/student/notifications", {
       method: "POST",
@@ -98,7 +113,7 @@ export default function StudentDashboard() {
         return;
       }
       setUser(j.user);
-      await Promise.all([loadCourses(), loadLive(), loadNotifs(), loadCerts()]);
+      await Promise.all([loadCourses(), loadLive(), loadNotifs(), loadCerts(), loadGame()]);
       setLoading(false);
     })();
   }, []);
@@ -185,6 +200,46 @@ export default function StudentDashboard() {
           >
             {msg}
           </div>
+        )}
+
+        {/* Gamification strip */}
+        {stats && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 22 }}>
+            <StatTile emoji="⚡" label="XP" value={stats.xp} />
+            <StatTile emoji="🔥" label="Day streak" value={stats.streakDays} />
+            <StatTile emoji="🏅" label="Rank" value={`#${stats.rank}`} />
+            <StatTile emoji="🎖️" label="Badges" value={`${stats.badges.filter((b) => b.earned).length}/${stats.badges.length}`} />
+          </div>
+        )}
+
+        {/* Badges */}
+        {stats && stats.badges.some((b) => b.earned) && (
+          <Section title="Badges">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {stats.badges.map((b) => (
+                <div
+                  key={b.key}
+                  title={b.desc}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,.1)",
+                    background: b.earned ? "rgba(255,107,90,.12)" : "rgba(255,255,255,.03)",
+                    opacity: b.earned ? 1 : 0.45,
+                  }}
+                >
+                  <span style={{ fontSize: 20, filter: b.earned ? "none" : "grayscale(1)" }}>{b.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 800 }}>{b.label}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.5)" }}>{b.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
         )}
 
         {/* Notifications */}
@@ -317,6 +372,35 @@ export default function StudentDashboard() {
             </Grid>
           )}
         </Section>
+
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <Section title="Leaderboard">
+            <div style={{ display: "grid", gap: 6 }}>
+              {leaderboard.map((row) => (
+                <div
+                  key={row.rank}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,.1)",
+                    background: row.isMe ? "rgba(255,107,90,.14)" : "#111827",
+                  }}
+                >
+                  <span style={{ width: 28, fontWeight: 900, fontSize: 14, color: row.rank <= 3 ? "#ff9d90" : "rgba(255,255,255,.5)" }}>
+                    {row.rank <= 3 ? ["🥇", "🥈", "🥉"][row.rank - 1] : `#${row.rank}`}
+                  </span>
+                  <span style={{ flex: 1, fontWeight: 700, fontSize: 13.5 }}>{row.name}{row.isMe ? " (You)" : ""}</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,.55)" }}>🔥 {row.streakDays}</span>
+                  <span style={{ fontWeight: 800, fontSize: 13, color: "#ff9d90" }}>{row.xp} XP</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
       </div>
 
       {checkout && user && (
@@ -331,6 +415,18 @@ export default function StudentDashboard() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function StatTile({ emoji, label, value }: { emoji: string; label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg,#1f2937,#111827)", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", gap: 12 }}>
+      <span style={{ fontSize: 24 }}>{emoji}</span>
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>{value}</div>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.5)" }}>{label}</div>
+      </div>
     </div>
   );
 }

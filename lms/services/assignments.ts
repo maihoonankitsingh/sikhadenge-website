@@ -7,6 +7,9 @@
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
 import { notify } from "../notify";
+import { awardXp, awardBadge, touchStreak } from "./gamification";
+
+const XP_SUBMIT = 15;
 
 async function courseIdIfEnrolled(userId: string, lessonId: string): Promise<string | null> {
   const lesson = await prisma.lesson.findUnique({
@@ -57,12 +60,24 @@ export async function submitAssignment(
   const assignment = await prisma.assignment.findUnique({ where: { lessonId }, select: { id: true } });
   if (!assignment) return serviceFail(404, "No assignment for this lesson");
 
+  // Pehli submission? (XP + Creator badge sirf pehli baar.)
+  const existing = await prisma.submission.findUnique({
+    where: { assignmentId_userId: { assignmentId: assignment.id, userId } },
+    select: { id: true },
+  });
+
   // Naya submission -> status reset to submitted (re-grade needed).
   await prisma.submission.upsert({
     where: { assignmentId_userId: { assignmentId: assignment.id, userId } },
     create: { assignmentId: assignment.id, userId, fileUrl, text, status: "submitted" },
     update: { fileUrl, text, status: "submitted", grade: null, feedback: null },
   });
+
+  await touchStreak(userId).catch(() => null);
+  if (!existing) {
+    await awardXp(userId, XP_SUBMIT).catch(() => null);
+    await awardBadge(userId, "creator").catch(() => null);
+  }
 
   return serviceOk({ submitted: true });
 }

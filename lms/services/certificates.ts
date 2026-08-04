@@ -8,6 +8,9 @@ import crypto from "crypto";
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
 import { notify } from "../notify";
+import { awardXp, awardBadge } from "./gamification";
+
+const XP_CERTIFICATE = 100;
 
 function makeSerial(): string {
   // e.g. SD-4F9K2A7C
@@ -46,6 +49,9 @@ export async function issueIfComplete(userId: string, courseId: string): Promise
   await prisma.certificate
     .create({ data: { userId, courseId, serial } })
     .catch(() => null);
+
+  await awardXp(userId, XP_CERTIFICATE).catch(() => null);
+  await awardBadge(userId, "graduate").catch(() => null);
 
   await notify({
     userId,

@@ -7,6 +7,9 @@
 import { prisma } from "../../lib/prisma";
 import { serviceOk, serviceFail, type ServiceResult } from "../types";
 import { issueIfComplete } from "./certificates";
+import { awardXp, awardBadge, touchStreak } from "./gamification";
+
+const XP_LESSON_COMPLETE = 10;
 
 export type SaveProgressInput = {
   lessonId?: unknown;
@@ -43,6 +46,13 @@ export async function saveProgress(
   });
   if (!enrollment) return serviceFail(403, "Not enrolled");
 
+  // Pehle se completed tha? (XP sirf pehli baar complete hone pe do.)
+  const prev = await prisma.lessonProgress.findUnique({
+    where: { userId_lessonId: { userId, lessonId } },
+    select: { completed: true },
+  });
+  const newlyCompleted = isCompleted && !prev?.completed;
+
   const saved = await prisma.lessonProgress.upsert({
     where: { userId_lessonId: { userId, lessonId } },
     create: { userId, lessonId, lastPosSec: pos, completed: isCompleted },
@@ -54,8 +64,13 @@ export async function saveProgress(
     select: { completed: true, lastPosSec: true },
   });
 
-  // Lesson complete hua -> agar course 100% ho gaya to certificate auto-issue.
-  if (isCompleted) {
+  // Har activity par streak touch.
+  await touchStreak(userId).catch(() => null);
+
+  if (newlyCompleted) {
+    await awardXp(userId, XP_LESSON_COMPLETE).catch(() => null);
+    await awardBadge(userId, "first_steps").catch(() => null);
+    // Course 100% ho gaya to certificate auto-issue.
     await issueIfComplete(userId, lesson.module.courseId).catch(() => null);
   }
 

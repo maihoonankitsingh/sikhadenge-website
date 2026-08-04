@@ -36,6 +36,7 @@ lms/
     ├── certificates.ts  # course 100% -> auto-issue; list mine; public verify
     ├── notifications.ts # in-app notifications list + mark read
     ├── portfolio.ts     # public portfolio: profile, showcase projects, certs
+    ├── gamification.ts  # XP, streak, badges, leaderboard (+ awardXp/touchStreak)
     └── admin/
         ├── courses.ts   # course-builder: create/update/publish course, module, lesson
         └── analytics.ts # admin dashboard KPIs (revenue, enrollments, top courses)
@@ -145,6 +146,13 @@ alias use kar sakte ho.)
 - ✅ Top courses (by enrollment), recent payments, **top coupons (influencer sales)**
 - ✅ Pending-work cards (submissions to grade, open doubts) → clickable
 
+**Phase 9 — gamification**
+- ✅ XP: lesson complete +10, quiz pass +20, project submit +15, certificate +100
+  (sirf pehli baar — farming nahi)
+- ✅ Daily **streak** (🔥) — kisi bhi activity par update
+- ✅ Badges: First Steps, Creator, Rising Star, Committed, On Fire, Graduate
+- ✅ Dashboard: XP/streak/rank/badges strip + **leaderboard** (top 10, "You" highlighted)
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -175,6 +183,7 @@ alias use kar sakte ho.)
 | `pages/api/student/portfolio` | portfolio get / update / toggle showcase |
 | `pages/api/portfolio/[handle]` | **public** portfolio by handle |
 | `pages/api/admin/lms/analytics` | admin dashboard KPIs |
+| `pages/api/student/gamification` | XP/streak/badges/rank + leaderboard |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```
@@ -200,10 +209,12 @@ WHATSAPP_TOKEN=...   WHATSAPP_PHONE_ID=...
 ```
 > Keys na ho to sirf in-app notification banti hai (email/WhatsApp skip).
 
-## Aage kya aayega (usi structure me plug hoga)
+## Aage kya aayega (production / ops)
 
-- Portfolio (completed projects → public page), analytics dashboard, gamification
-- Prod: recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note);
-  Razorpay webhook (idempotent); live-class reminder cron (notify before class)
+- Deploy + `prisma migrate` (saare phases ki migration ek saath chal sakti hai)
+- Recording presigned URL ko apne storage (R2/S3) me copy (live.ts me note)
+- Razorpay webhook (idempotent) payment reliability ke liye
+- Live-class reminder cron (class se pehle notify)
+- Rate limiting (OTP/login abuse), audit logs
 
 > Poora roadmap: `docs/LMS-BUILD-PLAN.md`
