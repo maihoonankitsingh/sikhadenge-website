@@ -5,8 +5,8 @@
 > `/certificate`). Matlab ek hi codebase deploy hota hai, aur LMS ke pages usi
 > deployment ke andar milte hain.
 >
-> **Domain:** tumne `lms.sikhadenge.in` socha hai. Exact subdomain naam jo bhi ho
-> (lms / learn / app), guide same rahegi — bas jahan `lms.sikhadenge.in` likha hai
+> **Domain:** tumne `learn.sikhadenge.in` socha hai. Exact subdomain naam jo bhi ho
+> (lms / learn / app), guide same rahegi — bas jahan `learn.sikhadenge.in` likha hai
 > waha apna final subdomain daal dena. Webhook URLs bhi usi final domain se banenge.
 
 ---
@@ -16,9 +16,9 @@
 Marketing site + LMS **ek hi codebase** me hain. Do tareeke:
 
 - **Option A (recommended):** Ek hi Vercel project, do domains —
-  `sikhadenge.in` (marketing) **aur** `lms.sikhadenge.in` (same app).
+  `sikhadenge.in` (marketing) **aur** `learn.sikhadenge.in` (same app).
   Sabse simple, ek hi deploy. LMS pages dono domain pe milenge
-  (e.g. `lms.sikhadenge.in/student`).
+  (e.g. `learn.sikhadenge.in/student`).
 - **Option B:** Alag Vercel project sirf LMS subdomain ke liye (same repo).
   Tab do deployments manage karne padte hain. Zyada kaam, faayda kam.
 
@@ -121,16 +121,16 @@ Deploy ke baad (ya local pe):
 
 ---
 
-## 6. Domain — `lms.sikhadenge.in` (ya jo bhi tum choose karo)
+## 6. Domain — `learn.sikhadenge.in` (ya jo bhi tum choose karo)
 
 Vercel project → **Settings → Domains**:
 1. `sikhadenge.in` add karo (marketing).
-2. `lms.sikhadenge.in` add karo (LMS bhi isi app se).
+2. `learn.sikhadenge.in` add karo (LMS bhi isi app se).
 3. Vercel jo **DNS record** batayega wo apne domain provider (GoDaddy/Cloudflare) me daalo:
-   - subdomain ke liye usually: **CNAME** `lms` → `cname.vercel-dns.com`
+   - subdomain ke liye usually: **CNAME** `learn` → `cname.vercel-dns.com`
 4. SSL Vercel khud laga dega (kuch minute).
 
-Ab `lms.sikhadenge.in/student`, `/admin/lms`, `/portfolio/<handle>` sab live.
+Ab `learn.sikhadenge.in/student`, `/admin/lms`, `/portfolio/<handle>` sab live.
 
 > Exact subdomain confirm kar lena — jo bhi final ho (`lms`/`learn`/`app`), webhook
 > URLs (step 7) usi domain se banao.
@@ -142,7 +142,7 @@ Ab `lms.sikhadenge.in/student`, `/admin/lms`, `/portfolio/<handle>` sab live.
 ### 100ms (recording auto-update ke liye)
 100ms dashboard → **Webhooks** → URL:
 ```
-https://lms.sikhadenge.in/api/webhooks/hms
+https://learn.sikhadenge.in/api/webhooks/hms
 ```
 `HMS_WEBHOOK_SECRET` set kiya ho to wahi passcode 100ms me bhi daalo. Template me
 **recording enabled** confirm karo.
@@ -198,5 +198,81 @@ Ek-ek karke check karo:
 1. Neon Postgres banao → `DATABASE_URL`
 2. `npm i && npx prisma db push` (safe, additive)
 3. Vercel import → saare env (`.env.example` dekho) → deploy
-4. `lms.sikhadenge.in` domain add → DNS CNAME
+4. `learn.sikhadenge.in` domain add → DNS CNAME
 5. 100ms webhook URL set → smoke test → live 🎉
+
+---
+
+## 11. Terminal quick-deploy (copy-paste, Vercel CLI)
+
+> Ye `learn.sikhadenge.in` ke liye hai. Sirf 2 cheezein terminal se nahi hoti:
+> (a) Neon se `DATABASE_URL` lena, (b) DNS record daalna — baaki sab CLI se.
+
+**A. Repo + deps (ek baar):**
+```bash
+git clone https://github.com/maihoonankitsingh/sikhadenge-website.git
+cd sikhadenge-website
+git checkout claude/skilhadenge-lms-audit-bxdnqi
+npm install
+```
+
+**B. `.env` banao (apni real values daalo):**
+```bash
+cp .env.example .env
+# ADMIN_COOKIE_SECRET ke liye ek random secret:
+openssl rand -base64 32
+# ab .env kholke DATABASE_URL, ADMIN_USERNAME, ADMIN_PASSWORD,
+# ADMIN_COOKIE_SECRET (+ jo optional keys hain) bhar do:
+nano .env
+```
+
+**C. Schema DB me push + build test (safe, additive):**
+```bash
+npx prisma generate
+npx prisma db push
+npm run build          # green hona chahiye
+```
+
+**D. Vercel CLI se deploy:**
+```bash
+npm i -g vercel
+vercel login
+vercel link            # naya project banao ya existing se link karo
+
+# Env vars Vercel me daalo (har command value maangega — paste karo):
+vercel env add DATABASE_URL production
+vercel env add ADMIN_USERNAME production
+vercel env add ADMIN_PASSWORD production
+vercel env add ADMIN_COOKIE_SECRET production
+# optional (jo use kar rahe ho wahi):
+vercel env add RAZORPAY_KEY_ID production
+vercel env add RAZORPAY_SECRET production
+vercel env add HMS_ACCESS_KEY production
+vercel env add HMS_SECRET production
+vercel env add HMS_TEMPLATE_ID production
+vercel env add HMS_SUBDOMAIN production
+vercel env add HMS_WEBHOOK_SECRET production
+
+# Production deploy:
+vercel --prod
+```
+
+**E. Domain `learn.sikhadenge.in` add karo:**
+```bash
+vercel domains add learn.sikhadenge.in
+```
+Vercel jo DNS record dega (usually `CNAME learn → cname.vercel-dns.com`),
+wo apne domain provider (jahan sikhadenge.in hai) me daal do. SSL auto lagega.
+
+**F. Deploy hone ke baad — schema fix (agar zaroorat pade):**
+```bash
+# agar Vercel ka DB alag hai to wahi DATABASE_URL local .env me daalke:
+npx prisma db push
+```
+
+**Aage jab code update karo:**
+```bash
+git pull
+npx prisma db push     # sirf agar schema badla ho
+vercel --prod          # dobara deploy
+```
