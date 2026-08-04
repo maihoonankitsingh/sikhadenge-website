@@ -37,7 +37,8 @@ lms/
     ├── notifications.ts # in-app notifications list + mark read
     ├── portfolio.ts     # public portfolio: profile, showcase projects, certs
     └── admin/
-        └── courses.ts   # course-builder: create/update/publish course, module, lesson
+        ├── courses.ts   # course-builder: create/update/publish course, module, lesson
+        └── analytics.ts # admin dashboard KPIs (revenue, enrollments, top courses)
 ```
 
 Routes aur UI Next.js ke rule ki wajah se `pages/` me rehte hain (waha se move nahi
@@ -138,6 +139,12 @@ alias use kar sakte ho.)
 - ✅ Public/private toggle; recruiter/client ko link bhej sake
 - ✅ Editor: `/student/portfolio` (dashboard header se link)
 
+**Phase 8 — admin analytics**
+- ✅ `/admin/lms/analytics`: revenue (total + this month), students, enrollments,
+  paid orders, certificates, live classes
+- ✅ Top courses (by enrollment), recent payments, **top coupons (influencer sales)**
+- ✅ Pending-work cards (submissions to grade, open doubts) → clickable
+
 ### Routes map
 | Route | Kya |
 |---|---|
@@ -167,6 +174,7 @@ alias use kar sakte ho.)
 | `pages/api/certificate/[serial]` | **public** certificate verify |
 | `pages/api/student/portfolio` | portfolio get / update / toggle showcase |
 | `pages/api/portfolio/[handle]` | **public** portfolio by handle |
+| `pages/api/admin/lms/analytics` | admin dashboard KPIs |
 
 ### Phase 3 env (100ms) — ye set karo warna live provision nahi hoga
 ```

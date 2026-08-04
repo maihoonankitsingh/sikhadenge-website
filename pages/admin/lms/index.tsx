@@ -58,6 +58,9 @@ export default function AdminLmsCourses() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <h1 style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>LMS · Courses</h1>
         <div style={{ display: "flex", gap: 14 }}>
+          <Link href="/admin/lms/analytics" style={{ fontSize: 12.5, fontWeight: 800, color: "#3730a3", textDecoration: "none" }}>
+            Analytics →
+          </Link>
           <Link href="/admin/lms/doubts" style={{ fontSize: 12.5, fontWeight: 800, color: "#3730a3", textDecoration: "none" }}>
             Doubts →
           </Link>
