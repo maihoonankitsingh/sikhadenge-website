@@ -67,13 +67,22 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 900, color: "rgba(15,23,42,.55)", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            LMS
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Card title="Courses" desc="Create courses, modules, lessons, live classes" href="/admin/lms" accent />
+            <Card title="Analytics" desc="Revenue, enrollments, top courses, coupons" href="/admin/lms/analytics" accent />
+            <Card title="Submissions" desc="Grade student projects + feedback" href="/admin/lms/submissions" accent />
+            <Card title="Doubts" desc="Answer & resolve student doubts" href="/admin/lms/doubts" accent />
+          </div>
+
+          <div style={{ fontSize: 12.5, fontWeight: 900, color: "rgba(15,23,42,.55)", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 8 }}>
+            Marketing
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Card title="Influencers" desc="Create/disable promo codes, reset passwords" href="/admin/influencers" />
             <Card title="Leads" desc="View leads, promo attribution, update status" href="/admin/leads" />
-          </div>
-
-          <div style={{ fontSize: 12, color: "rgba(15,23,42,.62)" }}>
-            Next: admissions + payout reports
           </div>
         </div>
       </div>
@@ -81,17 +90,17 @@ export default function AdminDashboard() {
   );
 }
 
-function Card({ title, desc, href }: { title: string; desc: string; href: string }) {
+function Card({ title, desc, href, accent }: { title: string; desc: string; href: string; accent?: boolean }) {
   return (
     <a
       href={href}
       style={{
         textDecoration: "none",
         color: "#0f172a",
-        border: "1px solid rgba(15,23,42,.12)",
+        border: accent ? "1px solid rgba(255,107,90,.35)" : "1px solid rgba(15,23,42,.12)",
         borderRadius: 16,
         padding: 14,
-        background: "rgba(255,255,255,.92)",
+        background: accent ? "rgba(255,107,90,.06)" : "rgba(255,255,255,.92)",
         display: "grid",
         gap: 6,
       }}
