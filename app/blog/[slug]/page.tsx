@@ -1,27 +1,19 @@
-import React from "react";
 import fs from "fs";
 import path from "path";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
-  ArrowRight,
-  Briefcase,
-  CheckCircle2,
-  ChevronDown,
-  CircleHelp,
-  Clock3,
-  Compass,
-  DollarSign,
-  GraduationCap,
-  LayoutGrid,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  Wand2,
-} from "lucide-react";
+  GeneratedPageLayout,
+  type GeneratedFaq,
+  type GeneratedHighlight,
+  type GeneratedStep,
+  type GeneratedTool,
+} from "../../../components/generated/GeneratedPageKit";
 
-type BlogFaq = { q: string; a: string };
+const BASE_URL = "https://sikhadenge.in";
+const RELEASE_DATE_ISO = "2026-07-24";
+const RELEASE_DATE_LABEL = "July 24, 2026";
+
 type BlogItem = {
   slug: string;
   title: string;
@@ -32,74 +24,59 @@ type BlogItem = {
   summaryPoints?: string[];
   practicalSteps?: string[];
   mistakes?: string[];
-  faqs?: BlogFaq[];
+  faqs?: GeneratedFaq[];
+  publishedAt?: string;
+  updatedAt?: string;
+  datePublished?: string;
+  dateModified?: string;
 };
 
 type ParsedSlug = {
-  slug: string;
-  segments: string[];
   year: string;
-  audience: string;
   audienceLabel: string;
-  skill: string;
   skillLabel: string;
-  primaryIntent: string;
   intentLabel: string;
-  keywordCluster: string[];
 };
 
-const BASE_URL = "https://sikhadenge.in";
-
 const audienceMap: Record<string, string> = {
-  students: "Students",
-  student: "Students",
-  college: "Students",
-  beginners: "Beginners",
-  beginner: "Beginners",
-  freelancers: "Freelancers",
-  freelancer: "Freelancers",
-  professionals: "Working Professionals",
-  professional: "Working Professionals",
-  marketers: "Marketers",
-  marketer: "Marketers",
-  developers: "Developers",
-  developer: "Developers",
-  teachers: "Teachers",
-  teacher: "Teachers",
-  business: "Business Owners",
-  businesses: "Business Owners",
-  founders: "Founders",
-  founder: "Founders",
-  creators: "Creators",
-  creator: "Creators",
-  youtubers: "Creators",
-  youtuber: "Creators",
-  agencies: "Agencies",
-  agency: "Agencies",
-  designers: "Designers",
-  designer: "Designers",
-  job: "Job Seekers",
-  jobs: "Job Seekers",
-  seekers: "Job Seekers",
+  students: "students",
+  student: "students",
+  beginners: "beginners",
+  beginner: "beginners",
+  freelancers: "freelancers",
+  freelancer: "freelancers",
+  professionals: "working professionals",
+  professional: "working professionals",
+  marketers: "marketers",
+  developers: "developers",
+  teachers: "teachers",
+  business: "business owners",
+  businesses: "business owners",
+  founders: "founders",
+  creators: "creators",
+  youtubers: "creators",
+  agencies: "agencies",
+  designers: "designers",
+  jobs: "job seekers",
 };
 
 const skillMap: Record<string, string> = {
   chatgpt: "ChatGPT",
   gemini: "Google Gemini",
   claude: "Claude",
-  prompt: "Prompt Engineering",
-  prompts: "Prompt Engineering",
+  prompt: "prompt engineering",
+  prompts: "prompt engineering",
   seo: "SEO",
-  ai: "AI Skills",
-  automation: "Business Automation",
-  marketing: "AI Marketing",
-  content: "AI Content Creation",
-  writing: "AI Content Creation",
-  coding: "AI Coding",
-  code: "AI Coding",
-  graphic: "AI Graphic Design",
-  design: "AI Graphic Design",
-  generative: "Generative AI",
+  ai: "AI skills",
+  automation: "business automation",
+  marketing: "AI marketing",
+  content: "AI content creation",
+  writing: "AI content creation",
+  coding: "AI coding",
+  code: "AI coding",
+  graphic: "AI graphic design",
+  design: "AI graphic design",
+  generative: "generative AI",
 };
 
 const intentMap: Record<string, string> = {
@@ -108,296 +85,323 @@ const intentMap: Record<string, string> = {
   trends: "trends",
   workflow: "workflow",
   automation: "workflow",
-  case: "case-studies",
-  studies: "case-studies",
   guide: "guide",
   complete: "guide",
-  essential: "skills",
   skills: "skills",
   career: "career",
-  options: "career",
   earn: "earning",
   money: "earning",
   tools: "tools",
 };
 
-const skillCategoryMap: Record<string, string> = {
-  ChatGPT: "ChatGPT",
-  "Google Gemini": "AI Tools",
-  Claude: "Prompt Engineering",
-  "Prompt Engineering": "Prompt Engineering",
-  SEO: "AI Marketing",
-  "AI Skills": "AI Skills",
-  "Business Automation": "AI Freelancing",
-  "AI Marketing": "AI Marketing",
-  "AI Content Creation": "AI Content Creation",
-  "AI Coding": "AI Coding",
-  "AI Graphic Design": "AI Graphic Design",
-  "Generative AI": "AI Skills",
-};
-
-const categoryTools: Record<
-  string,
-  { name: string; desc: string; free: boolean; badge: string }[]
-> = {
-  "AI Skills": [
-    { name: "ChatGPT", desc: "Research, answers, drafts, and learning support for daily AI work.", free: true, badge: "Free" },
-    { name: "Google Gemini", desc: "Multi-modal AI for text, image, code, and productivity workflows.", free: true, badge: "Free" },
-    { name: "Notion AI", desc: "Planning, summaries, notes, and knowledge organization.", free: true, badge: "Free" },
-    { name: "Coursera AI Courses", desc: "Structured courses for stronger fundamentals and certification value.", free: false, badge: "Paid" },
-  ],
-  "AI Tools": [
-    { name: "Google Gemini", desc: "Fast everyday assistant for writing, research, and multimodal use.", free: true, badge: "Free" },
-    { name: "Claude", desc: "Long-form reasoning, summaries, and document-heavy work.", free: true, badge: "Free" },
-    { name: "ChatGPT Plus", desc: "Advanced reasoning, GPTs, and stronger workflow flexibility.", free: false, badge: "Paid" },
-    { name: "Gamma", desc: "Quick deck creation and business presentation support.", free: true, badge: "Free" },
-  ],
-  ChatGPT: [
-    { name: "ChatGPT Free", desc: "Good starting point for prompts, summaries, research, and daily practice.", free: true, badge: "Free" },
-    { name: "ChatGPT Plus", desc: "Better reasoning and more reliable output for serious users.", free: false, badge: "Paid" },
-    { name: "Custom GPTs", desc: "Task-specific assistants for repeatable workflows and support.", free: true, badge: "Free" },
-    { name: "OpenAI API", desc: "Useful when businesses want AI inside apps or automations.", free: false, badge: "Paid" },
-  ],
-  "AI Freelancing": [
-    { name: "Upwork", desc: "High-intent freelance demand across AI writing, support, and automation.", free: true, badge: "Free" },
-    { name: "Fiverr", desc: "Fast gig marketplace for AI services and lightweight delivery offers.", free: true, badge: "Free" },
-    { name: "ChatGPT", desc: "Speeds up proposals, drafts, delivery systems, and client communication.", free: true, badge: "Free" },
-    { name: "Jasper", desc: "Helpful when content production volume matters more than low cost.", free: false, badge: "Paid" },
-  ],
-  "AI Content Creation": [
-    { name: "ChatGPT", desc: "Idea generation, outlines, captions, scripts, and editing support.", free: true, badge: "Free" },
-    { name: "Canva", desc: "Social creatives, design tasks, and presentation support.", free: true, badge: "Free" },
-    { name: "CapCut", desc: "Fast editing, repurposing, and short-form content production.", free: true, badge: "Free" },
-    { name: "Opus Clip", desc: "Long-form to short-form repurposing for creators and agencies.", free: true, badge: "Free" },
-  ],
-  "AI Graphic Design": [
-    { name: "Canva", desc: "Quick visual production for creators, students, and businesses.", free: true, badge: "Free" },
-    { name: "Adobe Firefly", desc: "Professional visual generation inside Adobe workflows.", free: true, badge: "Free" },
-    { name: "Midjourney", desc: "High-quality concept visuals and creative ideation.", free: false, badge: "Paid" },
-    { name: "Figma AI", desc: "Helpful for UI flows, UX drafts, and fast concept work.", free: true, badge: "Free" },
-  ],
-  "AI Marketing": [
-    { name: "ChatGPT", desc: "Ad copy, messaging, campaign angles, and analysis support.", free: true, badge: "Free" },
-    { name: "Gemini", desc: "Broad research and multi-format idea support for marketing teams.", free: true, badge: "Free" },
-    { name: "Canva", desc: "Ad creatives, simple landing assets, and promotional visuals.", free: true, badge: "Free" },
-    { name: "HubSpot AI", desc: "Useful for CRM-heavy teams and pipeline-assisted automation.", free: true, badge: "Free" },
-  ],
-  "Prompt Engineering": [
-    { name: "ChatGPT", desc: "Best everyday prompt testing and structured iteration environment.", free: true, badge: "Free" },
-    { name: "Claude", desc: "Strong for longer prompts, reasoning, and document-based work.", free: true, badge: "Free" },
-    { name: "FlowGPT", desc: "Prompt examples and community discovery for inspiration.", free: true, badge: "Free" },
-    { name: "PromptPerfect", desc: "Useful when prompt cleanup and optimization matter.", free: true, badge: "Free" },
-  ],
-  "AI Coding": [
-    { name: "GitHub Copilot", desc: "Inline code support and daily engineering productivity.", free: false, badge: "Paid" },
-    { name: "Cursor", desc: "AI-first coding editor for debugging, refactors, and flow.", free: true, badge: "Free" },
-    { name: "ChatGPT", desc: "Code explanation, debugging support, and learning workflows.", free: true, badge: "Free" },
-    { name: "Replit AI", desc: "Fast browser-based experimentation for prototypes.", free: true, badge: "Free" },
-  ],
-};
-
 function getBlogs(): BlogItem[] {
   try {
-    return JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "data", "blogs.json"), "utf8"),
-    ) as BlogItem[];
-  } catch {
+    const filePath = path.join(process.cwd(), "data", "blogs.json");
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as BlogItem[];
+    return parsed.filter(
+      (item) =>
+        typeof item?.slug === "string" &&
+        item.slug.trim().length > 0 &&
+        typeof item?.title === "string" &&
+        item.title.trim().length > 0,
+    );
+  } catch (error) {
+    console.error("Unable to load data/blogs.json", error);
     return [];
   }
 }
 
-function titleCase(value: string) {
-  return value
-    .split("-")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function parseSlug(slug: string, post?: BlogItem): ParsedSlug {
-  const slugLower = slug.toLowerCase();
-  const segments = slugLower.split("-").filter(Boolean);
-  const year = segments.find((segment) => /^\d{4}$/.test(segment)) ?? "2026";
-
-  const audienceKey =
-    segments.find((segment) => audienceMap[segment]) ?? "professionals";
-  const skillKey =
-    segments.find((segment) => skillMap[segment]) ??
-    post?.category?.toLowerCase().split(" ")[0] ??
-    "ai";
-  const intentKey =
-    segments.find((segment) => intentMap[segment]) ?? "guide";
-
-  const skillLabel = skillMap[skillKey] ?? post?.category ?? "AI Skills";
-  const audienceLabel = audienceMap[audienceKey] ?? "Working Professionals";
-  const intentLabel = intentMap[intentKey] ?? "guide";
-
-  const keywordCluster = [
-    skillLabel,
-    `${skillLabel} ${intentLabel}`,
-    `${skillLabel} for ${audienceLabel}`,
-    `${skillLabel} in ${year}`,
-    `${skillLabel} SEO`,
-    `${skillLabel} AEO`,
-    `${skillLabel} GEO`,
-    `Sikhadenge ${skillLabel}`,
-  ];
+function parseSlug(slug: string, post: BlogItem): ParsedSlug {
+  const segments = slug.toLowerCase().split("-").filter(Boolean);
+  const year = segments.find((segment) => /^20\d{2}$/.test(segment)) || "2026";
+  const audienceKey = segments.find((segment) => audienceMap[segment]);
+  const skillKey = segments.find((segment) => skillMap[segment]);
+  const intentKey = segments.find((segment) => intentMap[segment]);
 
   return {
-    slug,
-    segments,
     year,
-    audience: audienceKey,
-    audienceLabel,
-    skill: skillKey,
-    skillLabel,
-    primaryIntent: intentKey,
-    intentLabel,
-    keywordCluster,
+    audienceLabel: audienceKey ? audienceMap[audienceKey] : "learners and professionals",
+    skillLabel: skillKey ? skillMap[skillKey] : post.category || "AI and digital skills",
+    intentLabel: intentKey ? intentMap[intentKey] : "guide",
   };
 }
 
-function buildHeadline(parsed: ParsedSlug) {
-  const intentTitles: Record<string, string> = {
-    benefits: `Benefits of ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    examples: `Examples of ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    trends: `Trends in ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    workflow: `${parsed.skillLabel} Workflow Guide for ${parsed.audienceLabel} in ${parsed.year}`,
-    "case-studies": `Case Studies in ${parsed.skillLabel} for ${parsed.audienceLabel}`,
-    guide: `Complete Guide to ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    skills: `Essential Skills for ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    career: `Career Options in ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    earning: `How to Earn with ${parsed.skillLabel} for ${parsed.audienceLabel} in ${parsed.year}`,
-    tools: `Top ${parsed.skillLabel} Tools for ${parsed.audienceLabel} in ${parsed.year}`,
-  };
-
-  return intentTitles[parsed.intentLabel] ??
-    `${titleCase(parsed.slug)} in ${parsed.year}`;
+function buildDescription(post: BlogItem, parsed: ParsedSlug) {
+  return (
+    post.excerpt ||
+    `A practical ${parsed.intentLabel} to ${parsed.skillLabel} for ${parsed.audienceLabel}, with clear answers, a step-by-step workflow, common mistakes, tools, and next actions.`
+  );
 }
 
-function buildDescription(parsed: ParsedSlug) {
-  return `${buildHeadline(parsed)}. Practical Sikhadenge guide with SEO, AEO, GEO-aligned answers, tools, learning path, workflow tips, mistakes to avoid, and lead-ready action steps for ${parsed.audienceLabel.toLowerCase()}.`;
+function buildAnswer(post: BlogItem, parsed: ParsedSlug) {
+  return (
+    post.intro ||
+    `${parsed.skillLabel} becomes useful when it is connected to a specific task, a clear output standard, and a repeatable review process. Start with one relevant use case, use a focused tool stack, produce a small real-world output, and improve it using feedback rather than trying to learn every feature at once.`
+  );
 }
 
-function buildIntro(parsed: ParsedSlug) {
-  return `${parsed.skillLabel} ${parsed.audienceLabel.toLowerCase()} ke liye ${parsed.year} me aur bhi important ho raha hai, kyunki search demand, AI adoption, productivity pressure, aur digital competition sab saath me badh rahe hain. Is guide me hum practical level par dekhenge ki ${parsed.skillLabel} ko kaise seekhna, use karna, monetize karna, aur better results ke liye system me convert karna chahiye.`;
-}
+function buildHighlights(post: BlogItem, parsed: ParsedSlug): GeneratedHighlight[] {
+  const supplied = post.summaryPoints?.filter(Boolean).slice(0, 6) || [];
+  if (supplied.length >= 3) {
+    return supplied.map((point, index) => ({
+      title: `Takeaway ${index + 1}`,
+      description: point,
+      icon: index % 3 === 0 ? "target" : index % 3 === 1 ? "sparkles" : "check",
+    }));
+  }
 
-function buildSummaryPoints(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ka practical roadmap ${parsed.audienceLabel.toLowerCase()} ke context me samajhna`,
-    `Best tools, prompts, ya workflows choose karna without confusion`,
-    `SEO, AEO, GEO, learning, earning, aur execution ko ek page me connect karna`,
-  ];
-}
-
-function buildPracticalSteps(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ka clear use-case choose karo jo ${parsed.audienceLabel.toLowerCase()} ke liye immediately relevant ho`,
-    `Ek primary tool aur ek repeatable workflow select karo, phir daily small practice routine banao`,
-    `Real-world outputs banao jaise proposals, content drafts, automations, prompts, ya portfolio examples`,
-    `Apne work ko measure karo: speed, quality, conversions, leads, ya interview confidence me kya improvement aaya`,
-  ];
-}
-
-function buildStepDetails(parsed: ParsedSlug) {
-  return [
-    `Sabse pehle clarity lao. Aapka goal learning hai, freelancing hai, jobs hai, ya business output? Jab goal clear hota hai tab ${parsed.skillLabel} random tool nahi rehta, ek productive system ban jata hai.`,
-    `Too many tools try karne ke bajay ek focused stack banao. Daily practice se prompts, outputs, aur review quality improve hoti hai. Isi stage par aapka execution edge build hota hai.`,
-    `Small projects hi best proof hote hain. Students ke liye assignments aur interview prep, freelancers ke liye client assets, aur businesses ke liye SOPs ya sales copy jaise outputs strong proof create karte hain.`,
-    `Akhri step optimization ka hai. Jo cheez kaam kar rahi hai use document karo, templates banao, aur usi ko better conversion, better search relevance, aur better delivery ke liye scale karo.`,
-  ];
-}
-
-function buildMistakes(parsed: ParsedSlug) {
-  return [
-    `${parsed.skillLabel} ko sirf trend samajhkar bina workflow ke use karna`,
-    `Har output ko final maan lena aur human review skip karna`,
-    `Prompt quality aur context clarity ko ignore karna`,
-    `Search intent, audience need, aur conversion goal ko mix up kar dena`,
-  ];
-}
-
-function buildFaqs(parsed: ParsedSlug, title: string) {
   return [
     {
-      q: `${title} ke liye sabse pehla practical step kya hai?`,
-      a: `Sabse pehle ek clear use-case choose karo. ${parsed.skillLabel} tab best kaam karta hai jab task, audience, output format, aur goal clearly defined ho.`,
+      title: "Start with user intent",
+      description: `Define what ${parsed.audienceLabel} need to achieve before selecting tools or prompts.`,
+      icon: "target",
     },
     {
-      q: `${parsed.skillLabel} SEO, AEO, aur GEO me kaise help karta hai?`,
-      a: `${parsed.skillLabel} better topic coverage, answer blocks, FAQs, semantic relevance, workflow speed, aur structured drafts me help karta hai. Isse search-friendly aur AI-answer-friendly content banana easy hota hai.`,
+      title: "Create a repeatable workflow",
+      description: `Turn ${parsed.skillLabel} into a sequence that can be tested, documented, and improved.`,
+      icon: "wand",
     },
     {
-      q: `Kya ${parsed.audienceLabel.toLowerCase()} ${parsed.skillLabel} se real earning ya growth paa sakte hain?`,
-      a: `Haan. Ye jobs, freelancing, business systems, productivity, aur communication quality me direct impact la sakta hai jab aap isse repeatable workflow ke roop me use karte ho.`,
+      title: "Produce visible proof",
+      description: "Use a project, example, checklist, comparison, or measured result to demonstrate practical capability.",
+      icon: "check",
     },
     {
-      q: `Beginners ke liye ${parsed.skillLabel} seekhne ka sahi tareeka kya hai?`,
-      a: `Basics samjho, ek tool par focus karo, daily practice karo, aur small proof-of-work banao. Theory se zyada implementation par dhyan do.`,
+      title: "Review before publishing",
+      description: "Check factual accuracy, usefulness, originality, clarity, links, and whether the answer matches the query.",
+      icon: "shield",
     },
     {
-      q: `Kya ye page sirf keyword ke liye hai ya practical bhi hai?`,
-      a: `Ye page keyword-rich hai, lekin structure, answers, tools, mistakes, CTA, aur practical learning path sab isliye rakhe gaye hain taaki page genuinely useful lage aur fake doorway na lage.`,
+      title: "Connect related topics",
+      description: "Use descriptive internal links so readers and crawlers can discover the next relevant resource.",
+      icon: "link",
+    },
+    {
+      title: "Update material changes",
+      description: "Revise the page when features, recommendations, examples, or the main answer materially change.",
+      icon: "book",
     },
   ];
 }
 
-function getDeepContent(parsed: ParsedSlug) {
-  return {
-    whyMatters: `${parsed.year} me ${parsed.skillLabel} ka importance isliye badh raha hai kyunki companies, freelancers, creators, aur students sab faster output aur smarter execution chahte hain. Jo log ${parsed.skillLabel} ko practical level par use kar pa rahe hain unhe search visibility, content speed, problem solving, aur delivery quality me edge mil raha hai. Isi wajah se is topic par search volume aur commercial intent dono strong bane hue hain.`,
-    marketStats: `${parsed.skillLabel} se related demand India me rapidly increase ho rahi hai. Businesses ko AI-assisted communication, marketing, workflow support, automation, and research help chahiye. Ye category sirf trend nahi, ek durable capability ban rahi hai jahan early movers better positioning le rahe hain.`,
-    futureScope: `Aane wale 2-4 saal me ${parsed.skillLabel} literacy waise hi important hogi jaise aaj spreadsheet, content, ya digital tools ki basic understanding hai. Jo log abhi se systems, prompts, review habits, aur practical execution seekhenge unke paas future-ready advantage hoga.`,
-    earnings: `${parsed.skillLabel} directly side-income, freelancing, team productivity, aur role expansion me help kar sakta hai. Students interviews me stronger answers de sakte hain, freelancers faster delivery kar sakte hain, aur business owners internal processes ko lean bana sakte hain.`,
-  };
+function buildSteps(post: BlogItem, parsed: ParsedSlug): GeneratedStep[] {
+  const supplied = post.practicalSteps?.filter(Boolean).slice(0, 6) || [];
+  if (supplied.length >= 4) {
+    return supplied.map((step, index) => ({
+      title: step,
+      description: `Complete this stage with a visible output and review it before moving to step ${index + 2}.`,
+      meta: index === 0 ? "Define the goal" : index === supplied.length - 1 ? "Measure and improve" : "Build and review",
+    }));
+  }
+
+  return [
+    {
+      title: "Define one concrete outcome",
+      description: `Choose a task where ${parsed.skillLabel} can create a useful result for ${parsed.audienceLabel}. Write down the required format, quality standard, and success measure.`,
+      meta: "30–45 minutes",
+    },
+    {
+      title: "Choose a focused tool stack",
+      description: "Use one primary tool and only the supporting tools required for the task. Verify current capabilities and limitations in official documentation.",
+      meta: "Same day",
+    },
+    {
+      title: "Build a small real-world output",
+      description: "Create an example that can be inspected: a draft, design, automation, analysis, prompt system, portfolio item, or documented workflow.",
+      meta: "1–3 practice sessions",
+    },
+    {
+      title: "Apply a quality review",
+      description: "Check accuracy, clarity, completeness, originality, usability, accessibility, and whether a human can act on the result without searching again.",
+      meta: "Before publishing",
+    },
+    {
+      title: "Measure the result",
+      description: "Track the metric that matches the goal, such as time saved, fewer errors, better output quality, engagement, leads, or task completion.",
+      meta: "After real use",
+    },
+    {
+      title: "Document and update the system",
+      description: "Save the working process, sources, prompts, templates, and review checklist. Update the page when material facts or tool behavior change.",
+      meta: "Ongoing",
+    },
+  ];
 }
 
-function buildKeywordList(parsed: ParsedSlug, title: string) {
-  return [
-    title,
-    parsed.skillLabel,
-    `${parsed.skillLabel} ${parsed.year}`,
-    `${parsed.skillLabel} for ${parsed.audienceLabel}`,
-    `${parsed.skillLabel} prompts`,
-    `${parsed.skillLabel} tools`,
-    `${parsed.skillLabel} workflow`,
-    `${parsed.skillLabel} SEO`,
-    `${parsed.skillLabel} AEO`,
-    `${parsed.skillLabel} GEO`,
-    `Sikhadenge ${parsed.skillLabel}`,
-    `${parsed.skillLabel} guide`,
-    `${parsed.skillLabel} tutorial`,
-    `${parsed.skillLabel} examples`,
-    `${parsed.skillLabel} use cases`,
+function buildTools(parsed: ParsedSlug): GeneratedTool[] {
+  const common: GeneratedTool[] = [
+    {
+      name: "Official product documentation",
+      description: "Use the provider's current documentation for features, limitations, privacy, pricing, and technical behavior.",
+      label: "Primary source",
+    },
+    {
+      name: "Sikhadenge practice checklist",
+      description: "Define the task, required evidence, review criteria, and measurable result before starting.",
+      label: "Workflow",
+    },
   ];
+
+  if (parsed.skillLabel.includes("SEO")) {
+    return [
+      { name: "Google Search Console", description: "Inspect indexing, canonical selection, search performance, and crawl-related issues.", label: "Official" },
+      { name: "Bing Webmaster Tools", description: "Review Bing discovery, sitemap status, recommendations, and URL health.", label: "Official" },
+      ...common,
+    ];
+  }
+
+  if (parsed.skillLabel.includes("design")) {
+    return [
+      { name: "Figma or Adobe tools", description: "Create, review, and present visual work using a professional design workflow.", label: "Creation" },
+      { name: "Accessibility checks", description: "Review contrast, hierarchy, readability, text alternatives, and responsive behavior.", label: "Quality" },
+      ...common,
+    ];
+  }
+
+  return [
+    { name: "ChatGPT", description: "Useful for structured drafts, analysis, explanations, and iterative workflows when outputs are reviewed.", label: "AI tool" },
+    { name: "Google Gemini", description: "Useful for multimodal assistance, research support, and Google ecosystem workflows.", label: "AI tool" },
+    ...common,
+  ];
+}
+
+function buildMistakes(post: BlogItem, parsed: ParsedSlug) {
+  const supplied = post.mistakes?.filter(Boolean).slice(0, 6) || [];
+  if (supplied.length >= 4) return supplied;
+  return [
+    `Using ${parsed.skillLabel} without a defined user need or output standard.`,
+    "Publishing automated drafts without factual checks, original value, or a clear ownership trail.",
+    "Creating many near-duplicate pages for query variations instead of building a useful topic hierarchy.",
+    "Adding unsupported statistics, ratings, earnings claims, urgency, or guarantees.",
+    "Treating schema markup as a substitute for visible, useful page content.",
+    "Changing sitemap dates on every build when the main content did not materially change.",
+  ];
+}
+
+function buildFaqs(post: BlogItem, parsed: ParsedSlug): GeneratedFaq[] {
+  const supplied = post.faqs?.filter((faq) => faq?.q && faq?.a) || [];
+  const generated: GeneratedFaq[] = [
+    {
+      q: `What is the practical meaning of ${parsed.skillLabel}?`,
+      a: `${parsed.skillLabel} is practical when it helps complete a defined task to a clear quality standard. The useful part is not the tool name; it is the repeatable process, evidence, and result.`,
+    },
+    {
+      q: `Who should use this ${parsed.intentLabel}?`,
+      a: `It is designed for ${parsed.audienceLabel} who want a structured starting point, a review checklist, and a practical next action rather than a keyword-only overview.`,
+    },
+    {
+      q: `What should a beginner learn first?`,
+      a: "Start with the underlying task and basic terminology, then learn one tool through a small project. Avoid switching between many tools before completing a useful output.",
+    },
+    {
+      q: `How long does it take to become useful with ${parsed.skillLabel}?`,
+      a: "A basic workflow can often be learned through a few focused practice sessions. Reliable professional capability takes repeated projects, review, correction, and exposure to real constraints.",
+    },
+    {
+      q: "Do I need paid tools to start?",
+      a: "Not always. Many tools offer free access or trials, but features and limits change. Verify current terms on the provider's official website before choosing a workflow.",
+    },
+    {
+      q: "How should I evaluate the quality of an output?",
+      a: "Check accuracy, relevance, completeness, clarity, originality, accessibility, consistency, and whether the intended user can act on the result without additional clarification.",
+    },
+    {
+      q: "Can this help with jobs or freelancing?",
+      a: "It can support jobs or freelancing when you can demonstrate real work, explain your process, handle feedback, and connect the skill to a business or user outcome. No page can guarantee employment or income.",
+    },
+    {
+      q: "What should I include in a portfolio?",
+      a: "Include the problem, constraints, your process, tools used, key decisions, final output, and what changed after review. A smaller number of well-explained projects is stronger than many unexplained samples.",
+    },
+    {
+      q: "How do I avoid incorrect AI-generated information?",
+      a: "Use primary sources, verify important claims, test outputs where possible, label uncertainty, and keep a human responsible for the final published result.",
+    },
+    {
+      q: "How is this page designed for answer engines?",
+      a: "The page includes a direct answer, descriptive headings, visible FAQs, structured steps, entity context, internal links, and matching structured data. These features improve clarity but do not guarantee citations or rankings.",
+    },
+    {
+      q: "Does FAQ schema guarantee a Google rich result?",
+      a: "No. Structured data can help machines understand visible content, but search engines decide eligibility and presentation. The FAQs are included primarily because they are useful to readers.",
+    },
+    {
+      q: "How often should this guide be updated?",
+      a: "Update it when the main answer, recommended workflow, material facts, tool capabilities, or important links change. Cosmetic rebuilds alone should not trigger a new modified date.",
+    },
+    {
+      q: "What sources should I trust first?",
+      a: "Prefer official product documentation, recognized standards bodies, original research, government sources, and first-party evidence. Use secondary summaries for context, not as the only support for important claims.",
+    },
+    {
+      q: "What is the best next step after reading?",
+      a: "Choose one relevant task, complete the first step today, save the result, and review it against a written quality checklist before expanding the workflow.",
+    },
+    {
+      q: "Can I use this process on mobile?",
+      a: "Some learning, drafting, and review tasks work on mobile, but complex production, file management, design, coding, or automation is usually more reliable on a desktop or laptop.",
+    },
+  ];
+
+  const merged = [...supplied, ...generated];
+  return merged.filter((faq, index, all) => all.findIndex((item) => item.q === faq.q) === index).slice(0, 15);
+}
+
+function safeDate(value?: string) {
+  if (!value) return RELEASE_DATE_ISO;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? RELEASE_DATE_ISO : date.toISOString().slice(0, 10);
 }
 
 export async function generateStaticParams() {
-  return getBlogs()
-    .slice(0, 500)
-    .map((post) => ({ slug: post.slug }));
+  return getBlogs().slice(0, 1000).map((post) => ({ slug: post.slug }));
 }
 
 export const dynamicParams = true;
 export const revalidate = 2592000;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = getBlogs().find((item) => item.slug === params.slug);
+  if (!post) {
+    return {
+      title: "Article Not Found",
+      description: "The requested Sikhadenge article is not available.",
+      robots: { index: false, follow: false },
+    };
+  }
+
   const parsed = parseSlug(params.slug, post);
-  const title = post?.title || buildHeadline(parsed);
-  const description = post?.excerpt || buildDescription(parsed);
-  const keywords = buildKeywordList(parsed, title);
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
+  const description = buildDescription(post, parsed);
+  const canonical = `${BASE_URL}/blog/${post.slug}`;
 
   return {
-    title: `${title} | Sikhadenge`,
+    title: post.title,
     description,
-    keywords,
     alternates: { canonical },
+    authors: [{ name: "Sikhadenge Editorial Team", url: `${BASE_URL}/authors/sikhadenge-editorial-team` }],
+    openGraph: {
+      type: "article",
+      url: canonical,
+      siteName: "Sikhadenge",
+      title: post.title,
+      description,
+      publishedTime: safeDate(post.publishedAt || post.datePublished),
+      modifiedTime: safeDate(post.updatedAt || post.dateModified),
+      images: [
+        {
+          url: `${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description,
+      images: [`${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`],
+    },
     robots: {
       index: true,
       follow: true,
@@ -409,581 +413,117 @@ export async function generateMetadata({
         "max-video-preview": -1,
       },
     },
-    openGraph: {
-      title,
-      description,
-      type: "article",
-      url: canonical,
-      siteName: "Sikhadenge",
-      images: [
-        {
-          url: `${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`,
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [`${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`],
-    },
   };
 }
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
   const allBlogs = getBlogs();
   const post = allBlogs.find((item) => item.slug === params.slug);
+  if (!post) notFound();
+
   const parsed = parseSlug(params.slug, post);
-  const title = post?.title || buildHeadline(parsed);
-  const category = post?.category || skillCategoryMap[parsed.skillLabel] || "AI Skills";
-  const readTime = post?.readTime || "8 min read";
-  const intro = post?.intro || buildIntro(parsed);
-  const summaryPoints = post?.summaryPoints || buildSummaryPoints(parsed);
-  const practicalSteps = post?.practicalSteps || buildPracticalSteps(parsed);
-  const mistakes = post?.mistakes || buildMistakes(parsed);
-  const faqs = post?.faqs || buildFaqs(parsed, title);
-  const deepContent = getDeepContent(parsed);
-  const tools = categoryTools[category] || categoryTools["AI Skills"];
-  const stepDetails = buildStepDetails(parsed);
-  const stepTimelines = [
-    "2-3 din clarity",
-    "1 week repetition",
-    "2-3 weeks practical proof",
-    "Ongoing optimization",
-  ];
+  const description = buildDescription(post, parsed);
+  const answer = buildAnswer(post, parsed);
+  const faqs = buildFaqs(post, parsed);
+  const canonical = `${BASE_URL}/blog/${post.slug}`;
+  const publishedDate = safeDate(post.publishedAt || post.datePublished);
+  const modifiedDate = safeDate(post.updatedAt || post.dateModified);
+  const category = post.category || parsed.skillLabel;
 
   const relatedPosts = allBlogs
-    .filter((item) => item.slug !== params.slug)
+    .filter((item) => item.slug !== post.slug)
     .filter(
       (item) =>
-        item.category === category ||
-        item.slug.includes(parsed.skill) ||
-        item.slug.includes(parsed.audience),
+        item.category === post.category ||
+        item.slug.toLowerCase().includes(parsed.skillLabel.toLowerCase().split(" ")[0]),
     )
     .slice(0, 6);
 
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
-  const description = post?.excerpt || buildDescription(parsed);
-  const keywordList = buildKeywordList(parsed, title);
-
-  const articleJsonLd = {
+  const schema = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: title,
-    description,
-    mainEntityOfPage: canonical,
-    datePublished: "2026-01-01",
-    dateModified: "2026-04-23",
-    author: {
-      "@type": "Organization",
-      name: "Sikhadenge",
-      url: BASE_URL,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Sikhadenge",
-      url: BASE_URL,
-    },
-    about: [
-      parsed.skillLabel,
-      parsed.audienceLabel,
-      "SEO",
-      "AEO",
-      "GEO",
-      "AI workflows",
-    ],
-    keywords: keywordList.join(", "),
-  };
-
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
-      { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
-      { "@type": "ListItem", position: 3, name: title, item: canonical },
-    ],
-  };
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.a,
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": `${canonical}#article`,
+        headline: post.title,
+        description,
+        mainEntityOfPage: { "@id": canonical },
+        url: canonical,
+        image: `${BASE_URL}/images/courses/ai-mastery-design-editing-cover.webp`,
+        datePublished: publishedDate,
+        dateModified: modifiedDate,
+        inLanguage: "en-IN",
+        author: {
+          "@type": "Organization",
+          "@id": `${BASE_URL}/authors/sikhadenge-editorial-team#organization`,
+          name: "Sikhadenge Editorial Team",
+          url: `${BASE_URL}/authors/sikhadenge-editorial-team`,
+        },
+        publisher: { "@id": `${BASE_URL}/#organization` },
+        isPartOf: { "@id": `${BASE_URL}/#website` },
+        about: [parsed.skillLabel, parsed.audienceLabel, category],
       },
-    })),
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${canonical}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
+          { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
+          { "@type": "ListItem", position: 3, name: post.title, item: canonical },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${canonical}#faq`,
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: { "@type": "Answer", text: faq.a },
+        })),
+      },
+    ],
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-
-      <article className="min-h-screen bg-[#eff4fb] text-slate-900">
-        <header className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(87,120,255,0.22),transparent_34%),linear-gradient(135deg,#142457_0%,#1d3180_50%,#142457_100%)] pt-28 pb-20">
-          <div className="absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle,_white_1px,_transparent_1px)] [background-size:18px_18px]" />
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white/85">
-                {category}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
-                <Clock3 className="h-4 w-4" />
-                {readTime}
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
-                For {parsed.audienceLabel}
-              </span>
-            </div>
-
-            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
-              {title}
-            </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-blue-50/85 sm:text-lg">
-              {intro}
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              {keywordList.slice(0, 6).map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs font-semibold text-white/85"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-sm font-black text-[#17306d] shadow-xl transition hover:bg-slate-100"
-              >
-                Join Free Masterclass
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-7 py-4 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
-              >
-                Talk to Team
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  label: "Search-ready structure",
-                  detail: "SEO, AEO, GEO aligned layout with clear answers and strong intent mapping.",
-                  icon: Search,
-                },
-                {
-                  label: "Practical learning focus",
-                  detail: "Outputs, prompts, workflows, and mistakes to avoid instead of only theory.",
-                  icon: Sparkles,
-                },
-                {
-                  label: "Lead-generation angle",
-                  detail: "Sales-ready CTA blocks and decision support for high-intent users.",
-                  icon: ShieldCheck,
-                },
-              ].map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-[24px] border border-white/10 bg-white/8 p-5 backdrop-blur"
-                >
-                  <card.icon className="h-5 w-5 text-blue-200" />
-                  <h2 className="mt-3 text-lg font-extrabold text-white">
-                    {card.label}
-                  </h2>
-                  <p className="mt-2 text-sm leading-7 text-blue-50/75">
-                    {card.detail}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          <nav className="mb-12 rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_2px_24px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3">
-              <LayoutGrid className="h-5 w-5 text-blue-700" />
-              <h2 className="text-xl font-black text-slate-900">Is guide me kya hai</h2>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { href: "#why", label: "Ye kyu zaruri hai", icon: TrendingUp },
-                { href: "#summary", label: "Kya seekhoge", icon: CheckCircle2 },
-                { href: "#steps", label: "Step-by-step guide", icon: Compass },
-                { href: "#tools", label: "Recommended tools", icon: Wand2 },
-                { href: "#mistakes", label: "Common mistakes", icon: ShieldCheck },
-                { href: "#market", label: "Market and earning", icon: DollarSign },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-blue-200 hover:bg-blue-50"
-                >
-                  <item.icon className="h-4 w-4 text-blue-700" />
-                  <span className="text-sm font-semibold text-slate-700">
-                    {item.label}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </nav>
-
-          <section id="why" className="mb-12 rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_2px_24px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-blue-700" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
-                  Section 01
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Ye kyu zaruri hai
-                </h2>
-              </div>
-            </div>
-            <p className="mt-5 text-[15px] leading-8 text-slate-600">
-              {deepContent.whyMatters}
-            </p>
-            <p className="mt-4 text-[15px] leading-8 text-slate-600">
-              Is page ka goal sirf search traffic nahi hai. Iska goal hai
-              intent ko samajhna, trust build karna, aur users ko practical
-              next step tak le jaana. Isi wajah se content structure answer-first
-              aur sales-aware rakha gaya hai.
-            </p>
-          </section>
-
-          <section id="summary" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
-                  Section 02
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Kya seekhoge
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {summaryPoints.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  <p className="mt-4 text-sm font-semibold leading-7 text-slate-700">
-                    {point}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section id="steps" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <Compass className="h-5 w-5 text-indigo-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600">
-                  Section 03
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Step-by-step guide
-                </h2>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {practicalSteps.map((step, index) => (
-                <div
-                  key={step}
-                  className="flex gap-5 rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-black text-white">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-extrabold text-slate-900">
-                      {step}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      {stepDetails[index]}
-                    </p>
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {stepTimelines[index]}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12 rounded-[30px] bg-[linear-gradient(135deg,#2753d7_0%,#2444ac_100%)] p-8 text-white shadow-[0_24px_60px_rgba(39,83,215,0.2)] sm:p-10">
-            <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-white/85">
-              Conversion Block
-            </div>
-            <h2 className="mt-5 text-3xl font-black tracking-tight">
-              Free AI Masterclass join karo
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-8 text-blue-50/85 sm:text-base">
-              Agar aap {parsed.skillLabel} ko sirf samajhna nahi, balki real
-              work me use karna chahte ho, to guided practice sabse fast path
-              hota hai. Sikhadenge ka masterclass action-oriented learners ke
-              liye bana hai.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#1f41a0] transition hover:bg-slate-100"
-              >
-                Register Free Now
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/15"
-              >
-                Talk to Team
-              </Link>
-            </div>
-          </section>
-
-          <section id="tools" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <Wand2 className="h-5 w-5 text-orange-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">
-                  Section 04
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Recommended tools
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {tools.map((tool) => (
-                <div
-                  key={tool.name}
-                  className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        {tool.name}
-                      </h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        {tool.desc}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${
-                        tool.free
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {tool.badge}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section id="mistakes" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-rose-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
-                  Section 05
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Ye galtiyan mat karna
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {mistakes.map((mistake) => (
-                <div
-                  key={mistake}
-                  className="rounded-[24px] border border-rose-100 bg-rose-50 p-5"
-                >
-                  <p className="text-sm font-semibold leading-7 text-slate-700">
-                    {mistake}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section id="market" className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-emerald-600" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
-                  Section 06
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Market and earning potential
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-6">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Market demand
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.marketStats}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-6">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Earning angle
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.earnings}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-violet-200 bg-violet-50 p-6 sm:col-span-2">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  Future scope
-                </h3>
-                <p className="mt-3 text-sm leading-8 text-slate-600">
-                  {deepContent.futureScope}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <div className="mb-5 flex items-center gap-3">
-              <CircleHelp className="h-5 w-5 text-slate-700" />
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                  Section 07
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Frequently asked questions
-                </h2>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {faqs.map((faq) => (
-                <details
-                  key={faq.q}
-                  className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
-                >
-                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
-                    <span className="text-left text-base font-bold text-slate-900">
-                      {faq.q}
-                    </span>
-                    <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180 group-open:text-blue-700" />
-                  </summary>
-                  <div className="border-t border-slate-100 px-6 py-5 text-sm leading-8 text-slate-600">
-                    {faq.a}
-                  </div>
-                </details>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12 rounded-[30px] bg-[linear-gradient(135deg,#111c3d_0%,#172856_100%)] p-8 text-white shadow-[0_24px_60px_rgba(17,28,61,0.24)] sm:p-10">
-            <h2 className="max-w-3xl text-3xl font-black tracking-tight">
-              Sikhadenge ke saath practical AI journey shuru karo
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-200 sm:text-base">
-              Agar aapka goal jobs, freelancing, business growth, ya better
-              digital execution hai, to practical systems hi long-term value dete
-              hain. Sikhadenge isi gap ko solve karta hai.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/gen-ai-masterclass/register-one-step"
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-500 px-6 py-4 text-sm font-black text-white transition hover:bg-blue-600"
-              >
-                Join Practical AI Masterclass
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/courses"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/15"
-              >
-                Explore Courses
-              </Link>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              {[
-                { label: "Students", icon: GraduationCap },
-                { label: "Freelancers", icon: Briefcase },
-                { label: "Professionals", icon: TrendingUp },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[20px] border border-white/10 bg-white/8 p-5 backdrop-blur"
-                >
-                  <item.icon className="h-5 w-5 text-blue-200" />
-                  <div className="mt-3 text-sm font-bold text-white">
-                    {item.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {relatedPosts.length > 0 && (
-            <section className="mb-6">
-              <div className="mb-5 flex items-center gap-3">
-                <LayoutGrid className="h-5 w-5 text-blue-700" />
-                <h2 className="text-2xl font-black text-slate-900">
-                  Related articles
-                </h2>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {relatedPosts.map((item) => (
-                  <Link
-                    key={item.slug}
-                    href={`/blog/${item.slug}`}
-                    className="group rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
-                  >
-                    <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-700">
-                      {item.category || "AI Skills"}
-                    </span>
-                    <h3 className="mt-3 text-lg font-bold leading-snug text-slate-900 transition group-hover:text-blue-700">
-                      {item.title}
-                    </h3>
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-700">
-                      Read more
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      </article>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <GeneratedPageLayout
+        breadcrumbs={[
+          { href: "/", label: "Home" },
+          { href: "/blog", label: "Blog" },
+          { href: `/blog/${post.slug}`, label: post.title },
+        ]}
+        eyebrow={`${category} guide`}
+        title={post.title}
+        description={description}
+        badges={[post.readTime || "8 min read", `For ${parsed.audienceLabel}`, `Updated ${RELEASE_DATE_LABEL}`]}
+        answerTitle={`How should you approach ${parsed.skillLabel}?`}
+        answer={answer}
+        highlights={buildHighlights(post, parsed)}
+        steps={buildSteps(post, parsed)}
+        tools={buildTools(parsed)}
+        mistakes={buildMistakes(post, parsed)}
+        faqs={faqs}
+        relatedLinks={[
+          ...relatedPosts.map((item) => ({
+            href: `/blog/${item.slug}`,
+            label: item.title,
+            description: item.excerpt || "Read the related practical Sikhadenge guide.",
+          })),
+          { href: "/blog", label: "Browse all blog topics", description: "Explore the Sikhadenge knowledge hub." },
+        ].slice(0, 6)}
+        updatedAt={RELEASE_DATE_LABEL}
+        primaryCta={{ href: "/gen-ai-masterclass/register-one-step", label: "Join the free masterclass" }}
+        secondaryCta={{ href: "/contact-us", label: "Contact Sikhadenge" }}
+      >
+        <section className="mb-14 rounded-3xl border border-white/10 bg-[#111827]/70 p-6 sm:p-8">
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#F5B301]">Source standard</div>
+          <h2 className="mt-3 text-2xl font-extrabold">Verify changing facts at the primary source</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-8 text-[#B0B7C3] sm:text-base">
+            Product features, model access, prices, policies, and platform limits can change. Use official documentation for current facts, keep important evidence with the project, and update this page when a material recommendation changes.
+          </p>
+        </section>
+      </GeneratedPageLayout>
     </>
   );
 }
