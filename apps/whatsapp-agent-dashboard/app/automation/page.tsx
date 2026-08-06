@@ -1,9 +1,11 @@
 import { DashboardRole } from "@prisma/client";
 
 import AutomationFlowBuilder from "../../components/automation/AutomationFlowBuilder";
+import MasterclassAutomationPanel from "../../components/automation/MasterclassAutomationPanel";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./masterclass-automation.css";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function AutomationPage() {
       userName={user.name}
       userRole={user.role}
     >
+      <MasterclassAutomationPanel />
       <AutomationFlowBuilder />
     </DashboardModuleShell>
   );

@@ -17,7 +17,7 @@ export type MasterclassCommunityFlowReply = {
   intent: AgentIntent;
 };
 
-type MasterclassConfig = {
+export type MasterclassConfig = {
   name: string;
   dateLabel: string;
   timeLabel: string;
