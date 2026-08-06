@@ -23,7 +23,18 @@ function suppliedSecret(request: Request): string {
   return request.headers.get("x-masterclass-secret")?.trim() || "";
 }
 
+function automationActionsEnabled(): boolean {
+  return process.env.AUTOMATION_ACTIONS_ENABLED?.trim().toLowerCase() === "true";
+}
+
 export async function POST(request: Request) {
+  if (!automationActionsEnabled()) {
+    return NextResponse.json(
+      { error: "Automation external actions are disabled." },
+      { status: 503, headers: NO_STORE_HEADERS },
+    );
+  }
+
   const expected =
     process.env.MASTERCLASS_REGISTRATION_WEBHOOK_SECRET?.trim() || "";
   if (!expected) {
