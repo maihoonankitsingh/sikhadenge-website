@@ -40,6 +40,18 @@ async function authorizedUser() {
   return { response: null, user };
 }
 
+function applyAgentRuntime(config: {
+  classTime: string;
+  classDate: string;
+  classDay: string;
+  communityLink: string;
+}): void {
+  process.env.MASTERCLASS_NAME = "Free AI Expert Masterclass";
+  process.env.MASTERCLASS_DATE_LABEL = `${config.classDay}, ${config.classDate}`;
+  process.env.MASTERCLASS_TIME_LABEL = config.classTime;
+  process.env.MASTERCLASS_COMMUNITY_URL = config.communityLink;
+}
+
 export async function GET() {
   const auth = await authorizedUser();
   if (auth.response) return auth.response;
@@ -54,7 +66,7 @@ export async function PATCH(request: Request) {
 
   try {
     const payload = (await request.json()) as Record<string, unknown>;
-    await saveMasterclassFlowConfig({
+    const updated = await saveMasterclassFlowConfig({
       enabled: payload.enabled,
       classTime: payload.classTime,
       classDate: payload.classDate,
@@ -63,6 +75,7 @@ export async function PATCH(request: Request) {
       delayMinutes: payload.delayMinutes,
       actorId: auth.user.id,
     });
+    applyAgentRuntime(updated);
     return NextResponse.json(await getMasterclassFlowOverview(), {
       headers: { "Cache-Control": "no-store" },
     });
