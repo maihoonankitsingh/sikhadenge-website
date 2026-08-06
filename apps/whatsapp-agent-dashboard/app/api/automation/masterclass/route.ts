@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../lib/auth/session";
 import {
+  effectiveMessage2ImageAssetId,
+  ensureMasterclassImageTemplates,
+  getMasterclassImageOverview,
+  saveMasterclassImageConfig,
+  submitMasterclassImageTemplates,
+} from "../../../../lib/automation/masterclass-image-flow";
+import {
   dispatchDueMasterclassFollowUps,
   ensureMasterclassTemplates,
   getMasterclassFlowOverview,
@@ -56,10 +63,60 @@ function applyAgentRuntime(config: {
   process.env.MASTERCLASS_COMMUNITY_URL = config.communityLink;
 }
 
+function candidateAssetId(value: unknown, current: string | null): string | null {
+  if (value === undefined) return current;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+async function assertCandidateImageTemplatesReady(
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const overview = await getMasterclassImageOverview();
+  const candidate = {
+    message1ImageAssetId: candidateAssetId(
+      payload.message1ImageAssetId,
+      overview.config.message1ImageAssetId,
+    ),
+    useSameImageForMessage2:
+      payload.useSameImageForMessage2 === undefined
+        ? overview.config.useSameImageForMessage2
+        : payload.useSameImageForMessage2 === true,
+    message2ImageAssetId: candidateAssetId(
+      payload.message2ImageAssetId,
+      overview.config.message2ImageAssetId,
+    ),
+  };
+
+  if (
+    candidate.message1ImageAssetId &&
+    overview.templates.instant?.status !== "APPROVED"
+  ) {
+    throw new Error(
+      "Message 1 image template must be APPROVED before enabling the flow.",
+    );
+  }
+  if (
+    effectiveMessage2ImageAssetId(candidate) &&
+    overview.templates.reminder?.status !== "APPROVED"
+  ) {
+    throw new Error(
+      "Message 2 image template must be APPROVED before enabling the flow.",
+    );
+  }
+}
+
+async function combinedOverview() {
+  const [base, imageFlow] = await Promise.all([
+    getMasterclassFlowOverview(),
+    getMasterclassImageOverview(),
+  ]);
+  return { ...base, imageFlow };
+}
+
 export async function GET() {
   const auth = await authorizedUser();
   if (auth.response) return auth.response;
-  return NextResponse.json(await getMasterclassFlowOverview(), {
+  return NextResponse.json(await combinedOverview(), {
     headers: { "Cache-Control": "no-store" },
   });
 }
@@ -75,6 +132,17 @@ export async function PATCH(request: Request) {
         "AUTOMATION_ACTIONS_ENABLED must be true before this flow can be enabled.",
       );
     }
+    if (payload.enabled === true) {
+      await assertCandidateImageTemplatesReady(payload);
+    }
+
+    await saveMasterclassImageConfig({
+      message1ImageAssetId: payload.message1ImageAssetId,
+      useSameImageForMessage2: payload.useSameImageForMessage2,
+      message2ImageAssetId: payload.message2ImageAssetId,
+      actorId: auth.user.id,
+    });
+
     const updated = await saveMasterclassFlowConfig({
       enabled: payload.enabled,
       classTime: payload.classTime,
@@ -85,7 +153,7 @@ export async function PATCH(request: Request) {
       actorId: auth.user.id,
     });
     applyAgentRuntime(updated);
-    return NextResponse.json(await getMasterclassFlowOverview(), {
+    return NextResponse.json(await combinedOverview(), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
@@ -113,7 +181,9 @@ export async function POST(request: Request) {
         : "";
 
     if (
-      (action === "submit_templates" || action === "dispatch_due") &&
+      (action === "prepare_templates" ||
+        action === "submit_templates" ||
+        action === "dispatch_due") &&
       !automationActionsEnabled()
     ) {
       throw new Error(
@@ -123,9 +193,17 @@ export async function POST(request: Request) {
 
     let result: unknown;
     if (action === "prepare_templates") {
-      result = await ensureMasterclassTemplates(auth.user.id);
+      const [textTemplates, imageTemplates] = await Promise.all([
+        ensureMasterclassTemplates(auth.user.id),
+        ensureMasterclassImageTemplates(auth.user.id),
+      ]);
+      result = { textTemplates, imageTemplates };
     } else if (action === "submit_templates") {
-      result = await submitMasterclassTemplates(auth.user.id);
+      const [textTemplates, imageTemplates] = await Promise.all([
+        submitMasterclassTemplates(auth.user.id),
+        submitMasterclassImageTemplates(auth.user.id),
+      ]);
+      result = { textTemplates, imageTemplates };
     } else if (action === "sync_templates") {
       result = await syncMasterclassTemplates(auth.user.id);
     } else if (action === "dispatch_due") {
@@ -143,7 +221,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { result, overview: await getMasterclassFlowOverview() },
+      { result, overview: await combinedOverview() },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

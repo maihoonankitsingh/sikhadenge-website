@@ -13,6 +13,8 @@ export type OutboundTemplateRequest = {
   kind: "template";
   templateId: string;
   components?: unknown[];
+  headerMediaAssetId?: string | null;
+  headerMediaType?: OutboundMediaType | null;
 };
 
 export type OutboundMediaRequest = {
