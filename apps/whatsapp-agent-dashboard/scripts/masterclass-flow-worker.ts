@@ -30,6 +30,7 @@ const INTERVAL_MS = 60_000;
 let stopping = false;
 let running = false;
 let timer: NodeJS.Timeout | null = null;
+let gateNoticeLogged = false;
 
 function log(event: string, detail: Record<string, unknown> = {}): void {
   console.log(
@@ -42,8 +43,20 @@ function log(event: string, detail: Record<string, unknown> = {}): void {
   );
 }
 
+function automationActionsEnabled(): boolean {
+  return process.env.AUTOMATION_ACTIONS_ENABLED?.trim().toLowerCase() === "true";
+}
+
 async function runCycle(): Promise<void> {
   if (running || stopping) return;
+  if (!automationActionsEnabled()) {
+    if (!gateNoticeLogged) {
+      log("paused", { reason: "AUTOMATION_ACTIONS_ENABLED is not true" });
+      gateNoticeLogged = true;
+    }
+    return;
+  }
+  gateNoticeLogged = false;
   running = true;
   try {
     const [{ dispatchDueMasterclassFollowUps }, { dispatchQueuedOutboundBatch }] =
