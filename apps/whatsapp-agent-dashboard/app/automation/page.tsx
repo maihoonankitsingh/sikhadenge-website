@@ -6,6 +6,7 @@ import DashboardModuleShell from "../../components/navigation/DashboardModuleShe
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
 import "./masterclass-automation.css";
+import "./masterclass-image-upload.css";
 
 export const dynamic = "force-dynamic";
 
