@@ -8,6 +8,10 @@ import {
 } from "../../../../lib/meta/config";
 import { verifyMetaSignature } from "../../../../lib/meta/signature";
 import { processWhatsAppWebhook } from "../../../../lib/meta/webhook-processor";
+import {
+  releasePersistedWebhookReplay,
+  reservePersistedWebhookReplay,
+} from "@/modules/channels/core/security/prisma-webhook-replay";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,9 +69,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const signatureHeader = request.headers.get("x-hub-signature-256");
   const signatureIsValid = verifyMetaSignature({
     rawBody,
-    signatureHeader: request.headers.get("x-hub-signature-256"),
+    signatureHeader,
     appSecret,
   });
   if (!signatureIsValid) {
@@ -84,6 +89,27 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Webhook payload is not valid JSON." },
       { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  let replay: Awaited<ReturnType<typeof reservePersistedWebhookReplay>>;
+  try {
+    replay = await reservePersistedWebhookReplay({
+      channel: "WHATSAPP",
+      rawBody,
+      signatureHeader,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Webhook replay protection is unavailable." },
+      { status: 503, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  if (replay.duplicate) {
+    return NextResponse.json(
+      { received: true, duplicate: true },
+      { status: 200, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -108,6 +134,7 @@ export async function POST(request: Request) {
       { status: 200, headers: NO_STORE_HEADERS },
     );
   } catch {
+    await releasePersistedWebhookReplay(replay).catch(() => undefined);
     return NextResponse.json(
       { error: "Webhook processing failed and can be retried." },
       { status: 500, headers: NO_STORE_HEADERS },

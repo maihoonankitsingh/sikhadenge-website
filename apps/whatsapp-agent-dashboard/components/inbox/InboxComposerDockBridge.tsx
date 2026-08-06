@@ -2,8 +2,22 @@
 
 import { useEffect } from "react";
 
+import {
+  getInboxComposerDockLayout,
+  INBOX_COMPOSER_DOCK_Z_INDEX,
+} from "./inbox-composer-dock-layout";
+
 function setImportant(element: HTMLElement, property: string, value: string): void {
   element.style.setProperty(property, value, "important");
+}
+
+function restoreInlineStyle(
+  element: HTMLElement | null,
+  originalStyle: string | null,
+): void {
+  if (!element) return;
+  if (originalStyle === null) element.removeAttribute("style");
+  else element.setAttribute("style", originalStyle);
 }
 
 export default function InboxComposerDockBridge() {
@@ -13,45 +27,56 @@ export default function InboxComposerDockBridge() {
     let currentComposer: HTMLElement | null = null;
     let currentMessages: HTMLElement | null = null;
     let currentInbox: HTMLElement | null = null;
+    let currentRow: HTMLElement | null = null;
+    let currentTextarea: HTMLTextAreaElement | null = null;
+    let currentChannelNote: HTMLElement | null = null;
+    let currentTools: HTMLElement | null = null;
+    let currentDivider: HTMLElement | null = null;
     let chatOriginalStyle: string | null = null;
     let composerOriginalStyle: string | null = null;
     let messagesOriginalStyle: string | null = null;
     let inboxOriginalStyle: string | null = null;
+    let rowOriginalStyle: string | null = null;
+    let textareaOriginalStyle: string | null = null;
+    let channelNoteOriginalStyle: string | null = null;
+    let toolsOriginalStyle: string | null = null;
+    let dividerOriginalStyle: string | null = null;
 
     const resizeObserver = new ResizeObserver(() => schedule());
 
     function restoreCurrent(): void {
       resizeObserver.disconnect();
 
-      if (currentComposer) {
-        if (composerOriginalStyle === null) currentComposer.removeAttribute("style");
-        else currentComposer.setAttribute("style", composerOriginalStyle);
-        currentComposer.removeAttribute("data-runtime-docked");
-      }
+      restoreInlineStyle(currentRow, rowOriginalStyle);
+      restoreInlineStyle(currentTextarea, textareaOriginalStyle);
+      restoreInlineStyle(currentChannelNote, channelNoteOriginalStyle);
+      restoreInlineStyle(currentTools, toolsOriginalStyle);
+      restoreInlineStyle(currentDivider, dividerOriginalStyle);
+      restoreInlineStyle(currentComposer, composerOriginalStyle);
+      restoreInlineStyle(currentChat, chatOriginalStyle);
+      restoreInlineStyle(currentMessages, messagesOriginalStyle);
+      restoreInlineStyle(currentInbox, inboxOriginalStyle);
 
-      if (currentChat) {
-        if (chatOriginalStyle === null) currentChat.removeAttribute("style");
-        else currentChat.setAttribute("style", chatOriginalStyle);
-      }
-
-      if (currentMessages) {
-        if (messagesOriginalStyle === null) currentMessages.removeAttribute("style");
-        else currentMessages.setAttribute("style", messagesOriginalStyle);
-      }
-
-      if (currentInbox) {
-        if (inboxOriginalStyle === null) currentInbox.removeAttribute("style");
-        else currentInbox.setAttribute("style", inboxOriginalStyle);
-      }
+      currentComposer?.removeAttribute("data-runtime-docked");
 
       currentChat = null;
       currentComposer = null;
       currentMessages = null;
       currentInbox = null;
+      currentRow = null;
+      currentTextarea = null;
+      currentChannelNote = null;
+      currentTools = null;
+      currentDivider = null;
       chatOriginalStyle = null;
       composerOriginalStyle = null;
       messagesOriginalStyle = null;
       inboxOriginalStyle = null;
+      rowOriginalStyle = null;
+      textareaOriginalStyle = null;
+      channelNoteOriginalStyle = null;
+      toolsOriginalStyle = null;
+      dividerOriginalStyle = null;
     }
 
     function rememberNodes(
@@ -59,12 +84,22 @@ export default function InboxComposerDockBridge() {
       chat: HTMLElement,
       composer: HTMLElement,
       messages: HTMLElement | null,
+      row: HTMLElement | null,
+      textarea: HTMLTextAreaElement | null,
+      channelNote: HTMLElement | null,
+      tools: HTMLElement | null,
+      divider: HTMLElement | null,
     ): void {
       if (
         currentInbox === inbox &&
         currentChat === chat &&
         currentComposer === composer &&
-        currentMessages === messages
+        currentMessages === messages &&
+        currentRow === row &&
+        currentTextarea === textarea &&
+        currentChannelNote === channelNote &&
+        currentTools === tools &&
+        currentDivider === divider
       ) {
         return;
       }
@@ -74,10 +109,20 @@ export default function InboxComposerDockBridge() {
       currentChat = chat;
       currentComposer = composer;
       currentMessages = messages;
+      currentRow = row;
+      currentTextarea = textarea;
+      currentChannelNote = channelNote;
+      currentTools = tools;
+      currentDivider = divider;
       inboxOriginalStyle = inbox.getAttribute("style");
       chatOriginalStyle = chat.getAttribute("style");
       composerOriginalStyle = composer.getAttribute("style");
       messagesOriginalStyle = messages?.getAttribute("style") ?? null;
+      rowOriginalStyle = row?.getAttribute("style") ?? null;
+      textareaOriginalStyle = textarea?.getAttribute("style") ?? null;
+      channelNoteOriginalStyle = channelNote?.getAttribute("style") ?? null;
+      toolsOriginalStyle = tools?.getAttribute("style") ?? null;
+      dividerOriginalStyle = divider?.getAttribute("style") ?? null;
       resizeObserver.observe(chat);
       resizeObserver.observe(composer);
     }
@@ -95,13 +140,30 @@ export default function InboxComposerDockBridge() {
       const chat = inbox?.querySelector<HTMLElement>(".sx-chat") ?? null;
       const composer = chat?.querySelector<HTMLElement>(".sx-composer") ?? null;
       const messages = chat?.querySelector<HTMLElement>(".sx-messages") ?? null;
+      const row = composer?.querySelector<HTMLElement>(".sx-composer-row") ?? null;
+      const textarea = composer?.querySelector<HTMLTextAreaElement>("textarea") ?? null;
+      const channelNote =
+        composer?.querySelector<HTMLElement>(".sx-composer-channel-note") ?? null;
+      const tools = composer?.querySelector<HTMLElement>(".sx-composer-tools") ?? null;
+      const divider =
+        composer?.querySelector<HTMLElement>(".sx-composer-divider") ?? null;
 
       if (!inbox || !chat || !composer || !shouldDock()) {
         restoreCurrent();
         return;
       }
 
-      rememberNodes(inbox, chat, composer, messages);
+      rememberNodes(
+        inbox,
+        chat,
+        composer,
+        messages,
+        row,
+        textarea,
+        channelNote,
+        tools,
+        divider,
+      );
 
       const chatStyle = window.getComputedStyle(chat);
       const rect = chat.getBoundingClientRect();
@@ -130,6 +192,13 @@ export default function InboxComposerDockBridge() {
         0,
         window.innerHeight - (viewportTop + viewportHeight),
       );
+      const layout = getInboxComposerDockLayout(visibleWidth);
+
+      restoreInlineStyle(row, rowOriginalStyle);
+      restoreInlineStyle(textarea, textareaOriginalStyle);
+      restoreInlineStyle(channelNote, channelNoteOriginalStyle);
+      restoreInlineStyle(tools, toolsOriginalStyle);
+      restoreInlineStyle(divider, dividerOriginalStyle);
 
       setImportant(inbox, "transform", "none");
       setImportant(inbox, "filter", "none");
@@ -149,23 +218,29 @@ export default function InboxComposerDockBridge() {
       setImportant(composer, "max-width", `${visibleWidth}px`);
       setImportant(composer, "min-width", "0");
       setImportant(composer, "min-height", "64px");
-      setImportant(composer, "max-height", `${Math.max(120, Math.min(320, viewportHeight * 0.5))}px`);
+      setImportant(
+        composer,
+        "max-height",
+        `${Math.max(120, Math.min(320, viewportHeight * 0.5))}px`,
+      );
       setImportant(composer, "display", "block");
       setImportant(composer, "visibility", "visible");
       setImportant(composer, "opacity", "1");
       setImportant(composer, "transform", "none");
       setImportant(composer, "overflow-x", "hidden");
       setImportant(composer, "overflow-y", "auto");
-      setImportant(composer, "z-index", "2147483000");
+      setImportant(composer, "z-index", String(INBOX_COMPOSER_DOCK_Z_INDEX));
       setImportant(composer, "background", "#ffffff");
-      setImportant(composer, "box-shadow", "0 -10px 28px rgba(15, 23, 42, 0.16)");
+      setImportant(
+        composer,
+        "box-shadow",
+        "0 -10px 28px rgba(15, 23, 42, 0.16)",
+      );
       composer.setAttribute("data-runtime-docked", "true");
 
-      const row = composer.querySelector<HTMLElement>(".sx-composer-row");
-      const textarea = composer.querySelector<HTMLTextAreaElement>("textarea");
       if (row) {
         setImportant(row, "display", "grid");
-        setImportant(row, "grid-template-columns", "auto minmax(0, 1fr) auto auto auto");
+        setImportant(row, "grid-template-columns", layout.rowTemplate);
         setImportant(row, "width", "100%");
         setImportant(row, "min-width", "0");
       }
@@ -179,19 +254,16 @@ export default function InboxComposerDockBridge() {
         setImportant(textarea, "font-size", "16px");
       }
 
-      if (visibleWidth < 720) {
-        const channelNote = composer.querySelector<HTMLElement>(".sx-composer-channel-note");
-        const tools = composer.querySelector<HTMLElement>(".sx-composer-tools");
-        const divider = composer.querySelector<HTMLElement>(".sx-composer-divider");
+      if (layout.compact) {
         if (channelNote) setImportant(channelNote, "display", "none");
         if (tools) setImportant(tools, "display", "none");
         if (divider) setImportant(divider, "display", "none");
-        if (row) {
-          setImportant(row, "grid-template-columns", "auto minmax(0, 1fr) auto");
-        }
       }
 
-      const composerHeight = Math.max(64, composer.getBoundingClientRect().height);
+      const composerHeight = Math.max(
+        64,
+        composer.getBoundingClientRect().height,
+      );
       setImportant(chat, "padding-bottom", `${composerHeight}px`);
       if (messages) {
         setImportant(messages, "padding-bottom", "16px");
@@ -215,9 +287,16 @@ export default function InboxComposerDockBridge() {
 
     window.addEventListener("resize", schedule, { passive: true });
     window.addEventListener("orientationchange", schedule, { passive: true });
-    window.addEventListener("scroll", schedule, { passive: true, capture: true });
-    window.visualViewport?.addEventListener("resize", schedule, { passive: true });
-    window.visualViewport?.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("scroll", schedule, {
+      passive: true,
+      capture: true,
+    });
+    window.visualViewport?.addEventListener("resize", schedule, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener("scroll", schedule, {
+      passive: true,
+    });
 
     schedule();
 
