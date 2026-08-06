@@ -338,7 +338,9 @@ export async function ensureMasterclassImageTemplates(actorId: string) {
   if (asset.kind !== "image") {
     throw new Error("Masterclass template sample must be an image.");
   }
-  const sampleFile = new File([data], asset.originalName, {
+  const sampleBytes = new ArrayBuffer(data.byteLength);
+  new Uint8Array(sampleBytes).set(data);
+  const sampleFile = new File([sampleBytes], asset.originalName, {
     type: asset.mimeType,
   });
   const sample = await uploadTemplateSampleToMeta({
