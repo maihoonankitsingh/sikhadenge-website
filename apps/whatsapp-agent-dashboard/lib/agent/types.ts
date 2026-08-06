@@ -64,6 +64,13 @@ export type AgentLeadContext = {
   counselorRequested?: boolean | null;
 };
 
+export type AgentMasterclassContext = {
+  name: string;
+  dateLabel: string;
+  timeLabel: string;
+  communityUrl: string;
+};
+
 export type AgentKnowledgeReference = {
   chunkId: string;
   documentId: string;
@@ -81,6 +88,7 @@ export type AgentInput = {
   history?: AgentHistoryMessage[];
   contact?: AgentContactContext | null;
   lead?: AgentLeadContext | null;
+  masterclass?: AgentMasterclassContext | null;
 };
 
 export type AgentSafetyResult = {

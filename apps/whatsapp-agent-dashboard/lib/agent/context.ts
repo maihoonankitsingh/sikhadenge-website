@@ -65,6 +65,21 @@ export async function buildAgentInputFromConversation(input: {
 
   if (!conversation) return null;
 
+  let masterclass: AgentInput["masterclass"] = null;
+
+  try {
+    const { getMasterclassAgentConfigForConversation } = await import(
+      "../automation/masterclass-registration-flow"
+    );
+
+    masterclass = await getMasterclassAgentConfigForConversation(
+      conversation.id,
+    );
+  } catch {
+    // Agent analysis must remain available even if snapshot lookup fails.
+    masterclass = null;
+  }
+
   const history = conversation.messages
     .slice()
     .reverse()
@@ -121,5 +136,6 @@ export async function buildAgentInputFromConversation(input: {
           counselorRequested: conversation.lead.counselorRequested,
         }
       : null,
+    masterclass,
   };
 }
