@@ -446,11 +446,12 @@ export async function submitMasterclassImageTemplates(actorId: string) {
 }
 
 export async function assertMasterclassImageTemplatesReady(
-  config = await getMasterclassImageConfig(),
+  config?: MasterclassImageConfig,
 ): Promise<void> {
+  const resolvedConfig = config ?? (await getMasterclassImageConfig());
   const templates = await loadImageTemplates();
   if (
-    config.message1ImageAssetId &&
+    resolvedConfig.message1ImageAssetId &&
     templates.instant?.status !== TemplateStatus.APPROVED
   ) {
     throw new Error(
@@ -458,7 +459,7 @@ export async function assertMasterclassImageTemplatesReady(
     );
   }
   if (
-    effectiveMessage2ImageAssetId(config) &&
+    effectiveMessage2ImageAssetId(resolvedConfig) &&
     templates.reminder?.status !== TemplateStatus.APPROVED
   ) {
     throw new Error(
