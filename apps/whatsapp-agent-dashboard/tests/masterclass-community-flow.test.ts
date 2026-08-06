@@ -35,6 +35,7 @@ function replyFor(input: Partial<AgentInput> & { customerMessage: string }) {
       history: input.history ?? [],
       contact: input.contact ?? { name: "Rahul Kumar" },
       lead: input.lead ?? { stage: "NEW" },
+      masterclass: input.masterclass ?? null,
     },
     classification,
   });
@@ -146,6 +147,27 @@ function replyFor(input: Partial<AgentInput> & { customerMessage: string }) {
   assert.match(result.reply, /WhatsApp app update/iu);
   assert.match(result.reply, /Chrome browser/iu);
   assert.match(result.reply, /screenshot/iu);
+}
+
+{
+  const result = replyFor({
+    customerMessage: "Masterclass kab hai aur kitne baje?",
+    masterclass: {
+      name: "Free AI Expert Masterclass",
+      dateLabel: "Monday, 31 August",
+      timeLabel: "09:15 PM",
+      communityUrl:
+        "https://chat.whatsapp.com/SnapshotConsistency123",
+    },
+  });
+
+  assert.ok(result);
+  assert.equal(result.intent, "BATCH_SCHEDULE");
+  assert.match(result.reply, /Monday, 31 August/iu);
+  assert.match(result.reply, /09:15 PM/iu);
+  assert.match(result.reply, /SnapshotConsistency123/u);
+  assert.doesNotMatch(result.reply, /06 August 2026/iu);
+  assert.doesNotMatch(result.reply, /08:00 PM IST/iu);
 }
 
 console.log("PASS: masterclass-community-flow");

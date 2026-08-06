@@ -48,7 +48,23 @@ function enabled(): boolean {
   return !["0", "false", "no", "off", "disabled"].includes(value);
 }
 
-function config(): MasterclassConfig {
+function config(
+  override?: AgentInput["masterclass"],
+): MasterclassConfig {
+  const name = override?.name?.trim();
+  const dateLabel = override?.dateLabel?.trim();
+  const timeLabel = override?.timeLabel?.trim();
+  const communityUrl = override?.communityUrl?.trim();
+
+  if (name && dateLabel && timeLabel && communityUrl) {
+    return {
+      name,
+      dateLabel,
+      timeLabel,
+      communityUrl,
+    };
+  }
+
   return {
     name:
       process.env.MASTERCLASS_NAME?.trim() ||
@@ -167,7 +183,7 @@ export function generateMasterclassCommunityReply(input: {
     isGoalQuestion(lastAssistant);
   if (!active) return null;
 
-  const cfg = config();
+  const cfg = config(agentInput.masterclass);
   const commonLeadUpdates: AgentLeadUpdates = {
     interestedCourse: "Become AI Expert – Free Masterclass",
   };

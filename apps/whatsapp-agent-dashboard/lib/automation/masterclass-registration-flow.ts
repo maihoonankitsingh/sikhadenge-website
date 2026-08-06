@@ -1009,6 +1009,46 @@ export async function getMasterclassAgentConfig(): Promise<MasterclassConfig> {
   }
 }
 
+export async function getMasterclassAgentConfigForConversation(
+  conversationId: string,
+): Promise<MasterclassConfig | null> {
+  const normalizedConversationId = clean(conversationId, 100);
+  if (!normalizedConversationId) return null;
+
+  const events = await prisma.webhookEvent.findMany({
+    where: {
+      eventType: ENROLLMENT_EVENT_TYPE,
+      payload: {
+        path: ["conversationId"],
+        equals: normalizedConversationId,
+      },
+    },
+    orderBy: { receivedAt: "desc" },
+    take: 20,
+    select: { payload: true },
+  });
+
+  const enrollment = events
+    .map((event) => parseEnrollment(event.payload))
+    .find(
+      (item) =>
+        Boolean(item?.instantMessageId) &&
+        (item?.status === "PENDING_REMINDER" ||
+          item?.status === "COMPLETED"),
+    );
+
+  if (!enrollment) return null;
+
+  return {
+    name: "Free AI Expert Masterclass",
+    dateLabel:
+      `${enrollment.snapshot.classDay}, ` +
+      enrollment.snapshot.classDate,
+    timeLabel: enrollment.snapshot.classTime,
+    communityUrl: enrollment.snapshot.communityLink,
+  };
+}
+
 function normalizePhone(value: unknown): string {
   const digits = clean(value, 40).replace(/\D/g, "");
   if (digits.length < 8 || digits.length > 15) {

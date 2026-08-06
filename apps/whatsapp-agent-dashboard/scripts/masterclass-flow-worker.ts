@@ -65,7 +65,9 @@ async function runCycle(): Promise<void> {
         import("../lib/outbound/outbound-service"),
       ]);
     const reminders = await dispatchDueMasterclassFollowUps({ limit: 100 });
-    const outbound = await dispatchQueuedOutboundBatch(50);
+    const outbound = await dispatchQueuedOutboundBatch(50, {
+      idempotencyPrefix: "masterclass:",
+    });
     if (
       reminders.due > 0 ||
       reminders.failed > 0 ||

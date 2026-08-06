@@ -640,13 +640,32 @@ export async function dispatchOutboundMessage(
   }
 }
 
-export async function dispatchQueuedOutboundBatch(limit = 10) {
+export async function dispatchQueuedOutboundBatch(
+  limit = 10,
+  options?: {
+    idempotencyPrefix?: string;
+  },
+) {
   const safeLimit = Math.max(1, Math.min(50, Math.floor(limit)));
+  const idempotencyPrefix = compact(
+    options?.idempotencyPrefix ?? "",
+    200,
+  );
+
+  const where: Prisma.WhatsAppMessageWhereInput = {
+    direction: MessageDirection.OUTBOUND,
+    status: MessageStatus.QUEUED,
+  };
+
+  if (idempotencyPrefix) {
+    where.rawPayload = {
+      path: ["outbound", "idempotencyKey"],
+      string_starts_with: idempotencyPrefix,
+    };
+  }
+
   const queued = await prisma.whatsAppMessage.findMany({
-    where: {
-      direction: MessageDirection.OUTBOUND,
-      status: MessageStatus.QUEUED,
-    },
+    where,
     orderBy: { createdAt: "asc" },
     take: safeLimit,
     select: { id: true },
