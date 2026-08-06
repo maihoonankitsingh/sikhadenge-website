@@ -5,8 +5,10 @@ import {
   MessageStatus,
   MessageType,
   Prisma,
+  TemplateStatus,
 } from "@prisma/client";
 
+import { resolveMasterclassImageForOutbound } from "../automation/masterclass-image-flow";
 import { prisma } from "../db/prisma";
 import {
   dashboardMediaUrl,
@@ -78,6 +80,15 @@ function mediaTypeFromMessageType(type: MessageType): OutboundMediaType {
   throw new Error("Queued message is not a supported media type.");
 }
 
+function metadataMediaType(value: unknown): OutboundMediaType | null {
+  return value === "image" ||
+    value === "document" ||
+    value === "video" ||
+    value === "audio"
+    ? value
+    : null;
+}
+
 function withContext(
   payload: PreparedMetaMessage,
   replyToMetaMessageId: string | null,
@@ -85,6 +96,32 @@ function withContext(
   return replyToMetaMessageId
     ? { ...payload, context: { message_id: replyToMetaMessageId } }
     : payload;
+}
+
+function withTemplateHeaderMedia(
+  components: unknown[],
+  mediaType: OutboundMediaType,
+  metaMediaId: string,
+): unknown[] {
+  const remaining = components.filter((component) => {
+    if (!component || typeof component !== "object" || Array.isArray(component)) {
+      return true;
+    }
+    const type = (component as Record<string, unknown>).type;
+    return typeof type !== "string" || type.trim().toLowerCase() !== "header";
+  });
+  return [
+    {
+      type: "header",
+      parameters: [
+        {
+          type: mediaType,
+          [mediaType]: { id: metaMediaId },
+        },
+      ],
+    },
+    ...remaining,
+  ];
 }
 
 function preparedPayload(input: {
@@ -128,7 +165,14 @@ function preparedPayload(input: {
 
     if (mediaType === "image") {
       return withContext(
-        { ...base, type: "image", image: { id: input.metaMediaId, ...(caption ? { caption } : {}) } },
+        {
+          ...base,
+          type: "image",
+          image: {
+            id: input.metaMediaId,
+            ...(caption ? { caption } : {}),
+          },
+        },
         input.replyToMetaMessageId,
       );
     }
@@ -148,7 +192,14 @@ function preparedPayload(input: {
     }
     if (mediaType === "video") {
       return withContext(
-        { ...base, type: "video", video: { id: input.metaMediaId, ...(caption ? { caption } : {}) } },
+        {
+          ...base,
+          type: "video",
+          video: {
+            id: input.metaMediaId,
+            ...(caption ? { caption } : {}),
+          },
+        },
         input.replyToMetaMessageId,
       );
     }
@@ -172,10 +223,50 @@ function preparedPayload(input: {
   );
 }
 
+async function masterclassImageContent(
+  input: QueueOutboundInput,
+  idempotencyKey: string,
+): Promise<OutboundContent> {
+  const image = await resolveMasterclassImageForOutbound(idempotencyKey);
+  if (!image?.assetId) return input.content;
+
+  if (input.content.kind === "text") {
+    return {
+      kind: "media",
+      assetId: image.assetId,
+      mediaType: "image",
+      caption: input.content.text,
+      replyToMetaMessageId: input.content.replyToMetaMessageId,
+    };
+  }
+
+  if (input.content.kind === "template") {
+    if (
+      !image.imageTemplateId ||
+      image.imageTemplateStatus !== TemplateStatus.APPROVED
+    ) {
+      throw new Error(
+        `${image.kind === "instant" ? "Message 1" : "Message 2"} image template is not approved.`,
+      );
+    }
+    return {
+      kind: "template",
+      templateId: image.imageTemplateId,
+      components: input.content.components,
+      headerMediaAssetId: image.assetId,
+      headerMediaType: "image",
+    };
+  }
+
+  return input.content;
+}
+
 export async function queueOutboundMessage(input: QueueOutboundInput) {
   const now = input.now ?? new Date();
   const idempotencyKey = compact(input.idempotencyKey, 200);
   if (!idempotencyKey) throw new Error("Outbound idempotency key is required.");
+
+  const content = await masterclassImageContent(input, idempotencyKey);
 
   const conversation = await prisma.whatsAppConversation.findUnique({
     where: { id: input.conversationId },
@@ -196,9 +287,9 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
   if (!conversation) throw new Error("Conversation not found.");
 
   const template =
-    input.content.kind === "template"
+    content.kind === "template"
       ? await prisma.whatsAppTemplate.findUnique({
-          where: { id: input.content.templateId },
+          where: { id: content.templateId },
           select: {
             id: true,
             name: true,
@@ -207,19 +298,24 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
           },
         })
       : null;
-  if (input.content.kind === "template" && !template) {
+  if (content.kind === "template" && !template) {
     throw new Error("WhatsApp template not found.");
   }
 
-  const mediaAsset =
-    input.content.kind === "media"
-      ? await loadMediaAsset(input.content.assetId)
-      : null;
-  if (
-    input.content.kind === "media" &&
-    mediaAsset &&
-    mediaAsset.kind !== input.content.mediaType
-  ) {
+  const mediaAssetId =
+    content.kind === "media"
+      ? content.assetId
+      : content.kind === "template"
+        ? content.headerMediaAssetId || null
+        : null;
+  const mediaType =
+    content.kind === "media"
+      ? content.mediaType
+      : content.kind === "template"
+        ? content.headerMediaType || null
+        : null;
+  const mediaAsset = mediaAssetId ? await loadMediaAsset(mediaAssetId) : null;
+  if (mediaAsset && mediaType && mediaAsset.kind !== mediaType) {
     throw new Error("Selected media type does not match the uploaded file.");
   }
 
@@ -232,7 +328,7 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
       serviceWindowExpiresAt: conversation.serviceWindowExpiresAt,
       templateStatus: template?.status ?? null,
     },
-    content: input.content,
+    content,
     now,
   });
   if (!policy.allowed) {
@@ -252,22 +348,22 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
           payload: toJson({
             conversationId: conversation.id,
             idempotencyKey,
-            kind: input.content.kind,
-            assetId: input.content.kind === "media" ? input.content.assetId : null,
+            kind: content.kind,
+            assetId: mediaAssetId,
           }),
           attemptCount: 1,
         },
       });
 
       const text =
-        input.content.kind === "text"
-          ? input.content.text.trim().slice(0, 4_096)
-          : input.content.kind === "media"
-            ? input.content.caption?.trim().slice(0, 1_024) || null
+        content.kind === "text"
+          ? content.text.trim().slice(0, 4_096)
+          : content.kind === "media"
+            ? content.caption?.trim().slice(0, 1_024) || null
             : null;
       const replyToMetaMessageId =
-        input.content.kind === "text" || input.content.kind === "media"
-          ? input.content.replyToMetaMessageId?.trim().slice(0, 300) || null
+        content.kind === "text" || content.kind === "media"
+          ? content.replyToMetaMessageId?.trim().slice(0, 300) || null
           : null;
       const message = await transaction.whatsAppMessage.create({
         data: {
@@ -281,24 +377,24 @@ export async function queueOutboundMessage(input: QueueOutboundInput) {
           mediaUrl: mediaAsset ? dashboardMediaUrl(mediaAsset.id) : null,
           mimeType: mediaAsset?.mimeType ?? null,
           filename:
-            input.content.kind === "media"
-              ? compact(input.content.filename || mediaAsset?.originalName || "attachment", 180)
-              : null,
+            content.kind === "media"
+              ? compact(
+                  content.filename || mediaAsset?.originalName || "attachment",
+                  180,
+                )
+              : mediaAsset?.originalName ?? null,
           replyToMetaMessageId,
           rawPayload: toJson({
             outbound: {
               idempotencyKey,
-              kind: input.content.kind,
+              kind: content.kind,
               templateId: template?.id ?? null,
               templateName: template?.name ?? null,
               language: template?.language ?? null,
               components:
-                input.content.kind === "template"
-                  ? input.content.components ?? []
-                  : [],
-              assetId: input.content.kind === "media" ? input.content.assetId : null,
-              mediaType:
-                input.content.kind === "media" ? input.content.mediaType : null,
+                content.kind === "template" ? content.components ?? [] : [],
+              assetId: mediaAssetId,
+              mediaType,
               serviceWindowOpen: policy.serviceWindowOpen,
               queuedAt: now.toISOString(),
               attemptCount: 0,
@@ -385,7 +481,12 @@ export async function dispatchOutboundMessage(
     message.mediaId ||
     (typeof metadata.metaMediaId === "string" ? metadata.metaMediaId : null);
   const assetId = typeof metadata.assetId === "string" ? metadata.assetId : null;
-  if (isMediaMessageType(message.type) && !metaMediaId) {
+  const queuedMediaType = metadataMediaType(metadata.mediaType);
+  const needsMetaMedia = Boolean(
+    assetId && (isMediaMessageType(message.type) || message.type === MessageType.TEMPLATE),
+  );
+
+  if (needsMetaMedia && !metaMediaId) {
     if (!assetId) throw new Error("Queued media asset ID is missing.");
     if (mode === "live") {
       const { asset, data } = await readMediaAsset(assetId);
@@ -400,6 +501,13 @@ export async function dispatchOutboundMessage(
     }
   }
 
+  const preparedComponents =
+    message.type === MessageType.TEMPLATE &&
+    queuedMediaType &&
+    metaMediaId
+      ? withTemplateHeaderMedia(components, queuedMediaType, metaMediaId)
+      : components;
+
   const payload = preparedPayload({
     waId: message.conversation.contact.waId,
     type: message.type,
@@ -407,7 +515,7 @@ export async function dispatchOutboundMessage(
     filename: message.filename,
     replyToMetaMessageId: message.replyToMetaMessageId,
     template,
-    components,
+    components: preparedComponents,
     metaMediaId,
   });
 
@@ -440,7 +548,7 @@ export async function dispatchOutboundMessage(
         where: { id: message.id },
         data: {
           metaMessageId: sent.metaMessageId,
-          mediaId: isMediaMessageType(message.type) ? metaMediaId : message.mediaId,
+          mediaId: needsMetaMedia ? metaMediaId : message.mediaId,
           status: MessageStatus.SENT,
           failureCode: null,
           failureReason: null,
@@ -448,7 +556,7 @@ export async function dispatchOutboundMessage(
             ...asRecord(message.rawPayload),
             outbound: {
               ...metadata,
-              metaMediaId: isMediaMessageType(message.type) ? metaMediaId : null,
+              metaMediaId: needsMetaMedia ? metaMediaId : null,
               attemptCount: previousAttempts + 1,
               lastAttemptAt: sentAt.toISOString(),
               metaAcceptedStatus: sent.statusCode,
@@ -483,17 +591,16 @@ export async function dispatchOutboundMessage(
       reason: null,
     };
   } catch (error) {
-    const reason = (error instanceof Error ? error.message : "Meta send failed.").slice(
-      0,
-      1_000,
-    );
+    const reason = (
+      error instanceof Error ? error.message : "Meta send failed."
+    ).slice(0, 1_000);
     const retriable = isRetriableMetaError(error) && previousAttempts < 4;
     const nextStatus = retriable ? MessageStatus.QUEUED : MessageStatus.FAILED;
 
     await prisma.whatsAppMessage.update({
       where: { id: message.id },
       data: {
-        mediaId: isMediaMessageType(message.type) ? metaMediaId : message.mediaId,
+        mediaId: needsMetaMedia ? metaMediaId : message.mediaId,
         status: nextStatus,
         failureCode: retriable ? "RETRIABLE_META_ERROR" : "META_SEND_FAILED",
         failureReason: reason,
@@ -501,7 +608,7 @@ export async function dispatchOutboundMessage(
           ...asRecord(message.rawPayload),
           outbound: {
             ...metadata,
-            metaMediaId: isMediaMessageType(message.type) ? metaMediaId : null,
+            metaMediaId: needsMetaMedia ? metaMediaId : null,
             attemptCount: previousAttempts + 1,
             lastAttemptAt: new Date().toISOString(),
             lastError: reason,
