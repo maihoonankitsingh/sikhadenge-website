@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentDashboardUser } from "../../../../lib/auth/session";
 import {
-  assertMasterclassImageTemplatesReady,
+  effectiveMessage2ImageAssetId,
   ensureMasterclassImageTemplates,
   getMasterclassImageOverview,
   saveMasterclassImageConfig,
@@ -63,6 +63,48 @@ function applyAgentRuntime(config: {
   process.env.MASTERCLASS_COMMUNITY_URL = config.communityLink;
 }
 
+function candidateAssetId(value: unknown, current: string | null): string | null {
+  if (value === undefined) return current;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+async function assertCandidateImageTemplatesReady(
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const overview = await getMasterclassImageOverview();
+  const candidate = {
+    message1ImageAssetId: candidateAssetId(
+      payload.message1ImageAssetId,
+      overview.config.message1ImageAssetId,
+    ),
+    useSameImageForMessage2:
+      payload.useSameImageForMessage2 === undefined
+        ? overview.config.useSameImageForMessage2
+        : payload.useSameImageForMessage2 === true,
+    message2ImageAssetId: candidateAssetId(
+      payload.message2ImageAssetId,
+      overview.config.message2ImageAssetId,
+    ),
+  };
+
+  if (
+    candidate.message1ImageAssetId &&
+    overview.templates.instant?.status !== "APPROVED"
+  ) {
+    throw new Error(
+      "Message 1 image template must be APPROVED before enabling the flow.",
+    );
+  }
+  if (
+    effectiveMessage2ImageAssetId(candidate) &&
+    overview.templates.reminder?.status !== "APPROVED"
+  ) {
+    throw new Error(
+      "Message 2 image template must be APPROVED before enabling the flow.",
+    );
+  }
+}
+
 async function combinedOverview() {
   const [base, imageFlow] = await Promise.all([
     getMasterclassFlowOverview(),
@@ -90,16 +132,16 @@ export async function PATCH(request: Request) {
         "AUTOMATION_ACTIONS_ENABLED must be true before this flow can be enabled.",
       );
     }
+    if (payload.enabled === true) {
+      await assertCandidateImageTemplatesReady(payload);
+    }
 
-    const imageConfig = await saveMasterclassImageConfig({
+    await saveMasterclassImageConfig({
       message1ImageAssetId: payload.message1ImageAssetId,
       useSameImageForMessage2: payload.useSameImageForMessage2,
       message2ImageAssetId: payload.message2ImageAssetId,
       actorId: auth.user.id,
     });
-    if (payload.enabled === true) {
-      await assertMasterclassImageTemplatesReady(imageConfig);
-    }
 
     const updated = await saveMasterclassFlowConfig({
       enabled: payload.enabled,
