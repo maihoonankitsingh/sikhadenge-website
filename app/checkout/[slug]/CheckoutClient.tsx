@@ -141,6 +141,7 @@ export default function CheckoutClient({ product }: Props) {
   const viewedRef = useRef(false);
   const checkoutRef = useRef(false);
   const addPaymentRef = useRef(false);
+  const purchaseRef = useRef(false);
 
   const bumpSlug = "masterclass-upgrade-toolkit";
   const bumpPrice = 187;
@@ -394,6 +395,15 @@ export default function CheckoutClient({ product }: Props) {
               response?.razorpay_order_id ||
               "";
 
+            if (!transactionId) {
+              throw new Error("Verified payment is missing a transaction identifier.");
+            }
+
+            if (purchaseRef.current) return;
+            purchaseRef.current = true;
+
+            const purchaseEventId = `store_purchase_${transactionId}`;
+
             trackMetaEvent("Purchase", {
               content_name: includeBump
                 ? `${product.title} + Masterclass Upgrade Toolkit`
@@ -404,7 +414,7 @@ export default function CheckoutClient({ product }: Props) {
               content_type: "product",
               value: total,
               currency: "INR",
-            });
+            }, purchaseEventId);
 
             trackGoogleEvent("purchase", {
               transaction_id: transactionId,
