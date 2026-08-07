@@ -37,18 +37,6 @@ export async function POST(req: Request) {
         razorpay_order_id,
         razorpay_payment_id
       }));
-      console.error("STORE_VERIFY_PAYMENT_SIGNATURE_MISMATCH", JSON.stringify({
-        razorpay_order_id,
-        razorpay_payment_id
-      }));
-      await prisma.storeOrder.updateMany({
-        where: { paymentOrderId: razorpay_order_id },
-        data: {
-          paymentStatus: "FAILED",
-          paymentId: razorpay_payment_id,
-          paymentSignature: razorpay_signature,
-        },
-      });
 
       return NextResponse.json(
         { success: false, error: "Invalid payment signature" },
@@ -73,6 +61,39 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Store order not found" },
         { status: 404 }
+      );
+    }
+
+    if (order.paymentStatus === "PAID") {
+      if (order.paymentId === razorpay_payment_id) {
+        console.log("STORE_VERIFY_PAYMENT_IDEMPOTENT_OK", JSON.stringify({
+          razorpay_order_id,
+          razorpay_payment_id,
+          storeOrderId: order.id,
+        }));
+
+        return NextResponse.json({
+          success: true,
+          storeOrderId: order.id,
+          paymentStatus: order.paymentStatus,
+          product: order.product,
+          redirectUrl: `/payment-success?storeOrderId=${order.id}`,
+        });
+      }
+
+      console.error("STORE_VERIFY_PAYMENT_ALREADY_PAID_CONFLICT", JSON.stringify({
+        razorpay_order_id,
+        incomingPaymentId: razorpay_payment_id,
+        existingPaymentId: order.paymentId,
+        storeOrderId: order.id,
+      }));
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Store order is already paid with a different payment",
+        },
+        { status: 409 }
       );
     }
 
