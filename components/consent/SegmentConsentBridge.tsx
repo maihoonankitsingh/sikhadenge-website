@@ -3,6 +3,9 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
+const SEGMENT_ENABLED =
+  process.env.NEXT_PUBLIC_SEGMENT_ENABLED === "true";
+
 const SEGMENT_WRITE_KEY =
   process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY || "";
 
@@ -35,6 +38,7 @@ type SegmentWindow =
     analytics?: SegmentAnalytics;
     __sdSegmentInitialized?: boolean;
     __sdSegmentLastPageKey?: string;
+    __sdSegmentLoadFailed?: boolean;
   };
 
 const SEGMENT_METHODS = [
@@ -63,8 +67,11 @@ const SEGMENT_METHODS = [
 ];
 
 function hasValidWriteKey(): boolean {
-  return /^[A-Za-z0-9_-]{20,80}$/.test(
-    SEGMENT_WRITE_KEY
+  return (
+    SEGMENT_ENABLED &&
+    /^[A-Za-z0-9_-]{20,80}$/.test(
+      SEGMENT_WRITE_KEY
+    )
   );
 }
 
@@ -159,6 +166,15 @@ function getOrCreateAnalytics():
       "analytics"
     );
 
+    script.addEventListener(
+      "error",
+      () => {
+        segmentWindow.__sdSegmentLoadFailed = true;
+        segmentWindow.__sdSegmentInitialized = false;
+      },
+      { once: true },
+    );
+
     document.head.appendChild(
       script
     );
@@ -186,6 +202,10 @@ export function SegmentConsentBridge() {
 
     const segmentWindow =
       window as SegmentWindow;
+
+    if (segmentWindow.__sdSegmentLoadFailed) {
+      return;
+    }
 
     const analytics =
       getOrCreateAnalytics();

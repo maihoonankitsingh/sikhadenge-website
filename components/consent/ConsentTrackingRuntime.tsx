@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import ClarityEvents from "@/app/ClarityEvents";
 import { SikhadengeAnalyticsRuntime } from "@/components/analytics/SikhadengeAnalyticsRuntime";
 import { ClarityConsentBridge } from "./ClarityConsentBridge";
@@ -13,7 +14,9 @@ export function ConsentTrackingRuntime() {
 
   return (
     <>
-      <GoogleConsentBridge />
+      <Suspense fallback={null}>
+        <GoogleConsentBridge />
+      </Suspense>
       <ClarityConsentBridge />
       <MetaConsentBridge />
 

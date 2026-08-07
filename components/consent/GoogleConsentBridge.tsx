@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { toGoogleConsentModeState } from "@/lib/consent";
 import { useConsent } from "./ConsentProvider";
 
@@ -13,10 +14,11 @@ const GOOGLE_PLACEHOLDER_ID = "G-XXXXXXXXXX";
 type GtagFunction = (...args: unknown[]) => void;
 
 type GoogleWindow = typeof window & {
-  dataLayer?: unknown[][];
+  dataLayer?: unknown[];
   gtag?: GtagFunction;
   __sdGoogleConsentDefaultSet?: boolean;
   __sdGoogleAnalyticsInitialized?: boolean;
+  __sdGoogleAnalyticsLastPageKey?: string;
 };
 
 function getOrCreateGtag(): GtagFunction {
@@ -28,17 +30,38 @@ function getOrCreateGtag(): GtagFunction {
     return googleWindow.gtag;
   }
 
-  const gtag: GtagFunction = (...args: unknown[]) => {
+  const gtag = function gtag(): void {
     googleWindow.dataLayer = googleWindow.dataLayer || [];
-    googleWindow.dataLayer.push(args);
-  };
+    googleWindow.dataLayer.push(arguments);
+  } as GtagFunction;
 
   googleWindow.gtag = gtag;
 
   return gtag;
 }
 
+function ensureGoogleScript(
+  measurementId: string,
+): void {
+  if (document.getElementById(GOOGLE_SCRIPT_ID)) {
+    return;
+  }
+
+  const script = document.createElement("script");
+
+  script.id = GOOGLE_SCRIPT_ID;
+  script.async = true;
+  script.src =
+    "https://www.googletagmanager.com/gtag/js?id=" +
+    encodeURIComponent(measurementId);
+
+  document.head.appendChild(script);
+}
+
 export function GoogleConsentBridge() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ?? "";
   const { state, ready, hasDecision } = useConsent();
 
   useEffect(() => {
@@ -70,34 +93,45 @@ export function GoogleConsentBridge() {
       gtag(
         "consent",
         "update",
-        toGoogleConsentModeState(state)
+        toGoogleConsentModeState(state),
       );
     }
 
-    if (state.analytics !== "granted") return;
+    if (state.analytics !== "granted") {
+      googleWindow.__sdGoogleAnalyticsLastPageKey = undefined;
+      return;
+    }
 
     if (!googleWindow.__sdGoogleAnalyticsInitialized) {
       gtag("js", new Date());
 
       gtag("config", GA4_MEASUREMENT_ID, {
-        send_page_view: true,
+        send_page_view: false,
       });
 
       googleWindow.__sdGoogleAnalyticsInitialized = true;
     }
 
-    if (document.getElementById(GOOGLE_SCRIPT_ID)) return;
+    ensureGoogleScript(GA4_MEASUREMENT_ID);
 
-    const script = document.createElement("script");
+    const pagePath = pathname || window.location.pathname || "/";
+    const pageKey = search ? `${pagePath}?${search}` : pagePath;
 
-    script.id = GOOGLE_SCRIPT_ID;
-    script.async = true;
-    script.src =
-      "https://www.googletagmanager.com/gtag/js?id=" +
-      encodeURIComponent(GA4_MEASUREMENT_ID);
+    if (
+      googleWindow.__sdGoogleAnalyticsLastPageKey === pageKey
+    ) {
+      return;
+    }
 
-    document.head.appendChild(script);
-  }, [state, ready, hasDecision]);
+    googleWindow.__sdGoogleAnalyticsLastPageKey = pageKey;
+
+    gtag("event", "page_view", {
+      send_to: GA4_MEASUREMENT_ID,
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: pageKey,
+    });
+  }, [pathname, search, state, ready, hasDecision]);
 
   return null;
 }
