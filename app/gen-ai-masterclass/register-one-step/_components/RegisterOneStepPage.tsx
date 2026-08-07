@@ -143,6 +143,7 @@ export default function RegisterOneStepPage() {
       source: tracking.source,
       page: tracking.page,
         advertisingConsent,
+      whatsappConsent: true,
       utm_source: tracking.utm_source || null,
       utm_medium: tracking.utm_medium || null,
       utm_campaign: tracking.utm_campaign || null,
@@ -480,8 +481,9 @@ export default function RegisterOneStepPage() {
               ) : null}
 
               <p className="text-[7px] leading-4 text-slate-500">
-                By submitting, you agree to SikhaDenge 
-                <a href="/terms" className="underline hover:text-slate-700">Terms</a> and <a href="/privacy-policy" className="underline hover:text-slate-700">Privacy Policy</a>.
+                By submitting, you agree to receive registration, class and reminder updates for this masterclass on WhatsApp from SikhaDenge and agree to SikhaDenge{" "}
+                <a href="/terms" className="underline hover:text-slate-700">Terms</a> and{" "}
+                <a href="/privacy-policy" className="underline hover:text-slate-700">Privacy Policy</a>.
               </p>
             </form>
           </div>

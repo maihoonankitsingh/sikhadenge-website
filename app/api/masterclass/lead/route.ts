@@ -61,6 +61,71 @@ async function pushToNeodoveRealtime(input: {
   }
 }
 
+
+async function pushToMasterclassWhatsApp(input: {
+  registrationId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  consent: boolean;
+}) {
+  const endpoint =
+    process.env.MASTERCLASS_WHATSAPP_WEBHOOK_ENDPOINT?.trim() || "";
+
+  const secret =
+    process.env.MASTERCLASS_WHATSAPP_WEBHOOK_SECRET?.trim() || "";
+
+  if (!endpoint || !secret) {
+    throw new Error(
+      "Masterclass WhatsApp webhook is not configured"
+    );
+  }
+
+  const mobile = normalizeIndianMobile(input.phone);
+
+  if (!/^[6-9]\d{9}$/.test(mobile)) {
+    throw new Error(
+      "Invalid Indian WhatsApp mobile number"
+    );
+  }
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${secret}`,
+    },
+    body: JSON.stringify({
+      registrationId: input.registrationId,
+      name: input.name,
+      phone: `91${mobile}`,
+      email: input.email || undefined,
+      source: "WEBSITE_MASTERCLASS",
+      consent: input.consent,
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000),
+  });
+
+  const responseText =
+    await response.text().catch(() => "");
+
+  if (!response.ok) {
+    throw new Error(
+      `Masterclass WhatsApp webhook failed: ` +
+      `${response.status} ${responseText.slice(0, 300)}`
+    );
+  }
+
+  console.log(
+    "MASTERCLASS_WHATSAPP_WEBHOOK_OK",
+    {
+      status: response.status,
+      registrationId: input.registrationId,
+    }
+  );
+}
+
 function sha256(value: string) {
   return crypto.createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
 }
@@ -226,7 +291,6 @@ export async function POST(req: NextRequest) {
     if (tracking.fbclid) data.fbclid = tracking.fbclid;
 
     let created: any = null;
-    let isNewLead = false;
 
     if (page === "/masterclass") {
       const existingZoomJoin = await prisma.masterclassZoomJoin.findFirst({
@@ -270,7 +334,6 @@ export async function POST(req: NextRequest) {
             },
           });
 
-      isNewLead = !existingZoomJoin;
     } else {
       const existingLead = await prisma.masterclassLead.findUnique({
         where: { phone },
@@ -302,11 +365,12 @@ export async function POST(req: NextRequest) {
             data,
           });
 
-      isNewLead = !existingLead;
     }
 
+    let submissionId: string | null = null;
+
     try {
-      await prisma.masterclassSubmission.create({
+      const submission = await prisma.masterclassSubmission.create({
         data: {
           leadId: created?.id ?? null,
           name: created?.name ?? name,
@@ -338,6 +402,7 @@ export async function POST(req: NextRequest) {
           referrer: raw?.referrer ? String(raw.referrer) : null,
         } as any,
       });
+      submissionId = submission.id;
       console.log("MASTERCLASS_SUBMISSION_LOG_OK_APP", {
         leadId: created?.id ?? null,
         phone: created?.phone ?? phone,
@@ -347,32 +412,46 @@ export async function POST(req: NextRequest) {
       console.error("MASTERCLASS_SUBMISSION_LOG_FAILED_APP", submissionErr);
     }
 
-    if (isNewLead) {
-      try {
-        const recentQueued = await prisma.aisensyReminderQueue.findFirst({
-          where: {
-            phone: created.phone,
-            createdAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        });
 
-        if (!recentQueued) {
-          await prisma.aisensyReminderQueue.create({
-            data: {
-              phone: created.phone,
-              name: created.name || "Friend",
-              sendAt: new Date(Date.now() + 10 * 60 * 1000),
-              status: "pending",
-            },
+    const whatsappConsent =
+      raw?.whatsappConsent === true;
+
+    if (whatsappConsent) {
+      const registrationId =
+        submissionId || created?.id || "";
+
+      if (!registrationId) {
+        console.error(
+          "MASTERCLASS_WHATSAPP_WEBHOOK_SKIPPED",
+          { reason: "registration_id_missing" }
+        );
+      } else {
+        try {
+          await pushToMasterclassWhatsApp({
+            registrationId,
+            name,
+            phone,
+            email,
+            consent: true,
           });
+        } catch (whatsappError) {
+          console.error(
+            "MASTERCLASS_WHATSAPP_WEBHOOK_ERROR",
+            whatsappError
+          );
         }
-      } catch (queueError) {
-        console.error("MASTERCLASS_AISENSY_QUEUE_CREATE_ERROR", queueError);
       }
+    } else {
+      console.log(
+        "MASTERCLASS_WHATSAPP_WEBHOOK_SKIPPED",
+        {
+          reason: "whatsapp_consent_not_granted",
+          registrationId:
+            submissionId || created?.id || null,
+        }
+      );
     }
+
 
     const cookieAdvertisingConsent = readAdvertisingConsentFromRequest(req);
     if (
