@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import JsonLd from "./_components/JsonLd";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { ConsentManager } from "@/components/consent/ConsentManager";
+import { GoogleConsentDefaults } from "@/components/consent/GoogleConsentDefaults";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -105,6 +106,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <GoogleConsentDefaults />
         {/* SIKHADENGE_FAVICON_FORCE_WHITE_BG */}
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon-white-bg-48x48.png?v=whitebg-folder-final" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-white-bg-32x32.png?v=whitebg-folder-final" />
