@@ -15,6 +15,7 @@ function assert(condition, message) {
 const middleware = read("middleware.ts");
 const dashboardAuth = read("lib/dashboard-auth.ts");
 const authLayout = read("app/auth/layout.tsx");
+const dashboardLayout = read("app/dashboard/layout.tsx");
 const adminLayout = read("app/admin/layout.tsx");
 const adminDashboard = read("app/admin/dashboard/page.tsx");
 const adminMasterclassDashboard = read("app/admin/masterclass-dashboard/page.tsx");
@@ -35,6 +36,7 @@ assert(middleware.includes("DASHBOARD_AUTH_COOKIE"), "middleware must validate t
 assert(middleware.includes("isDashboardAuthValueValid"), "middleware dashboard session validation is missing");
 assert(middleware.includes('"X-Robots-Tag"'), "private X-Robots-Tag is missing");
 assert(dashboardAuth.includes("DASHBOARD_AUTH_TOKEN"), "central dashboard token validation is missing");
+assert(dashboardLayout.includes("isDashboardAuthValueValid"), "dashboard server layout must use shared session validation");
 assert(adminLayout.includes("isDashboardAuthValueValid"), "admin server layout auth is missing");
 assert(authLayout.includes("index: false"), "auth pages must remain noindex");
 assert(loginRoute.includes("sanitizeDashboardNext"), "dashboard login must sanitize the post-login return target");
