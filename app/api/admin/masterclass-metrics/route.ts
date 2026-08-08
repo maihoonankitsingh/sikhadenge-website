@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  DASHBOARD_AUTH_COOKIE,
+  isDashboardAuthValueValid,
+} from "@/lib/dashboard-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,22 +23,16 @@ function dayRangeIST(dateStr?: string | null) {
   return { base, start, end };
 }
 
-function getTokenFromReq(req: Request) {
-  const u = new URL(req.url);
-  return (u.searchParams.get("token") || "").trim();
-}
-
 export async function GET(req: NextRequest) {
+  const authCookie = req.cookies.get(DASHBOARD_AUTH_COOKIE)?.value || "";
+  if (!isDashboardAuthValueValid(authCookie)) {
+    return NextResponse.json(
+      { ok: false, error: "unauthorized" },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   try {
-    const required = (process.env.ADMIN_TOKEN || "").trim();
-
-    if (required) {
-      const got = getTokenFromReq(req);
-      if (!got || got !== required) {
-        return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-      }
-    }
-
     const u = new URL(req.url);
     const date = u.searchParams.get("date");
     const { base, start, end } = dayRangeIST(date);
@@ -116,7 +114,7 @@ export async function GET(req: NextRequest) {
           Pragma: "no-cache",
           Expires: "0",
         },
-      }
+      },
     );
   } catch (e) {
     console.error("masterclass-metrics error:", e);
@@ -136,13 +134,13 @@ export async function GET(req: NextRequest) {
         recent: [],
       },
       {
-        status: 200,
+        status: 500,
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },
-      }
+      },
     );
   }
 }
