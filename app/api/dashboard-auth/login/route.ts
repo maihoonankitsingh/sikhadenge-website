@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  DASHBOARD_AUTH_COOKIE,
+  DASHBOARD_NEXT_COOKIE,
+  sanitizeDashboardNext,
+} from "@/lib/dashboard-auth";
 
 export const dynamic = "force-dynamic";
-
-const COOKIE_NAME = "sd_dash_auth";
 
 function buildPublicBase(req: NextRequest): string {
   const forwardedProto = (req.headers.get("x-forwarded-proto") || "https")
@@ -26,6 +29,9 @@ export async function POST(req: NextRequest) {
 
     const user = String(form.get("user") || "").trim();
     const pass = String(form.get("pass") || "").trim();
+    const formNext = String(form.get("next") || "").trim();
+    const cookieNext = req.cookies.get(DASHBOARD_NEXT_COOKIE)?.value || "";
+    const nextTarget = sanitizeDashboardNext(cookieNext || formNext);
 
     const expectedUser = (process.env.DASHBOARD_AUTH_USER || "").trim();
     const expectedPass = (process.env.DASHBOARD_AUTH_PASS || "").trim();
@@ -34,26 +40,23 @@ export async function POST(req: NextRequest) {
     if (!expectedUser || !expectedPass || !token) {
       return NextResponse.json(
         { ok: false, error: "Dashboard auth env vars are missing" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     const base = buildPublicBase(req);
 
     if (user !== expectedUser || pass !== expectedPass) {
-      return NextResponse.redirect(
-        new URL("/auth/dashboard-login?error=invalid", base),
-        { status: 302 }
-      );
+      const invalidUrl = new URL("/auth/dashboard-login", base);
+      invalidUrl.searchParams.set("error", "invalid");
+      invalidUrl.searchParams.set("next", nextTarget);
+      return NextResponse.redirect(invalidUrl, { status: 302 });
     }
 
-    const res = NextResponse.redirect(
-      new URL("/", base),
-      { status: 302 }
-    );
+    const res = NextResponse.redirect(new URL(nextTarget, base), { status: 302 });
 
     res.cookies.set({
-      name: COOKIE_NAME,
+      name: DASHBOARD_AUTH_COOKIE,
       value: token,
       httpOnly: true,
       secure: true,
@@ -61,13 +64,22 @@ export async function POST(req: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 12,
     });
+    res.cookies.set({
+      name: DASHBOARD_NEXT_COOKIE,
+      value: "",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
 
     return res;
   } catch (error) {
     console.error("DASHBOARD_LOGIN_ERROR", error);
     return NextResponse.json(
       { ok: false, error: "Login failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
