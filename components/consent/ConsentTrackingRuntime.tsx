@@ -18,7 +18,9 @@ export function ConsentTrackingRuntime() {
         <GoogleConsentBridge />
       </Suspense>
       <ClarityConsentBridge />
-      <MetaConsentBridge />
+      <Suspense fallback={null}>
+        <MetaConsentBridge />
+      </Suspense>
 
       {ready && state.analytics === "granted" ? (
         <>
