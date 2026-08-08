@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trackMetaEvent } from "@/lib/metaPixel";
 import { trackGoogleEvent } from "@/lib/analytics";
 import {
+  hasAdvertisingConsent,
+  hasAnalyticsConsent,
+} from "@/lib/consent";
+import {
   ShieldCheck,
   Lock,
   CreditCard,
@@ -125,6 +129,152 @@ async function verifyPaymentWithRetry(payload: {
   }
 
   throw new Error(lastError);
+}
+
+type StoredCheckoutAttribution = Record<string, unknown>;
+
+function readCheckoutTouch(
+  key: string
+): StoredCheckoutAttribution {
+  try {
+    const raw = window.localStorage.getItem(key);
+
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+
+    return parsed && typeof parsed === "object"
+      ? (parsed as StoredCheckoutAttribution)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function checkoutTouchString(
+  value: StoredCheckoutAttribution,
+  key: string
+) {
+  const candidate = value[key];
+
+  return typeof candidate === "string"
+    ? candidate.trim()
+    : "";
+}
+
+function buildCheckoutAttribution() {
+  const analyticsAllowed = hasAnalyticsConsent();
+  const advertisingAllowed = hasAdvertisingConsent();
+
+  const url = new URL(window.location.href);
+  const safeUrl = new URL(url.toString());
+
+  if (!advertisingAllowed) {
+    safeUrl.searchParams.delete("fbclid");
+    safeUrl.searchParams.delete("gclid");
+    safeUrl.searchParams.delete("msclkid");
+  }
+
+  const firstTouch = analyticsAllowed
+    ? readCheckoutTouch("sd_first_touch")
+    : {};
+
+  const lastTouch = analyticsAllowed
+    ? readCheckoutTouch("sd_last_touch")
+    : {};
+
+  const pick = (
+    params: string[],
+    storedKey: string
+  ) => {
+    for (const key of params) {
+      const current = url.searchParams.get(key)?.trim();
+
+      if (current) return current;
+    }
+
+    return (
+      checkoutTouchString(lastTouch, storedKey) ||
+      checkoutTouchString(firstTouch, storedKey) ||
+      ""
+    );
+  };
+
+  return {
+    utmSource: analyticsAllowed
+      ? pick(["utm_source"], "utm_source")
+      : "",
+
+    utmMedium: analyticsAllowed
+      ? pick(["utm_medium"], "utm_medium")
+      : "",
+
+    utmCampaign: analyticsAllowed
+      ? pick(["utm_campaign"], "utm_campaign")
+      : "",
+
+    utmContent: analyticsAllowed
+      ? pick(["utm_content"], "utm_content")
+      : "",
+
+    utmTerm: analyticsAllowed
+      ? pick(["utm_term"], "utm_term")
+      : "",
+
+    utmId: analyticsAllowed
+      ? pick(["utm_id"], "utm_id")
+      : "",
+
+    utmCampaignId: analyticsAllowed
+      ? pick(
+          ["utm_campaign_id", "campaign_id"],
+          "utm_campaign_id"
+        )
+      : "",
+
+    utmAdsetId: analyticsAllowed
+      ? pick(
+          ["utm_adset_id", "adset_id"],
+          "utm_adset_id"
+        )
+      : "",
+
+    utmAdId: analyticsAllowed
+      ? pick(
+          ["utm_ad_id", "ad_id"],
+          "utm_ad_id"
+        )
+      : "",
+
+    fbclid: advertisingAllowed
+      ? pick(["fbclid"], "fbclid")
+      : "",
+
+    gclid: advertisingAllowed
+      ? pick(["gclid"], "gclid")
+      : "",
+
+    msclkid: advertisingAllowed
+      ? pick(["msclkid"], "msclkid")
+      : "",
+
+    landingPage: analyticsAllowed
+      ? (
+          checkoutTouchString(firstTouch, "landing_url") ||
+          checkoutTouchString(lastTouch, "landing_url") ||
+          safeUrl.toString()
+        )
+      : "",
+
+    referrer: analyticsAllowed
+      ? (
+          checkoutTouchString(firstTouch, "referrer") ||
+          checkoutTouchString(lastTouch, "referrer") ||
+          document.referrer ||
+          ""
+        )
+      : "",
+  };
 }
 
 export default function CheckoutClient({ product }: Props) {
@@ -304,7 +454,8 @@ export default function CheckoutClient({ product }: Props) {
         return;
       }
 
-      const url = new URL(window.location.href);
+      const attribution = buildCheckoutAttribution();
+
       const payload = {
         slug: product.slug,
         bumpSlug,
@@ -314,18 +465,7 @@ export default function CheckoutClient({ product }: Props) {
         phone: cleanPhone,
         age,
         source: "store_checkout",
-        utmSource: url.searchParams.get("utm_source") || "",
-        utmMedium: url.searchParams.get("utm_medium") || "",
-        utmCampaign: url.searchParams.get("utm_campaign") || "",
-        utmContent: url.searchParams.get("utm_content") || "",
-        utmTerm: url.searchParams.get("utm_term") || "",
-        gclid: url.searchParams.get("gclid") || "",
-        fbclid: url.searchParams.get("fbclid") || "",
-        utmCampaignId: url.searchParams.get("utm_campaign_id") || "",
-        utmAdsetId: url.searchParams.get("utm_adset_id") || "",
-        utmAdId: url.searchParams.get("utm_ad_id") || "",
-        landingPage: url.toString(),
-        referrer: document.referrer || "",
+        ...attribution,
       };
 
       const res = await fetch("/api/store/create-order", {

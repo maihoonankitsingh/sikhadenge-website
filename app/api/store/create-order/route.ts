@@ -39,8 +39,10 @@ export async function POST(req: Request) {
     const utmCampaign = String(body?.utmCampaign || "").trim() || null;
     const utmContent = String(body?.utmContent || "").trim() || null;
     const utmTerm = String(body?.utmTerm || "").trim() || null;
+    const utmId = String(body?.utmId || "").trim() || null;
     const gclid = String(body?.gclid || "").trim() || null;
     const fbclid = String(body?.fbclid || "").trim() || null;
+    const msclkid = String(body?.msclkid || "").trim() || null;
     const utmCampaignId = String(body?.utmCampaignId || "").trim() || null;
     const utmAdsetId = String(body?.utmAdsetId || "").trim() || null;
     const utmAdId = String(body?.utmAdId || "").trim() || null;
@@ -133,8 +135,10 @@ export async function POST(req: Request) {
         bumpProductId: bumpProduct?.id || "",
         bumpSlug: bumpProduct?.slug || "",
         age: age || "",
+        utmId: utmId || "",
         gclid: gclid || "",
         fbclid: fbclid || "",
+        msclkid: msclkid || "",
         utmCampaignId: utmCampaignId || "",
         utmAdsetId: utmAdsetId || "",
         utmAdId: utmAdId || "",
@@ -163,8 +167,10 @@ export async function POST(req: Request) {
           totalAmount,
           includeBump,
           age,
+          utmId,
           gclid,
           fbclid,
+          msclkid,
           utmCampaignId,
           utmAdsetId,
           utmAdId,

@@ -5,6 +5,10 @@ import { ChevronDown } from "lucide-react";
 import { trackMetaEvent } from "@/lib/metaPixel";
 
 import { trackEvent } from "@/lib/analytics";
+import {
+  hasAdvertisingConsent,
+  hasAnalyticsConsent,
+} from "@/lib/consent";
 import { CONTACT_FAQS } from "./contactFaqs";
 type FormState = {
   name: string;
@@ -264,6 +268,148 @@ function buildWhatsAppUrl(form: FormState) {
   return `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
+type StoredContactAttribution = Record<string, unknown>;
+
+function readContactTouch(key: string): StoredContactAttribution {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+
+    return parsed && typeof parsed === "object"
+      ? (parsed as StoredContactAttribution)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function readContactTouchString(
+  value: StoredContactAttribution,
+  key: string
+) {
+  const candidate = value[key];
+
+  return typeof candidate === "string"
+    ? candidate.trim()
+    : "";
+}
+
+function buildContactAttribution() {
+  const analyticsAllowed = hasAnalyticsConsent();
+  const advertisingAllowed = hasAdvertisingConsent();
+
+  const url = new URL(window.location.href);
+  const safeUrl = new URL(url.toString());
+
+  if (!advertisingAllowed) {
+    safeUrl.searchParams.delete("fbclid");
+    safeUrl.searchParams.delete("gclid");
+    safeUrl.searchParams.delete("msclkid");
+  }
+
+  const firstTouch = analyticsAllowed
+    ? readContactTouch("sd_first_touch")
+    : {};
+
+  const lastTouch = analyticsAllowed
+    ? readContactTouch("sd_last_touch")
+    : {};
+
+  const pick = (
+    params: string[],
+    storedKey: string
+  ) => {
+    for (const key of params) {
+      const current = url.searchParams.get(key)?.trim();
+      if (current) return current;
+    }
+
+    return (
+      readContactTouchString(lastTouch, storedKey) ||
+      readContactTouchString(firstTouch, storedKey) ||
+      null
+    );
+  };
+
+  return {
+    utm_source: analyticsAllowed
+      ? pick(["utm_source"], "utm_source")
+      : null,
+
+    utm_medium: analyticsAllowed
+      ? pick(["utm_medium"], "utm_medium")
+      : null,
+
+    utm_campaign: analyticsAllowed
+      ? pick(["utm_campaign"], "utm_campaign")
+      : null,
+
+    utm_term: analyticsAllowed
+      ? pick(["utm_term"], "utm_term")
+      : null,
+
+    utm_content: analyticsAllowed
+      ? pick(["utm_content"], "utm_content")
+      : null,
+
+    utm_id: analyticsAllowed
+      ? pick(["utm_id"], "utm_id")
+      : null,
+
+    utm_campaign_id: analyticsAllowed
+      ? pick(
+          ["utm_campaign_id", "campaign_id"],
+          "utm_campaign_id"
+        )
+      : null,
+
+    utm_adset_id: analyticsAllowed
+      ? pick(
+          ["utm_adset_id", "adset_id"],
+          "utm_adset_id"
+        )
+      : null,
+
+    utm_ad_id: analyticsAllowed
+      ? pick(
+          ["utm_ad_id", "ad_id"],
+          "utm_ad_id"
+        )
+      : null,
+
+    fbclid: advertisingAllowed
+      ? pick(["fbclid"], "fbclid")
+      : null,
+
+    gclid: advertisingAllowed
+      ? pick(["gclid"], "gclid")
+      : null,
+
+    msclkid: advertisingAllowed
+      ? pick(["msclkid"], "msclkid")
+      : null,
+
+    landing_page: analyticsAllowed
+      ? (
+          readContactTouchString(firstTouch, "landing_url") ||
+          readContactTouchString(lastTouch, "landing_url") ||
+          safeUrl.toString()
+        )
+      : null,
+
+    referrer: analyticsAllowed
+      ? (
+          readContactTouchString(firstTouch, "referrer") ||
+          readContactTouchString(lastTouch, "referrer") ||
+          document.referrer ||
+          null
+        )
+      : null,
+  };
+}
+
 export default function ContactPage() {
   const [openContactFaqIndex, setOpenContactFaqIndex] = useState<number | null>(0);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -294,6 +440,8 @@ export default function ContactPage() {
     setSubmitting(true);
     setStatus(null);
 
+    const attribution = buildContactAttribution();
+
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
@@ -314,6 +462,7 @@ export default function ContactPage() {
           email: form.email.trim(),
           specialization: form.specialization,
           category: form.category,
+          ...attribution,
         }),
       });
 

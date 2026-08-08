@@ -251,16 +251,38 @@ export async function POST(req: NextRequest) {
 
     const page = String(raw?.page ?? "/masterclass").trim();
 
+    const advertisingAttributionAllowed =
+      raw?.advertisingConsent === "granted" &&
+      readAdvertisingConsentFromRequest(req) === "granted";
+
     const tracking = {
       utm_source: raw?.utm_source ? String(raw.utm_source) : "",
       utm_medium: raw?.utm_medium ? String(raw.utm_medium) : "",
       utm_campaign: raw?.utm_campaign ? String(raw.utm_campaign) : "",
       utm_term: raw?.utm_term ? String(raw.utm_term) : "",
       utm_content: raw?.utm_content ? String(raw.utm_content) : "",
+      utm_id: raw?.utm_id ? String(raw.utm_id) : "",
       utm_campaign_id: raw?.utm_campaign_id ? String(raw.utm_campaign_id) : "",
       utm_adset_id: raw?.utm_adset_id ? String(raw.utm_adset_id) : "",
       utm_ad_id: raw?.utm_ad_id ? String(raw.utm_ad_id) : "",
-      fbclid: raw?.fbclid ? String(raw.fbclid) : "",
+      fbclid:
+        advertisingAttributionAllowed && raw?.fbclid
+          ? String(raw.fbclid)
+          : "",
+      gclid:
+        advertisingAttributionAllowed && raw?.gclid
+          ? String(raw.gclid)
+          : "",
+      msclkid:
+        advertisingAttributionAllowed && raw?.msclkid
+          ? String(raw.msclkid)
+          : "",
+      landing_url: raw?.landingUrl
+        ? String(raw.landingUrl).slice(0, 190)
+        : "",
+      referrer: raw?.referrer
+        ? String(raw.referrer).slice(0, 190)
+        : "",
     };
 
     const laptopBool = laptop === "true" ? true : laptop === "false" ? false : null;
@@ -285,10 +307,15 @@ export async function POST(req: NextRequest) {
     if (tracking.utm_campaign) data.utm_campaign = tracking.utm_campaign;
     if (tracking.utm_term) data.utm_term = tracking.utm_term;
     if (tracking.utm_content) data.utm_content = tracking.utm_content;
+    if (tracking.utm_id) data.utm_id = tracking.utm_id;
     if (tracking.utm_campaign_id) data.utm_campaign_id = tracking.utm_campaign_id;
     if (tracking.utm_adset_id) data.utm_adset_id = tracking.utm_adset_id;
     if (tracking.utm_ad_id) data.utm_ad_id = tracking.utm_ad_id;
     if (tracking.fbclid) data.fbclid = tracking.fbclid;
+    if (tracking.gclid) data.gclid = tracking.gclid;
+    if (tracking.msclkid) data.msclkid = tracking.msclkid;
+    if (tracking.landing_url) data.landing_url = tracking.landing_url;
+    if (tracking.referrer) data.referrer = tracking.referrer;
 
     let created: any = null;
 
@@ -355,10 +382,15 @@ export async function POST(req: NextRequest) {
               utm_campaign: data.utm_campaign,
               utm_term: data.utm_term,
               utm_content: data.utm_content,
+              utm_id: data.utm_id,
               utm_campaign_id: data.utm_campaign_id,
               utm_adset_id: data.utm_adset_id,
               utm_ad_id: data.utm_ad_id,
               fbclid: data.fbclid,
+              gclid: data.gclid,
+              msclkid: data.msclkid,
+              landing_url: data.landing_url,
+              referrer: data.referrer,
             },
           })
         : await prisma.masterclassLead.create({
@@ -391,15 +423,15 @@ export async function POST(req: NextRequest) {
           utm_campaign: created?.utm_campaign ?? data.utm_campaign ?? null,
           utm_content: created?.utm_content ?? data.utm_content ?? null,
           utm_term: created?.utm_term ?? data.utm_term ?? null,
-          utm_id: created?.utm_id ?? null,
+          utm_id: created?.utm_id ?? data.utm_id ?? null,
           utm_campaign_id: created?.utm_campaign_id ?? data.utm_campaign_id ?? null,
           utm_adset_id: created?.utm_adset_id ?? data.utm_adset_id ?? null,
           utm_ad_id: created?.utm_ad_id ?? data.utm_ad_id ?? null,
           fbclid: created?.fbclid ?? data.fbclid ?? null,
-          gclid: created?.gclid ?? null,
-          msclkid: created?.msclkid ?? null,
-          landing_url: raw?.landingUrl ? String(raw.landingUrl) : null,
-          referrer: raw?.referrer ? String(raw.referrer) : null,
+          gclid: created?.gclid ?? data.gclid ?? null,
+          msclkid: created?.msclkid ?? data.msclkid ?? null,
+          landing_url: created?.landing_url ?? data.landing_url ?? null,
+          referrer: created?.referrer ?? data.referrer ?? null,
         } as any,
       });
       submissionId = submission.id;
@@ -453,11 +485,7 @@ export async function POST(req: NextRequest) {
     }
 
 
-    const cookieAdvertisingConsent = readAdvertisingConsentFromRequest(req);
-    if (
-      raw?.advertisingConsent === "granted" &&
-      cookieAdvertisingConsent === "granted"
-    ) {
+    if (advertisingAttributionAllowed) {
     try {
       await sendMetaLeadEvent({
         req,

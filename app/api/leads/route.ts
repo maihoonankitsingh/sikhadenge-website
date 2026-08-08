@@ -11,7 +11,32 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { name, phone, course, message, page, promoCode, device, utm_source, utm_medium, utm_campaign, utm_adset, utm_ad, utm_campaign_id, utm_adset_id, utm_ad_id, fbclid, landing_page, referrer } = body || {};
+    const {
+      name,
+      phone,
+      source,
+      course,
+      message,
+      page,
+      promoCode,
+      device,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      utm_term,
+      utm_content,
+      utm_id,
+      utm_adset,
+      utm_ad,
+      utm_campaign_id,
+      utm_adset_id,
+      utm_ad_id,
+      fbclid,
+      gclid,
+      msclkid,
+      landing_page,
+      referrer,
+    } = body || {};
 
     
     const stripTpl = (v: any) => {
@@ -41,7 +66,7 @@ if (!phone) {
       data: {
         name: name || null,
         phone,
-        source: "website-modal",
+        source: stripTpl(source) || "website-modal",
         status: "new",
           utmSource: stripTpl(utm_source),
           utmMedium: stripTpl(utm_medium),
@@ -64,16 +89,21 @@ if (!phone) {
           ip,
 
             tracking: {
-              utm_source: utm_source || null,
-              utm_medium: utm_medium || null,
-              utm_campaign: utm_campaign || null,
-              utm_adset: utm_adset || null,
-              utm_ad: utm_ad || null,
-              utm_campaign_id: utm_campaign_id || null,
-              utm_adset_id: utm_adset_id || null,
-              utm_ad_id: utm_ad_id || null,
+              utm_source: stripTpl(utm_source),
+              utm_medium: stripTpl(utm_medium),
+              utm_campaign: stripTpl(utm_campaign),
+              utm_term: stripTpl(utm_term),
+              utm_content: stripTpl(utm_content),
+              utm_id: stripTpl(utm_id),
+              utm_adset: stripTpl(utm_adset),
+              utm_ad: stripTpl(utm_ad),
+              utm_campaign_id: stripTpl(utm_campaign_id),
+              utm_adset_id: stripTpl(utm_adset_id),
+              utm_ad_id: stripTpl(utm_ad_id),
               fbclid: stripTpl(fbclid),
-              landing_page: landing_page || null,
+              gclid: stripTpl(gclid),
+              msclkid: stripTpl(msclkid),
+              landing_page: stripTpl(landing_page),
               referrer: stripTpl(referrer),
             },
         }),

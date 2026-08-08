@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { trackGoogleEvent } from "@/lib/analytics";
+import { hasAdvertisingConsent } from "@/lib/consent";
 
 declare global {
   interface Window {
@@ -16,6 +17,24 @@ type TouchData = {
   landing_path: string;
   referrer_host: string;
   captured_at: string;
+
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  utm_id?: string;
+
+  utm_campaign_id?: string;
+  utm_adset_id?: string;
+  utm_ad_id?: string;
+
+  fbclid?: string;
+  gclid?: string;
+  msclkid?: string;
+
+  landing_url?: string;
+  referrer?: string;
 };
 
 const FIRST_TOUCH_KEY = "sd_first_touch";
@@ -183,10 +202,28 @@ export default function ClarityEvents() {
       setTag("lead_score_reason", reason);
     };
 
-    const tagAttribution = () => {
+    const tagAttribution = (allowReferrerRefresh = false) => {
       const params = new URLSearchParams(window.location.search);
       const referrerHost = getReferrerHost();
+      const currentHost = window.location.hostname.replace(/^www\./, "");
       const sourceData = detectSource(params, referrerHost);
+      const advertisingAllowed = hasAdvertisingConsent();
+
+      const getParam = (...keys: string[]) => {
+        for (const key of keys) {
+          const value = clean(params.get(key), 250);
+          if (value) return value;
+        }
+        return "";
+      };
+
+      const safeLandingUrl = new URL(window.location.href);
+
+      if (!advertisingAllowed) {
+        safeLandingUrl.searchParams.delete("fbclid");
+        safeLandingUrl.searchParams.delete("gclid");
+        safeLandingUrl.searchParams.delete("msclkid");
+      }
 
       const touch: TouchData = {
         source: sourceData.source,
@@ -195,27 +232,96 @@ export default function ClarityEvents() {
         landing_path: window.location.pathname,
         referrer_host: referrerHost,
         captured_at: new Date().toISOString(),
+
+        utm_source: getParam("utm_source"),
+        utm_medium: getParam("utm_medium"),
+        utm_campaign: getParam("utm_campaign"),
+        utm_content: getParam("utm_content"),
+        utm_term: getParam("utm_term"),
+        utm_id: getParam("utm_id"),
+
+        utm_campaign_id: getParam(
+          "utm_campaign_id",
+          "campaign_id"
+        ),
+        utm_adset_id: getParam(
+          "utm_adset_id",
+          "adset_id"
+        ),
+        utm_ad_id: getParam(
+          "utm_ad_id",
+          "ad_id"
+        ),
+
+        fbclid: advertisingAllowed
+          ? getParam("fbclid")
+          : "",
+        gclid: advertisingAllowed
+          ? getParam("gclid")
+          : "",
+        msclkid: advertisingAllowed
+          ? getParam("msclkid")
+          : "",
+
+        landing_url: safeLandingUrl.toString().slice(0, 2000),
+        referrer: String(document.referrer || "").slice(0, 2000),
       };
 
       const firstTouch = readTouch(FIRST_TOUCH_KEY);
-      if (!firstTouch) writeTouch(FIRST_TOUCH_KEY, touch);
-      writeTouch(LAST_TOUCH_KEY, touch);
+      const lastTouch = readTouch(LAST_TOUCH_KEY);
+
+      if (!firstTouch) {
+        writeTouch(FIRST_TOUCH_KEY, touch);
+      }
+
+      const hasCampaignSignal = Boolean(
+        touch.utm_source ||
+        touch.utm_medium ||
+        touch.utm_campaign ||
+        touch.utm_content ||
+        touch.utm_term ||
+        touch.utm_id ||
+        touch.utm_campaign_id ||
+        touch.utm_adset_id ||
+        touch.utm_ad_id ||
+        touch.fbclid ||
+        touch.gclid ||
+        touch.msclkid
+      );
+
+      const externalReferrer =
+        referrerHost !== "direct" &&
+        referrerHost !== "unknown" &&
+        referrerHost !== currentHost;
+
+      const shouldRefreshLastTouch =
+        !lastTouch ||
+        hasCampaignSignal ||
+        (allowReferrerRefresh && externalReferrer);
+
+      if (shouldRefreshLastTouch) {
+        writeTouch(LAST_TOUCH_KEY, touch);
+      }
 
       const activeFirstTouch = firstTouch || touch;
 
-      setTag("traffic_source", touch.source);
-      setTag("traffic_medium", touch.medium);
-      setTag("traffic_campaign", touch.campaign);
-      setTag("referrer_host", touch.referrer_host);
-      setTag("landing_path", touch.landing_path);
+      const activeLastTouch = shouldRefreshLastTouch
+        ? touch
+        : lastTouch || touch;
+
+      setTag("traffic_source", activeLastTouch.source);
+      setTag("traffic_medium", activeLastTouch.medium);
+      setTag("traffic_campaign", activeLastTouch.campaign);
+      setTag("referrer_host", activeLastTouch.referrer_host);
+      setTag("landing_path", activeLastTouch.landing_path);
 
       setTag("first_touch_source", activeFirstTouch.source);
       setTag("first_touch_medium", activeFirstTouch.medium);
       setTag("first_touch_campaign", activeFirstTouch.campaign);
 
-      setTag("last_touch_source", touch.source);
-      setTag("last_touch_medium", touch.medium);
-      setTag("last_touch_campaign", touch.campaign);
+      setTag("last_touch_source", activeLastTouch.source);
+      setTag("last_touch_medium", activeLastTouch.medium);
+      setTag("last_touch_campaign", activeLastTouch.campaign);
 
       setTag("lead_score", readLeadScore());
     };
@@ -410,13 +516,14 @@ export default function ClarityEvents() {
 
     const onRouteChange = () => {
       window.setTimeout(() => {
+        tagAttribution();
         maskSensitiveElements();
         tagCurrentPage();
         onScroll();
       }, 50);
     };
 
-    tagAttribution();
+    tagAttribution(true);
     maskSensitiveElements();
     tagCurrentPage();
     onScroll();
