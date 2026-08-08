@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useConsent } from "./ConsentProvider";
 
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
@@ -19,6 +20,7 @@ type MetaWindow = typeof window & {
   fbq?: MetaPixelFunction;
   _fbq?: MetaPixelFunction;
   __sdMetaPixelInitialized?: boolean;
+  __sdMetaPixelLastPageKey?: string;
 };
 
 function getOrCreateMetaPixel(): MetaPixelFunction {
@@ -49,7 +51,24 @@ function getOrCreateMetaPixel(): MetaPixelFunction {
   return fbq;
 }
 
-export function MetaConsentBridge() {
+function ensureMetaScript(): void {
+  if (document.getElementById(META_SCRIPT_ID)) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.id = META_SCRIPT_ID;
+  script.async = true;
+  script.src = "https://connect.facebook.net/en_US/fbevents.js";
+
+  document.head.appendChild(script);
+}
+
+export function MetaConsentRuntime({
+  pageKey,
+}: {
+  pageKey: string | null;
+}) {
   const { state, ready } = useConsent();
 
   useEffect(() => {
@@ -58,15 +77,25 @@ export function MetaConsentBridge() {
     const metaWindow = window as MetaWindow;
 
     if (state.advertising !== "granted") {
+      metaWindow.__sdMetaPixelLastPageKey = undefined;
+
       if (typeof metaWindow.fbq === "function") {
         metaWindow.fbq("consent", "revoke");
       }
+
       return;
     }
 
-    if (!META_PIXEL_ID || META_PIXEL_ID === META_PLACEHOLDER_ID) return;
+    if (
+      !META_PIXEL_ID ||
+      META_PIXEL_ID === META_PLACEHOLDER_ID ||
+      !pageKey
+    ) {
+      return;
+    }
 
     const fbq = getOrCreateMetaPixel();
+
     fbq("consent", "grant");
 
     if (!metaWindow.__sdMetaPixelInitialized) {
@@ -74,17 +103,29 @@ export function MetaConsentBridge() {
       metaWindow.__sdMetaPixelInitialized = true;
     }
 
+    ensureMetaScript();
+
+    if (metaWindow.__sdMetaPixelLastPageKey === pageKey) {
+      return;
+    }
+
+    metaWindow.__sdMetaPixelLastPageKey = pageKey;
     fbq("track", "PageView");
-
-    if (document.getElementById(META_SCRIPT_ID)) return;
-
-    const script = document.createElement("script");
-    script.id = META_SCRIPT_ID;
-    script.async = true;
-    script.src = "https://connect.facebook.net/en_US/fbevents.js";
-
-    document.head.appendChild(script);
-  }, [state.advertising, ready]);
+  }, [pageKey, state.advertising, ready]);
 
   return null;
+}
+
+export function MetaConsentBridge() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ?? "";
+
+  const pageKey = pathname
+    ? search
+      ? `${pathname}?${search}`
+      : pathname
+    : null;
+
+  return <MetaConsentRuntime pageKey={pageKey} />;
 }
