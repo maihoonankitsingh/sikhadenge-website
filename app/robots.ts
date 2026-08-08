@@ -10,9 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: ["/", "/llms.txt", "/ai.txt"],
         disallow: [
           "/api/",
-          "/admin/",
-          "/dashboard/",
-          "/auth/",
           "/payment/",
           "/checkout/",
           "/influencer/login",
