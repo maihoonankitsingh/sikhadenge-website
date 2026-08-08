@@ -72,9 +72,12 @@ assert(!htmlSitemap.includes('href: "/admin'), "HTML sitemap must not link admin
 assert(!htmlSitemap.includes('href: "/payment'), "HTML sitemap must not link payment-state routes");
 assert(!htmlSitemap.includes('href: "/checkout'), "HTML sitemap must not link checkout-state routes");
 
-// robots.txt is crawl guidance only; keep private route exclusions as an additional layer.
-assert(robots.includes('"/dashboard/"'), "robots.txt dashboard exclusion is missing");
-assert(robots.includes('"/admin/"'), "robots.txt admin exclusion is missing");
+// Deindexing pages need crawler access to observe noindex. Keep private APIs and
+// transactional states disallowed, but do not robots-block protected page routes.
+assert(robots.includes('"/api/"'), "robots.txt API exclusion is missing");
+assert(!robots.includes('"/dashboard/"'), "dashboard must be crawlable so noindex can be observed");
+assert(!robots.includes('"/admin/"'), "admin pages must be crawlable so noindex can be observed");
+assert(!robots.includes('"/auth/"'), "auth pages must be crawlable so noindex can be observed");
 assert(robots.includes('sitemap: `${BASE}/sitemap.xml`'), "robots.txt sitemap declaration is missing");
 
 // Catch the known duplicate-brand regression in source files without traversing generated data files.
