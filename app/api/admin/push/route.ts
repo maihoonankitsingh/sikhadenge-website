@@ -1,7 +1,11 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import {
+  DASHBOARD_AUTH_COOKIE,
+  isDashboardAuthValueValid,
+} from "@/lib/dashboard-auth";
 
 const prisma = new PrismaClient();
 
@@ -9,20 +13,16 @@ function bad(status: number, error: string) {
   return NextResponse.json({ ok: false, error }, { status });
 }
 
-function isAuthed(req: Request) {
-  const url = new URL(req.url);
-  const token = url.searchParams.get("token") || req.headers.get("x-admin-token") || "";
-  const expected = process.env.ADMIN_TOKEN || "";
-  if (!expected) return false;
-  return token === expected;
+function isAuthed(req: NextRequest) {
+  const value = req.cookies.get(DASHBOARD_AUTH_COOKIE)?.value || "";
+  return isDashboardAuthValueValid(value);
 }
 
 function modelAccessor(model: string) {
-  // Prisma model accessor: MasterclassLead -> masterclassLead, ClassSession -> classSession, etc.
   return model.charAt(0).toLowerCase() + model.slice(1);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     if (!isAuthed(req)) return bad(401, "unauthorized");
 
@@ -52,20 +52,18 @@ export async function POST(req: Request) {
 
     const accessor = modelAccessor(model);
 
-    // @ts-ignore - dynamic prisma access
+    // @ts-ignore - dynamic prisma access constrained by the allowlist above.
     let rows = await prisma[accessor].findMany({
       where,
       take,
       orderBy: { createdAt: "desc" },
     }).catch(async () => {
-      // fallback if model has no createdAt
-      // @ts-ignore
+      // @ts-ignore - fallback for models without createdAt.
       return prisma[accessor].findMany({ where, take });
     });
 
     if (!Array.isArray(rows)) rows = [];
 
-    // webhook call must never hang
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
 
@@ -91,6 +89,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, pushed: rows.length }, { status: 200 });
   } catch (e: any) {
     console.error("admin push error:", e?.message || e);
-    return NextResponse.json({ ok:false, error:"server_error", detail:String(e?.message||e), where:"api/admin/push" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "server_error", detail: String(e?.message || e), where: "api/admin/push" },
+      { status: 500 },
+    );
   }
 }
