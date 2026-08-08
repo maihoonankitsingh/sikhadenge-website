@@ -31,6 +31,12 @@ jobs:
       - name: SEO safety gate
         run: npm run seo:check
 
+      - name: SEO helper syntax checks
+        run: |
+          node --check scripts/seo-guard.mjs
+          node --check scripts/generate-blog-prisma-client.mjs
+          node --check scripts/classify-blog-inventory.mjs
+
       - name: Generate blog Prisma client
         run: npm run blog:db:generate
 
