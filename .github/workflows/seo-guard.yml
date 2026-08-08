@@ -37,6 +37,9 @@ jobs:
           node --check scripts/generate-blog-prisma-client.mjs
           node --check scripts/classify-blog-inventory.mjs
 
+      - name: Blog classifier smoke test
+        run: npm run blog:classify -- --limit=250
+
       - name: Generate blog Prisma client
         run: npm run blog:db:generate
 
