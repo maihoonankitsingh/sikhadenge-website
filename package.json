@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "blog:db:generate": "node scripts/generate-blog-prisma-client.mjs",
+    "prebuild": "npm run blog:db:generate",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
