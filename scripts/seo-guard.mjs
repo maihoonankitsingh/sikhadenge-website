@@ -13,16 +13,50 @@ function assert(condition, message) {
 }
 
 const middleware = read("middleware.ts");
+const dashboardAuth = read("lib/dashboard-auth.ts");
+const adminLayout = read("app/admin/layout.tsx");
+const adminDashboard = read("app/admin/dashboard/page.tsx");
+const adminMasterclassDashboard = read("app/admin/masterclass-dashboard/page.tsx");
+const adminTableApi = read("app/api/admin/table/route.ts");
+const adminMetricsApi = read("app/api/admin/masterclass-metrics/route.ts");
+const adminPushApi = read("app/api/admin/push/route.ts");
+const adminPushControls = read("components/admin/AdminPushControls.tsx");
+const loginRoute = read("app/api/dashboard-auth/login/route.ts");
 const sitemapIndex = read("app/sitemap.xml/route.ts");
 const htmlSitemap = read("app/site-map/page.tsx");
 const robots = read("app/robots.ts");
 const packageJson = JSON.parse(read("package.json"));
 
-// P0: private routes require actual auth, not robots.txt alone.
-assert(middleware.includes('pathMatchesPrefix(pathname, "/dashboard")'), "middleware must intercept /dashboard");
-assert(middleware.includes('request.cookies.get("sd_dash_auth")'), "dashboard middleware auth cookie check is missing");
-assert(middleware.includes("DASHBOARD_AUTH_TOKEN"), "dashboard middleware token validation is missing");
-assert(middleware.includes('"X-Robots-Tag", "noindex, nofollow, noarchive"'), "private X-Robots-Tag is missing");
+// P0: private pages and admin APIs require actual session auth, not robots.txt alone.
+assert(middleware.includes('PRIVATE_PAGE_PREFIXES = ["/dashboard", "/admin"]'), "middleware must protect /dashboard and /admin pages");
+assert(middleware.includes('PRIVATE_API_PREFIXES = ["/api/admin"]'), "middleware must protect /api/admin endpoints");
+assert(middleware.includes("DASHBOARD_AUTH_COOKIE"), "middleware must validate the dashboard auth cookie");
+assert(middleware.includes("isDashboardAuthValueValid"), "middleware dashboard session validation is missing");
+assert(middleware.includes('"X-Robots-Tag"'), "private X-Robots-Tag is missing");
+assert(dashboardAuth.includes('DASHBOARD_AUTH_TOKEN'), "central dashboard token validation is missing");
+assert(adminLayout.includes("isDashboardAuthValueValid"), "admin server layout auth is missing");
+assert(loginRoute.includes("sanitizeDashboardNext"), "dashboard login must sanitize the post-login return target");
+assert(loginRoute.includes("DASHBOARD_NEXT_COOKIE"), "dashboard login must preserve the requested private destination safely");
+
+// Admin pages/APIs must not fall back to query-string ADMIN_TOKEN authentication.
+const legacyAdminTokenFiles = [
+  ["app/admin/dashboard/page.tsx", adminDashboard],
+  ["app/admin/masterclass-dashboard/page.tsx", adminMasterclassDashboard],
+  ["app/api/admin/table/route.ts", adminTableApi],
+  ["app/api/admin/masterclass-metrics/route.ts", adminMetricsApi],
+  ["app/api/admin/push/route.ts", adminPushApi],
+  ["components/admin/AdminPushControls.tsx", adminPushControls],
+];
+
+for (const [file, text] of legacyAdminTokenFiles) {
+  assert(!text.includes("ADMIN_TOKEN"), `${file} must not use legacy ADMIN_TOKEN auth`);
+  assert(!text.includes("?token="), `${file} must not put admin tokens in URLs`);
+  assert(!text.includes("searchParams?.token"), `${file} must not read admin tokens from page query params`);
+}
+
+assert(adminTableApi.includes("DASHBOARD_AUTH_COOKIE"), "admin table API must require dashboard session auth");
+assert(adminMetricsApi.includes("DASHBOARD_AUTH_COOKIE"), "admin metrics API must require dashboard session auth");
+assert(adminPushApi.includes("DASHBOARD_AUTH_COOKIE"), "admin push API must require dashboard session auth");
 
 // P1/P3: unreviewed fully generated families must stay out of the sitemap index.
 for (const risky of ["sitemap-expert", "sitemap-prompts", "sitemap-hindi", "sitemap-learn"]) {
@@ -41,7 +75,7 @@ assert(robots.includes('"/dashboard/"'), "robots.txt dashboard exclusion is miss
 assert(robots.includes('"/admin/"'), "robots.txt admin exclusion is missing");
 assert(robots.includes('sitemap: `${BASE}/sitemap.xml`'), "robots.txt sitemap declaration is missing");
 
-// Catch the known metadata regression in source files without traversing generated data files.
+// Catch the known duplicate-brand regression in source files without traversing generated data files.
 const sourceRoots = ["app", "components", "lib"];
 const duplicateBrand = /\|\s*Sikhadenge\s*\|\s*Sikhadenge/gi;
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
@@ -81,6 +115,8 @@ for (const script of guardedScripts) {
   const command = packageJson.scripts?.[script] || "";
   assert(command.includes("seo-guard.mjs"), `${script} must run the SEO guard before publishing/generation`);
 }
+
+assert(packageJson.scripts?.["blog:classify"]?.includes("classify-blog-inventory.mjs"), "blog:classify audit command is missing");
 
 if (failures.length) {
   console.error("SEO GUARD: FAIL");
