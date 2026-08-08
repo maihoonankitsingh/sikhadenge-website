@@ -31,6 +31,9 @@ jobs:
       - name: SEO safety gate
         run: npm run seo:check
 
+      - name: Generate blog Prisma client
+        run: npm run blog:db:generate
+
       - name: TypeScript check
         run: npx tsc --noEmit
 
