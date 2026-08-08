@@ -49,7 +49,7 @@ async function getMetrics(date: string, authCookie: string) {
     {
       cache: "no-store",
       headers: authCookie
-        ? { cookie: `${DASHBOARD_AUTH_COOKIE}=${encodeURIComponent(authCookie)}` }
+        ? { cookie: `${DASHBOARD_AUTH_COOKIE}=${authCookie}` }
         : {},
     },
   ).catch(() => null);
