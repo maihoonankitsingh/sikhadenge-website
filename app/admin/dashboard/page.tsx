@@ -64,7 +64,7 @@ async function fetchTable(
   const res = await fetch(url, {
     cache: "no-store",
     headers: authCookie
-      ? { cookie: `${DASHBOARD_AUTH_COOKIE}=${encodeURIComponent(authCookie)}` }
+      ? { cookie: `${DASHBOARD_AUTH_COOKIE}=${authCookie}` }
       : {},
   }).catch(() => null);
 
