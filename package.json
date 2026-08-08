@@ -11,6 +11,7 @@
     "lint": "next lint",
     "seo:check": "node scripts/seo-guard.mjs",
     "blog:audit": "node scripts/audit-blog-foundation.mjs",
+    "blog:classify": "node scripts/classify-blog-inventory.mjs",
     "blog:audit-routes": "node scripts/audit-blog-routes.mjs",
     "blog:audit-titles": "node scripts/audit-blog-titles.mjs",
     "blog:backfill-high-intent": "node scripts/backfill-high-intent-blogs.mjs",
