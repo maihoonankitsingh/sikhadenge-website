@@ -76,6 +76,7 @@ assert(!htmlSitemap.includes('href: "/checkout'), "HTML sitemap must not link ch
 
 // Deindexing pages need crawler access to observe noindex. Keep private APIs and
 // transactional states disallowed, but do not robots-block protected page routes.
+assert(!fs.existsSync(path.join(root, "public/robots.txt")), "public/robots.txt must not shadow app/robots.ts");
 assert(robots.includes('"/api/"'), "robots.txt API exclusion is missing");
 assert(!robots.includes('"/dashboard/"'), "dashboard must be crawlable so noindex can be observed");
 assert(!robots.includes('"/admin/"'), "admin pages must be crawlable so noindex can be observed");
