@@ -3,13 +3,12 @@
 import { useMemo, useState } from "react";
 
 type Props = {
-  token: string;
   model?: string;
   where?: any;
   take?: number;
 };
 
-export default function AdminPushControls({ token, model = "MasterclassLead", where = {}, take = 200 }: Props) {
+export default function AdminPushControls({ model = "MasterclassLead", where = {}, take = 200 }: Props) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>("");
 
@@ -25,9 +24,10 @@ export default function AdminPushControls({ token, model = "MasterclassLead", wh
     setBusy(true);
     setMsg("");
     try {
-      const res = await fetch(`/api/admin/push?token=${encodeURIComponent(token || "")}`, {
+      const res = await fetch("/api/admin/push", {
         method: "POST",
         headers: { "content-type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify(payload),
       });
       const j = await res.json().catch(() => ({}));
@@ -48,9 +48,9 @@ export default function AdminPushControls({ token, model = "MasterclassLead", wh
       <button
         type="button"
         onClick={runPush}
-        disabled={busy || !token}
+        disabled={busy}
         className="rounded-xl border border-white/10 bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-60"
-        title={!token ? "token missing" : "Push current filtered rows to webhook"}
+        title="Push current filtered rows to webhook"
       >
         {busy ? "Pushing..." : "Push to webhook"}
       </button>

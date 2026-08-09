@@ -4,6 +4,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { BarChart3, Menu } from "lucide-react";
 import SidebarNav from "./_components/SidebarNav";
+import {
+  DASHBOARD_AUTH_COOKIE,
+  isDashboardAuthValueValid,
+} from "@/lib/dashboard-auth";
 
 export const metadata = {
   robots: {
@@ -13,16 +17,14 @@ export const metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  
   const cookieStore = await cookies();
-  const authCookie = cookieStore.get("sd_dash_auth")?.value || "";
-  const expectedToken = (process.env.DASHBOARD_AUTH_TOKEN || "").trim();
+  const authCookie = cookieStore.get(DASHBOARD_AUTH_COOKIE)?.value || "";
 
-  if (!expectedToken || authCookie !== expectedToken) {
+  if (!isDashboardAuthValueValid(authCookie)) {
     redirect("/auth/dashboard-login?next=/dashboard");
   }
 
-return (
+  return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">

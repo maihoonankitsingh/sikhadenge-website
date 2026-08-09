@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 
 const BASE_URL = "https://sikhadenge.in";
 
+// Store inventory is database-backed and must be rendered at request time.
+// This keeps production builds independent from runtime database credentials.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Digital Products, Prompt Packs & Automation Toolkits",
   description: "Browse Sikhadenge digital products, prompt packs, and practical automation toolkits with clear product details and secure checkout.",

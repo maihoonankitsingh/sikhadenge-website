@@ -1,6 +1,10 @@
 export const revalidate = 0;
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  DASHBOARD_AUTH_COOKIE,
+  isDashboardAuthValueValid,
+} from "@/lib/dashboard-auth";
 export const dynamic = "force-dynamic";
 
 
@@ -49,13 +53,10 @@ const MODEL_META: Record<ModelKey, { dateField?: string; defaultOrder?: any; sea
   ClassSession: { dateField: "sessionDate", defaultOrder: { sessionDate: "desc" }, searchFields: ["title"] },
 };
 
-function requireToken(req: Request) {
-  const required = (process.env.ADMIN_TOKEN || "").trim();
-  if (!required) return null;
-  const u = new URL(req.url);
-  const got = (u.searchParams.get("token") || "").trim();
-  if (!got || got !== required) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  return null;
+function requireDashboardSession(req: NextRequest) {
+  const value = req.cookies.get(DASHBOARD_AUTH_COOKIE)?.value || "";
+  if (isDashboardAuthValueValid(value)) return null;
+  return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 }
 
 function parseIntSafe(v: string | null, def: number) {
@@ -81,7 +82,6 @@ function buildWhere(model: ModelKey, q: string, range: { start: Date | null; end
   const meta = MODEL_META[model];
   const where: any = {};
 
-  // Date range filter
   if (range && meta.dateField) {
     where[meta.dateField] = {};
     if (range.start) where[meta.dateField].gte = range.start;
@@ -89,7 +89,6 @@ function buildWhere(model: ModelKey, q: string, range: { start: Date | null; end
     if (Object.keys(where[meta.dateField]).length === 0) delete where[meta.dateField];
   }
 
-  // Text search (OR across safe fields)
   const qq = q.trim();
   if (qq && meta.searchFields?.length) {
     where.OR = meta.searchFields.map((f) => ({ [f]: { contains: qq, mode: "insensitive" } }));
@@ -98,7 +97,6 @@ function buildWhere(model: ModelKey, q: string, range: { start: Date | null; end
   return where;
 }
 
-// Central switch: avoids any "dynamic prisma[model]" which is risky.
 async function runQuery(model: ModelKey, where: any, take: number, skip: number) {
   const orderBy = MODEL_META[model].defaultOrder || undefined;
 
@@ -192,9 +190,8 @@ async function runQuery(model: ModelKey, where: any, take: number, skip: number)
   }
 }
 
-export async function GET(req: Request) {
-  // Token guard (if ADMIN_TOKEN set)
-  const guard = requireToken(req);
+export async function GET(req: NextRequest) {
+  const guard = requireDashboardSession(req);
   if (guard) return guard;
 
   try {
@@ -212,7 +209,6 @@ export async function GET(req: Request) {
 
     const range = parseDateRangeIST(from, to);
     const where = buildWhere(model, q, range);
-
     const { total, rows } = await runQuery(model, where, take, skip);
 
     return NextResponse.json(
@@ -227,11 +223,13 @@ export async function GET(req: Request) {
         total,
         rows,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (e) {
     console.error("admin/table error:", e);
-    // Safe-mode: never break the site
-    return NextResponse.json({ ok: false, error: "server_error", total: 0, rows: [] }, { status: 200 });
+    return NextResponse.json(
+      { ok: false, error: "server_error", total: 0, rows: [] },
+      { status: 500 },
+    );
   }
 }

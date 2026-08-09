@@ -1,5 +1,8 @@
 const BASE_URL = "https://sikhadenge.in";
 
+// Only canonical/indexable sitemap families belong in the public index.
+// Fully generated expert/learn/prompts/hindi families are intentionally
+// quarantined until they pass the explicit SEO quality/approval gate.
 const SITEMAPS = [
   "sitemap-static.xml",
   "sitemap-blogs-1.xml",
@@ -12,12 +15,8 @@ const SITEMAPS = [
   "sitemap-skills-1.xml",
   "sitemap-skills-2.xml",
   "sitemap-skills-3.xml",
-  "sitemap-expert.xml",
-  "sitemap-prompts.xml",
   "sitemap-compare.xml",
-  "sitemap-hindi.xml",
   "sitemap-tools.xml",
-  "sitemap-learn.xml",
 ];
 
 export async function GET() {

@@ -1,4 +1,5 @@
 import { LockKeyhole, Mail, Sparkles } from "lucide-react";
+import { sanitizeDashboardNext } from "@/lib/dashboard-auth";
 
 type PageProps = {
   searchParams?: {
@@ -12,7 +13,7 @@ export const revalidate = 0;
 
 export default function DashboardLoginPage({ searchParams }: PageProps) {
   const error = String(searchParams?.error || "").trim();
-  const next = "/";
+  const next = sanitizeDashboardNext(searchParams?.next);
 
   return (
     <main className="min-h-[calc(100vh-140px)] bg-[#EEF3FA] px-4 py-8 text-[#0F172A] md:px-6 lg:px-8">

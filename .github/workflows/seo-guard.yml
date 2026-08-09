@@ -1,0 +1,50 @@
+name: SEO Guard
+
+on:
+  pull_request:
+    branches:
+      - live-clean-sync-20260424
+  push:
+    branches:
+      - agent/seo-green-checkpoints-20260808
+
+permissions:
+  contents: read
+
+jobs:
+  seo-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: SEO safety gate
+        run: npm run seo:check
+
+      - name: SEO helper syntax checks
+        run: |
+          node --check scripts/seo-guard.mjs
+          node --check scripts/generate-blog-prisma-client.mjs
+          node --check scripts/classify-blog-inventory.mjs
+
+      - name: Blog classifier smoke test
+        run: npm run blog:classify -- --limit=250
+
+      - name: Generate blog Prisma client
+        run: npm run blog:db:generate
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
