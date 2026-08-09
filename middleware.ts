@@ -58,6 +58,15 @@ export function middleware(request: NextRequest) {
         "X-Robots-Tag",
         "noindex, nofollow, noarchive",
       );
+      redirectResponse.headers.set(
+        "Cache-Control",
+        "no-store, no-cache, max-age=0, must-revalidate",
+      );
+      redirectResponse.headers.set("Pragma", "no-cache");
+      redirectResponse.headers.set("Expires", "0");
+      redirectResponse.headers.set("CDN-Cache-Control", "no-store");
+      redirectResponse.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+      redirectResponse.headers.set("Surrogate-Control", "no-store");
       redirectResponse.cookies.set({
         name: DASHBOARD_NEXT_COOKIE,
         value: returnTo,
