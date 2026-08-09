@@ -35,6 +35,7 @@ assert(middleware.includes('PRIVATE_API_PREFIXES = ["/api/admin"]'), "middleware
 assert(middleware.includes("DASHBOARD_AUTH_COOKIE"), "middleware must validate the dashboard auth cookie");
 assert(middleware.includes("isDashboardAuthValueValid"), "middleware dashboard session validation is missing");
 assert(middleware.includes('"X-Robots-Tag"'), "private X-Robots-Tag is missing");
+assert(middleware.includes('redirectResponse.headers.set(\n        "Cache-Control",\n        "no-store, no-cache, max-age=0, must-revalidate"'), "private auth redirects must explicitly disable caching");
 assert(dashboardAuth.includes("DASHBOARD_AUTH_TOKEN"), "central dashboard token validation is missing");
 assert(dashboardLayout.includes("isDashboardAuthValueValid"), "dashboard server layout must use shared session validation");
 assert(adminLayout.includes("isDashboardAuthValueValid"), "admin server layout auth is missing");
