@@ -10,6 +10,8 @@ const nav = [
   { label: "Blog", href: "/blog" },
 ];
 
+const HEADERLESS_CHECKOUT_PATH = "/checkout/ai-prompt-starter-pack";
+
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
@@ -17,6 +19,11 @@ function isActive(pathname: string, href: string) {
 
 export default function Header() {
   const pathname = usePathname() ?? "";
+
+  if (pathname === HEADERLESS_CHECKOUT_PATH) {
+    return <style>{`.sd-header-spacer { display: none !important; }`}</style>;
+  }
+
   return (
     <header className="fixed inset-x-0 top-[56px] z-50 sd-header-under-offer border-b border-black/10 bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
