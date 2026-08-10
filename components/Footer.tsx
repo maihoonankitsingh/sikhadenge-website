@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const quickLinks = [
   { href: "/courses", label: "Courses" },
@@ -15,19 +16,27 @@ const policyLinks = [
   { href: "/refund-policy", label: "Refund Policy" },
 ];
 
+const FOOTERLESS_CHECKOUT_PATH = "/checkout/ai-prompt-starter-pack";
+
 export default function Footer() {
+  const pathname = usePathname() ?? "";
+
+  if (pathname === FOOTERLESS_CHECKOUT_PATH) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-slate-200 bg-white text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr_1fr_1.1fr]">
           <div>
             <a href="/" className="inline-flex items-center overflow-visible" aria-label="Sikhadenge Home">
-  <img
-    src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
-    alt="Sikhadenge"
-    className="block h-12 w-auto object-contain"
-  />
-</a>
+              <img
+                src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
+                alt="Sikhadenge"
+                className="block h-12 w-auto object-contain"
+              />
+            </a>
             <p className="mt-4 max-w-sm text-sm leading-7 text-slate-600">
               ThinkGrow Pvt. Ltd. Practical, future-ready learning focused on
               real workflows and professional output.
