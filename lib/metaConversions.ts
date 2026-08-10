@@ -18,6 +18,7 @@ type MetaConversionArguments = {
   req: NextRequest;
   eventName: string;
   eventId: string;
+  advertisingConsent?: string;
   eventSourceUrl: string;
   user: MetaUserData;
   customData?: Record<string, unknown>;
@@ -110,6 +111,16 @@ export async function sendMetaConversionEvent(
   args: MetaConversionArguments
 ): Promise<MetaConversionResult> {
   try {
+    if (
+      args.advertisingConsent &&
+      args.advertisingConsent !== "granted"
+    ) {
+      return {
+        status: "skipped",
+        reason: "advertising_consent_denied",
+      };
+    }
+
     if (!advertisingConsentGranted(args.req)) {
       return {
         status: "skipped",
