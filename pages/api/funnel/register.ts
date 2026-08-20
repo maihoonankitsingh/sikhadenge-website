@@ -2,6 +2,7 @@ import crypto from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
 import { sendMetaCapiEvent } from "../../../lib/funnel/metaCapi";
+import { createCheckoutToken } from "../../../lib/funnel/checkoutToken";
 
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 20;
@@ -345,9 +346,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       registrationEventId = existingEvent?.eventId || "";
     }
 
+    const checkoutToken =
+      offerMode === "paid"
+        ? createCheckoutToken({ leadId: lead.id, funnel, ttlSeconds: 2 * 60 * 60 })
+        : "";
     const checkoutUrl =
       offerMode === "paid"
-        ? `/masterclass/${funnel}/checkout?lead_id=${encodeURIComponent(lead.id)}`
+        ? `/masterclass/${funnel}/checkout?lead_id=${encodeURIComponent(lead.id)}&token=${encodeURIComponent(checkoutToken)}`
         : null;
 
     const confirmationUrl = `/masterclass/${funnel}/thank-you?lead_id=${encodeURIComponent(
