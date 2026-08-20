@@ -34,6 +34,7 @@ type OrderData = {
 export default function CheckoutPage({ config }: { config: FunnelConfig }) {
   const router = useRouter();
   const leadId = typeof router.query.lead_id === "string" ? router.query.lead_id : "";
+  const checkoutToken = typeof router.query.token === "string" ? router.query.token : "";
   const [sdkReady, setSdkReady] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "paying" | "verifying" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -42,11 +43,14 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
 
   useEffect(() => {
     if (!router.isReady) return;
-    if (!leadId) setMessage("Registration reference missing. Please return to the masterclass page.");
-  }, [router.isReady, leadId]);
+    if (!leadId || !checkoutToken) {
+      setStatus("error");
+      setMessage("This secure checkout link is incomplete. Please return to the masterclass page and register again.");
+    }
+  }, [router.isReady, leadId, checkoutToken]);
 
   async function startPayment() {
-    if (!leadId || status === "loading" || status === "paying" || status === "verifying") return;
+    if (!leadId || !checkoutToken || status === "loading" || status === "paying" || status === "verifying") return;
     if (!sdkReady || !window.Razorpay) {
       setStatus("error");
       setMessage("Secure payment window is still loading. Please try again.");
@@ -60,7 +64,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
       const orderResponse = await fetch("/api/funnel/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId, funnel: config.product }),
+        body: JSON.stringify({ leadId, funnel: config.product, checkoutToken }),
       });
       const order = (await orderResponse.json()) as OrderData & { error?: string };
       if (!orderResponse.ok || !order.ok) {
@@ -72,13 +76,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
         return;
       }
 
-      if (
-        !order.keyId ||
-        !order.paymentRecordId ||
-        !order.orderId ||
-        !order.amount ||
-        !order.currency
-      ) {
+      if (!order.keyId || !order.paymentRecordId || !order.orderId || !order.amount || !order.currency) {
         throw new Error("Secure checkout is not fully configured");
       }
 
@@ -231,7 +229,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
             <button
               type="button"
               className="funnel-primary-button funnel-pay-button"
-              disabled={busy || !leadId}
+              disabled={busy || !leadId || !checkoutToken}
               onClick={startPayment}
             >
               {status === "loading"
