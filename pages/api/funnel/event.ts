@@ -73,8 +73,8 @@ function positiveInt(value: unknown): number | null {
   return Math.round(parsed);
 }
 
-function safeMetadata(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+function safeMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
   const output: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value as Record<string, unknown>).slice(0, 25)) {
@@ -114,11 +114,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ ok: false, error: "Invalid offer mode" });
   }
 
+  const metadata = safeMetadata(body.metadata);
+  metadata.server_ip_recorded = Boolean(ip && ip !== "unknown");
+
   try {
     const item = await prisma.funnelEvent.create({
       data: {
+        eventId: short(body.eventId, 160),
         eventName,
         visitorId: short(body.visitorId, 120),
+        sessionId: short(body.sessionId, 120),
         leadId: short(body.leadId, 120),
         funnel,
         offerMode,
@@ -134,10 +139,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         adsetId: short(body.adsetId, 120),
         adId: short(body.adId, 120),
         fbclid: short(body.fbclid, 300),
+        fbp: short(body.fbp, 300),
+        fbc: short(body.fbc, 500),
+        gclid: short(body.gclid, 300),
         landingVariant: short(body.landingVariant, 120),
         eventValue: positiveInt(body.eventValue ?? body?.metadata?.value),
         currency: short(body.currency ?? body?.metadata?.currency, 8) || "INR",
-        metadata: safeMetadata(body.metadata) || undefined,
+        metadata,
       },
       select: { id: true },
     });
