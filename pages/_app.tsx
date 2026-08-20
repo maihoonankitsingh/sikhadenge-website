@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import "../styles/globals.css";
 import "../styles/funnel.css";
 import "../styles/funnel-confirmation.css";
+import "../styles/funnel-checkout.css";
 import Header from "../components/Header";
 
 type FunnelAwarePage = AppProps["Component"] & {
