@@ -2,133 +2,176 @@
 
 Isolated funnel engine on `feature/ai-masterclass-funnel-v2`.
 
-## Current phase status
+## Phase status
 
-Phase 1 established the shared ChatGPT/Claude acquisition engine. Phase 2 hardens attribution, Meta browser/server event deduplication, confirmation flows, modular page structure, WhatsApp integration hooks, and dashboard-ready first-party events.
+- Phase 1: shared ChatGPT/Claude acquisition engine — implemented
+- Phase 2: attribution, Meta Pixel/CAPI dedup, confirmation flow, modular sections, dashboard foundation — implemented
+- Phase 3: Razorpay paid-entry order/checkout/verification/webhook flow — implemented in code, requires real env + migration + remote CI before live traffic
+- Future: implementation-workshop funnel, core ₹14,999 program funnel, Meta Ads spend ingestion, complete refund reconciliation
 
-Nothing in this branch should be treated as production-ready until the database migration, environment variables, payment webhook, WhatsApp contract, and remote build are verified.
+Nothing in this branch is production-approved until CI passes, migrations are deployed in a controlled release, Razorpay Test Mode succeeds end-to-end, and production environment variables are verified.
 
 ## Routes
 
 ### ChatGPT
 - `/masterclass/chatgpt/free`
 - `/masterclass/chatgpt/paid`
+- `/masterclass/chatgpt/checkout`
 - `/masterclass/chatgpt/thank-you`
 
 ### Claude
 - `/masterclass/claude/free`
 - `/masterclass/claude/paid`
+- `/masterclass/claude/checkout`
 - `/masterclass/claude/thank-you`
 
 ### Admin
 - `/admin/funnel-dashboard`
 
-The four acquisition pages share one implementation. Product, offer mode, entry price, batch, date, time, copy and theme are configuration-driven. Do not fork full page markup for price or cohort changes.
-
 ## Commercial ladder
 
-1. Free or low-ticket live masterclass
-2. Optional implementation workshop (`₹1,499` test price / `₹1,999` regular configuration)
-3. Core AI Expert Program (`₹14,999` business offer, to be implemented in a later funnel phase)
+1. Free or low-ticket masterclass
+2. ₹1,499–₹1,999 implementation workshop
+3. ₹14,999 AI Expert Program
 
-The acquisition page does not directly pitch the core program.
+Entry price is configuration-driven. Changing ₹9 to ₹49/₹99/etc. must not require page duplication.
 
 ## Code organization
 
-- `components/funnel/FunnelPage.tsx` — lightweight orchestrator only
+- `components/funnel/FunnelPage.tsx` — acquisition orchestrator
 - `components/funnel/sections/*` — isolated landing-page sections
 - `components/funnel/RegistrationCard.tsx` — registration UX
+- `components/funnel/CheckoutPage.tsx` — paid Razorpay checkout UX
 - `components/funnel/ConfirmationPage.tsx` — shared confirmation UX
-- `components/funnel/FunnelAnalytics.tsx` — optional GTM bootstrap
-- `components/funnel/FunnelTracker.tsx` — page-view funnel event
-- `lib/funnel/client.ts` — browser attribution + dataLayer + Meta Pixel events
-- `lib/funnel/metaCapi.ts` — optional Meta Conversions API adapter
-- `pages/api/funnel/register.ts` — validated registration + integrations
+- `lib/funnel/client.ts` — browser attribution, dataLayer and Meta Pixel events
+- `lib/funnel/metaCapi.ts` — Meta Conversions API adapter
+- `lib/funnel/razorpay.ts` — Razorpay Orders/payment/signature helpers
+- `lib/funnel/checkoutToken.ts` — short-lived signed checkout handoff tokens
+- `pages/api/funnel/register.ts` — registration + lead integrations
+- `pages/api/funnel/payment/create-order.ts` — server-fixed Razorpay order creation
+- `pages/api/funnel/payment/verify.ts` — checkout signature + provider-state verification
+- `pages/api/funnel/payment/webhook.ts` — signed webhook reconciliation
 - `pages/api/funnel/event.ts` — first-party event persistence
-- `data/funnels.ts` — ChatGPT/Claude offer configuration
-- `public/funnels/shared/*` — verified shared funnel media
-- `styles/funnel.css` — acquisition-page design system
-- `styles/funnel-confirmation.css` — confirmation-page design system
+- `pages/api/admin/funnel-dashboard.ts` — stage analytics API
+- `data/funnels.ts` — ChatGPT/Claude configuration
+- `public/funnels/shared/*` — funnel-owned media
+- `styles/funnel.css` — acquisition design system
+- `styles/funnel-checkout.css` — secure checkout design system
+- `styles/funnel-confirmation.css` — confirmation design system
 
-## Core environment variables
+## Environment variables
 
-Existing application variables:
+### Existing application
 - `DATABASE_URL`
 - `SHADOW_DATABASE_URL`
-- `NEODOVE_ENDPOINT` — optional
 - `ADMIN_COOKIE_SECRET`
-- `NEXT_PUBLIC_META_PIXEL_ID` — existing Meta Pixel ID
+- `NEODOVE_ENDPOINT` — optional
+- `NEXT_PUBLIC_META_PIXEL_ID` — optional browser Meta Pixel
 
-Funnel display/configuration:
-- `NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE` — paid entry amount, default `9`
-- `NEXT_PUBLIC_MASTERCLASS_DATE_LABEL` — human-readable event date/batch label
-- `NEXT_PUBLIC_MASTERCLASS_TIME_LABEL` — display time, default `8:00 PM IST`
-- `NEXT_PUBLIC_CHATGPT_MASTERCLASS_BATCH_ID` — stable ChatGPT cohort ID
-- `NEXT_PUBLIC_CLAUDE_MASTERCLASS_BATCH_ID` — stable Claude cohort ID
+### Funnel configuration
+- `NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE` — default `9`
+- `NEXT_PUBLIC_MASTERCLASS_DATE_LABEL`
+- `NEXT_PUBLIC_MASTERCLASS_TIME_LABEL`
+- `NEXT_PUBLIC_CHATGPT_MASTERCLASS_BATCH_ID`
+- `NEXT_PUBLIC_CLAUDE_MASTERCLASS_BATCH_ID`
 - `NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE` — default `1499`
 - `NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE` — default `1999`
-- `NEXT_PUBLIC_GTM_ID` — optional GTM container (`GTM-XXXXXXX`)
-- `NEXT_PUBLIC_SITE_URL` or server `PUBLIC_SITE_URL` — canonical event source base; server fallback is `https://sikhadenge.in`
+- `NEXT_PUBLIC_GTM_ID` — optional
+- `NEXT_PUBLIC_SITE_URL` or `PUBLIC_SITE_URL`
 
-Community/support:
-- `NEXT_PUBLIC_CHATGPT_COMMUNITY_URL` — optional ChatGPT cohort Community URL
-- `NEXT_PUBLIC_CLAUDE_COMMUNITY_URL` — optional Claude cohort Community URL
-- `NEXT_PUBLIC_MASTERCLASS_COMMUNITY_URL` — optional shared fallback Community URL
-- `NEXT_PUBLIC_FUNNEL_SUPPORT_WHATSAPP_URL` — optional direct support CTA
+### WhatsApp/community
+- `WHATSAPP_FUNNEL_WEBHOOK_URL` — optional authenticated server adapter
+- `WHATSAPP_FUNNEL_WEBHOOK_TOKEN` — optional Bearer token
+- `NEXT_PUBLIC_CHATGPT_COMMUNITY_URL`
+- `NEXT_PUBLIC_CLAUDE_COMMUNITY_URL`
+- `NEXT_PUBLIC_MASTERCLASS_COMMUNITY_URL`
+- `NEXT_PUBLIC_FUNNEL_SUPPORT_WHATSAPP_URL`
 
-Authenticated WhatsApp integration adapter:
-- `WHATSAPP_FUNNEL_WEBHOOK_URL` — optional server-to-server registration webhook
-- `WHATSAPP_FUNNEL_WEBHOOK_TOKEN` — optional Bearer credential
+### Meta Conversions API
+- `META_CAPI_ACCESS_TOKEN`
+- `META_GRAPH_API_VERSION`
+- `META_TEST_EVENT_CODE` — optional Test Events code
+- `DEFAULT_PHONE_COUNTRY_CODE` — defaults to `91`
 
-The exact private API contract for `whatsapp.sikhadenge.in` was not exposed in the audited website repository, so the code uses a configurable server-side adapter instead of guessing private routes or credentials.
+### Razorpay paid-entry
+- `RAZORPAY_KEY_ID` — server key ID; preferred
+- `NEXT_PUBLIC_RAZORPAY_KEY_ID` — optional public-key fallback only
+- `RAZORPAY_KEY_SECRET` — server secret; never expose to browser
+- `RAZORPAY_WEBHOOK_SECRET` — webhook signing secret
+- `FUNNEL_CHECKOUT_SECRET` — recommended dedicated HMAC secret for checkout-link signing
 
-## Meta Pixel + Conversions API
+If `FUNNEL_CHECKOUT_SECRET` is omitted, code falls back to an existing server secret. Production should configure a dedicated high-entropy value.
 
-Browser tracking continues through the existing Meta Pixel. Phase 2 adds optional server-side Lead delivery through Meta Conversions API.
+## Paid-entry security contract
 
-Server variables:
-- `META_CAPI_ACCESS_TOKEN` — Meta CAPI access token; never expose as `NEXT_PUBLIC_*`
-- `META_GRAPH_API_VERSION` — configurable Graph API version
-- `META_TEST_EVENT_CODE` — optional Meta Events Manager test code
-- `DEFAULT_PHONE_COUNTRY_CODE` — defaults to `91` for normalizing 10-digit Indian numbers before hashing
+The paid funnel does not trust browser price or browser success state.
 
-For a new lead:
-1. The server generates one `registrationEventId`.
-2. The first-party `generate_lead` row stores that ID.
-3. The server sends Meta CAPI `Lead` with the same ID when CAPI credentials are configured.
-4. The browser sends Meta Pixel `Lead` using the same `eventID` and does **not** persist a duplicate first-party row.
+1. Registration is stored first.
+2. Server creates a short-lived signed checkout token bound to `leadId + funnel`.
+3. Checkout order creation rejects invalid/expired/tampered tokens.
+4. Server reads the configured masterclass price and converts it to paise.
+5. Server creates a Razorpay Order and stores a `FunnelPayment` row.
+6. Razorpay Checkout receives the server-created `order_id`.
+7. On success, `/api/funnel/payment/verify` validates the checkout HMAC using the stored server order ID.
+8. Server fetches Razorpay Payment + Order and requires:
+   - exact order match
+   - exact amount
+   - exact currency
+   - payment `captured`
+   - order `paid`
+9. Only then is the payment marked captured, the lead becomes `paid_masterclass`, and first-party `purchase` is created.
+10. Browser Meta Pixel `Purchase` uses the same event ID returned by the server as the server-side Meta CAPI `Purchase` for deduplication.
+11. Signed Razorpay `payment.captured` / `order.paid` webhooks can reconcile a payment when the browser callback is lost.
+12. `payment.failed` never becomes purchase revenue.
 
-This is the browser/server deduplication contract. CAPI failure must never block registration.
+Webhook endpoint:
 
-User matching data sent by the server is normalized and SHA-256 hashed where required. Browser attribution captures `_fbp` and `_fbc` when available.
+`POST https://<site-host>/api/funnel/payment/webhook`
 
-## Attribution contract
+Configure at minimum Razorpay events:
+- `payment.captured`
+- `payment.failed`
+- `order.paid`
 
-Stored first-party fields include:
-- persistent `visitorId`
-- per-session `sessionId`
-- `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`
-- Meta `campaign_id`, `adset_id`, `ad_id`
+Refund/reversal reconciliation is intentionally still a future phase and must be implemented before relying on net revenue after refunds.
+
+## Database
+
+Migrations:
+- `prisma/migrations/20260820231500_funnel_events/migration.sql`
+- `prisma/migrations/20260820235000_funnel_payments/migration.sql`
+
+`FunnelEvent` stores attribution and funnel stages.
+
+`FunnelPayment` stores provider order/payment identity, exact paise amount, status, purchase-event ID, failure details and timestamps. Provider order IDs, payment IDs, receipts and purchase event IDs are unique for idempotency.
+
+Do not apply production migrations manually until the branch has passed CI and a controlled deployment window is approved.
+
+## Attribution
+
+Stored fields include:
+- persistent visitor ID
+- session ID
+- UTM source/medium/campaign/content/term
+- Meta campaign/adset/ad IDs
 - `fbclid`, `_fbp`, `_fbc`
 - `gclid`
-- landing-page variant
+- landing variant
 - referrer
 - funnel product
 - offer mode
 - entry price
 - stable batch ID
 - event ID
-- lead ID where known
+- lead ID
 
-Recommended Meta ad URL parameters:
+Recommended Meta URL parameters:
 
 `utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}&campaign_id={{campaign.id}}&adset_id={{adset.id}}&ad_id={{ad.id}}`
 
-Use stable IDs for reporting even when campaign/ad names change.
+## Event taxonomy
 
-## First-party event taxonomy
-
-Acquisition:
+Acquisition/payment:
 - `view_masterclass_offer`
 - `masterclass_cta_click`
 - `registration_submit_click`
@@ -141,18 +184,16 @@ WhatsApp/community:
 - `community_click`
 - `join_group`
 
-Live masterclass:
+Masterclass:
 - `masterclass_joined`
 - `masterclass_30m`
 - `masterclass_60m`
 - `masterclass_offer_seen`
 
-Implementation workshop:
+Workshop/core:
 - `workshop_cta_click`
 - `workshop_purchase`
 - `workshop_attended`
-
-Core program / CRM:
 - `qualify_lead`
 - `working_lead`
 - `core_offer_seen`
@@ -160,75 +201,35 @@ Core program / CRM:
 - `close_unconvert_lead`
 - `refund`
 
-Only verified business events should be written. Do not manufacture attendance, purchase, ad spend, revenue or qualification records.
+Only verified business events should be stored. Do not manufacture attendance, purchase, ad spend, revenue or CRM states.
 
-## Lead system
+## WhatsApp principle
 
-The existing `Lead` model remains the master lead record. Funnel registration details are stored in `Lead.notes` until a later normalized CRM migration is justified.
-
-Sources:
-- `funnel:chatgpt:free`
-- `funnel:chatgpt:paid`
-- `funnel:claude:free`
-- `funnel:claude:paid`
-
-New registrations can be pushed to the existing NeoDove endpoint and the optional authenticated WhatsApp webhook in parallel. External integration failure is logged but does not invalidate the stored registration.
-
-## Confirmation flow
-
-Free registration redirects to the product-specific thank-you page. Critical joining instructions should be delivered directly to the registered WhatsApp number.
-
-WhatsApp Community is intentionally an engagement layer, not the only route for the live-class link. This prevents Community non-joiners from becoming automatic webinar no-shows.
-
-## Paid checkout — production blocker
-
-No payment provider/order/webhook implementation was present in the audited repository.
-
-Current paid pages can only hand off to configured checkout URLs:
-- `CHATGPT_MASTERCLASS_CHECKOUT_URL`
-- `CLAUDE_MASTERCLASS_CHECKOUT_URL`
-- shared fallback `MASTERCLASS_CHECKOUT_URL`
-
-Do **not** treat redirect-to-checkout as a purchase.
-
-Before paid traffic is production-ready, implement:
-1. server-created payment/order
-2. gateway signature verification
-3. authenticated payment webhook
-4. idempotent payment/order record
-5. `purchase` only after verified success
-6. exact amount/currency/order/payment IDs
-7. verified paid thank-you flow
-8. refund/reversal reconciliation
-
-The payment provider must be explicitly chosen and its real server credentials configured; the repository currently does not establish one.
-
-## Database
-
-Migration:
-- `prisma/migrations/20260820231500_funnel_events/migration.sql`
-
-It creates the first-party `FunnelEvent` model with event ID, visitor/session IDs, attribution IDs, batch ID, revenue fields and indexes.
-
-Apply the migration before live funnel traffic and regenerate Prisma Client as part of deployment.
+Critical class reminders/joining instructions should be deliverable directly to the registered WhatsApp number. Community membership is an engagement layer, not the sole delivery dependency.
 
 ## Dashboard
 
-`/admin/funnel-dashboard` is protected by the existing admin session.
+`/admin/funnel-dashboard` uses first-party stored events and compares ChatGPT vs Claude and Free vs Paid across lead, attendance, retention, workshop and core-program stages.
 
-The dashboard uses first-party stored events. Meta ad spend, CPL, CAC and ROAS must only be shown after a verified Meta Ads reporting source is connected. They are intentionally not estimated from browser events.
+Meta ad spend, CPL, CAC and ROAS are not fabricated. They require an authenticated Meta Ads reporting source in a later phase.
 
-## CI / validation
+## CI / release gate
 
 `.github/workflows/funnel-v2-ci.yml` runs:
 - `npm ci`
 - `prisma generate`
 - `npm run build`
 
-A remote CI PASS is required before merge/deployment. The current connector session has not yet exposed a completed workflow result, so build status must not be represented as PASS until GitHub records a successful check.
+Required before live deployment:
+1. remote CI PASS
+2. Razorpay Test Mode end-to-end successful payment
+3. invalid-signature test rejected
+4. amount-tampering test rejected
+5. webhook signature test
+6. callback-loss/webhook reconciliation test
+7. duplicate webhook/idempotency test
+8. database migration rehearsal
+9. Meta Test Events browser/server dedup verification
+10. WhatsApp integration test
 
-## Assets and claims
-
-Shared media is under `public/funnels/shared/`.
-
-Do not add unverified learner counts, job guarantees, salary claims, fake scarcity, fake bonus values, or claims of OpenAI/Anthropic affiliation. Testimonials must use verified learner records and consented media.
+No merge to `main` or production activation should happen before these gates pass.
