@@ -16,19 +16,25 @@ const sharedFaqs = [
   { question: "Is SikhaDenge affiliated with OpenAI or Anthropic?", answer: "No. SikhaDenge is an independent education provider. ChatGPT is a product of OpenAI and Claude is a product of Anthropic." },
 ];
 
-const EVENT_DATE =
-  process.env.NEXT_PUBLIC_MASTERCLASS_DATE_LABEL || "Next Live Batch";
-const EVENT_TIME =
-  process.env.NEXT_PUBLIC_MASTERCLASS_TIME_LABEL || "8:00 PM IST";
-const ENTRY_PRICE =
-  Number(process.env.NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE || "9") || 9;
-const WORKSHOP_PRICE =
-  Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE || "1499") || 1499;
-const WORKSHOP_REGULAR_PRICE =
-  Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE || "1999") || 1999;
+const EVENT_DATE = process.env.NEXT_PUBLIC_MASTERCLASS_DATE_LABEL || "Next Live Batch";
+const EVENT_TIME = process.env.NEXT_PUBLIC_MASTERCLASS_TIME_LABEL || "8:00 PM IST";
+const ENTRY_PRICE = Number(process.env.NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE || "9") || 9;
+const WORKSHOP_PRICE = Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE || "1499") || 1499;
+const WORKSHOP_REGULAR_PRICE = Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE || "1999") || 1999;
 
-const productBase: Record<FunnelProduct, Omit<FunnelConfig, "id" | "offerMode" | "entryPrice" | "ctaLabel">> = {
+const CHATGPT_BATCH_ID =
+  process.env.NEXT_PUBLIC_CHATGPT_MASTERCLASS_BATCH_ID ||
+  `chatgpt:${EVENT_DATE}:${EVENT_TIME}`;
+const CLAUDE_BATCH_ID =
+  process.env.NEXT_PUBLIC_CLAUDE_MASTERCLASS_BATCH_ID ||
+  `claude:${EVENT_DATE}:${EVENT_TIME}`;
+
+const productBase: Record<
+  FunnelProduct,
+  Omit<FunnelConfig, "id" | "offerMode" | "entryPrice" | "ctaLabel">
+> = {
   chatgpt: {
+    batchId: CHATGPT_BATCH_ID,
     product: "chatgpt",
     productLabel: "ChatGPT",
     badge: "LIVE • CHATGPT MASTERCLASS",
@@ -74,6 +80,7 @@ const productBase: Record<FunnelProduct, Omit<FunnelConfig, "id" | "offerMode" |
     workshopRegularPrice: WORKSHOP_REGULAR_PRICE,
   },
   claude: {
+    batchId: CLAUDE_BATCH_ID,
     product: "claude",
     productLabel: "Claude",
     badge: "LIVE • CLAUDE MASTERCLASS",
@@ -123,6 +130,7 @@ const productBase: Record<FunnelProduct, Omit<FunnelConfig, "id" | "offerMode" |
 export function getFunnelConfig(product: FunnelProduct, offerMode: OfferMode): FunnelConfig {
   const base = productBase[product];
   const entryPrice = offerMode === "free" ? 0 : ENTRY_PRICE;
+
   return {
     ...base,
     id: `${product}-${offerMode}`,
