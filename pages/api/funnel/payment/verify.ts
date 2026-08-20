@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../lib/prisma";
 import {
@@ -62,12 +61,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ ok: false, error: "Payment order mismatch" });
     }
 
-    const validSignature = verifyRazorpayCheckoutSignature({
-      orderId: stored.providerOrderId,
-      paymentId,
-      signature,
-    });
-    if (!validSignature) {
+    if (
+      !verifyRazorpayCheckoutSignature({
+        orderId: stored.providerOrderId,
+        paymentId,
+        signature,
+      })
+    ) {
       return res.status(400).json({ ok: false, error: "Payment signature verification failed" });
     }
 
@@ -76,16 +76,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fetchRazorpayOrder(stored.providerOrderId),
     ]);
 
-    const amountMatches =
+    const validProviderState =
+      payment.order_id === stored.providerOrderId &&
+      payment.status === "captured" &&
+      payment.captured !== false &&
+      order.status === "paid" &&
       payment.amount === stored.amountPaise &&
       order.amount === stored.amountPaise &&
-      order.amount_paid >= stored.amountPaise;
-    const providerMatches = payment.order_id === stored.providerOrderId;
-    const currencyMatches = payment.currency === stored.currency && order.currency === stored.currency;
-    const captured = payment.status === "captured" && payment.captured !== false;
-    const orderPaid = order.status === "paid";
+      order.amount_paid >= stored.amountPaise &&
+      payment.currency === stored.currency &&
+      order.currency === stored.currency;
 
-    if (!amountMatches || !providerMatches || !currencyMatches || !captured || !orderPaid) {
+    if (!validProviderState) {
       return res.status(409).json({
         ok: false,
         error: "Payment is not fully captured yet. Please retry verification shortly.",
@@ -93,68 +95,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const metadata = record(stored.metadata);
-    const purchaseEventId = stored.purchaseEventId || `purchase_${crypto.randomUUID()}`;
+    const purchaseEventId = `purchase_${paymentId}`;
     const amountRupees = stored.amountPaise / 100;
 
     await prisma.$transaction(async (tx) => {
-      const latest = await tx.funnelPayment.findUnique({ where: { id: stored.id } });
-      if (!latest) throw new Error("Payment record disappeared during verification");
+      await tx.funnelPayment.update({
+        where: { id: stored.id },
+        data: {
+          status: "captured",
+          providerPaymentId: paymentId,
+          purchaseEventId,
+          paidAt: stored.paidAt || new Date(),
+          failureCode: null,
+          failureReason: null,
+        },
+      });
 
-      if (latest.status !== "captured") {
-        await tx.funnelPayment.update({
-          where: { id: stored.id },
-          data: {
-            status: "captured",
+      await tx.funnelEvent.upsert({
+        where: { eventId: purchaseEventId },
+        update: {},
+        create: {
+          eventId: purchaseEventId,
+          eventName: "purchase",
+          visitorId: text(metadata.visitorId, 120) || null,
+          sessionId: text(metadata.sessionId, 120) || null,
+          leadId: stored.leadId,
+          funnel: stored.funnel,
+          offerMode: stored.offerMode,
+          entryPrice: Math.round(amountRupees),
+          batchId: stored.batchId,
+          pagePath: `/masterclass/${stored.funnel}/checkout`,
+          source: text(metadata.source, 120) || null,
+          medium: text(metadata.medium, 120) || null,
+          campaign: text(metadata.campaign, 220) || null,
+          content: text(metadata.content, 220) || null,
+          term: text(metadata.term, 220) || null,
+          campaignId: text(metadata.campaignId, 120) || null,
+          adsetId: text(metadata.adsetId, 120) || null,
+          adId: text(metadata.adId, 120) || null,
+          fbclid: text(metadata.fbclid, 300) || null,
+          fbp: text(metadata.fbp, 300) || null,
+          fbc: text(metadata.fbc, 500) || null,
+          gclid: text(metadata.gclid, 300) || null,
+          landingVariant: text(metadata.landingVariant, 120) || null,
+          eventValue: Math.round(amountRupees),
+          currency: stored.currency,
+          metadata: {
+            provider: "razorpay",
+            paymentRecordId: stored.id,
+            providerOrderId: stored.providerOrderId,
             providerPaymentId: paymentId,
-            purchaseEventId,
-            paidAt: new Date(),
-            failureCode: null,
-            failureReason: null,
+            verifiedBy: "checkout_signature_and_provider_status",
           },
-        });
+        },
+      });
 
-        await tx.funnelEvent.create({
-          data: {
-            eventId: purchaseEventId,
-            eventName: "purchase",
-            visitorId: text(metadata.visitorId, 120) || null,
-            sessionId: text(metadata.sessionId, 120) || null,
-            leadId: stored.leadId,
-            funnel: stored.funnel,
-            offerMode: stored.offerMode,
-            entryPrice: Math.round(amountRupees),
-            batchId: stored.batchId,
-            pagePath: `/masterclass/${stored.funnel}/checkout`,
-            source: text(metadata.source, 120) || null,
-            medium: text(metadata.medium, 120) || null,
-            campaign: text(metadata.campaign, 220) || null,
-            content: text(metadata.content, 220) || null,
-            term: text(metadata.term, 220) || null,
-            campaignId: text(metadata.campaignId, 120) || null,
-            adsetId: text(metadata.adsetId, 120) || null,
-            adId: text(metadata.adId, 120) || null,
-            fbclid: text(metadata.fbclid, 300) || null,
-            fbp: text(metadata.fbp, 300) || null,
-            fbc: text(metadata.fbc, 500) || null,
-            gclid: text(metadata.gclid, 300) || null,
-            landingVariant: text(metadata.landingVariant, 120) || null,
-            eventValue: Math.round(amountRupees),
-            currency: stored.currency,
-            metadata: {
-              provider: "razorpay",
-              paymentRecordId: stored.id,
-              providerOrderId: stored.providerOrderId,
-              providerPaymentId: paymentId,
-              verifiedBy: "checkout_signature_and_provider_status",
-            },
-          },
-        });
-
-        await tx.lead.update({
-          where: { id: stored.leadId },
-          data: { status: "paid_masterclass" },
-        });
-      }
+      await tx.lead.update({
+        where: { id: stored.leadId },
+        data: { status: "paid_masterclass" },
+      });
     });
 
     const lead = await prisma.lead.findUnique({ where: { id: stored.leadId } });
