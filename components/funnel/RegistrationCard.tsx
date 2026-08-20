@@ -53,7 +53,7 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
           funnel: config.product,
           offerMode: config.offerMode,
           entryPrice: config.entryPrice,
-          batchId: `${config.product}:${config.dateLabel}:${config.timeLabel}`,
+          batchId: config.batchId,
           page: window.location.pathname,
           attribution,
         }),
@@ -64,31 +64,50 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
         throw new Error(data?.error || "Registration failed");
       }
 
-      void trackFunnelEvent(
-        config,
-        "generate_lead",
-        { registration_status: "success" },
-        data.leadId,
-        { persist: false }
-      );
+      if (data.shouldTrackLead && data.registrationEventId) {
+        void trackFunnelEvent(
+          config,
+          "generate_lead",
+          { registration_status: "success" },
+          data.leadId,
+          { persist: false, eventId: data.registrationEventId }
+        );
+      }
 
       setStatus("done");
 
       if (config.offerMode === "paid") {
         if (data.checkoutUrl) {
           setCheckoutUrl(data.checkoutUrl);
-          setMessage(
-            `Registration details saved. Continue to the secure ₹${config.entryPrice} checkout.`
+          setMessage(`Registration details saved. Opening the secure ₹${config.entryPrice} checkout…`);
+
+          void trackFunnelEvent(
+            config,
+            "begin_checkout",
+            { value: config.entryPrice, currency: "INR" },
+            data.leadId
           );
-        } else {
-          setMessage(
-            "Your details are saved. Paid checkout is not active on this preview yet."
-          );
+
+          window.setTimeout(() => {
+            window.location.assign(data.checkoutUrl);
+          }, 350);
+          return;
         }
-      } else {
+
         setMessage(
-          "Registration confirmed. Joining instructions will be sent to your registered WhatsApp number."
+          "Your details are saved. Paid checkout is not active on this preview yet."
         );
+        return;
+      }
+
+      setMessage(
+        "Registration confirmed. Opening your masterclass confirmation page…"
+      );
+
+      if (data.confirmationUrl) {
+        window.setTimeout(() => {
+          window.location.assign(data.confirmationUrl);
+        }, 300);
       }
     } catch (error) {
       setStatus("error");
@@ -146,7 +165,7 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@example.com"
-          />
+            />
           </label>
         </div>
 
@@ -231,7 +250,13 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
               <a
                 className="funnel-checkout-link"
                 href={checkoutUrl}
-                onClick={() => void trackFunnelEvent(config, "begin_checkout")}
+                onClick={() =>
+                  void trackFunnelEvent(
+                    config,
+                    "begin_checkout",
+                    { value: config.entryPrice, currency: "INR" }
+                  )
+                }
               >
                 Continue to secure checkout →
               </a>
