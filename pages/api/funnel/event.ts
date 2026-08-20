@@ -115,8 +115,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ ok: false, error: "Invalid offer mode" });
   }
 
-  const metadata = safeMetadata(body.metadata);
-  metadata.server_ip_recorded = Boolean(ip && ip !== "unknown");
+  const metadata: Prisma.InputJsonObject = {
+    ...safeMetadata(body.metadata),
+    server_ip_recorded: Boolean(ip && ip !== "unknown"),
+  };
 
   try {
     const item = await prisma.funnelEvent.create({
