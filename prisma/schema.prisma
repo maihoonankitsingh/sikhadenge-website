@@ -64,7 +64,7 @@ model InfluencerSession {
 
 model FunnelEvent {
   id             String   @id @default(cuid())
-  eventId        String?
+  eventId        String?  @unique
   eventName      String
   visitorId      String?
   sessionId      String?
@@ -94,7 +94,6 @@ model FunnelEvent {
 
   @@index([eventName, createdAt])
   @@index([funnel, offerMode, createdAt])
-  @@index([eventId])
   @@index([visitorId])
   @@index([sessionId])
   @@index([leadId])
