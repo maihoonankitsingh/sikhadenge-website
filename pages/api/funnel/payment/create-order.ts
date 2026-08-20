@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../lib/prisma";
 import { createRazorpayOrder, getRazorpayPublicKey } from "../../../../lib/funnel/razorpay";
+import { verifyCheckoutToken } from "../../../../lib/funnel/checkoutToken";
 
 function text(value: unknown, max = 220) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -26,9 +27,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const leadId = text(req.body?.leadId, 120);
   const funnel = text(req.body?.funnel, 20);
+  const checkoutToken = text(req.body?.checkoutToken, 1200);
+  const token = verifyCheckoutToken(checkoutToken);
 
-  if (!leadId || !["chatgpt", "claude"].includes(funnel)) {
-    return res.status(400).json({ ok: false, error: "Invalid checkout request" });
+  if (
+    !leadId ||
+    !["chatgpt", "claude"].includes(funnel) ||
+    !token ||
+    token.leadId !== leadId ||
+    token.funnel !== funnel
+  ) {
+    return res.status(401).json({ ok: false, error: "Checkout link is invalid or expired. Please register again." });
   }
 
   const keyId = getRazorpayPublicKey();
@@ -115,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (order.amount !== amountPaise || order.currency !== "INR") {
-      throw new Error("Payment provider returned an unexpected order amount")
+      throw new Error("Payment provider returned an unexpected order amount");
     }
 
     const payment = await prisma.funnelPayment.create({
