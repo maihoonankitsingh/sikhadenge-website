@@ -45,14 +45,11 @@ model Influencer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
   leads Lead[]
   sessions InfluencerSession[]
-
 }
 
 model InfluencerSession {
-
   id           String   @id @default(cuid())
   influencerId String
   tokenHash    String   @unique
@@ -63,4 +60,37 @@ model InfluencerSession {
 
   @@index([influencerId])
   @@index([expiresAt])
+}
+
+model FunnelEvent {
+  id             String   @id @default(cuid())
+  eventName      String
+  visitorId      String?
+  leadId         String?
+  funnel         String?
+  offerMode      String?
+  entryPrice     Int?
+  batchId        String?
+  pagePath       String?
+  source         String?
+  medium         String?
+  campaign       String?
+  content        String?
+  term           String?
+  campaignId     String?
+  adsetId        String?
+  adId           String?
+  fbclid         String?
+  landingVariant String?
+  eventValue     Int?
+  currency       String?  @default("INR")
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([funnel, offerMode, createdAt])
+  @@index([visitorId])
+  @@index([leadId])
+  @@index([campaignId])
+  @@index([adId])
 }
