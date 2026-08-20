@@ -30,8 +30,7 @@ function rateLimited(ip: string) {
 }
 
 function text(value: unknown, max = 300) {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, max);
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
 function normalizePhone(value: unknown) {
@@ -107,34 +106,6 @@ function attribution(value: unknown): ServerAttribution {
   };
 }
 
-function configuredCheckoutUrl(product: "chatgpt" | "claude") {
-  if (product === "chatgpt" && process.env.CHATGPT_MASTERCLASS_CHECKOUT_URL) {
-    return process.env.CHATGPT_MASTERCLASS_CHECKOUT_URL;
-  }
-  if (product === "claude" && process.env.CLAUDE_MASTERCLASS_CHECKOUT_URL) {
-    return process.env.CLAUDE_MASTERCLASS_CHECKOUT_URL;
-  }
-  return process.env.MASTERCLASS_CHECKOUT_URL || "";
-}
-
-function buildCheckoutUrl(
-  raw: string,
-  params: { leadId: string; visitorId: string; funnel: string; amount: number; batchId: string }
-) {
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    url.searchParams.set("lead_id", params.leadId);
-    if (params.visitorId) url.searchParams.set("visitor_id", params.visitorId);
-    url.searchParams.set("funnel", params.funnel);
-    url.searchParams.set("amount", String(params.amount));
-    if (params.batchId) url.searchParams.set("batch_id", params.batchId);
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 function absolutePageUrl(path: string) {
   const base = (process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://sikhadenge.in").replace(/\/$/, "");
   if (!path) return base;
@@ -151,7 +122,6 @@ async function pushNeoDove(payload: {
 }) {
   const endpoint = process.env.NEODOVE_ENDPOINT;
   if (!endpoint) return;
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
@@ -176,14 +146,12 @@ async function pushNeoDove(payload: {
 async function pushWhatsAppRegistration(payload: Record<string, unknown>) {
   const endpoint = process.env.WHATSAPP_FUNNEL_WEBHOOK_URL;
   if (!endpoint) return;
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (process.env.WHATSAPP_FUNNEL_WEBHOOK_TOKEN) {
     headers.Authorization = `Bearer ${process.env.WHATSAPP_FUNNEL_WEBHOOK_TOKEN}`;
   }
-
   try {
     await fetch(endpoint, {
       method: "POST",
@@ -337,6 +305,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           offerMode,
           entryPrice,
           batchId,
+          paymentRequired: offerMode === "paid",
         }),
         sendMetaCapiEvent({
           eventName: "Lead",
@@ -378,13 +347,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const checkoutUrl =
       offerMode === "paid"
-        ? buildCheckoutUrl(configuredCheckoutUrl(funnel), {
-            leadId: lead.id,
-            visitorId: attrs.visitorId,
-            funnel,
-            amount: entryPrice,
-            batchId,
-          })
+        ? `/masterclass/${funnel}/checkout?lead_id=${encodeURIComponent(lead.id)}`
         : null;
 
     const confirmationUrl = `/masterclass/${funnel}/thank-you?lead_id=${encodeURIComponent(
