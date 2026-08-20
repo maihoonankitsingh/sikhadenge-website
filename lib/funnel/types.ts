@@ -24,6 +24,7 @@ export type FunnelFaq = {
 
 export type FunnelConfig = {
   id: string;
+  batchId: string;
   product: FunnelProduct;
   offerMode: OfferMode;
   entryPrice: number;
