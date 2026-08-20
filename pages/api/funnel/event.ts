@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 
 const ALLOWED_EVENTS = new Set([
@@ -73,15 +74,15 @@ function positiveInt(value: unknown): number | null {
   return Math.round(parsed);
 }
 
-function safeMetadata(value: unknown): Record<string, unknown> {
+function safeMetadata(value: unknown): Prisma.InputJsonObject {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
-  const output: Record<string, unknown> = {};
+  const output: Record<string, Prisma.InputJsonValue> = {};
   for (const [key, item] of Object.entries(value as Record<string, unknown>).slice(0, 25)) {
-    if (typeof item === "string") output[key.slice(0, 80)] = item.slice(0, 500);
-    else if (typeof item === "number" || typeof item === "boolean" || item === null) {
-      output[key.slice(0, 80)] = item;
-    }
+    const safeKey = key.slice(0, 80);
+    if (typeof item === "string") output[safeKey] = item.slice(0, 500);
+    else if (typeof item === "number" && Number.isFinite(item)) output[safeKey] = item;
+    else if (typeof item === "boolean") output[safeKey] = item;
   }
 
   return output;
@@ -152,6 +153,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ ok: true, id: item.id });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return res.status(200).json({ ok: true, duplicate: true });
+    }
     console.error("Funnel event persistence failed:", error);
     return res.status(500).json({ ok: false, error: "Unable to record event" });
   }
