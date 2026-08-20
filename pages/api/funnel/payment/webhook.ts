@@ -35,7 +35,6 @@ function siteUrl(path: string) {
 async function reconcileCaptured(orderId: string, paymentId: string) {
   const stored = await prisma.funnelPayment.findUnique({ where: { providerOrderId: orderId } });
   if (!stored) return { handled: false };
-  if (stored.status === "captured") return { handled: true, purchaseEventId: stored.purchaseEventId };
 
   const [payment, order] = await Promise.all([
     fetchRazorpayPayment(paymentId),
@@ -57,27 +56,26 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
   }
 
   const metadata = record(stored.metadata);
-  const purchaseEventId = stored.purchaseEventId || `purchase_${paymentId}`;
+  const purchaseEventId = `purchase_${paymentId}`;
   const amountRupees = stored.amountPaise / 100;
 
   await prisma.$transaction(async (tx) => {
-    const latest = await tx.funnelPayment.findUnique({ where: { id: stored.id } });
-    if (!latest || latest.status === "captured") return;
-
     await tx.funnelPayment.update({
       where: { id: stored.id },
       data: {
         status: "captured",
         providerPaymentId: paymentId,
         purchaseEventId,
-        paidAt: new Date(),
+        paidAt: stored.paidAt || new Date(),
         failureCode: null,
         failureReason: null,
       },
     });
 
-    await tx.funnelEvent.create({
-      data: {
+    await tx.funnelEvent.upsert({
+      where: { eventId: purchaseEventId },
+      update: {},
+      create: {
         eventId: purchaseEventId,
         eventName: "purchase",
         visitorId: text(metadata.visitorId, 120) || null,
@@ -105,6 +103,7 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
         currency: stored.currency,
         metadata: {
           provider: "razorpay",
+          paymentRecordId: stored.id,
           providerOrderId: orderId,
           providerPaymentId: paymentId,
           verifiedBy: "signed_webhook_and_provider_status",
