@@ -2,6 +2,7 @@ import type { FunnelConfig } from "./types";
 
 export type FunnelAttribution = {
   visitorId: string;
+  sessionId: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -11,27 +12,47 @@ export type FunnelAttribution = {
   adsetId: string;
   adId: string;
   fbclid: string;
+  fbp: string;
+  fbc: string;
+  gclid: string;
   landingVariant: string;
   referrer: string;
 };
 
 type TrackOptions = {
   persist?: boolean;
+  eventId?: string;
 };
 
-const VISITOR_KEY = "sd_funnel_visitor_id_v1";
-const ATTRIBUTION_KEY = "sd_funnel_attribution_v1";
+const VISITOR_KEY = "sd_funnel_visitor_id_v2";
+const SESSION_KEY = "sd_funnel_session_id_v2";
+const ATTRIBUTION_KEY = "sd_funnel_attribution_v2";
 
-function makeId() {
+function makeId(prefix = "sd") {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
+    return `${prefix}_${crypto.randomUUID()}`;
   }
-  return `sd_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+export function createFunnelEventId(eventName: string) {
+  return makeId(`sd_${eventName.replace(/[^a-z0-9]+/gi, "_").toLowerCase()}`);
+}
+
+function readCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const prefix = `${name}=`;
+  const item = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : "";
 }
 
 function emptyAttribution(): FunnelAttribution {
   return {
     visitorId: "",
+    sessionId: "",
     utmSource: "",
     utmMedium: "",
     utmCampaign: "",
@@ -41,28 +62,59 @@ function emptyAttribution(): FunnelAttribution {
     adsetId: "",
     adId: "",
     fbclid: "",
+    fbp: "",
+    fbc: "",
+    gclid: "",
     landingVariant: "",
     referrer: "",
   };
 }
 
+function getOrCreateVisitorId() {
+  try {
+    let visitorId = window.localStorage.getItem(VISITOR_KEY) || "";
+    if (!visitorId) {
+      visitorId = makeId("visitor");
+      window.localStorage.setItem(VISITOR_KEY, visitorId);
+    }
+    return visitorId;
+  } catch {
+    return makeId("visitor");
+  }
+}
+
+function getOrCreateSessionId() {
+  try {
+    let sessionId = window.sessionStorage.getItem(SESSION_KEY) || "";
+    if (!sessionId) {
+      sessionId = makeId("session");
+      window.sessionStorage.setItem(SESSION_KEY, sessionId);
+    }
+    return sessionId;
+  } catch {
+    return makeId("session");
+  }
+}
+
+function deriveFbc(fbclid: string, existingFbc: string) {
+  if (existingFbc) return existingFbc;
+  if (!fbclid) return "";
+  return `fb.1.${Date.now()}.${fbclid}`;
+}
+
 export function getAttribution(): FunnelAttribution {
   if (typeof window === "undefined") return emptyAttribution();
 
-  let visitorId = "";
-  try {
-    visitorId = window.localStorage.getItem(VISITOR_KEY) || "";
-    if (!visitorId) {
-      visitorId = makeId();
-      window.localStorage.setItem(VISITOR_KEY, visitorId);
-    }
-  } catch {
-    visitorId = makeId();
-  }
-
+  const visitorId = getOrCreateVisitorId();
+  const sessionId = getOrCreateSessionId();
   const search = new URLSearchParams(window.location.search);
+  const fbclid = search.get("fbclid") || "";
+  const fbp = readCookie("_fbp");
+  const fbc = deriveFbc(fbclid, readCookie("_fbc"));
+
   const fresh: FunnelAttribution = {
     visitorId,
+    sessionId,
     utmSource: search.get("utm_source") || "",
     utmMedium: search.get("utm_medium") || "",
     utmCampaign: search.get("utm_campaign") || "",
@@ -71,13 +123,16 @@ export function getAttribution(): FunnelAttribution {
     campaignId: search.get("campaign_id") || search.get("fb_campaign_id") || "",
     adsetId: search.get("adset_id") || search.get("fb_adset_id") || "",
     adId: search.get("ad_id") || search.get("fb_ad_id") || "",
-    fbclid: search.get("fbclid") || "",
+    fbclid,
+    fbp,
+    fbc,
+    gclid: search.get("gclid") || "",
     landingVariant: search.get("variant") || "",
     referrer: document.referrer || "",
   };
 
   const hasFreshAttribution = Object.entries(fresh).some(
-    ([key, value]) => key !== "visitorId" && Boolean(value)
+    ([key, value]) => !["visitorId", "sessionId", "fbp"].includes(key) && Boolean(value)
   );
 
   if (hasFreshAttribution) {
@@ -93,13 +148,36 @@ export function getAttribution(): FunnelAttribution {
     const stored = window.sessionStorage.getItem(ATTRIBUTION_KEY);
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<FunnelAttribution>;
-      return { ...emptyAttribution(), ...parsed, visitorId };
+      return {
+        ...emptyAttribution(),
+        ...parsed,
+        visitorId,
+        sessionId,
+        fbp: fbp || parsed.fbp || "",
+        fbc: readCookie("_fbc") || parsed.fbc || "",
+      };
     }
   } catch {
     // Ignore malformed browser storage.
   }
 
   return fresh;
+}
+
+function metaStandardEvent(eventName: string) {
+  switch (eventName) {
+    case "generate_lead":
+      return "Lead";
+    case "view_masterclass_offer":
+      return "ViewContent";
+    case "begin_checkout":
+      return "InitiateCheckout";
+    case "purchase":
+    case "workshop_purchase":
+      return "Purchase";
+    default:
+      return null;
+  }
 }
 
 export async function trackFunnelEvent(
@@ -112,14 +190,24 @@ export async function trackFunnelEvent(
   if (typeof window === "undefined") return;
 
   const attribution = getAttribution();
+  const eventId = options.eventId || createFunnelEventId(eventName);
+  const numericValue =
+    typeof metadata.value === "number"
+      ? metadata.value
+      : eventName === "purchase"
+        ? config.entryPrice
+        : undefined;
+
   const payload = {
     eventName,
+    eventId,
     visitorId: attribution.visitorId,
+    sessionId: attribution.sessionId,
     leadId: leadId || null,
     funnel: config.product,
     offerMode: config.offerMode,
     entryPrice: config.entryPrice,
-    batchId: `${config.product}:${config.dateLabel}:${config.timeLabel}`,
+    batchId: config.batchId,
     pagePath: window.location.pathname,
     source: attribution.utmSource,
     medium: attribution.utmMedium,
@@ -130,8 +218,13 @@ export async function trackFunnelEvent(
     adsetId: attribution.adsetId,
     adId: attribution.adId,
     fbclid: attribution.fbclid,
+    fbp: attribution.fbp,
+    fbc: attribution.fbc,
+    gclid: attribution.gclid,
     landingVariant: attribution.landingVariant,
     metadata,
+    eventValue: numericValue,
+    currency: typeof metadata.currency === "string" ? metadata.currency : "INR",
   };
 
   const w = window as typeof window & {
@@ -142,44 +235,49 @@ export async function trackFunnelEvent(
   w.dataLayer = w.dataLayer || [];
   w.dataLayer.push({
     event: eventName,
+    event_id: eventId,
     funnel_product: config.product,
     offer_mode: config.offerMode,
     entry_price: config.entryPrice,
+    batch_id: config.batchId,
     visitor_id: attribution.visitorId,
+    session_id: attribution.sessionId,
     lead_id: leadId || undefined,
+    fbp: attribution.fbp || undefined,
+    fbc: attribution.fbc || undefined,
+    gclid: attribution.gclid || undefined,
     ...metadata,
   });
 
   if (typeof w.fbq === "function") {
-    if (eventName === "generate_lead") {
-      w.fbq("track", "Lead", {
-        content_name: `${config.product}_masterclass`,
-        value: config.entryPrice,
-        currency: "INR",
-      });
-    } else if (eventName === "view_masterclass_offer") {
-      w.fbq("track", "ViewContent", {
-        content_name: `${config.product}_masterclass`,
-        content_category: "masterclass",
-        value: config.entryPrice,
-        currency: "INR",
-      });
-    } else if (eventName === "begin_checkout") {
-      w.fbq("track", "InitiateCheckout", {
-        content_name: `${config.product}_masterclass`,
-        value: config.entryPrice,
-        currency: "INR",
-      });
+    const standardEvent = metaStandardEvent(eventName);
+    const metaPayload: Record<string, unknown> = {
+      content_name: `${config.product}_masterclass`,
+      content_category: "masterclass",
+      currency: "INR",
+    };
+
+    if (typeof numericValue === "number") metaPayload.value = numericValue;
+    else if (eventName !== "generate_lead") metaPayload.value = config.entryPrice;
+
+    if (standardEvent) {
+      w.fbq("track", standardEvent, metaPayload, { eventID: eventId });
     } else {
-      w.fbq("trackCustom", eventName, {
-        funnel_product: config.product,
-        offer_mode: config.offerMode,
-        entry_price: config.entryPrice,
-      });
+      w.fbq(
+        "trackCustom",
+        eventName,
+        {
+          funnel_product: config.product,
+          offer_mode: config.offerMode,
+          entry_price: config.entryPrice,
+          batch_id: config.batchId,
+        },
+        { eventID: eventId }
+      );
     }
   }
 
-  if (options.persist === false) return;
+  if (options.persist === false) return eventId;
 
   try {
     const body = JSON.stringify(payload);
@@ -188,7 +286,7 @@ export async function trackFunnelEvent(
         "/api/funnel/event",
         new Blob([body], { type: "application/json" })
       );
-      return;
+      return eventId;
     }
 
     await fetch("/api/funnel/event", {
@@ -200,4 +298,6 @@ export async function trackFunnelEvent(
   } catch {
     // Analytics must never block the funnel UX.
   }
+
+  return eventId;
 }
