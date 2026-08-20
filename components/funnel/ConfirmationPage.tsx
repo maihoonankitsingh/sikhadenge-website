@@ -2,7 +2,6 @@
 
 import Head from "next/head";
 import Image from "next/image";
-import { useRouter } from "next/router";
 import { useMemo } from "react";
 import type { FunnelConfig } from "../../lib/funnel/types";
 import { trackFunnelEvent } from "../../lib/funnel/client";
@@ -29,26 +28,25 @@ function getSupportWhatsAppUrl() {
 
 export default function ConfirmationPage({
   config,
-  paymentVerified = false,
-  leadId: leadIdProp,
+  confirmationVerified,
+  leadId,
 }: {
   config: FunnelConfig;
-  paymentVerified?: boolean;
+  confirmationVerified: boolean;
   leadId?: string;
 }) {
-  const router = useRouter();
-  const routerLeadId = typeof router.query.lead_id === "string" ? router.query.lead_id : undefined;
-  const leadId = leadIdProp || routerLeadId;
   const communityUrl = useMemo(() => getCommunityUrl(config.product), [config.product]);
   const supportWhatsAppUrl = getSupportWhatsAppUrl();
   const isPaid = config.offerMode === "paid";
-  const canConfirmSeat = !isPaid || paymentVerified;
+  const canConfirmSeat = confirmationVerified;
 
-  const title = isPaid
-    ? paymentVerified
+  const title = canConfirmSeat
+    ? isPaid
       ? `Payment Verified | ${config.productLabel} Masterclass | SikhaDenge`
-      : `Payment Not Confirmed | ${config.productLabel} Masterclass | SikhaDenge`
-    : `Registration Confirmed | ${config.productLabel} Masterclass | SikhaDenge`;
+      : `Registration Confirmed | ${config.productLabel} Masterclass | SikhaDenge`
+    : isPaid
+      ? `Payment Not Confirmed | ${config.productLabel} Masterclass | SikhaDenge`
+      : `Registration Not Confirmed | ${config.productLabel} Masterclass | SikhaDenge`;
 
   return (
     <>
@@ -59,7 +57,7 @@ export default function ConfirmationPage({
           content={
             canConfirmSeat
               ? `Your SikhaDenge ${config.productLabel} Masterclass seat is confirmed.`
-              : `Your SikhaDenge ${config.productLabel} Masterclass payment has not been verified.`
+              : `Your SikhaDenge ${config.productLabel} Masterclass confirmation could not be verified.`
           }
         />
         <meta name="robots" content="noindex,nofollow" />
@@ -87,25 +85,31 @@ export default function ConfirmationPage({
           </div>
 
           <span className="funnel-kicker">
-            {isPaid
-              ? paymentVerified
+            {canConfirmSeat
+              ? isPaid
                 ? "PAYMENT VERIFIED • SEAT CONFIRMED"
-                : "PAYMENT NOT VERIFIED"
-              : "REGISTRATION CONFIRMED"}
+                : "REGISTRATION CONFIRMED"
+              : isPaid
+                ? "PAYMENT NOT VERIFIED"
+                : "REGISTRATION NOT VERIFIED"}
           </span>
 
           <h1>
-            {isPaid
-              ? paymentVerified
+            {canConfirmSeat
+              ? isPaid
                 ? `Payment verified. Your ${config.productLabel} Masterclass seat is confirmed.`
-                : `Your ${config.productLabel} Masterclass paid seat is not confirmed yet.`
-              : `Your ${config.productLabel} Masterclass seat is registered.`}
+                : `Your ${config.productLabel} Masterclass seat is registered.`
+              : isPaid
+                ? `Your ${config.productLabel} Masterclass paid seat is not confirmed yet.`
+                : `We could not verify this ${config.productLabel} Masterclass registration.`}
           </h1>
 
           <p className="funnel-confirmation-lead">
             {canConfirmSeat
               ? "Critical joining instructions and reminders will be sent to the WhatsApp number you used while registering."
-              : "A paid seat is confirmed only after SikhaDenge verifies a captured payment in the payment system. If you have not completed payment, return to the paid masterclass page and continue from there."}
+              : isPaid
+                ? "A paid seat is confirmed only after SikhaDenge verifies a captured payment in the payment system. If you have not completed payment, return to the paid masterclass page and register again."
+                : "This confirmation link does not match a valid stored registration. Please return to the masterclass page and complete the registration form."}
           </p>
 
           <div className="funnel-confirmation-event">
@@ -174,12 +178,15 @@ export default function ConfirmationPage({
             </>
           ) : (
             <div className="funnel-confirmation-actions">
-              <a className="funnel-primary-button" href={`/masterclass/${config.product}/paid`}>
-                Return to Paid Masterclass
+              <a
+                className="funnel-primary-button"
+                href={`/masterclass/${config.product}/${isPaid ? "paid" : "free"}`}
+              >
+                Return to Masterclass Registration
               </a>
               {supportWhatsAppUrl ? (
                 <a className="funnel-secondary-button" href={supportWhatsAppUrl} target="_blank" rel="noreferrer">
-                  Contact Payment Support
+                  Contact Support
                 </a>
               ) : null}
             </div>
