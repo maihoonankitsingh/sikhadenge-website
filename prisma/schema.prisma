@@ -101,3 +101,33 @@ model FunnelEvent {
   @@index([campaignId])
   @@index([adId])
 }
+
+model FunnelPayment {
+  id                String    @id @default(cuid())
+  provider          String    @default("razorpay")
+  purpose           String    @default("masterclass_entry")
+  leadId            String
+  funnel            String
+  offerMode         String
+  batchId           String?
+  amountPaise       Int
+  currency          String    @default("INR")
+  status            String    @default("created")
+  receipt           String    @unique
+  providerOrderId   String    @unique
+  providerPaymentId String?   @unique
+  purchaseEventId   String?   @unique
+  failureCode       String?
+  failureReason     String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  paidAt            DateTime?
+  failedAt          DateTime?
+  refundedAt        DateTime?
+
+  @@index([leadId, createdAt])
+  @@index([funnel, offerMode, createdAt])
+  @@index([status, createdAt])
+  @@index([batchId])
+}
