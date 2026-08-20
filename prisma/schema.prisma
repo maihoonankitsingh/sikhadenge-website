@@ -45,7 +45,7 @@ model Influencer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leads Lead[]
+  leads    Lead[]
   sessions InfluencerSession[]
 }
 
@@ -64,8 +64,10 @@ model InfluencerSession {
 
 model FunnelEvent {
   id             String   @id @default(cuid())
+  eventId        String?
   eventName      String
   visitorId      String?
+  sessionId      String?
   leadId         String?
   funnel         String?
   offerMode      String?
@@ -81,6 +83,9 @@ model FunnelEvent {
   adsetId        String?
   adId           String?
   fbclid         String?
+  fbp            String?
+  fbc            String?
+  gclid          String?
   landingVariant String?
   eventValue     Int?
   currency       String?  @default("INR")
@@ -89,7 +94,9 @@ model FunnelEvent {
 
   @@index([eventName, createdAt])
   @@index([funnel, offerMode, createdAt])
+  @@index([eventId])
   @@index([visitorId])
+  @@index([sessionId])
   @@index([leadId])
   @@index([campaignId])
   @@index([adId])
