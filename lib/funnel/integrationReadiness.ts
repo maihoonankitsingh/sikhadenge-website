@@ -94,13 +94,13 @@ export function getIntegrationReadiness(): IntegrationReadiness {
   if (!whatsappStatusToken) whatsappMissing.push("WHATSAPP_FUNNEL_STATUS_TOKEN");
 
   const siteUrl = value("PUBLIC_SITE_URL") || value("NEXT_PUBLIC_SITE_URL");
-  const signingSecret = value("FUNNEL_CHECKOUT_SIGNING_SECRET");
+  const signingSecret = value("FUNNEL_CHECKOUT_SECRET");
 
   const blockers: string[] = [];
   if (!razorpayTestReady) blockers.push("Razorpay Test Mode is not fully ready");
   if (!metaReady) blockers.push("Meta Test Events is not fully ready");
   if (!whatsappReady) blockers.push("WhatsApp outbound/status bridge is not fully ready");
-  if (!signingSecret) blockers.push("FUNNEL_CHECKOUT_SIGNING_SECRET is not configured");
+  if (!signingSecret) blockers.push("FUNNEL_CHECKOUT_SECRET is not configured as a dedicated checkout signing secret");
   if (!siteUrl) blockers.push("PUBLIC_SITE_URL/NEXT_PUBLIC_SITE_URL is not configured");
 
   const fullyReady = blockers.length === 0;
