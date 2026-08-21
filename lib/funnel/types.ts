@@ -51,4 +51,7 @@ export type FunnelConfig = {
   workshopName: string;
   workshopPrice: number;
   workshopRegularPrice: number;
+  coreProgramName: string;
+  coreProgramPrice: number;
+  coreProgramDuration: string;
 };
