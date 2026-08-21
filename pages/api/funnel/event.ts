@@ -16,6 +16,7 @@ const ALLOWED_EVENTS = new Set([
   "masterclass_30m",
   "masterclass_60m",
   "masterclass_offer_seen",
+  "workshop_offer_viewed",
   "workshop_cta_click",
   "workshop_checkout_started",
   "workshop_purchase",
@@ -32,32 +33,23 @@ const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 180;
 const ipHits =
   (globalThis as any).__sd_funnel_event_hits ??
-  ((globalThis as any).__sd_funnel_event_hits = new Map<
-    string,
-    { n: number; t: number }
-  >());
+  ((globalThis as any).__sd_funnel_event_hits = new Map<string, { n: number; t: number }>());
 
 function getClientIp(req: NextApiRequest) {
   const cf = req.headers["cf-connecting-ip"];
   if (typeof cf === "string" && cf.trim()) return cf.trim();
-
   const xff = req.headers["x-forwarded-for"];
-  if (typeof xff === "string" && xff.trim()) {
-    return xff.split(",")[0]?.trim() || "unknown";
-  }
-
+  if (typeof xff === "string" && xff.trim()) return xff.split(",")[0]?.trim() || "unknown";
   return String(req.socket?.remoteAddress || "unknown");
 }
 
 function rateLimited(ip: string) {
   const now = Date.now();
   const current = ipHits.get(ip);
-
   if (!current || now - current.t > RATE_WINDOW_MS) {
     ipHits.set(ip, { n: 1, t: now });
     return false;
   }
-
   current.n += 1;
   ipHits.set(ip, current);
   return current.n > RATE_MAX;
@@ -77,7 +69,6 @@ function positiveInt(value: unknown): number | null {
 
 function safeMetadata(value: unknown): Prisma.InputJsonObject {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-
   const output: Record<string, Prisma.InputJsonValue> = {};
   for (const [key, item] of Object.entries(value as Record<string, unknown>).slice(0, 25)) {
     const safeKey = key.slice(0, 80);
@@ -85,7 +76,6 @@ function safeMetadata(value: unknown): Prisma.InputJsonObject {
     else if (typeof item === "number" && Number.isFinite(item)) output[safeKey] = item;
     else if (typeof item === "boolean") output[safeKey] = item;
   }
-
   return output;
 }
 
@@ -96,25 +86,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const ip = getClientIp(req);
-  if (rateLimited(ip)) {
-    return res.status(429).json({ ok: false, error: "Too many analytics events" });
-  }
+  if (rateLimited(ip)) return res.status(429).json({ ok: false, error: "Too many analytics events" });
 
   const body = req.body ?? {};
   const eventName = short(body.eventName, 80);
-
   if (!eventName || !ALLOWED_EVENTS.has(eventName)) {
     return res.status(400).json({ ok: false, error: "Invalid event" });
   }
 
   const funnel = short(body.funnel, 30);
   const offerMode = short(body.offerMode, 20);
-  if (funnel && !["chatgpt", "claude"].includes(funnel)) {
-    return res.status(400).json({ ok: false, error: "Invalid funnel" });
-  }
-  if (offerMode && !["free", "paid"].includes(offerMode)) {
-    return res.status(400).json({ ok: false, error: "Invalid offer mode" });
-  }
+  if (funnel && !["chatgpt", "claude"].includes(funnel)) return res.status(400).json({ ok: false, error: "Invalid funnel" });
+  if (offerMode && !["free", "paid"].includes(offerMode)) return res.status(400).json({ ok: false, error: "Invalid offer mode" });
 
   const metadata: Prisma.InputJsonObject = {
     ...safeMetadata(body.metadata),
@@ -124,41 +107,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const item = await prisma.funnelEvent.create({
       data: {
-        eventId: short(body.eventId, 160),
-        eventName,
-        visitorId: short(body.visitorId, 120),
-        sessionId: short(body.sessionId, 120),
-        leadId: short(body.leadId, 120),
-        funnel,
-        offerMode,
-        entryPrice: positiveInt(body.entryPrice),
-        batchId: short(body.batchId, 180),
-        pagePath: short(body.pagePath, 300),
-        source: short(body.source, 120),
-        medium: short(body.medium, 120),
-        campaign: short(body.campaign, 220),
-        content: short(body.content, 220),
-        term: short(body.term, 220),
-        campaignId: short(body.campaignId, 120),
-        adsetId: short(body.adsetId, 120),
-        adId: short(body.adId, 120),
-        fbclid: short(body.fbclid, 300),
-        fbp: short(body.fbp, 300),
-        fbc: short(body.fbc, 500),
-        gclid: short(body.gclid, 300),
-        landingVariant: short(body.landingVariant, 120),
-        eventValue: positiveInt(body.eventValue ?? body?.metadata?.value),
-        currency: short(body.currency ?? body?.metadata?.currency, 8) || "INR",
-        metadata,
+        eventId: short(body.eventId, 160), eventName, visitorId: short(body.visitorId, 120), sessionId: short(body.sessionId, 120),
+        leadId: short(body.leadId, 120), funnel, offerMode, entryPrice: positiveInt(body.entryPrice), batchId: short(body.batchId, 180),
+        pagePath: short(body.pagePath, 300), source: short(body.source, 120), medium: short(body.medium, 120), campaign: short(body.campaign, 220),
+        content: short(body.content, 220), term: short(body.term, 220), campaignId: short(body.campaignId, 120), adsetId: short(body.adsetId, 120),
+        adId: short(body.adId, 120), fbclid: short(body.fbclid, 300), fbp: short(body.fbp, 300), fbc: short(body.fbc, 500),
+        gclid: short(body.gclid, 300), landingVariant: short(body.landingVariant, 120), eventValue: positiveInt(body.eventValue ?? body?.metadata?.value),
+        currency: short(body.currency ?? body?.metadata?.currency, 8) || "INR", metadata,
       },
       select: { id: true },
     });
-
     return res.status(200).json({ ok: true, id: item.id });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return res.status(200).json({ ok: true, duplicate: true });
-    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return res.status(200).json({ ok: true, duplicate: true });
     console.error("Funnel event persistence failed:", error);
     return res.status(500).json({ ok: false, error: "Unable to record event" });
   }
