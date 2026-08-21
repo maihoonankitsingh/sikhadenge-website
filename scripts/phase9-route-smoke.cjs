@@ -13,6 +13,8 @@ const routes = [
   '/masterclass/chatgpt/free',
   '/masterclass/claude/free',
   '/admin/funnel-dashboard',
+  '/admin/funnel-cohorts',
+  '/admin/funnel-followups',
   '/admin/funnel-crm',
   '/admin/funnel-integrations',
 ];
@@ -47,7 +49,7 @@ async function fetchWithTimeout(url, timeoutMs = 10000) {
     return await fetch(url, {
       redirect: 'manual',
       signal: controller.signal,
-      headers: { 'user-agent': 'sikhadenge-phase10-route-smoke/1.0' },
+      headers: { 'user-agent': 'sikhadenge-phase11-route-smoke/1.0' },
     });
   } finally {
     clearTimeout(timer);
