@@ -19,6 +19,7 @@ on:
       - 'scripts/phase9-route-smoke.cjs'
       - 'scripts/phase10-integration-readiness-check.cjs'
       - 'scripts/phase10-lifecycle-smoke.cjs'
+      - 'scripts/phase15-responsive-qa.mjs'
       - 'styles/funnel*.css'
       - 'styles/workshop-funnel.css'
       - 'package.json'
@@ -105,3 +106,14 @@ jobs:
 
       - name: Production route smoke test
         run: node scripts/phase9-route-smoke.cjs
+
+      - name: Phase 15 responsive visual QA
+        run: node scripts/phase15-responsive-qa.mjs
+
+      - name: Upload Phase 15 responsive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase15-responsive-visual-qa
+          path: .tmp/phase15-visual-qa
+          if-no-files-found: error
