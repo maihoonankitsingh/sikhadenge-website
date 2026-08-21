@@ -38,13 +38,32 @@ async function waitForHttp(url, timeoutMs = 45000) {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url, { redirect: "manual" });
-      if (response.status >= 200 && response.status < 500) return response;
+      await response.arrayBuffer();
+      if (response.status >= 200 && response.status < 500) return response.status;
     } catch (error) {
       lastError = error;
     }
     await sleep(350);
   }
   throw new Error(`Timed out waiting for ${url}${lastError ? `: ${lastError.message}` : ""}`);
+}
+
+async function verifyRoute(url, expected, timeoutMs = 20000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!html.includes(expected)) throw new Error(`missing expected product label ${expected}`);
+      return response.status;
+    } catch (error) {
+      lastError = error;
+      await sleep(500);
+    }
+  }
+  throw new Error(`Unable to verify ${url}${lastError ? `: ${lastError.message}` : ""}`);
 }
 
 await rm(outDir, { recursive: true, force: true });
@@ -67,10 +86,7 @@ try {
   const chrome = findChrome();
 
   for (const route of routes) {
-    const response = await fetch(`${baseUrl}${route.path}`);
-    const html = await response.text();
-    if (!response.ok) throw new Error(`${route.path} returned HTTP ${response.status}`);
-    if (!html.includes(route.expected)) throw new Error(`${route.path} did not contain expected product label ${route.expected}`);
+    const status = await verifyRoute(`${baseUrl}${route.path}`, route.expected);
 
     for (const viewport of viewports) {
       const filename = `${route.key}-${viewport.key}.png`;
@@ -89,7 +105,8 @@ try {
         throw new Error(`Chrome screenshot failed for ${route.key} ${viewport.key}: ${result.stderr || result.stdout}`);
       }
 
-      results.push({ route: route.key, path: route.path, viewport, screenshot: filename, status: response.status });
+      results.push({ route: route.key, path: route.path, viewport, screenshot: filename, status });
+      await sleep(250);
     }
   }
 
