@@ -1,0 +1,26 @@
+name: Claude Live Release CI
+
+on:
+  push:
+    branches:
+      - release/claude-live-landing-20260821
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Production build
+        run: npm run build
