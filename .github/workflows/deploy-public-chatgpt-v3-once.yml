@@ -163,8 +163,9 @@ jobs:
             'app/checkout/[slug]/CheckoutClient.tsx'
             'app/layout.tsx'
             'app/masterclass/page.tsx'
+            'pages/_app.tsx'
           )
-          EXPECTED_DIRTY=$'app/checkout/[slug]/CheckoutClient.tsx\napp/layout.tsx\napp/masterclass/page.tsx'
+          EXPECTED_DIRTY=$'app/checkout/[slug]/CheckoutClient.tsx\napp/layout.tsx\napp/masterclass/page.tsx\npages/_app.tsx'
           EXPECTED_RELEASE=$'pages/masterclass/chatgpt/free.tsx\nstyles/chatgpt-masterclass-live.module.css'
 
           dirty_files() {
@@ -290,7 +291,7 @@ jobs:
           verify_local_drift
           echo "LIVE_SHA=$(git rev-parse HEAD)"
           echo 'PASS: public ChatGPT page returned expected production content'
-          echo 'PASS: pre-existing local VPS edits remain preserved'
+          echo 'PASS: all four pre-existing local VPS edits remain preserved'
 
           ACTIVATED=0
           LOCAL_CLEARED=0
