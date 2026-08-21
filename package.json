@@ -20,7 +20,7 @@
     "bcryptjs": "^3.0.3",
     "lucide-react": "^0.562.0",
     "mysql2": "^3.16.0",
-    "next": "15.5.23",
+    "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.3"
@@ -31,7 +31,7 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.23",
     "eslint": "^8",
-    "eslint-config-next": "15.5.23",
+    "eslint-config-next": "16.3.1",
     "postcss": "^8.5.6",
     "prisma": "^6.12.0",
     "tailwindcss": "^3.4.19",
