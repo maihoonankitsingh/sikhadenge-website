@@ -17,6 +17,7 @@ import "../styles/funnel-core-premium-v2.css";
 import "../styles/funnel-transaction-premium.css";
 import "../styles/funnel-transaction-v2.css";
 import "../styles/funnel-ux-standard-v3.css";
+import "../styles/funnel-claude-sales-v4.css";
 import "../styles/funnel-crm.css";
 import Header from "../components/Header";
 
