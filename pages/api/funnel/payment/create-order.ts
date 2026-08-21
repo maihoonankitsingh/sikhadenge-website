@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../lib/prisma";
 import { createRazorpayOrder, getRazorpayPublicKey } from "../../../../lib/funnel/razorpay";
-import { verifyCheckoutToken } from "../../../../lib/funnel/checkoutToken";
+import { verifyCheckoutToken, type CheckoutPurpose } from "../../../../lib/funnel/checkoutToken";
 
 function text(value: unknown, max = 220) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -19,6 +19,33 @@ function parseNotes(value: string | null) {
   }
 }
 
+function configuredAmount(purpose: CheckoutPurpose) {
+  if (purpose === "implementation_workshop") {
+    return Math.max(
+      1,
+      Math.round(Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE || "1499") || 1499)
+    );
+  }
+  return Math.max(
+    1,
+    Math.round(Number(process.env.NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE || "9") || 9)
+  );
+}
+
+function confirmationUrl(purpose: CheckoutPurpose, funnel: string, leadId: string) {
+  if (purpose === "implementation_workshop") {
+    return `/workshop/${funnel}/thank-you?lead_id=${encodeURIComponent(leadId)}`;
+  }
+  return `/masterclass/${funnel}/thank-you?lead_id=${encodeURIComponent(leadId)}&mode=paid&paid=1`;
+}
+
+function description(purpose: CheckoutPurpose, funnel: string) {
+  const product = funnel === "chatgpt" ? "ChatGPT" : "Claude";
+  return purpose === "implementation_workshop"
+    ? `${product} Implementation Workshop`
+    : `${product} Live Masterclass`;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -27,17 +54,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const leadId = text(req.body?.leadId, 120);
   const funnel = text(req.body?.funnel, 20);
+  const purpose = text(req.body?.purpose, 60) as CheckoutPurpose;
   const checkoutToken = text(req.body?.checkoutToken, 1200);
   const token = verifyCheckoutToken(checkoutToken);
 
   if (
     !leadId ||
     !["chatgpt", "claude"].includes(funnel) ||
+    !["masterclass_entry", "implementation_workshop"].includes(purpose) ||
     !token ||
     token.leadId !== leadId ||
-    token.funnel !== funnel
+    token.funnel !== funnel ||
+    token.purpose !== purpose
   ) {
-    return res.status(401).json({ ok: false, error: "Checkout link is invalid or expired. Please register again." });
+    return res.status(401).json({ ok: false, error: "Checkout link is invalid or expired." });
   }
 
   const keyId = getRazorpayPublicKey();
@@ -50,24 +80,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!lead) return res.status(404).json({ ok: false, error: "Registration not found" });
 
     const notes = parseNotes(lead.notes);
-    if (
-      notes.schema !== "funnel-v2" ||
-      notes.funnel !== funnel ||
-      notes.offerMode !== "paid" ||
-      lead.source !== `funnel:${funnel}:paid`
-    ) {
+    const validFunnelLead =
+      notes.schema === "funnel-v2" &&
+      notes.funnel === funnel &&
+      (lead.source === `funnel:${funnel}:free` || lead.source === `funnel:${funnel}:paid`);
+
+    if (!validFunnelLead) {
+      return res.status(409).json({ ok: false, error: "This registration does not belong to this funnel" });
+    }
+
+    if (purpose === "masterclass_entry" && (notes.offerMode !== "paid" || lead.source !== `funnel:${funnel}:paid`)) {
       return res.status(409).json({ ok: false, error: "This registration is not a paid masterclass registration" });
     }
 
-    const amountRupees = Math.max(
-      1,
-      Math.round(Number(process.env.NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE || "9") || 9)
-    );
+    const amountRupees = configuredAmount(purpose);
     const amountPaise = amountRupees * 100;
     const batchId = text(notes.batchId, 180) || null;
+    const offerMode = notes.offerMode === "free" ? "free" : "paid";
 
     const paid = await prisma.funnelPayment.findFirst({
-      where: { leadId, funnel, purpose: "masterclass_entry", status: "captured" },
+      where: { leadId, funnel, purpose, status: "captured" },
       orderBy: { createdAt: "desc" },
     });
 
@@ -75,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({
         ok: true,
         alreadyPaid: true,
-        confirmationUrl: `/masterclass/${funnel}/thank-you?lead_id=${encodeURIComponent(leadId)}&mode=paid&paid=1`,
+        confirmationUrl: confirmationUrl(purpose, funnel, leadId),
       });
     }
 
@@ -83,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: {
         leadId,
         funnel,
-        purpose: "masterclass_entry",
+        purpose,
         status: "created",
         amountPaise,
       },
@@ -105,11 +137,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: lead.name || "SikhaDenge Learner",
         email,
         contact: phone,
-        description: `${funnel === "chatgpt" ? "ChatGPT" : "Claude"} Live Masterclass`,
+        description: description(purpose, funnel),
       });
     }
 
-    const receipt = `mc_${leadId.slice(-10)}_${Date.now().toString(36)}`.slice(0, 40);
+    const prefix = purpose === "implementation_workshop" ? "ws" : "mc";
+    const receipt = `${prefix}_${leadId.slice(-10)}_${Date.now().toString(36)}`.slice(0, 40);
     const attrs = notes.attribution && typeof notes.attribution === "object" ? notes.attribution : {};
 
     const order = await createRazorpayOrder({
@@ -119,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lead_id: leadId.slice(0, 250),
         funnel,
         batch_id: String(batchId || "").slice(0, 250),
-        purpose: "masterclass_entry",
+        purpose,
       },
     });
 
@@ -130,10 +163,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const payment = await prisma.funnelPayment.create({
       data: {
         provider: "razorpay",
-        purpose: "masterclass_entry",
+        purpose,
         leadId,
         funnel,
-        offerMode: "paid",
+        offerMode,
         batchId,
         amountPaise,
         currency: "INR",
@@ -173,10 +206,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: lead.name || "SikhaDenge Learner",
       email,
       contact: phone,
-      description: `${funnel === "chatgpt" ? "ChatGPT" : "Claude"} Live Masterclass`,
+      description: description(purpose, funnel),
     });
   } catch (error) {
-    console.error("Masterclass payment order creation failed:", error);
+    console.error("Funnel payment order creation failed:", error);
     return res.status(500).json({ ok: false, error: "Unable to start secure payment" });
   }
 }
