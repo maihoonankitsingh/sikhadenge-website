@@ -1,0 +1,315 @@
+name: Deploy ChatGPT Inter Once
+
+on:
+  pull_request:
+    branches:
+      - live-clean-sync-20260424
+    paths:
+      - .github/workflows/deploy-chatgpt-inter-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-chatgpt-inter-production-once
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      TARGET_SHA: 67aac486c2f472b440a2d33c6aae0806c11112ff
+      EXPECTED_PREVIOUS_SHA: 468975301a616e6868647ef5bbb8033de984ec88
+      RUN_KEY: inter-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout exact release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Validate target and production secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_PREVIOUS_SHA" =~ ^[0-9a-f]{40}$ ]]
+          for key in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_HOST_KEY; do
+            test -n "${!key:-}" || { echo "Missing required production secret: $key" >&2; exit 1; }
+          done
+          if [[ -z "${SSH_PORT:-}" ]]; then echo 'SSH_PORT=22' >> "$GITHUB_ENV"; fi
+          echo 'PASS: target and secret gate'
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          private_key_file="$HOME/.ssh/public-site-production"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$private_key_file"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
+          fi
+          chmod 600 "$private_key_file"
+          [[ "$SSH_HOST" =~ ^[^[:space:]/]+$ ]]
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
+          (( SSH_PORT >= 1 && SSH_PORT <= 65535 ))
+          read -r _ supplied_key_type supplied_key_material _ <<< "$SSH_HOST_KEY"
+          test "$supplied_key_type" = "ssh-ed25519"
+          test -n "$supplied_key_material"
+          printf '%s %s\n' "$supplied_key_type" "$supplied_key_material" | ssh-keygen -lf - -E sha256 >/dev/null
+          canonical_host="[$SSH_HOST]:$SSH_PORT"
+          printf '%s %s %s\n' "$canonical_host" "$supplied_key_type" "$supplied_key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$private_key_file" >/dev/null
+          ssh-keygen -F "$canonical_host" -f "$HOME/.ssh/known_hosts" >/dev/null
+          echo 'PASS: pinned SSH identity configured'
+
+      - name: Verify pinned SSH transport
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in 1 2 3; do
+            if ssh \
+              -p "$SSH_PORT" \
+              -i "$HOME/.ssh/public-site-production" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=15 \
+              "$SSH_USER@$SSH_HOST" \
+              'test "$(id -u)" = "0" && printf "PASS: pinned SSH transport verified\n"'; then
+              exit 0
+            fi
+            [[ "$attempt" -lt 3 ]] || exit 1
+            sleep 5
+          done
+
+      - name: Transfer verified release bundle to VPS
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bundle="$RUNNER_TEMP/chatgpt-inter-${RUN_KEY}.bundle"
+          remote_bundle="/tmp/chatgpt-inter-${RUN_KEY}.bundle"
+          git branch -f chatgpt-inter-release "$TARGET_SHA"
+          git bundle create "$bundle" chatgpt-inter-release
+          git bundle verify "$bundle"
+          git bundle list-heads "$bundle" | grep -Fq "$TARGET_SHA refs/heads/chatgpt-inter-release"
+          bundle_sha="$(sha256sum "$bundle" | cut -d' ' -f1)"
+          for attempt in 1 2 3; do
+            if scp \
+              -P "$SSH_PORT" \
+              -i "$HOME/.ssh/public-site-production" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=15 \
+              "$bundle" "$SSH_USER@$SSH_HOST:$remote_bundle"; then
+              break
+            fi
+            [[ "$attempt" -lt 3 ]] || exit 1
+            sleep 5
+          done
+          remote_sha="$(ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/public-site-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" "sha256sum '$remote_bundle' | cut -d' ' -f1")"
+          test "$remote_sha" = "$bundle_sha"
+          echo 'PASS: exact release bundle transferred and hash verified'
+
+      - name: Deploy exact Inter typography release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/public-site-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "TARGET_SHA='$TARGET_SHA' EXPECTED_PREVIOUS_SHA='$EXPECTED_PREVIOUS_SHA' RUN_KEY='$RUN_KEY' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          LIVE_APP=/var/www/sikhadenge.in/sikhadenge-website-space
+          RELEASE_BRANCH=live-clean-sync-20260424
+          BUNDLE_REF=refs/heads/chatgpt-inter-release
+          BUNDLE_PATH="/tmp/chatgpt-inter-${RUN_KEY}.bundle"
+          PM2_PROCESS=sikhadenge-in
+          PUBLIC_URL=https://sikhadenge.in/masterclass/chatgpt/free
+          STAGE_ROOT="/tmp/sikhadenge-chatgpt-inter-stage-${RUN_KEY}"
+          NEW_NEXT="$LIVE_APP/.next.inter-${RUN_KEY}"
+          ROLLBACK_NEXT="$LIVE_APP/.next.rollback-inter-${RUN_KEY}"
+          LOCAL_PATCH="/tmp/sikhadenge-chatgpt-inter-local-${RUN_KEY}.patch"
+          ACTIVATED=0
+          LOCAL_CLEARED=0
+          BASELINE_SHA=""
+
+          ALLOWED_DIRTY=(
+            'app/checkout/[slug]/CheckoutClient.tsx'
+            'app/layout.tsx'
+            'app/masterclass/page.tsx'
+            'pages/_app.tsx'
+            'styles/claude-masterclass-live.module.css'
+          )
+          EXPECTED_DIRTY=$'app/checkout/[slug]/CheckoutClient.tsx\napp/layout.tsx\napp/masterclass/page.tsx\npages/_app.tsx\nstyles/claude-masterclass-live.module.css'
+          EXPECTED_RELEASE=$'pages/masterclass/chatgpt/free.tsx\nstyles/chatgpt-masterclass-live.module.css'
+
+          dirty_files() {
+            git -C "$LIVE_APP" diff --name-only -- . | sort
+          }
+
+          verify_local_drift() {
+            test "$(dirty_files)" = "$EXPECTED_DIRTY"
+            git -C "$LIVE_APP" diff --cached --quiet -- .
+            test -z "$(git -C "$LIVE_APP" diff --name-only -- \
+              pages/masterclass/chatgpt/free.tsx \
+              styles/chatgpt-masterclass-live.module.css)"
+          }
+
+          cleanup() {
+            git -C "$LIVE_APP" worktree remove --force "$STAGE_ROOT" >/dev/null 2>&1 || true
+            rm -rf "$NEW_NEXT" "$BUNDLE_PATH" >/dev/null 2>&1 || true
+          }
+
+          rollback() {
+            code=$?
+            set +e
+            echo "ROLLBACK_START code=$code" >&2
+            if [[ "$LOCAL_CLEARED" = "1" ]]; then
+              cd "$LIVE_APP" || true
+              git reset --hard "$BASELINE_SHA" >/dev/null 2>&1 || true
+              if [[ -s "$LOCAL_PATCH" ]]; then git apply --binary "$LOCAL_PATCH" >/dev/null 2>&1 || true; fi
+            fi
+            if [[ "$ACTIVATED" = "1" ]]; then
+              rm -rf "$LIVE_APP/.next" >/dev/null 2>&1 || true
+              if [[ -d "$ROLLBACK_NEXT" ]]; then mv "$ROLLBACK_NEXT" "$LIVE_APP/.next" || true; fi
+              pm2 restart "$PM2_PROCESS" >/dev/null 2>&1 || true
+              pm2 save >/dev/null 2>&1 || true
+            fi
+            if [[ "$LOCAL_CLEARED" = "1" ]]; then
+              restored_dirty="$(dirty_files 2>/dev/null || true)"
+              if [[ "$restored_dirty" = "$EXPECTED_DIRTY" ]]; then
+                echo 'ROLLBACK_LOCAL_EDITS_RESTORED=YES' >&2
+              else
+                echo 'ROLLBACK_LOCAL_EDITS_RESTORED=NO' >&2
+              fi
+            fi
+            cleanup
+            echo 'ROLLBACK_END' >&2
+            exit "$code"
+          }
+          trap rollback ERR
+          trap cleanup EXIT
+
+          test -d "$LIVE_APP/.git"
+          test -s "$BUNDLE_PATH"
+          cd "$LIVE_APP"
+          test "$(git rev-parse --abbrev-ref HEAD)" = "$RELEASE_BRANCH"
+          BASELINE_SHA="$(git rev-parse HEAD)"
+          if [[ "$BASELINE_SHA" != "$EXPECTED_PREVIOUS_SHA" && "$BASELINE_SHA" != "$TARGET_SHA" ]]; then
+            echo "Unexpected live SHA: $BASELINE_SHA" >&2
+            exit 1
+          fi
+          pm2 describe "$PM2_PROCESS" | grep -qi 'online'
+          verify_local_drift
+
+          git bundle verify "$BUNDLE_PATH" >/dev/null
+          git bundle list-heads "$BUNDLE_PATH" | grep -Fq "$TARGET_SHA $BUNDLE_REF"
+          git fetch "$BUNDLE_PATH" "$BUNDLE_REF" >/dev/null
+          test "$(git rev-parse FETCH_HEAD)" = "$TARGET_SHA"
+          git merge-base --is-ancestor "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA"
+          actual_release="$(git diff --name-only "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA" | sort)"
+          test "$actual_release" = "$EXPECTED_RELEASE"
+          echo "PASS: production identity, exact two-file release and known local drift verified at $BASELINE_SHA"
+
+          git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
+          for env_file in .env .env.local .env.production .env.production.local; do
+            if [[ -f "$LIVE_APP/$env_file" ]]; then ln -s "$LIVE_APP/$env_file" "$STAGE_ROOT/$env_file"; fi
+          done
+          cd "$STAGE_ROOT"
+          npm ci --no-audit --no-fund
+          npm run build
+          test -d "$STAGE_ROOT/.next"
+          grep -R -Fq -- '--font-inter' "$STAGE_ROOT/.next/static/css"
+          echo 'PASS: isolated production build includes Inter font variable'
+
+          rm -rf "$NEW_NEXT" "$ROLLBACK_NEXT" "$LOCAL_PATCH"
+          cp -a "$STAGE_ROOT/.next" "$NEW_NEXT"
+          test -d "$NEW_NEXT"
+
+          cd "$LIVE_APP"
+          test "$(git rev-parse HEAD)" = "$BASELINE_SHA"
+          verify_local_drift
+          git diff --binary -- "${ALLOWED_DIRTY[@]}" > "$LOCAL_PATCH"
+          test -s "$LOCAL_PATCH"
+          patch_sha="$(sha256sum "$LOCAL_PATCH" | cut -d' ' -f1)"
+
+          git restore --source=HEAD --worktree -- "${ALLOWED_DIRTY[@]}"
+          LOCAL_CLEARED=1
+          git diff --quiet -- .
+          git diff --cached --quiet -- .
+
+          if [[ "$(git rev-parse HEAD)" != "$TARGET_SHA" ]]; then git merge --ff-only "$TARGET_SHA"; fi
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+
+          git apply --binary "$LOCAL_PATCH"
+          verify_local_drift
+          reapplied_patch_sha="$(git diff --binary -- "${ALLOWED_DIRTY[@]}" | sha256sum | cut -d' ' -f1)"
+          test "$reapplied_patch_sha" = "$patch_sha"
+          echo 'PASS: all five pre-existing local VPS edits preserved unchanged'
+
+          if [[ -d "$LIVE_APP/.next" ]]; then mv "$LIVE_APP/.next" "$ROLLBACK_NEXT"; fi
+          mv "$NEW_NEXT" "$LIVE_APP/.next"
+          ACTIVATED=1
+
+          pm2 restart "$PM2_PROCESS"
+          pm2 save >/dev/null
+          sleep 4
+          pm2 describe "$PM2_PROCESS" | grep -qi 'online'
+          grep -R -Fq -- '--font-inter' "$LIVE_APP/.next/static/css"
+
+          html="$(curl -fsSL --retry 4 --retry-delay 2 --max-time 30 -H 'Cache-Control: no-cache' "$PUBLIC_URL")"
+          printf '%s' "$html" | grep -Fq 'Stop collecting prompts.'
+          printf '%s' "$html" | grep -Fq 'Build real work with ChatGPT.'
+          printf '%s' "$html" | grep -Fq 'Reserve My Free Seat'
+
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          verify_local_drift
+          echo "LIVE_SHA=$(git rev-parse HEAD)"
+          echo 'PASS: ChatGPT page is live with compiled Inter font bundle'
+
+          ACTIVATED=0
+          LOCAL_CLEARED=0
+          rm -rf "$ROLLBACK_NEXT" "$LOCAL_PATCH" "$BUNDLE_PATH"
+          cleanup
+          trap - ERR EXIT
+          REMOTE
+
+      - name: Verify public URL from runner
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for url in \
+            'https://sikhadenge.in/masterclass/chatgpt/free' \
+            "https://sikhadenge.in/masterclass/chatgpt/free?fontcheck=${RUN_KEY}"; do
+            body="$RUNNER_TEMP/page.html"
+            status="$(curl -sS --retry 4 --retry-delay 2 --max-time 30 -o "$body" -w '%{http_code}' -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url")"
+            test "$status" = '200'
+            grep -Fq 'Stop collecting prompts.' "$body"
+            grep -Fq 'Reserve My Free Seat' "$body"
+          done
+          echo 'PASS: exact and cache-busted public URL verification complete'
