@@ -19,10 +19,14 @@ export default function FunnelHeader({ config }: { config: FunnelConfig }) {
             alt="SikhaDenge"
           />
         </a>
-        <div className="funnel-top-meta">
-          <span>Live</span>
-          <span>Practical</span>
-          <span>Beginner Friendly</span>
+
+        <div className="funnel-top-actions">
+          <div className="funnel-top-meta" aria-label="Masterclass qualities">
+            <span>Live</span>
+            <span>Practical</span>
+            <span>Beginner Friendly</span>
+          </div>
+          <a className="funnel-nav-cta" href="#register">Reserve Seat</a>
         </div>
       </header>
     </>
