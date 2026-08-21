@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
 import { sendMetaCapiEvent } from "../../../lib/funnel/metaCapi";
 import { createCheckoutToken } from "../../../lib/funnel/checkoutToken";
+import { sendRegistrationToWhatsAppAgent } from "../../../lib/funnel/whatsappAgent";
 
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 20;
@@ -144,27 +145,6 @@ async function pushNeoDove(payload: {
   }
 }
 
-async function pushWhatsAppRegistration(payload: Record<string, unknown>) {
-  const endpoint = process.env.WHATSAPP_FUNNEL_WEBHOOK_URL;
-  if (!endpoint) return;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (process.env.WHATSAPP_FUNNEL_WEBHOOK_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.WHATSAPP_FUNNEL_WEBHOOK_TOKEN}`;
-  }
-  try {
-    await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -195,6 +175,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const occupation = text(body.occupation, 120);
   const goal = text(body.goal, 160);
   const laptop = text(body.laptop, 40);
+  const city = text(body.city, 120);
+  const consent = body.consent === true;
   const batchId = text(body.batchId, 180);
   const page = text(body.page, 300);
   const attrs = attribution(body.attribution);
@@ -203,6 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (fullName.length < 2) return res.status(400).json({ ok: false, error: "Please enter your full name." });
   if (!phone) return res.status(400).json({ ok: false, error: "Please enter a valid WhatsApp number." });
   if (!email) return res.status(400).json({ ok: false, error: "Please enter a valid email address." });
+  if (!consent) return res.status(400).json({ ok: false, error: "Please allow WhatsApp masterclass updates to receive your joining instructions." });
   if (!["chatgpt", "claude"].includes(funnel)) return res.status(400).json({ ok: false, error: "Invalid masterclass." });
   if (!["free", "paid"].includes(offerMode)) return res.status(400).json({ ok: false, error: "Invalid offer mode." });
 
@@ -242,6 +225,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         occupation,
         goal,
         laptop,
+        city,
+        consent: { whatsappMasterclass: true, capturedAt: new Date().toISOString() },
         attribution: attrs,
         ip,
       };
@@ -288,26 +273,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             occupation,
             goal,
             laptop,
+            city,
+            whatsappConsent: true,
+            whatsappActivation: offerMode === "free" ? "registration" : "after_verified_payment",
             referrer: attrs.referrer,
             serverPersisted: true,
           },
         },
       });
 
-      const integrationResults = await Promise.allSettled([
+      const integrations: Promise<unknown>[] = [
         pushNeoDove({ name: fullName, phone, email, funnel, offerMode }),
-        pushWhatsAppRegistration({
-          event: "masterclass_registered",
-          leadId: lead.id,
-          name: fullName,
-          phone,
-          email,
-          funnel,
-          offerMode,
-          entryPrice,
-          batchId,
-          paymentRequired: offerMode === "paid",
-        }),
         sendMetaCapiEvent({
           eventName: "Lead",
           eventId: registrationEventId,
@@ -322,8 +298,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           contentName: `${funnel}_masterclass`,
           customData: { offer_mode: offerMode, entry_price: entryPrice, batch_id: batchId },
         }),
-      ]);
+      ];
 
+      if (offerMode === "free") {
+        integrations.push(
+          sendRegistrationToWhatsAppAgent({
+            registrationId: lead.id,
+            name: fullName,
+            phone,
+            email,
+            city,
+            source,
+            consent: true,
+          })
+        );
+      }
+
+      const integrationResults = await Promise.allSettled(integrations);
       for (const result of integrationResults) {
         if (result.status === "rejected") {
           console.error("Funnel integration failed:", result.reason);
@@ -334,7 +325,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           result.value.attempted &&
           !result.value.ok
         ) {
-          console.error("Meta CAPI lead event failed:", result.value);
+          console.error("Funnel external integration returned an error:", result.value);
         }
       }
     } else {
