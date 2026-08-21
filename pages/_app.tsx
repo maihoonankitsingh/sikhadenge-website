@@ -7,6 +7,7 @@ import "../styles/funnel-checkout.css";
 import "../styles/workshop-funnel.css";
 import "../styles/funnel-core.css";
 import "../styles/funnel-premium.css";
+import "../styles/funnel-growthschool.css";
 import "../styles/funnel-transaction-premium.css";
 import "../styles/funnel-crm.css";
 import Header from "../components/Header";
