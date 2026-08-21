@@ -8,6 +8,7 @@ on:
     paths:
       - 'components/funnel/**'
       - 'data/funnels.ts'
+      - 'docs/funnels/**'
       - 'lib/funnel/**'
       - 'pages/masterclass/**'
       - 'pages/workshop/**'
