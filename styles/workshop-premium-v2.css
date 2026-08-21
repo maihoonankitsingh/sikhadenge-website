@@ -54,6 +54,8 @@
   gap: clamp(44px,6vw,74px);
 }
 
+.workshop-hero-copy { min-width: 0; }
+
 .workshop-hero-copy h1 {
   max-width: 790px;
   font-size: clamp(48px,5.25vw,70px);
@@ -89,6 +91,7 @@
 .workshop-offer-card {
   position: relative;
   overflow: hidden;
+  min-width: 0;
   padding: 34px;
   border-color: color-mix(in srgb, var(--ws-accent) 28%, rgba(255,255,255,.11));
   border-radius: 30px;
@@ -200,12 +203,20 @@
 }
 
 @media (max-width: 860px) {
-  .workshop-hero { min-height: auto; }
-  .workshop-offer-card { max-width: 680px; }
+  .workshop-hero {
+    min-height: auto;
+    grid-template-columns: minmax(0,1fr);
+    gap: 36px;
+    padding-top: 58px;
+    padding-bottom: 72px;
+  }
+  .workshop-hero-copy h1 { max-width: 720px; }
+  .workshop-hero-copy > p { max-width: 660px; }
+  .workshop-offer-card { width: 100%; max-width: 680px; }
 }
 
 @media (max-width: 560px) {
-  .workshop-hero { padding-top: 40px; padding-bottom: 58px; }
+  .workshop-hero { gap: 30px; padding-top: 40px; padding-bottom: 58px; }
   .workshop-hero-copy h1 { font-size: clamp(40px,10.5vw,46px); }
   .workshop-proof-row span { min-height: 36px; }
   .workshop-offer-card { padding: 24px; border-radius: 22px; }
