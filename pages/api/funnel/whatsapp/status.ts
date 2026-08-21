@@ -27,6 +27,25 @@ function authorized(req: NextApiRequest) {
   return left.length === right.length && crypto.timingSafeEqual(left, right);
 }
 
+function statusMetadata(input: {
+  provider: string;
+  providerMessageId: string;
+  status: string;
+  occurredAt: string;
+  errorCode: string;
+  errorMessage: string;
+}): Prisma.InputJsonObject {
+  const out: Record<string, Prisma.InputJsonValue> = {
+    provider: input.provider,
+    providerMessageId: input.providerMessageId,
+    status: input.status,
+  };
+  if (input.occurredAt) out.occurredAt = input.occurredAt;
+  if (input.errorCode) out.errorCode = input.errorCode;
+  if (input.errorMessage) out.errorMessage = input.errorMessage;
+  return out;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -59,6 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const eventId = `wa_${status}_${crypto.createHash("sha256").update(providerMessageId).digest("hex").slice(0, 32)}`;
+    const metadata = statusMetadata({ provider, providerMessageId, status, occurredAt, errorCode, errorMessage });
 
     await prisma.funnelEvent.upsert({
       where: { eventId },
@@ -86,25 +106,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fbc: registration?.fbc || null,
         gclid: registration?.gclid || null,
         landingVariant: registration?.landingVariant || null,
-        metadata: {
-          provider,
-          providerMessageId,
-          status,
-          occurredAt: occurredAt || null,
-          errorCode: errorCode || null,
-          errorMessage: errorMessage || null,
-        },
+        metadata,
       },
-      update: {
-        metadata: {
-          provider,
-          providerMessageId,
-          status,
-          occurredAt: occurredAt || null,
-          errorCode: errorCode || null,
-          errorMessage: errorMessage || null,
-        },
-      },
+      update: { metadata },
     });
 
     return res.status(200).json({ ok: true, eventName, eventId });
