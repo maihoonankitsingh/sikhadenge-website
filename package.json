@@ -13,6 +13,7 @@
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "db:migrate:deploy": "prisma migrate deploy",
     "test:funnel-security": "rm -rf .tmp/funnel-security && npx tsc lib/funnel/checkoutToken.ts lib/funnel/razorpay.ts --module commonjs --target es2020 --esModuleInterop --skipLibCheck --outDir .tmp/funnel-security && node scripts/funnel-security-check.cjs",
+    "test:funnel-integrations": "rm -rf .tmp/funnel-integrations && npx tsc lib/funnel/integrationReadiness.ts --module commonjs --target es2020 --esModuleInterop --skipLibCheck --outDir .tmp/funnel-integrations && node scripts/phase10-integration-readiness-check.cjs",
     "test:funnel-db": "node scripts/funnel-db-smoke.cjs"
   },
   "dependencies": {
