@@ -105,7 +105,7 @@ jobs:
           git bundle create "$bundle" chatgpt-release-bundle
           git bundle verify "$bundle"
           git bundle list-heads "$bundle" | grep -Fq "$TARGET_SHA refs/heads/chatgpt-release-bundle"
-          BUNDLE_SHA="$(sha256sum "$bundle" | awk '{print $1}')"
+          BUNDLE_SHA="$(sha256sum "$bundle" | cut -d' ' -f1)"
           for attempt in 1 2 3; do
             if scp \
               -P "$SSH_PORT" \
@@ -126,7 +126,7 @@ jobs:
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" "sha256sum '$remote_bundle' | awk '{print \\$1}'")"
+            "$SSH_USER@$SSH_HOST" "sha256sum '$remote_bundle' | cut -d' ' -f1")"
           test "$remote_sha" = "$BUNDLE_SHA"
           echo 'PASS: exact release bundle transferred and hash verified'
 
@@ -254,7 +254,7 @@ jobs:
           verify_local_drift
           git diff --binary -- "${ALLOWED_DIRTY[@]}" > "$LOCAL_PATCH"
           test -s "$LOCAL_PATCH"
-          PATCH_SHA="$(sha256sum "$LOCAL_PATCH" | awk '{print $1}')"
+          PATCH_SHA="$(sha256sum "$LOCAL_PATCH" | cut -d' ' -f1)"
           echo "LOCAL_PATCH_SHA256=$PATCH_SHA"
 
           git restore --source=HEAD --worktree -- "${ALLOWED_DIRTY[@]}"
@@ -267,7 +267,7 @@ jobs:
 
           git apply --binary "$LOCAL_PATCH"
           verify_local_drift
-          REAPPLIED_PATCH_SHA="$(git diff --binary -- "${ALLOWED_DIRTY[@]}" | sha256sum | awk '{print $1}')"
+          REAPPLIED_PATCH_SHA="$(git diff --binary -- "${ALLOWED_DIRTY[@]}" | sha256sum | cut -d' ' -f1)"
           test "$REAPPLIED_PATCH_SHA" = "$PATCH_SHA"
           echo 'PASS: known local VPS edits preserved and reapplied unchanged'
 
