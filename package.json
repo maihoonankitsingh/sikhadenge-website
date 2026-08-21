@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "db:migrate:deploy": "prisma migrate deploy",
-    "test:funnel-security": "rm -rf .tmp/funnel-security && npx tsc lib/funnel/checkoutToken.ts lib/funnel/razorpay.ts --module commonjs --target es2020 --esModuleInterop --skipLibCheck --outDir .tmp/funnel-security && node scripts/funnel-security-check.cjs"
+    "test:funnel-security": "rm -rf .tmp/funnel-security && npx tsc lib/funnel/checkoutToken.ts lib/funnel/razorpay.ts --module commonjs --target es2020 --esModuleInterop --skipLibCheck --outDir .tmp/funnel-security && node scripts/funnel-security-check.cjs",
+    "test:funnel-db": "node scripts/funnel-db-smoke.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
