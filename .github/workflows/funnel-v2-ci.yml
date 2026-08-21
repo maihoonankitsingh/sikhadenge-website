@@ -24,11 +24,13 @@ on:
       - 'prisma/**'
       - 'scripts/funnel-security-check.cjs'
       - 'scripts/funnel-db-smoke.cjs'
+      - 'scripts/phase9-react19-compat.cjs'
       - 'styles/funnel*.css'
       - 'styles/workshop-funnel.css'
       - 'package.json'
       - 'package-lock.json'
       - 'next.config.js'
+      - 'tsconfig.json'
       - '.github/workflows/funnel-v2-ci.yml'
 
 permissions:
@@ -83,10 +85,13 @@ jobs:
       - name: Migrate async App Router request APIs
         run: npx --yes @next/codemod@latest next-async-request-api app --force
 
+      - name: Apply React 19 compatibility transform
+        run: node scripts/phase9-react19-compat.cjs
+
       - name: Commit generated Next 16 changes on branch push
         if: github.event_name == 'push'
         run: |
-          git add app package-lock.json
+          git add app pages package-lock.json
           if git diff --cached --quiet; then
             echo 'Generated files already synchronized'
             exit 0
@@ -102,8 +107,7 @@ jobs:
       - name: Payment security self-tests
         run: npm run test:funnel-security
 
-      - name: Production dependency audit visibility
-        continue-on-error: true
+      - name: Production dependency audit
         run: npm run audit:prod
 
       - name: Generate Prisma client
