@@ -24,6 +24,8 @@ const ALLOWED_EVENTS = new Set([
   "qualify_lead",
   "working_lead",
   "core_offer_seen",
+  "advisor_cta_click",
+  "core_checkout_started",
   "close_convert_lead",
   "close_unconvert_lead",
   "refund",
