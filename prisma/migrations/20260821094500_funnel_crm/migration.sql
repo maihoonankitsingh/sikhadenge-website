@@ -59,3 +59,9 @@ CREATE INDEX "FunnelCrmActivity_activityType_createdAt_idx" ON "FunnelCrmActivit
 
 -- CreateIndex
 CREATE INDEX "FunnelCrmActivity_adminId_createdAt_idx" ON "FunnelCrmActivity"("adminId", "createdAt");
+
+-- AddForeignKey
+ALTER TABLE "FunnelCrmProfile" ADD CONSTRAINT "FunnelCrmProfile_leadId_fkey" FOREIGN KEY ("leadId") REFERENCES "Lead"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FunnelCrmActivity" ADD CONSTRAINT "FunnelCrmActivity_leadId_fkey" FOREIGN KEY ("leadId") REFERENCES "Lead"("id") ON DELETE CASCADE ON UPDATE CASCADE;
