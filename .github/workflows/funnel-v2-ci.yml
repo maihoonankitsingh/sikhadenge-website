@@ -20,8 +20,9 @@ on:
       - 'scripts/phase10-integration-readiness-check.cjs'
       - 'scripts/phase10-lifecycle-smoke.cjs'
       - 'scripts/phase15-responsive-qa.mjs'
+      - 'scripts/phase16-workshop-visual-qa.mjs'
       - 'styles/funnel*.css'
-      - 'styles/workshop-funnel.css'
+      - 'styles/workshop*.css'
       - 'package.json'
       - 'package-lock.json'
       - 'next.config.js'
@@ -116,5 +117,17 @@ jobs:
         with:
           name: phase15-responsive-visual-qa
           path: .tmp/phase15-visual-qa
+          if-no-files-found: error
+          include-hidden-files: true
+
+      - name: Phase 16 workshop visual QA
+        run: node scripts/phase16-workshop-visual-qa.mjs
+
+      - name: Upload Phase 16 workshop visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-workshop-visual-qa
+          path: .tmp/phase16-workshop-visual-qa
           if-no-files-found: error
           include-hidden-files: true
