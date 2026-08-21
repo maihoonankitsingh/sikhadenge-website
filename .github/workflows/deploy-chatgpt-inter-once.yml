@@ -162,10 +162,10 @@ jobs:
             'app/checkout/[slug]/CheckoutClient.tsx'
             'app/layout.tsx'
             'app/masterclass/page.tsx'
-            'pages/_app.tsx'
+            'pages/masterclass/claude/free.tsx'
             'styles/claude-masterclass-live.module.css'
           )
-          EXPECTED_DIRTY=$'app/checkout/[slug]/CheckoutClient.tsx\napp/layout.tsx\napp/masterclass/page.tsx\npages/_app.tsx\nstyles/claude-masterclass-live.module.css'
+          EXPECTED_DIRTY=$'app/checkout/[slug]/CheckoutClient.tsx\napp/layout.tsx\napp/masterclass/page.tsx\npages/masterclass/claude/free.tsx\nstyles/claude-masterclass-live.module.css'
           EXPECTED_RELEASE=$'pages/masterclass/chatgpt/free.tsx\nstyles/chatgpt-masterclass-live.module.css'
 
           dirty_files() {
