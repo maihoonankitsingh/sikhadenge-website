@@ -1,0 +1,37 @@
+/* Phase 15E — responsive visual-QA corrections only.
+   No payment, pricing, registration, attribution or eligibility behavior is changed here. */
+
+.funnel-nav-cta {
+  min-height: 44px;
+}
+
+.funnel-footer nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 6px;
+}
+
+@media (min-width: 961px) {
+  .funnel-hero h1 {
+    font-size: clamp(50px, 5vw, 72px);
+    line-height: .96;
+  }
+}
+
+@media (max-width: 680px) {
+  .funnel-nav-cta {
+    min-height: 44px;
+    padding: 10px 13px;
+  }
+
+  .funnel-hero h1 {
+    font-size: clamp(42px, 10.8vw, 48px);
+  }
+}
+
+@media (max-width: 420px) {
+  .funnel-hero h1 {
+    font-size: 42px;
+  }
+}
