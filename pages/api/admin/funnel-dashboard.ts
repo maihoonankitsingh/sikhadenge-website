@@ -17,6 +17,7 @@ type StageName =
   | "masterclass30m"
   | "masterclass60m"
   | "masterclassOfferSeen"
+  | "workshopOfferViews"
   | "workshopCtaClicks"
   | "workshopCheckoutStarts"
   | "workshopPurchases"
@@ -40,50 +41,18 @@ type Group = {
 };
 
 const stageNames: StageName[] = [
-  "views",
-  "ctaClicks",
-  "leads",
-  "whatsappSent",
-  "whatsappDelivered",
-  "whatsappRead",
-  "whatsappFailed",
-  "communityJoined",
-  "checkoutStarts",
-  "entryPurchases",
-  "masterclassJoined",
-  "masterclass30m",
-  "masterclass60m",
-  "masterclassOfferSeen",
-  "workshopCtaClicks",
-  "workshopCheckoutStarts",
-  "workshopPurchases",
-  "workshopAttended",
-  "qualifiedLeads",
-  "workingLeads",
-  "coreOfferSeen",
-  "corePurchases",
-  "lostLeads",
-  "refunds",
+  "views", "ctaClicks", "leads", "whatsappSent", "whatsappDelivered", "whatsappRead", "whatsappFailed", "communityJoined",
+  "checkoutStarts", "entryPurchases", "masterclassJoined", "masterclass30m", "masterclass60m", "masterclassOfferSeen",
+  "workshopOfferViews", "workshopCtaClicks", "workshopCheckoutStarts", "workshopPurchases", "workshopAttended",
+  "qualifiedLeads", "workingLeads", "coreOfferSeen", "corePurchases", "lostLeads", "refunds",
 ];
 
 function emptyStages(): Record<StageName, Set<string>> {
-  return Object.fromEntries(stageNames.map((name) => [name, new Set<string>()])) as Record<
-    StageName,
-    Set<string>
-  >;
+  return Object.fromEntries(stageNames.map((name) => [name, new Set<string>()])) as Record<StageName, Set<string>>;
 }
 
 function emptyGroup(funnel: string, offerMode: string): Group {
-  return {
-    funnel,
-    offerMode,
-    uniqueVisitors: new Set<string>(),
-    stages: emptyStages(),
-    entryRevenue: 0,
-    workshopRevenue: 0,
-    coreRevenue: 0,
-    refundValue: 0,
-  };
+  return { funnel, offerMode, uniqueVisitors: new Set<string>(), stages: emptyStages(), entryRevenue: 0, workshopRevenue: 0, coreRevenue: 0, refundValue: 0 };
 }
 
 function percent(numerator: number, denominator: number) {
@@ -91,12 +60,7 @@ function percent(numerator: number, denominator: number) {
   return Number(((numerator / denominator) * 100).toFixed(2));
 }
 
-function identity(event: {
-  id: string;
-  eventId: string | null;
-  leadId: string | null;
-  visitorId: string | null;
-}) {
+function identity(event: { id: string; eventId: string | null; leadId: string | null; visitorId: string | null }) {
   return event.leadId || event.visitorId || event.eventId || event.id;
 }
 
@@ -117,6 +81,7 @@ function stageForEvent(eventName: string): StageName | null {
     case "masterclass_30m": return "masterclass30m";
     case "masterclass_60m": return "masterclass60m";
     case "masterclass_offer_seen": return "masterclassOfferSeen";
+    case "workshop_offer_viewed": return "workshopOfferViews";
     case "workshop_cta_click": return "workshopCtaClicks";
     case "workshop_checkout_started": return "workshopCheckoutStarts";
     case "workshop_purchase": return "workshopPurchases";
@@ -134,7 +99,6 @@ function stageForEvent(eventName: string): StageName | null {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = requireAdmin(req, res);
   if (!admin) return;
-
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
@@ -147,39 +111,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const events = await prisma.funnelEvent.findMany({
       where: { createdAt: { gte: since } },
       orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        eventId: true,
-        eventName: true,
-        visitorId: true,
-        leadId: true,
-        funnel: true,
-        offerMode: true,
-        eventValue: true,
-        createdAt: true,
-      },
+      select: { id: true, eventId: true, eventName: true, visitorId: true, leadId: true, funnel: true, offerMode: true, eventValue: true, createdAt: true },
       take: 100000,
     });
 
     const groups = new Map<string, Group>();
-
     for (const event of events) {
       const funnel = event.funnel || "unknown";
       const offerMode = event.offerMode || "unknown";
       const key = `${funnel}:${offerMode}`;
       const group = groups.get(key) || emptyGroup(funnel, offerMode);
       const entity = identity(event);
-
       if (event.visitorId) group.uniqueVisitors.add(event.visitorId);
       const stage = stageForEvent(event.eventName);
       if (stage) group.stages[stage].add(entity);
-
       const value = Math.max(0, event.eventValue || 0);
       if (event.eventName === "purchase") group.entryRevenue += value;
       else if (event.eventName === "workshop_purchase") group.workshopRevenue += value;
       else if (event.eventName === "close_convert_lead") group.coreRevenue += value;
       else if (event.eventName === "refund") group.refundValue += value;
-
       groups.set(key, group);
     }
 
@@ -188,7 +138,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const s = Object.fromEntries(stageNames.map((name) => [name, group.stages[name].size])) as Record<StageName, number>;
         const grossRevenue = group.entryRevenue + group.workshopRevenue + group.coreRevenue;
         const netRevenue = Math.max(0, grossRevenue - group.refundValue);
-
         return {
           funnel: group.funnel,
           offerMode: group.offerMode,
@@ -204,7 +153,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           showUpRate: percent(s.masterclassJoined, s.leads),
           retention30Rate: percent(s.masterclass30m, s.masterclassJoined),
           retention60Rate: percent(s.masterclass60m, s.masterclassJoined),
-          workshopOfferToCheckoutRate: percent(s.workshopCheckoutStarts, s.masterclassOfferSeen),
+          liveOfferToWorkshopPageRate: percent(s.workshopOfferViews, s.masterclassOfferSeen),
+          workshopPageToCheckoutRate: percent(s.workshopCheckoutStarts, s.workshopOfferViews),
           workshopCheckoutConversionRate: percent(s.workshopPurchases, s.workshopCheckoutStarts),
           workshopBuyerRate: percent(s.workshopPurchases, s.masterclassOfferSeen),
           workshopAttendanceRate: percent(s.workshopAttended, s.workshopPurchases),
@@ -230,6 +180,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         acc.whatsappRead += row.whatsappRead;
         acc.communityJoined += row.communityJoined;
         acc.masterclassJoined += row.masterclassJoined;
+        acc.workshopOfferViews += row.workshopOfferViews;
         acc.workshopCheckoutStarts += row.workshopCheckoutStarts;
         acc.workshopPurchases += row.workshopPurchases;
         acc.corePurchases += row.corePurchases;
@@ -238,22 +189,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         acc.netRevenue += row.netRevenue;
         return acc;
       },
-      {
-        uniqueVisitors: 0,
-        views: 0,
-        leads: 0,
-        whatsappSent: 0,
-        whatsappDelivered: 0,
-        whatsappRead: 0,
-        communityJoined: 0,
-        masterclassJoined: 0,
-        workshopCheckoutStarts: 0,
-        workshopPurchases: 0,
-        corePurchases: 0,
-        grossRevenue: 0,
-        refundValue: 0,
-        netRevenue: 0,
-      }
+      { uniqueVisitors: 0, views: 0, leads: 0, whatsappSent: 0, whatsappDelivered: 0, whatsappRead: 0, communityJoined: 0, masterclassJoined: 0, workshopOfferViews: 0, workshopCheckoutStarts: 0, workshopPurchases: 0, corePurchases: 0, grossRevenue: 0, refundValue: 0, netRevenue: 0 }
     );
 
     return res.status(200).json({
@@ -262,8 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       since: since.toISOString(),
       summary,
       rows,
-      note:
-        "First-party funnel events only. WhatsApp metrics require authenticated private-service callbacks. Workshop checkout and purchase stages preserve the original Free/Paid acquisition cohort. Meta ad spend, CPL, CAC and ROAS remain excluded until a verified Meta Ads reporting source is connected.",
+      note: "First-party funnel events only. WhatsApp metrics require authenticated private-service callbacks. Live offer exposure, workshop page view, workshop checkout and verified purchase are separate stages and preserve the original Free/Paid acquisition cohort. Meta ad spend, CPL, CAC and ROAS remain excluded until a verified Meta Ads reporting source is connected.",
     });
   } catch (error) {
     console.error("Funnel dashboard failed:", error);
