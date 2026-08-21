@@ -1,9 +1,9 @@
 name: Deploy Public Claude Once
 
 on:
-  push:
+  pull_request:
     branches:
-      - ops/deploy-public-claude-20260821
+      - live-clean-sync-20260424
     paths:
       - .github/workflows/deploy-public-claude-once.yml
 
@@ -30,7 +30,7 @@ jobs:
       RUN_KEY: github-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
-      - name: Checkout deployment definition
+      - name: Checkout exact public release
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_SHA }}
@@ -89,6 +89,7 @@ jobs:
           NEW_NEXT="$LIVE_APP/.next.release-${RUN_KEY}"
           ROLLBACK_NEXT="$LIVE_APP/.next.rollback-${RUN_KEY}"
           ACTIVATED=0
+          BASELINE_SHA=""
 
           cleanup() {
             git -C "$LIVE_APP" worktree remove --force "$STAGE_ROOT" >/dev/null 2>&1 || true
@@ -98,9 +99,9 @@ jobs:
           rollback() {
             code=$?
             if [[ "$ACTIVATED" = "1" ]]; then
-              echo 'Activation verification failed; restoring previous source/build.' >&2
+              echo 'Activation verification failed; restoring baseline source/build.' >&2
               cd "$LIVE_APP"
-              git reset --hard "$EXPECTED_PREVIOUS_SHA"
+              git reset --hard "$BASELINE_SHA"
               rm -rf "$LIVE_APP/.next"
               if [[ -d "$ROLLBACK_NEXT" ]]; then mv "$ROLLBACK_NEXT" "$LIVE_APP/.next"; fi
               pm2 restart "$PM2_PROCESS" >/dev/null
@@ -112,11 +113,15 @@ jobs:
           trap rollback ERR
           trap cleanup EXIT
 
-          # Fail-closed production identity checks: no mutation before all pass.
+          # Fail closed before mutation unless this is the expected previous or already-target source.
           test -d "$LIVE_APP/.git"
           cd "$LIVE_APP"
           test "$(git rev-parse --abbrev-ref HEAD)" = "$RELEASE_BRANCH"
-          test "$(git rev-parse HEAD)" = "$EXPECTED_PREVIOUS_SHA"
+          BASELINE_SHA="$(git rev-parse HEAD)"
+          if [[ "$BASELINE_SHA" != "$EXPECTED_PREVIOUS_SHA" && "$BASELINE_SHA" != "$TARGET_SHA" ]]; then
+            echo "Unexpected live SHA: $BASELINE_SHA" >&2
+            exit 1
+          fi
           test -z "$(git status --porcelain --untracked-files=no)"
           pm2 describe "$PM2_PROCESS" >/dev/null
 
@@ -127,9 +132,9 @@ jobs:
           expected_files=$'pages/_app.tsx\npages/masterclass/claude/free.tsx\nstyles/claude-masterclass-live.module.css'
           actual_files="$(git diff --name-only "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA" | sort)"
           test "$actual_files" = "$expected_files"
-          echo 'PASS: production identity, clean worktree and exact 3-file release verified'
+          echo "PASS: production identity verified at baseline $BASELINE_SHA"
 
-          # Build exact target away from the live worktree.
+          # Build exact merged target away from the live worktree.
           git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
           for env_file in .env .env.local .env.production .env.production.local; do
             if [[ -f "$LIVE_APP/$env_file" ]]; then ln -s "$LIVE_APP/$env_file" "$STAGE_ROOT/$env_file"; fi
@@ -140,13 +145,14 @@ jobs:
           test -d "$STAGE_ROOT/.next"
           echo 'PASS: isolated production build completed'
 
-          # Prepare the new build on the same filesystem before source activation.
           rm -rf "$NEW_NEXT" "$ROLLBACK_NEXT"
           cp -a "$STAGE_ROOT/.next" "$NEW_NEXT"
           test -d "$NEW_NEXT"
 
           cd "$LIVE_APP"
-          git merge --ff-only "$TARGET_SHA"
+          if [[ "$(git rev-parse HEAD)" != "$TARGET_SHA" ]]; then
+            git merge --ff-only "$TARGET_SHA"
+          fi
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
           if [[ -d "$LIVE_APP/.next" ]]; then mv "$LIVE_APP/.next" "$ROLLBACK_NEXT"; fi
