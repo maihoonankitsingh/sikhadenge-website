@@ -322,8 +322,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           result.value &&
           typeof result.value === "object" &&
           "attempted" in result.value &&
-          result.value.attempted &&
-          !result.value.ok
+          "ok" in result.value &&
+          result.value.attempted === true &&
+          result.value.ok === false
         ) {
           console.error("Funnel external integration returned an error:", result.value);
         }
