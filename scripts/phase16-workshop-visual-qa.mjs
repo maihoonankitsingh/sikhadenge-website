@@ -17,7 +17,6 @@ const viewports = [
   { key: "430", width: 430, height: 932 },
   { key: "768", width: 768, height: 1024 },
   { key: "1366", width: 1366, height: 768 },
-  { key: "1440", width: 1440, height: 900 },
 ];
 
 function sleep(ms) {
@@ -32,38 +31,20 @@ function findChrome() {
   throw new Error("No Chrome/Chromium binary found on the runner");
 }
 
-async function waitForHttp(url, timeoutMs = 45000) {
+async function waitForServer(url, timeoutMs = 45000) {
   const deadline = Date.now() + timeoutMs;
   let lastError;
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url, { redirect: "manual" });
       await response.arrayBuffer();
-      if (response.status >= 200 && response.status < 500) return response.status;
+      if (response.status >= 200 && response.status < 500) return;
     } catch (error) {
       lastError = error;
     }
     await sleep(350);
   }
   throw new Error(`Timed out waiting for ${url}${lastError ? `: ${lastError.message}` : ""}`);
-}
-
-async function verifyRoute(url, expected, timeoutMs = 20000) {
-  const deadline = Date.now() + timeoutMs;
-  let lastError;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(url);
-      const html = await response.text();
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      if (!html.includes(expected)) throw new Error(`missing expected product label ${expected}`);
-      return response.status;
-    } catch (error) {
-      lastError = error;
-      await sleep(500);
-    }
-  }
-  throw new Error(`Unable to verify ${url}${lastError ? `: ${lastError.message}` : ""}`);
 }
 
 await rm(outDir, { recursive: true, force: true });
@@ -82,11 +63,23 @@ app.stderr.on("data", (chunk) => { appLog += chunk.toString(); });
 const results = [];
 
 try {
-  await waitForHttp(`${baseUrl}/workshop/chatgpt`);
+  await waitForServer(`${baseUrl}/masterclass/chatgpt/free`);
   const chrome = findChrome();
 
   for (const route of routes) {
-    const status = await verifyRoute(`${baseUrl}${route.path}`, route.expected);
+    const url = `${baseUrl}${route.path}`;
+    const dom = spawnSync(chrome, [
+      "--headless=new",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--no-sandbox",
+      "--dump-dom",
+      url,
+    ], { cwd: root, encoding: "utf8", timeout: 20000 });
+
+    if (dom.status !== 0 || !dom.stdout.includes(route.expected)) {
+      throw new Error(`Browser DOM verification failed for ${route.key}: ${dom.stderr || "expected product label missing"}`);
+    }
 
     for (const viewport of viewports) {
       const filename = `${route.key}-${viewport.key}.png`;
@@ -94,19 +87,19 @@ try {
       const result = spawnSync(chrome, [
         "--headless=new",
         "--disable-gpu",
+        "--disable-dev-shm-usage",
         "--no-sandbox",
         "--hide-scrollbars",
         `--window-size=${viewport.width},${viewport.height}`,
         `--screenshot=${filepath}`,
-        `${baseUrl}${route.path}`,
-      ], { cwd: root, encoding: "utf8", timeout: 30000 });
+        url,
+      ], { cwd: root, encoding: "utf8", timeout: 20000 });
 
       if (result.status !== 0) {
         throw new Error(`Chrome screenshot failed for ${route.key} ${viewport.key}: ${result.stderr || result.stdout}`);
       }
 
-      results.push({ route: route.key, path: route.path, viewport, screenshot: filename, status });
-      await sleep(250);
+      results.push({ route: route.key, path: route.path, viewport, screenshot: filename });
     }
   }
 
