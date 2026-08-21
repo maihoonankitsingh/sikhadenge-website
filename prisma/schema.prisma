@@ -130,3 +130,42 @@ model FunnelPayment {
   @@index([status, createdAt])
   @@index([batchId])
 }
+
+model FunnelCrmProfile {
+  id             String    @id @default(cuid())
+  leadId         String    @unique
+  pipelineStage  String    @default("new_lead")
+  owner          String?
+  priority       String    @default("normal")
+  advisorStatus  String    @default("not_started")
+  qualification  String?
+  lostReason     String?
+  nextFollowUpAt DateTime?
+  lastContactAt  DateTime?
+  updatedBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([pipelineStage, updatedAt])
+  @@index([owner, nextFollowUpAt])
+  @@index([advisorStatus, updatedAt])
+  @@index([priority, updatedAt])
+  @@index([nextFollowUpAt])
+}
+
+model FunnelCrmActivity {
+  id           String   @id @default(cuid())
+  leadId       String
+  activityType String
+  field        String?
+  oldValue     String?
+  newValue     String?
+  note         String?
+  adminId      String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([leadId, createdAt])
+  @@index([activityType, createdAt])
+  @@index([adminId, createdAt])
+}
