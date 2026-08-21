@@ -1,0 +1,101 @@
+/* Product-aware checkout/confirmation presentation. Payment authority and verification are unchanged. */
+.funnel-checkout-shell.funnel-theme-blue,
+.funnel-confirmation.funnel-theme-blue {
+  --funnel-accent: #10a37f;
+  --funnel-accent-2: #32d6a6;
+}
+
+.funnel-checkout-shell.funnel-theme-amber,
+.funnel-confirmation.funnel-theme-amber {
+  --funnel-accent: #d97757;
+  --funnel-accent-2: #f0a27b;
+}
+
+.funnel-checkout-shell.funnel-stage-core {
+  --funnel-accent: #2563eb;
+  --funnel-accent-2: #22d3ee;
+  background:
+    radial-gradient(860px 520px at 12% 3%, rgba(37,99,235,.26), transparent 72%),
+    radial-gradient(720px 460px at 90% 12%, rgba(34,211,238,.11), transparent 72%),
+    linear-gradient(155deg,#030816,#07111f 58%,#081624);
+}
+
+.funnel-checkout-shell.funnel-stage-masterclass.funnel-theme-blue,
+.funnel-checkout-shell.funnel-stage-workshop.funnel-theme-blue,
+.funnel-confirmation.funnel-theme-blue {
+  background:
+    radial-gradient(820px 500px at 14% 2%, rgba(16,163,127,.25), transparent 72%),
+    radial-gradient(680px 440px at 88% 12%, rgba(50,214,166,.11), transparent 72%),
+    linear-gradient(155deg,#020c09,#061712 58%,#07151b);
+}
+
+.funnel-checkout-shell.funnel-stage-masterclass.funnel-theme-amber,
+.funnel-checkout-shell.funnel-stage-workshop.funnel-theme-amber,
+.funnel-confirmation.funnel-theme-amber {
+  background:
+    radial-gradient(820px 500px at 14% 2%, rgba(217,119,87,.25), transparent 72%),
+    radial-gradient(680px 440px at 88% 12%, rgba(240,162,123,.11), transparent 72%),
+    linear-gradient(155deg,#100806,#1c110d 58%,#15110f);
+}
+
+.funnel-checkout-topbar {
+  border-bottom-color: rgba(255,255,255,.09);
+}
+
+.funnel-checkout-copy .funnel-kicker { color: var(--funnel-accent-2); }
+
+.funnel-checkout-copy h1 {
+  max-width: 780px;
+  font-size: clamp(50px,5.35vw,72px);
+  letter-spacing: -.06em;
+}
+
+.funnel-checkout-trust > div {
+  border-color: color-mix(in srgb,var(--funnel-accent) 18%,rgba(255,255,255,.09));
+  background: color-mix(in srgb,var(--funnel-accent) 5%,rgba(255,255,255,.025));
+}
+
+.funnel-payment-card {
+  border-color: color-mix(in srgb,var(--funnel-accent) 12%,rgba(255,255,255,.74));
+  background:
+    radial-gradient(500px 210px at 86% -5%, color-mix(in srgb,var(--funnel-accent) 10%,transparent), transparent 72%),
+    linear-gradient(180deg,#fff,#f8fafc);
+}
+
+.funnel-payment-title strong,
+.funnel-payment-total strong { letter-spacing: -.045em; }
+
+.funnel-pay-button {
+  background: linear-gradient(135deg,var(--funnel-accent),var(--funnel-accent-2));
+  color: #fff;
+}
+
+.funnel-checkout-footer nav a,
+.funnel-confirmation footer a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 4px;
+}
+
+.funnel-confirmation.funnel-theme-blue .funnel-confirmation-card {
+  background:
+    radial-gradient(620px 270px at 50% -6%, rgba(16,163,127,.15), transparent 72%),
+    linear-gradient(180deg,rgba(7,29,23,.98),rgba(3,14,11,.99));
+}
+
+.funnel-confirmation.funnel-theme-amber .funnel-confirmation-card {
+  background:
+    radial-gradient(620px 270px at 50% -6%, rgba(217,119,87,.16), transparent 72%),
+    linear-gradient(180deg,rgba(37,20,14,.98),rgba(16,8,6,.99));
+}
+
+.funnel-confirmation-check {
+  background: linear-gradient(135deg,var(--funnel-accent),var(--funnel-accent-2));
+}
+
+@media (max-width: 640px) {
+  .funnel-checkout-copy h1 { font-size: clamp(40px,10.6vw,46px); }
+  .funnel-checkout-trust > div { min-height: auto; }
+  .funnel-payment-title strong { font-size: 32px; }
+}
