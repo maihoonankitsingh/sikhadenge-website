@@ -5,6 +5,7 @@ import Script from "next/script";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import type { FunnelConfig } from "../../lib/funnel/types";
+import type { CheckoutPurpose } from "../../lib/funnel/checkoutToken";
 import { trackFunnelEvent } from "../../lib/funnel/client";
 
 declare global {
@@ -31,7 +32,13 @@ type OrderData = {
   description?: string;
 };
 
-export default function CheckoutPage({ config }: { config: FunnelConfig }) {
+export default function CheckoutPage({
+  config,
+  purpose = "masterclass_entry",
+}: {
+  config: FunnelConfig;
+  purpose?: CheckoutPurpose;
+}) {
   const router = useRouter();
   const leadId = typeof router.query.lead_id === "string" ? router.query.lead_id : "";
   const checkoutToken = typeof router.query.token === "string" ? router.query.token : "";
@@ -39,15 +46,26 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
   const [status, setStatus] = useState<"idle" | "loading" | "paying" | "verifying" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  const price = useMemo(() => config.entryPrice, [config.entryPrice]);
+  const isWorkshop = purpose === "implementation_workshop";
+  const price = useMemo(
+    () => (isWorkshop ? config.workshopPrice : config.entryPrice),
+    [config.entryPrice, config.workshopPrice, isWorkshop]
+  );
+  const productTitle = isWorkshop
+    ? config.workshopName
+    : `${config.productLabel} Live Masterclass`;
 
   useEffect(() => {
     if (!router.isReady) return;
     if (!leadId || !checkoutToken) {
       setStatus("error");
-      setMessage("This secure checkout link is incomplete. Please return to the masterclass page and register again.");
+      setMessage(
+        isWorkshop
+          ? "This secure workshop checkout link is incomplete. Open the personalized workshop link sent to your registered WhatsApp number."
+          : "This secure checkout link is incomplete. Please return to the masterclass page and register again."
+      );
     }
-  }, [router.isReady, leadId, checkoutToken]);
+  }, [router.isReady, leadId, checkoutToken, isWorkshop]);
 
   async function startPayment() {
     if (!leadId || !checkoutToken || status === "loading" || status === "paying" || status === "verifying") return;
@@ -64,7 +82,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
       const orderResponse = await fetch("/api/funnel/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId, funnel: config.product, checkoutToken }),
+        body: JSON.stringify({ leadId, funnel: config.product, purpose, checkoutToken }),
       });
       const order = (await orderResponse.json()) as OrderData & { error?: string };
       if (!orderResponse.ok || !order.ok) {
@@ -83,8 +101,8 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
       setStatus("paying");
       void trackFunnelEvent(
         config,
-        "begin_checkout",
-        { value: price, currency: "INR", provider: "razorpay", checkout_stage: "payment_window" },
+        isWorkshop ? "workshop_checkout_started" : "begin_checkout",
+        { value: price, currency: "INR", provider: "razorpay", payment_purpose: purpose },
         leadId
       );
 
@@ -93,7 +111,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
         amount: order.amount,
         currency: order.currency,
         name: "SikhaDenge",
-        description: order.description || `${config.productLabel} Live Masterclass`,
+        description: order.description || productTitle,
         order_id: order.orderId,
         image: "/funnels/shared/sikhadenge-logo.png",
         prefill: {
@@ -105,12 +123,13 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
           lead_id: leadId,
           funnel: config.product,
           batch_id: config.batchId,
+          purpose,
         },
         theme: { color: config.theme === "amber" ? "#D97706" : "#2563EB" },
         modal: {
           ondismiss: () => {
             setStatus("idle");
-            setMessage("Payment window closed. Your seat is not confirmed until payment succeeds.");
+            setMessage("Payment window closed. Enrollment is not confirmed until payment succeeds.");
           },
         },
         handler: async (result: any) => {
@@ -136,14 +155,18 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
             if (verified.purchaseEventId) {
               void trackFunnelEvent(
                 config,
-                "purchase",
-                { value: price, currency: "INR", provider: "razorpay" },
+                isWorkshop ? "workshop_purchase" : "purchase",
+                { value: price, currency: "INR", provider: "razorpay", payment_purpose: purpose },
                 leadId,
                 { persist: false, eventId: verified.purchaseEventId }
               );
             }
 
-            setMessage("Payment verified. Your masterclass seat is confirmed.");
+            setMessage(
+              isWorkshop
+                ? "Payment verified. Your implementation workshop enrollment is confirmed."
+                : "Payment verified. Your masterclass seat is confirmed."
+            );
             if (verified.confirmationUrl) {
               window.setTimeout(() => window.location.assign(verified.confirmationUrl), 250);
             }
@@ -162,7 +185,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
         setStatus("error");
         setMessage(
           failure?.error?.description ||
-            "Payment did not complete. No masterclass seat has been marked as paid."
+            "Payment did not complete. No enrollment has been marked as paid."
         );
       });
 
@@ -190,34 +213,40 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
       <main className={`funnel-checkout-shell funnel-theme-${config.theme}`}>
         <header className="funnel-checkout-topbar">
           <Image src="/funnels/shared/sikhadenge-logo.png" width={166} height={52} alt="SikhaDenge" priority />
-          <span>Secure masterclass checkout</span>
+          <span>{isWorkshop ? "Secure implementation workshop checkout" : "Secure masterclass checkout"}</span>
         </header>
 
         <section className="funnel-checkout-wrap">
           <div className="funnel-checkout-copy">
             <span className="funnel-kicker">FINAL STEP</span>
-            <h1>Confirm your {config.productLabel} masterclass seat.</h1>
+            <h1>
+              {isWorkshop
+                ? `Confirm your ${config.productLabel} implementation workshop enrollment.`
+                : `Confirm your ${config.productLabel} masterclass seat.`}
+            </h1>
             <p>
-              Your registration details are saved. Complete the secure entry payment to confirm this paid masterclass seat.
+              {isWorkshop
+                ? "Your masterclass lead and attribution are linked. Complete the secure workshop payment to activate the next implementation stage."
+                : "Your registration details are saved. Complete the secure entry payment to confirm this paid masterclass seat."}
             </p>
 
             <div className="funnel-checkout-trust">
               <div><strong>Server-fixed price</strong><span>The browser cannot change the payable amount.</span></div>
-              <div><strong>Verified payment</strong><span>Signature, amount and captured status are checked before confirmation.</span></div>
-              <div><strong>Tracked correctly</strong><span>Only a verified successful payment is counted as a purchase.</span></div>
+              <div><strong>Verified payment</strong><span>Signature, exact amount and captured provider status are checked before confirmation.</span></div>
+              <div><strong>Correct revenue stage</strong><span>{isWorkshop ? "Workshop revenue stays separate from masterclass entry revenue." : "Only a verified successful entry payment is counted as a purchase."}</span></div>
             </div>
           </div>
 
           <aside className="funnel-payment-card">
             <div className="funnel-payment-title">
-              <span>{config.productLabel} Live Masterclass</span>
+              <span>{productTitle}</span>
               <strong>₹{price}</strong>
             </div>
 
             <dl>
               <div><dt>Format</dt><dd>Live online</dd></div>
-              <div><dt>Date</dt><dd>{config.dateLabel}</dd></div>
-              <div><dt>Time</dt><dd>{config.timeLabel}</dd></div>
+              <div><dt>Stage</dt><dd>{isWorkshop ? "Implementation" : "Masterclass"}</dd></div>
+              <div><dt>Product</dt><dd>{config.productLabel}</dd></div>
               <div><dt>Language</dt><dd>{config.languageLabel}</dd></div>
             </dl>
 
@@ -242,7 +271,7 @@ export default function CheckoutPage({ config }: { config: FunnelConfig }) {
             </button>
 
             <p className="funnel-payment-note">
-              Payment is processed by Razorpay. Sikhadenge does not store full card or banking credentials.
+              Payment is processed by Razorpay. SikhaDenge does not store full card or banking credentials.
             </p>
 
             {message ? (
