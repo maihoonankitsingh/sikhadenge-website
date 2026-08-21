@@ -17,6 +17,7 @@ const ALLOWED_EVENTS = new Set([
   "masterclass_60m",
   "masterclass_offer_seen",
   "workshop_cta_click",
+  "workshop_checkout_started",
   "workshop_purchase",
   "workshop_attended",
   "qualify_lead",
