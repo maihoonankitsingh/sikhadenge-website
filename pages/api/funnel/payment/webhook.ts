@@ -5,6 +5,7 @@ import {
   fetchRazorpayPayment,
   verifyRazorpayWebhookSignature,
 } from "../../../../lib/funnel/razorpay";
+import { paymentPurposeDetails } from "../../../../lib/funnel/paymentPurpose";
 import { sendMetaCapiEvent } from "../../../../lib/funnel/metaCapi";
 
 export const config = { api: { bodyParser: false } };
@@ -36,9 +37,17 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
   const stored = await prisma.funnelPayment.findUnique({ where: { providerOrderId: orderId } });
   if (!stored) return { handled: false };
 
-  const [payment, order] = await Promise.all([
+  const details = paymentPurposeDetails(stored);
+  if (!details) throw new Error("Unsupported payment purpose in signed webhook");
+
+  const [payment, order, registration] = await Promise.all([
     fetchRazorpayPayment(paymentId),
     fetchRazorpayOrder(orderId),
+    prisma.funnelEvent.findFirst({
+      where: { leadId: stored.leadId, eventName: "generate_lead" },
+      orderBy: { createdAt: "desc" },
+      select: { entryPrice: true },
+    }),
   ]);
 
   if (
@@ -56,7 +65,7 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
   }
 
   const metadata = record(stored.metadata);
-  const purchaseEventId = `purchase_${paymentId}`;
+  const purchaseEventId = `${details.eventPrefix}_${paymentId}`;
   const amountRupees = stored.amountPaise / 100;
 
   await prisma.$transaction(async (tx) => {
@@ -77,15 +86,15 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
       update: {},
       create: {
         eventId: purchaseEventId,
-        eventName: "purchase",
+        eventName: details.eventName,
         visitorId: text(metadata.visitorId, 120) || null,
         sessionId: text(metadata.sessionId, 120) || null,
         leadId: stored.leadId,
         funnel: stored.funnel,
         offerMode: stored.offerMode,
-        entryPrice: Math.round(amountRupees),
+        entryPrice: registration?.entryPrice ?? null,
         batchId: stored.batchId,
-        pagePath: `/masterclass/${stored.funnel}/checkout`,
+        pagePath: details.pagePath,
         source: text(metadata.source, 120) || null,
         medium: text(metadata.medium, 120) || null,
         campaign: text(metadata.campaign, 220) || null,
@@ -103,7 +112,7 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
         currency: stored.currency,
         metadata: {
           provider: "razorpay",
-          paymentRecordId: stored.id,
+          purpose: stored.purpose,
           providerOrderId: orderId,
           providerPaymentId: paymentId,
           verifiedBy: "signed_webhook_and_provider_status",
@@ -113,14 +122,14 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
 
     await tx.lead.update({
       where: { id: stored.leadId },
-      data: { status: "paid_masterclass" },
+      data: { status: details.leadStatus },
     });
   });
 
   const capi = await sendMetaCapiEvent({
     eventName: "Purchase",
     eventId: purchaseEventId,
-    eventSourceUrl: siteUrl(`/masterclass/${stored.funnel}/checkout`),
+    eventSourceUrl: siteUrl(details.pagePath),
     email: text(metadata.email, 220),
     phone: text(metadata.phone, 30),
     fbp: text(metadata.fbp, 300),
@@ -128,9 +137,10 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
     externalId: stored.leadId,
     value: amountRupees,
     currency: stored.currency,
-    contentName: `${stored.funnel}_masterclass_entry`,
+    contentName: details.contentName,
     customData: {
       payment_provider: "razorpay",
+      payment_purpose: stored.purpose,
       reconciliation: "webhook",
       batch_id: stored.batchId || "",
     },
