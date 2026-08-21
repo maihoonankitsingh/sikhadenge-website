@@ -8,11 +8,16 @@ import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { ConsentSettingsButton } from "@/components/consent/ConsentSettingsButton";
 import { MetaConsentRuntime } from "@/components/consent/MetaConsentBridge";
 
+type HeaderAwarePage = AppProps["Component"] & {
+  hideGlobalHeader?: boolean;
+};
+
 export default function App({
   Component,
   pageProps,
   router,
 }: AppProps) {
+  const Page = Component as HeaderAwarePage;
   const pageKey = router.isReady
     ? router.asPath.split("#", 1)[0] || "/"
     : null;
@@ -23,7 +28,7 @@ export default function App({
       <ConsentBanner />
       <ConsentPreferences />
       <ConsentSettingsButton />
-      <Header />
+      {!Page.hideGlobalHeader ? <Header /> : null}
       <Component {...pageProps} />
     </ConsentProvider>
   );
