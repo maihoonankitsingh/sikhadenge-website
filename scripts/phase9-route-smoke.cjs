@@ -14,6 +14,7 @@ const routes = [
   '/masterclass/claude/free',
   '/admin/funnel-dashboard',
   '/admin/funnel-crm',
+  '/admin/funnel-integrations',
 ];
 
 const server = spawn(
@@ -46,7 +47,7 @@ async function fetchWithTimeout(url, timeoutMs = 10000) {
     return await fetch(url, {
       redirect: 'manual',
       signal: controller.signal,
-      headers: { 'user-agent': 'sikhadenge-phase9-route-smoke/1.0' },
+      headers: { 'user-agent': 'sikhadenge-phase10-route-smoke/1.0' },
     });
   } finally {
     clearTimeout(timer);
