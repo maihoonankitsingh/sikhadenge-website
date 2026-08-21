@@ -1,0 +1,99 @@
+name: Diagnose ChatGPT V3 Deploy
+
+on:
+  pull_request:
+    branches:
+      - live-clean-sync-20260424
+    paths:
+      - .github/workflows/diagnose-chatgpt-v3-deploy.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      TARGET_SHA: 468975301a616e6868647ef5bbb8033de984ec88
+      EXPECTED_PREVIOUS_SHA: 16bab0d58675016411ca097a39cbac3336085811
+      RUN_KEY: diag-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          key="$HOME/.ssh/public-site-production"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$key"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$key"; fi
+          chmod 600 "$key"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$key" >/dev/null
+
+      - name: Create and transfer diagnostic bundle
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bundle="$RUNNER_TEMP/chatgpt-${RUN_KEY}.bundle"
+          remote="/tmp/chatgpt-${RUN_KEY}.bundle"
+          git branch -f chatgpt-diagnostic-bundle "$TARGET_SHA"
+          git bundle create "$bundle" chatgpt-diagnostic-bundle
+          git bundle verify "$bundle"
+          local_sha="$(sha256sum "$bundle" | cut -d' ' -f1)"
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/public-site-production" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$bundle" "$SSH_USER@$SSH_HOST:$remote"
+          remote_sha="$(ssh -p "$SSH_PORT" -i "$HOME/.ssh/public-site-production" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "sha256sum '$remote' | cut -d' ' -f1")"
+          test "$local_sha" = "$remote_sha"
+          echo 'DIAG_BUNDLE_TRANSFER=PASS'
+
+      - name: Read-only VPS and bundle diagnostics
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/public-site-production" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "TARGET_SHA='$TARGET_SHA' EXPECTED_PREVIOUS_SHA='$EXPECTED_PREVIOUS_SHA' RUN_KEY='$RUN_KEY' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          LIVE_APP=/var/www/sikhadenge.in/sikhadenge-website-space
+          BUNDLE="/tmp/chatgpt-${RUN_KEY}.bundle"
+          TMP_REPO="/tmp/chatgpt-diag-repo-${RUN_KEY}"
+          cleanup(){ rm -rf "$TMP_REPO" "$BUNDLE"; }
+          trap cleanup EXIT
+          echo "BRANCH=$(git -C "$LIVE_APP" rev-parse --abbrev-ref HEAD)"
+          echo "LIVE_SHA=$(git -C "$LIVE_APP" rev-parse HEAD)"
+          echo 'DIRTY_START'
+          git -C "$LIVE_APP" diff --name-only -- . | sort
+          echo 'DIRTY_END'
+          echo 'RELEASE_DIRTY_START'
+          git -C "$LIVE_APP" diff --name-only -- pages/masterclass/chatgpt/free.tsx styles/chatgpt-masterclass-live.module.css || true
+          echo 'RELEASE_DIRTY_END'
+          pm2 describe sikhadenge-in | grep -qi online
+          echo 'PM2_ONLINE=YES'
+          test -s "$BUNDLE"
+          echo "BUNDLE_BYTES=$(stat -c %s "$BUNDLE")"
+          cd "$LIVE_APP"
+          git bundle verify "$BUNDLE"
+          echo 'BUNDLE_HEADS_START'
+          git bundle list-heads "$BUNDLE"
+          echo 'BUNDLE_HEADS_END'
+          git init --bare "$TMP_REPO" >/dev/null
+          git -C "$TMP_REPO" fetch "$BUNDLE" refs/heads/chatgpt-diagnostic-bundle:refs/heads/release >/dev/null
+          test "$(git -C "$TMP_REPO" rev-parse refs/heads/release)" = "$TARGET_SHA"
+          git -C "$TMP_REPO" merge-base --is-ancestor "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA"
+          echo 'TEMP_BUNDLE_FETCH=PASS'
+          echo 'DIAGNOSTIC_COMPLETE=PASS'
+          REMOTE
