@@ -21,6 +21,7 @@ on:
       - 'pages/admin/index.tsx'
       - 'prisma/**'
       - 'scripts/funnel-security-check.cjs'
+      - 'scripts/funnel-db-smoke.cjs'
       - 'styles/funnel*.css'
       - 'styles/workshop-funnel.css'
       - 'package.json'
@@ -31,6 +32,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
     env:
       DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
       SHADOW_DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_shadow
@@ -66,6 +83,12 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+
+      - name: Fresh database migration rehearsal
+        run: npm run db:migrate:deploy
+
+      - name: Database integrity smoke test
+        run: npm run test:funnel-db
 
       - name: Build Next.js application
         run: npm run build
