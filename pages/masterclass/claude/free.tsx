@@ -1,8 +1,8 @@
-import FunnelPage from "../../../components/funnel/FunnelPage";
+import ClaudeFreeLandingPage from "../../../components/funnel/claude/ClaudeFreeLandingPage";
 import { getFunnelConfig } from "../../../data/funnels";
 
 function ClaudeFreeMasterclassPage() {
-  return <FunnelPage config={getFunnelConfig("claude", "free")} />;
+  return <ClaudeFreeLandingPage config={getFunnelConfig("claude", "free")} />;
 }
 
 (ClaudeFreeMasterclassPage as typeof ClaudeFreeMasterclassPage & {
