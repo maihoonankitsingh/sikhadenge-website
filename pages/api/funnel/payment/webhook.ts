@@ -22,9 +22,7 @@ function record(value: unknown): Record<string, any> {
 
 async function rawBody(req: NextApiRequest) {
   const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   return Buffer.concat(chunks);
 }
 
@@ -33,9 +31,18 @@ function siteUrl(path: string) {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+async function registrationContext(leadId: string) {
+  return prisma.funnelEvent.findFirst({
+    where: { leadId, eventName: "generate_lead" },
+    orderBy: { createdAt: "desc" },
+    select: { entryPrice: true },
+  });
+}
+
 async function reconcileCaptured(orderId: string, paymentId: string) {
   const stored = await prisma.funnelPayment.findUnique({ where: { providerOrderId: orderId } });
   if (!stored) return { handled: false };
+  if (stored.status === "refunded") return { handled: true, purchaseEventId: stored.purchaseEventId };
 
   const details = paymentPurposeDetails(stored);
   if (!details) throw new Error("Unsupported payment purpose in signed webhook");
@@ -43,11 +50,7 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
   const [payment, order, registration] = await Promise.all([
     fetchRazorpayPayment(paymentId),
     fetchRazorpayOrder(orderId),
-    prisma.funnelEvent.findFirst({
-      where: { leadId: stored.leadId, eventName: "generate_lead" },
-      orderBy: { createdAt: "desc" },
-      select: { entryPrice: true },
-    }),
+    registrationContext(stored.leadId),
   ]);
 
   if (
@@ -120,10 +123,7 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
       },
     });
 
-    await tx.lead.update({
-      where: { id: stored.leadId },
-      data: { status: details.leadStatus },
-    });
+    await tx.lead.update({ where: { id: stored.leadId }, data: { status: details.leadStatus } });
   });
 
   const capi = await sendMetaCapiEvent({
@@ -150,6 +150,110 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
   return { handled: true, purchaseEventId };
 }
 
+async function reconcileProcessedRefund(refundEntity: Record<string, any>) {
+  const refundId = text(refundEntity.id, 120);
+  const paymentId = text(refundEntity.payment_id, 120);
+  const refundStatus = text(refundEntity.status, 40);
+  const refundAmountPaise = Math.max(0, Math.round(Number(refundEntity.amount) || 0));
+  const refundCurrency = text(refundEntity.currency, 8) || "INR";
+
+  if (!refundId || !paymentId || refundStatus !== "processed" || refundAmountPaise <= 0) {
+    throw new Error("Invalid processed refund webhook payload");
+  }
+
+  const stored = await prisma.funnelPayment.findUnique({ where: { providerPaymentId: paymentId } });
+  if (!stored) return { handled: false };
+  const details = paymentPurposeDetails(stored);
+  if (!details) throw new Error("Unsupported payment purpose in refund webhook");
+
+  const [providerPayment, registration] = await Promise.all([
+    fetchRazorpayPayment(paymentId),
+    registrationContext(stored.leadId),
+  ]);
+
+  if (
+    providerPayment.amount !== stored.amountPaise ||
+    providerPayment.currency !== stored.currency ||
+    refundCurrency !== stored.currency ||
+    refundAmountPaise > stored.amountPaise
+  ) {
+    throw new Error("Processed refund does not match the stored payment amount or currency");
+  }
+
+  const providerAmountRefunded = Math.max(0, Math.round(Number(providerPayment.amount_refunded) || 0));
+  if (providerAmountRefunded < refundAmountPaise) {
+    throw new Error("Provider payment does not reflect the processed refund amount");
+  }
+
+  const metadata = record(stored.metadata);
+  const fullRefund = providerAmountRefunded >= stored.amountPaise;
+  const refundEventId = `refund_${refundId}`;
+  const refundRupees = refundAmountPaise / 100;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.funnelEvent.upsert({
+      where: { eventId: refundEventId },
+      update: {},
+      create: {
+        eventId: refundEventId,
+        eventName: "refund",
+        visitorId: text(metadata.visitorId, 120) || null,
+        sessionId: text(metadata.sessionId, 120) || null,
+        leadId: stored.leadId,
+        funnel: stored.funnel,
+        offerMode: stored.offerMode,
+        entryPrice: registration?.entryPrice ?? null,
+        batchId: stored.batchId,
+        pagePath: details.pagePath,
+        source: text(metadata.source, 120) || null,
+        medium: text(metadata.medium, 120) || null,
+        campaign: text(metadata.campaign, 220) || null,
+        content: text(metadata.content, 220) || null,
+        term: text(metadata.term, 220) || null,
+        campaignId: text(metadata.campaignId, 120) || null,
+        adsetId: text(metadata.adsetId, 120) || null,
+        adId: text(metadata.adId, 120) || null,
+        fbclid: text(metadata.fbclid, 300) || null,
+        fbp: text(metadata.fbp, 300) || null,
+        fbc: text(metadata.fbc, 500) || null,
+        gclid: text(metadata.gclid, 300) || null,
+        landingVariant: text(metadata.landingVariant, 120) || null,
+        eventValue: Math.round(refundRupees),
+        currency: stored.currency,
+        metadata: {
+          provider: "razorpay",
+          purpose: stored.purpose,
+          refundId,
+          providerPaymentId: paymentId,
+          refundAmountPaise,
+          providerAmountRefunded,
+          fullRefund,
+          verifiedBy: "signed_refund_processed_webhook_and_provider_payment",
+        },
+      },
+    });
+
+    await tx.funnelPayment.update({
+      where: { id: stored.id },
+      data: {
+        status: fullRefund ? "refunded" : "captured",
+        refundedAt: new Date(),
+      },
+    });
+
+    if (fullRefund) {
+      await tx.lead.update({
+        where: { id: stored.leadId },
+        data: {
+          status: stored.purpose === "implementation_workshop" ? "refunded_workshop" : "refunded_masterclass",
+        },
+      });
+    }
+  });
+
+  return { handled: true, refundEventId, fullRefund };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -167,6 +271,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const eventName = text(event?.event, 100);
     const paymentEntity = record(event?.payload?.payment?.entity);
     const orderEntity = record(event?.payload?.order?.entity);
+    const refundEntity = record(event?.payload?.refund?.entity);
 
     if (eventName === "payment.captured" || eventName === "order.paid") {
       const paymentId = text(paymentEntity.id, 120);
@@ -179,7 +284,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const orderId = text(paymentEntity.order_id, 120);
       if (orderId) {
         const stored = await prisma.funnelPayment.findUnique({ where: { providerOrderId: orderId } });
-        if (stored && stored.status !== "captured") {
+        if (stored && stored.status !== "captured" && stored.status !== "refunded") {
           await prisma.funnelPayment.update({
             where: { id: stored.id },
             data: {
@@ -192,6 +297,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         }
       }
+      return res.status(200).json({ ok: true });
+    }
+
+    if (eventName === "refund.processed") {
+      await reconcileProcessedRefund(refundEntity);
       return res.status(200).json({ ok: true });
     }
 
