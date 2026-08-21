@@ -7,6 +7,18 @@ export function paymentPurposeDetails(input: {
   funnel: string;
   leadId: string;
 }) {
+  if (input.purpose === "core_program") {
+    return {
+      purpose: "core_program" as const,
+      eventName: "close_convert_lead",
+      eventPrefix: "core_purchase",
+      pagePath: "/program/ai-expert/checkout",
+      leadStatus: "enrolled_ai_expert",
+      contentName: "sikhadenge_ai_expert_program",
+      confirmationUrl: `/program/ai-expert/thank-you?lead_id=${encodeURIComponent(input.leadId)}`,
+    };
+  }
+
   if (input.purpose === "implementation_workshop") {
     return {
       purpose: "implementation_workshop" as const,
