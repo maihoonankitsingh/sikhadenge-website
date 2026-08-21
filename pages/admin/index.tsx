@@ -69,14 +69,15 @@ export default function AdminDashboard() {
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <Card title="Funnel CRM" desc="Learner lifecycle, advisor workflow, follow-ups, revenue and audit trail" href="/admin/funnel-crm" />
-            <Card title="Funnel Dashboard" desc="ChatGPT vs Claude, Free vs Paid, conversion stages and tracked revenue" href="/admin/funnel-dashboard" />
-            <Card title="Integration Console" desc="Phase 10 readiness and safe diagnostics for Razorpay Test Mode, Meta Test Events and WhatsApp" href="/admin/funnel-integrations" />
+            <Card title="Decision Intelligence" desc="Executive economics, cohort conversion, campaign/ad revenue and operational bottlenecks" href="/admin/funnel-dashboard" />
+            <Card title="Follow-up Intelligence" desc="Reminder-by-reminder WhatsApp sent, delivered, read, failure and send-delay telemetry" href="/admin/funnel-followups" />
+            <Card title="Integration Console" desc="Safe readiness diagnostics for existing Razorpay, Meta and SikhaDenge WhatsApp integrations" href="/admin/funnel-integrations" />
             <Card title="Influencers" desc="Create/disable promo codes, reset passwords" href="/admin/influencers" />
             <Card title="Leads" desc="Legacy lead view, promo attribution and generic status updates" href="/admin/leads" />
           </div>
 
           <div style={{ fontSize: 12, color: "rgba(15,23,42,.62)" }}>
-            Funnel CRM is the operational workspace for AI Masterclass Funnel v2. Verified payments and funnel events remain the source of truth for commercial lifecycle stages.
+            Funnel CRM is the operational workspace. Verified FunnelEvent and FunnelPayment records remain the source of truth for conversion and commercial metrics; missing spend or message-step data is shown as missing rather than estimated.
           </div>
         </div>
       </div>
