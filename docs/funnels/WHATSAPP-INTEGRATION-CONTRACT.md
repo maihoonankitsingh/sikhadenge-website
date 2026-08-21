@@ -127,22 +127,41 @@ WhatsApp Community is an engagement layer, not the only route for critical sessi
 
 The direct registered WhatsApp number should receive critical reminders/joining instructions so a Community non-joiner does not automatically become a webinar no-show.
 
-## 7. Security
+## 7. Phase 10 connectivity healthcheck
+
+The admin-only Integration Console can send a non-PII transport diagnostic to the same outbound URL:
+
+```json
+{
+  "event": "integration_healthcheck",
+  "source": "sikhadenge-funnel-v2",
+  "dryRun": true,
+  "occurredAt": "2026-08-21T05:00:00Z"
+}
+```
+
+The private WhatsApp service should return any `2xx` response after authenticating the Bearer token. It must **not** enqueue or send a learner message for this event.
+
+This healthcheck confirms only endpoint/auth compatibility. It does not prove message delivery/read callbacks; those require a controlled real test learner.
+
+## 8. Security
 
 - All callbacks are server-to-server.
 - Status endpoint rejects requests when `WHATSAPP_FUNNEL_STATUS_TOKEN` is not configured or does not match.
 - Do not expose either WhatsApp token via `NEXT_PUBLIC_*` variables.
 - Do not put secrets in query strings.
+- `integration_healthcheck` must be side-effect free.
 - Rotate integration tokens if they are ever exposed.
 
-## 8. Still required before production
+## 9. Still required before production
 
 The exact private API implementation at `whatsapp.sikhadenge.in` remains an external dependency. Before live activation verify:
 
-1. outbound registration message is accepted,
-2. provider message ID is returned/preserved,
-3. sent/delivered/read/failed callbacks are emitted,
-4. callbacks include the original website `leadId`,
-5. retry/replay behavior preserves message ID,
-6. direct class reminders work independently of Community membership,
-7. a real test lead appears through every expected dashboard stage.
+1. `integration_healthcheck` returns 2xx without sending a message,
+2. outbound registration message is accepted,
+3. provider message ID is returned/preserved,
+4. sent/delivered/read/failed callbacks are emitted,
+5. callbacks include the original website `leadId`,
+6. retry/replay behavior preserves message ID,
+7. direct class reminders work independently of Community membership,
+8. a real test lead appears through every expected dashboard stage.
