@@ -14,8 +14,10 @@ on:
       - 'pages/api/admin/funnel-dashboard.ts'
       - 'pages/admin/funnel-dashboard.tsx'
       - 'prisma/**'
+      - 'scripts/funnel-security-check.cjs'
       - 'styles/funnel*.css'
       - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/funnel-v2-ci.yml'
 
 jobs:
@@ -43,6 +45,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Payment security self-tests
+        run: npm run test:funnel-security
+
+      - name: Production dependency audit visibility
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Generate Prisma client
         run: npx prisma generate
