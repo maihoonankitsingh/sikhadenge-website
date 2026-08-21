@@ -18,6 +18,7 @@ type StageName =
   | "masterclass60m"
   | "masterclassOfferSeen"
   | "workshopCtaClicks"
+  | "workshopCheckoutStarts"
   | "workshopPurchases"
   | "workshopAttended"
   | "qualifiedLeads"
@@ -54,6 +55,7 @@ const stageNames: StageName[] = [
   "masterclass60m",
   "masterclassOfferSeen",
   "workshopCtaClicks",
+  "workshopCheckoutStarts",
   "workshopPurchases",
   "workshopAttended",
   "qualifiedLeads",
@@ -100,55 +102,32 @@ function identity(event: {
 
 function stageForEvent(eventName: string): StageName | null {
   switch (eventName) {
-    case "view_masterclass_offer":
-      return "views";
-    case "masterclass_cta_click":
-      return "ctaClicks";
-    case "generate_lead":
-      return "leads";
-    case "whatsapp_message_sent":
-      return "whatsappSent";
-    case "whatsapp_delivered":
-      return "whatsappDelivered";
-    case "whatsapp_read":
-      return "whatsappRead";
-    case "whatsapp_failed":
-      return "whatsappFailed";
+    case "view_masterclass_offer": return "views";
+    case "masterclass_cta_click": return "ctaClicks";
+    case "generate_lead": return "leads";
+    case "whatsapp_message_sent": return "whatsappSent";
+    case "whatsapp_delivered": return "whatsappDelivered";
+    case "whatsapp_read": return "whatsappRead";
+    case "whatsapp_failed": return "whatsappFailed";
     case "community_joined":
-    case "join_group":
-      return "communityJoined";
-    case "begin_checkout":
-      return "checkoutStarts";
-    case "purchase":
-      return "entryPurchases";
-    case "masterclass_joined":
-      return "masterclassJoined";
-    case "masterclass_30m":
-      return "masterclass30m";
-    case "masterclass_60m":
-      return "masterclass60m";
-    case "masterclass_offer_seen":
-      return "masterclassOfferSeen";
-    case "workshop_cta_click":
-      return "workshopCtaClicks";
-    case "workshop_purchase":
-      return "workshopPurchases";
-    case "workshop_attended":
-      return "workshopAttended";
-    case "qualify_lead":
-      return "qualifiedLeads";
-    case "working_lead":
-      return "workingLeads";
-    case "core_offer_seen":
-      return "coreOfferSeen";
-    case "close_convert_lead":
-      return "corePurchases";
-    case "close_unconvert_lead":
-      return "lostLeads";
-    case "refund":
-      return "refunds";
-    default:
-      return null;
+    case "join_group": return "communityJoined";
+    case "begin_checkout": return "checkoutStarts";
+    case "purchase": return "entryPurchases";
+    case "masterclass_joined": return "masterclassJoined";
+    case "masterclass_30m": return "masterclass30m";
+    case "masterclass_60m": return "masterclass60m";
+    case "masterclass_offer_seen": return "masterclassOfferSeen";
+    case "workshop_cta_click": return "workshopCtaClicks";
+    case "workshop_checkout_started": return "workshopCheckoutStarts";
+    case "workshop_purchase": return "workshopPurchases";
+    case "workshop_attended": return "workshopAttended";
+    case "qualify_lead": return "qualifiedLeads";
+    case "working_lead": return "workingLeads";
+    case "core_offer_seen": return "coreOfferSeen";
+    case "close_convert_lead": return "corePurchases";
+    case "close_unconvert_lead": return "lostLeads";
+    case "refund": return "refunds";
+    default: return null;
   }
 }
 
@@ -161,10 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const days = Math.min(
-    180,
-    Math.max(1, Number.parseInt(String(req.query.days || "30"), 10) || 30)
-  );
+  const days = Math.min(180, Math.max(1, Number.parseInt(String(req.query.days || "30"), 10) || 30));
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   try {
@@ -195,7 +171,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const entity = identity(event);
 
       if (event.visitorId) group.uniqueVisitors.add(event.visitorId);
-
       const stage = stageForEvent(event.eventName);
       if (stage) group.stages[stage].add(entity);
 
@@ -210,9 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const rows = Array.from(groups.values())
       .map((group) => {
-        const s = Object.fromEntries(
-          stageNames.map((name) => [name, group.stages[name].size])
-        ) as Record<StageName, number>;
+        const s = Object.fromEntries(stageNames.map((name) => [name, group.stages[name].size])) as Record<StageName, number>;
         const grossRevenue = group.entryRevenue + group.workshopRevenue + group.coreRevenue;
         const netRevenue = Math.max(0, grossRevenue - group.refundValue);
 
@@ -231,6 +204,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           showUpRate: percent(s.masterclassJoined, s.leads),
           retention30Rate: percent(s.masterclass30m, s.masterclassJoined),
           retention60Rate: percent(s.masterclass60m, s.masterclassJoined),
+          workshopOfferToCheckoutRate: percent(s.workshopCheckoutStarts, s.masterclassOfferSeen),
+          workshopCheckoutConversionRate: percent(s.workshopPurchases, s.workshopCheckoutStarts),
           workshopBuyerRate: percent(s.workshopPurchases, s.masterclassOfferSeen),
           workshopAttendanceRate: percent(s.workshopAttended, s.workshopPurchases),
           coreOfferConversionRate: percent(s.corePurchases, s.coreOfferSeen),
@@ -255,6 +230,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         acc.whatsappRead += row.whatsappRead;
         acc.communityJoined += row.communityJoined;
         acc.masterclassJoined += row.masterclassJoined;
+        acc.workshopCheckoutStarts += row.workshopCheckoutStarts;
         acc.workshopPurchases += row.workshopPurchases;
         acc.corePurchases += row.corePurchases;
         acc.grossRevenue += row.grossRevenue;
@@ -271,6 +247,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         whatsappRead: 0,
         communityJoined: 0,
         masterclassJoined: 0,
+        workshopCheckoutStarts: 0,
         workshopPurchases: 0,
         corePurchases: 0,
         grossRevenue: 0,
@@ -286,7 +263,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       summary,
       rows,
       note:
-        "First-party funnel events only. WhatsApp delivery/read metrics appear only after the private WhatsApp service posts authenticated status callbacks. Meta ad spend, CPL, CAC and ROAS remain excluded until a verified Meta Ads reporting source is connected.",
+        "First-party funnel events only. WhatsApp metrics require authenticated private-service callbacks. Workshop checkout and purchase stages preserve the original Free/Paid acquisition cohort. Meta ad spend, CPL, CAC and ROAS remain excluded until a verified Meta Ads reporting source is connected.",
     });
   } catch (error) {
     console.error("Funnel dashboard failed:", error);
