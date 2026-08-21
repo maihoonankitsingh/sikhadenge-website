@@ -34,13 +34,17 @@ export async function activateExistingWhatsAppMasterclass(leadId: string) {
     return { attempted: false, ok: false, error: "Stored WhatsApp masterclass consent is missing" };
   }
 
+  const name = text(lead.name, 160);
+  const phone = text(lead.phone, 40);
   const email = text(notes.email, 220);
+  if (!name) return { attempted: false, ok: false, error: "Stored lead name is missing" };
+  if (!phone) return { attempted: false, ok: false, error: "Stored lead phone is missing" };
   if (!email) return { attempted: false, ok: false, error: "Stored lead email is missing" };
 
   return sendRegistrationToWhatsAppAgent({
     registrationId: lead.id,
-    name: lead.name,
-    phone: lead.phone,
+    name,
+    phone,
     email,
     city: text(notes.city, 120),
     source: lead.source || "funnel:paid-masterclass",
