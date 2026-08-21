@@ -1,7 +1,9 @@
 import Head from "next/head";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import styles from "../../../styles/chatgpt-masterclass-live.module.css";
 
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 const registerHref = "/gen-ai-masterclass/register-one-step";
 
 const agenda = [
@@ -57,7 +59,7 @@ function ChatGPTFreeMasterclassPage() {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      <main className={styles.page}>
+      <main className={`${styles.page} ${inter.variable}`}>
         <div className={styles.ticker}><span>● LIVE MASTERCLASS</span><span>NEXT LIVE BATCH</span><span>8:00 PM IST</span><span>FREE REGISTRATION</span></div>
 
         <section className={styles.hero}>
