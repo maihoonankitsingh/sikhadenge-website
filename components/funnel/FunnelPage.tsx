@@ -5,6 +5,7 @@ import FunnelFooter from "./FunnelFooter";
 import FunnelHeader from "./FunnelHeader";
 import FunnelTracker from "./FunnelTracker";
 import MobileStickyCta from "./MobileStickyCta";
+import AgendaSection from "./sections/AgendaSection";
 import AudienceSection from "./sections/AudienceSection";
 import DemoSection from "./sections/DemoSection";
 import FaqSection from "./sections/FaqSection";
@@ -17,6 +18,7 @@ import ProblemSection from "./sections/ProblemSection";
 import ProofStrip from "./sections/ProofStrip";
 import RegisterSection from "./sections/RegisterSection";
 import ResourcesSection from "./sections/ResourcesSection";
+import TransformationSection from "./sections/TransformationSection";
 
 export default function FunnelPage({ config }: { config: FunnelConfig }) {
   return (
@@ -36,10 +38,12 @@ export default function FunnelPage({ config }: { config: FunnelConfig }) {
       <main className={`funnel-shell funnel-theme-${config.theme}`}>
         <FunnelHeader config={config} />
         <HeroSection config={config} />
-        <ProofStrip />
+        <ProofStrip config={config} />
         <ProblemSection config={config} />
         <OutcomesSection config={config} />
+        <AgendaSection config={config} />
         <DemoSection config={config} />
+        <TransformationSection config={config} />
         <AudienceSection config={config} />
         <MentorSection />
         <ResourcesSection config={config} />
