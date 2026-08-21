@@ -10,21 +10,13 @@ on:
       - 'components/funnel/**'
       - 'data/funnels.ts'
       - 'docs/funnels/**'
+      - 'eslint.config.mjs'
       - 'lib/funnel/**'
-      - 'pages/masterclass/**'
-      - 'pages/workshop/**'
-      - 'pages/program/**'
-      - 'pages/api/funnel/**'
-      - 'pages/api/admin/funnel-dashboard.ts'
-      - 'pages/api/admin/funnel-crm.ts'
-      - 'pages/api/admin/funnel-crm/**'
-      - 'pages/admin/funnel-dashboard.tsx'
-      - 'pages/admin/funnel-crm/**'
-      - 'pages/admin/index.tsx'
+      - 'pages/**'
       - 'prisma/**'
       - 'scripts/funnel-security-check.cjs'
       - 'scripts/funnel-db-smoke.cjs'
-      - 'scripts/phase9-react19-compat.cjs'
+      - 'scripts/phase9-route-smoke.cjs'
       - 'styles/funnel*.css'
       - 'styles/workshop-funnel.css'
       - 'package.json'
@@ -34,7 +26,7 @@ on:
       - '.github/workflows/funnel-v2-ci.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -79,35 +71,13 @@ jobs:
           node-version: '20.20.2'
           cache: npm
 
-      - name: Synchronize dependency lockfile
-        run: npm install --package-lock-only --ignore-scripts
-
-      - name: Migrate async App Router request APIs
-        run: npx --yes @next/codemod@latest next-async-request-api app --force
-
-      - name: Apply React 19 compatibility transform
-        run: node scripts/phase9-react19-compat.cjs
-
-      - name: Commit generated Next 16 changes on branch push
-        if: github.event_name == 'push'
-        run: |
-          git add app pages package-lock.json
-          if git diff --cached --quiet; then
-            echo 'Generated files already synchronized'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'chore: synchronize Next 16 generated migration changes'
-          git push origin HEAD:feature/ai-masterclass-funnel-v2
-
-      - name: Install dependencies
+      - name: Install dependencies from committed lockfile
         run: npm ci
 
       - name: Payment security self-tests
         run: npm run test:funnel-security
 
-      - name: Production dependency audit
+      - name: Production dependency audit — zero high required
         run: npm run audit:prod
 
       - name: Generate Prisma client
@@ -121,3 +91,6 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
+
+      - name: Production route smoke test
+        run: node scripts/phase9-route-smoke.cjs
