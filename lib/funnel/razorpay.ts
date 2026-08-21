@@ -18,6 +18,8 @@ type RazorpayPayment = {
   id: string;
   entity: "payment" | string;
   amount: number;
+  amount_refunded?: number;
+  refund_status?: string | null;
   currency: string;
   status: string;
   order_id?: string | null;
@@ -31,9 +33,7 @@ type RazorpayPayment = {
 function credentials() {
   const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
   const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
-  if (!keyId || !keySecret) {
-    throw new Error("Razorpay credentials are not configured");
-  }
+  if (!keyId || !keySecret) throw new Error("Razorpay credentials are not configured");
   return { keyId, keySecret };
 }
 
@@ -45,34 +45,23 @@ function authHeader() {
 async function razorpayRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 7000);
-
   try {
     const response = await fetch(`https://api.razorpay.com/v1${path}`, {
       ...init,
-      headers: {
-        Authorization: authHeader(),
-        "Content-Type": "application/json",
-        ...(init.headers || {}),
-      },
+      headers: { Authorization: authHeader(), "Content-Type": "application/json", ...(init.headers || {}) },
       signal: controller.signal,
     });
 
-    const text = await response.text();
+    const responseText = await response.text();
     let body: unknown = null;
-    try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      body = text;
-    }
+    try { body = responseText ? JSON.parse(responseText) : null; } catch { body = responseText; }
 
     if (!response.ok) {
-      const message =
-        body && typeof body === "object" && "error" in body
-          ? JSON.stringify((body as Record<string, unknown>).error)
-          : String(body || `HTTP ${response.status}`);
+      const message = body && typeof body === "object" && "error" in body
+        ? JSON.stringify((body as Record<string, unknown>).error)
+        : String(body || `HTTP ${response.status}`);
       throw new Error(`Razorpay ${response.status}: ${message.slice(0, 800)}`);
     }
-
     return body as T;
   } finally {
     clearTimeout(timer);
@@ -83,19 +72,10 @@ export function getRazorpayPublicKey() {
   return process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
 }
 
-export async function createRazorpayOrder(input: {
-  amountPaise: number;
-  receipt: string;
-  notes: Record<string, string>;
-}) {
+export async function createRazorpayOrder(input: { amountPaise: number; receipt: string; notes: Record<string, string> }) {
   return razorpayRequest<RazorpayOrder>("/orders", {
     method: "POST",
-    body: JSON.stringify({
-      amount: input.amountPaise,
-      currency: "INR",
-      receipt: input.receipt.slice(0, 40),
-      notes: input.notes,
-    }),
+    body: JSON.stringify({ amount: input.amountPaise, currency: "INR", receipt: input.receipt.slice(0, 40), notes: input.notes }),
   });
 }
 
@@ -114,16 +94,9 @@ function safeEqualHex(a: string, b: string) {
   return left.length === right.length && crypto.timingSafeEqual(left, right);
 }
 
-export function verifyRazorpayCheckoutSignature(input: {
-  orderId: string;
-  paymentId: string;
-  signature: string;
-}) {
+export function verifyRazorpayCheckoutSignature(input: { orderId: string; paymentId: string; signature: string }) {
   const { keySecret } = credentials();
-  const expected = crypto
-    .createHmac("sha256", keySecret)
-    .update(`${input.orderId}|${input.paymentId}`)
-    .digest("hex");
+  const expected = crypto.createHmac("sha256", keySecret).update(`${input.orderId}|${input.paymentId}`).digest("hex");
   return safeEqualHex(expected, input.signature);
 }
 
