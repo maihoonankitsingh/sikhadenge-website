@@ -120,7 +120,7 @@ export default function CheckoutPage({
         image: "/funnels/shared/sikhadenge-logo.png",
         prefill: { name: order.name || "", email: order.email || "", contact: order.contact || "" },
         notes: { lead_id: leadId, funnel: config.product, batch_id: config.batchId, purpose },
-        theme: { color: isCore ? "#2563EB" : config.theme === "amber" ? "#D97706" : "#2563EB" },
+        theme: { color: isCore ? "#2563EB" : config.theme === "amber" ? "#D97757" : "#10A37F" },
         modal: {
           ondismiss: () => {
             setStatus("idle");
@@ -183,6 +183,7 @@ export default function CheckoutPage({
 
   const busy = status === "loading" || status === "paying" || status === "verifying";
   const stageLabel = isCore ? "Advanced Program" : isWorkshop ? "Implementation" : "Masterclass";
+  const stageClass = isCore ? "core" : isWorkshop ? "workshop" : "masterclass";
 
   return (
     <>
@@ -196,7 +197,7 @@ export default function CheckoutPage({
         }}
       />
 
-      <main className={`funnel-checkout-shell funnel-theme-${isCore ? "blue" : config.theme}`}>
+      <main className={`funnel-checkout-shell funnel-stage-${stageClass} funnel-theme-${isCore ? "blue" : config.theme}`}>
         <header className="funnel-checkout-topbar">
           <Image src="/funnels/shared/sikhadenge-logo.png" width={166} height={52} alt="SikhaDenge" priority />
           <span>{isCore ? "Secure AI Expert Program checkout" : isWorkshop ? "Secure implementation workshop checkout" : "Secure masterclass checkout"}</span>
