@@ -25,9 +25,11 @@ export type IntegrationReadiness = {
   };
   whatsapp: {
     level: IntegrationLevel;
-    outboundUrlConfigured: boolean;
-    outboundTokenConfigured: boolean;
-    statusTokenConfigured: boolean;
+    registrationEndpointSource: "explicit" | "existing-default";
+    registrationSecretConfigured: boolean;
+    statusCallbackSecretConfigured: boolean;
+    runtimeReady: boolean;
+    safeHealthDiagnosticConfigured: boolean;
     readyForConnectivityTest: boolean;
     missing: string[];
   };
@@ -38,6 +40,8 @@ export type IntegrationReadiness = {
   };
   blockers: string[];
 };
+
+const DEFAULT_WHATSAPP_AGENT_BASE_URL = "https://whatsapp.sikhadenge.in";
 
 function value(name: string) {
   return String(process.env[name] || "").trim();
@@ -62,6 +66,8 @@ function level(required: boolean, partial: boolean): IntegrationLevel {
 }
 
 export function getIntegrationReadiness(): IntegrationReadiness {
+  // Reuse the admission system's existing Razorpay Key ID + Secret. The signed
+  // webhook adds callback-loss recovery on the same Razorpay account.
   const razorpayKeyId = value("RAZORPAY_KEY_ID") || value("NEXT_PUBLIC_RAZORPAY_KEY_ID");
   const razorpaySecret = value("RAZORPAY_KEY_SECRET");
   const razorpayWebhookSecret = value("RAZORPAY_WEBHOOK_SECRET");
@@ -71,46 +77,64 @@ export function getIntegrationReadiness(): IntegrationReadiness {
   const razorpayMissing: string[] = [];
   if (!razorpayKeyId) razorpayMissing.push("RAZORPAY_KEY_ID");
   if (!razorpaySecret) razorpayMissing.push("RAZORPAY_KEY_SECRET");
-  if (!razorpayWebhookSecret) razorpayMissing.push("RAZORPAY_WEBHOOK_SECRET");
-  if (razorpayKeyId && razorpayMode === "unknown") razorpayMissing.push("Recognized Razorpay test key prefix (rzp_test_)");
-  if (razorpayMode === "live") razorpayMissing.push("Test Mode key required for Phase 10 diagnostics");
+  if (!razorpayWebhookSecret) razorpayMissing.push("RAZORPAY_WEBHOOK_SECRET (same-account webhook signing secret)");
+  if (razorpayKeyId && razorpayMode === "unknown") razorpayMissing.push("Recognized Razorpay key prefix");
+  if (razorpayMode === "live") razorpayMissing.push("Test Mode key required only for non-production payment diagnostics");
 
+  // Reuse the existing website Pixel. CAPI/Test Events are additional server-side
+  // validation capabilities and must not be assumed present just because Pixel works.
   const pixelId = value("NEXT_PUBLIC_META_PIXEL_ID");
   const metaToken = value("META_CAPI_ACCESS_TOKEN");
   const metaTestCode = value("META_TEST_EVENT_CODE");
   const metaReady = Boolean(pixelId && metaToken && metaTestCode);
   const metaMissing: string[] = [];
   if (!pixelId) metaMissing.push("NEXT_PUBLIC_META_PIXEL_ID");
-  if (!metaToken) metaMissing.push("META_CAPI_ACCESS_TOKEN");
-  if (!metaTestCode) metaMissing.push("META_TEST_EVENT_CODE");
+  if (!metaToken) metaMissing.push("META_CAPI_ACCESS_TOKEN (only if existing server-side CAPI is available)");
+  if (!metaTestCode) metaMissing.push("META_TEST_EVENT_CODE (non-production validation only)");
 
-  const whatsappUrl = value("WHATSAPP_FUNNEL_WEBHOOK_URL");
-  const whatsappToken = value("WHATSAPP_FUNNEL_WEBHOOK_TOKEN");
-  const whatsappStatusToken = value("WHATSAPP_FUNNEL_STATUS_TOKEN");
-  const whatsappReady = Boolean(whatsappUrl && whatsappToken && whatsappStatusToken);
+  // Reuse the existing SikhaDenge masterclass agent. Runtime registration already
+  // defaults to whatsapp.sikhadenge.in/api/webhooks/masterclass-registration, so a
+  // second generic webhook URL/token must not be required just to report readiness.
+  const explicitRegistrationUrl = value("WHATSAPP_FUNNEL_WEBHOOK_URL") || value("WHATSAPP_AGENT_REGISTRATION_URL");
+  const agentBaseUrl = value("WHATSAPP_AGENT_BASE_URL") || DEFAULT_WHATSAPP_AGENT_BASE_URL;
+  const registrationEndpointAvailable = Boolean(explicitRegistrationUrl || agentBaseUrl);
+  const registrationSecret = value("MASTERCLASS_REGISTRATION_WEBHOOK_SECRET") || value("WHATSAPP_FUNNEL_WEBHOOK_TOKEN");
+  const statusCallbackSecret = value("WHATSAPP_FUNNEL_STATUS_TOKEN") || registrationSecret;
+  const whatsappRuntimeReady = Boolean(registrationEndpointAvailable && registrationSecret && statusCallbackSecret);
+
+  // Safe health diagnostics are optional and side-effect free. Never POST a fake
+  // learner payload to the registration webhook merely to test connectivity.
+  const whatsappHealthUrl = value("WHATSAPP_AGENT_STATUS_URL");
+  const whatsappHealthToken = value("DEVELOPER_API_TOKEN") || value("WHATSAPP_AGENT_STATUS_TOKEN");
+  const safeHealthDiagnosticReady = Boolean(whatsappHealthUrl && whatsappHealthToken);
   const whatsappMissing: string[] = [];
-  if (!whatsappUrl) whatsappMissing.push("WHATSAPP_FUNNEL_WEBHOOK_URL");
-  if (!whatsappToken) whatsappMissing.push("WHATSAPP_FUNNEL_WEBHOOK_TOKEN");
-  if (!whatsappStatusToken) whatsappMissing.push("WHATSAPP_FUNNEL_STATUS_TOKEN");
+  if (!registrationSecret) {
+    whatsappMissing.push("MASTERCLASS_REGISTRATION_WEBHOOK_SECRET (or legacy WHATSAPP_FUNNEL_WEBHOOK_TOKEN)");
+  }
+  if (!statusCallbackSecret) whatsappMissing.push("WhatsApp status callback shared secret");
 
   const siteUrl = value("PUBLIC_SITE_URL") || value("NEXT_PUBLIC_SITE_URL");
   const signingSecret = value("FUNNEL_CHECKOUT_SECRET");
 
   const blockers: string[] = [];
-  if (!razorpayTestReady) blockers.push("Razorpay Test Mode is not fully ready");
-  if (!metaReady) blockers.push("Meta Test Events is not fully ready");
-  if (!whatsappReady) blockers.push("WhatsApp outbound/status bridge is not fully ready");
+  if (!razorpayConfigured) blockers.push("Existing Razorpay Key ID/Secret are not available to this runtime");
+  if (!razorpayWebhookSecret) blockers.push("Razorpay signed webhook secret is not configured for callback-loss recovery");
+  if (!pixelId) blockers.push("Existing Meta Pixel ID is not available to this runtime");
+  if (!whatsappRuntimeReady) blockers.push("Existing SikhaDenge WhatsApp masterclass registration/status bridge is not fully ready");
   if (!signingSecret) blockers.push("FUNNEL_CHECKOUT_SECRET is not configured as a dedicated checkout signing secret");
   if (!siteUrl) blockers.push("PUBLIC_SITE_URL/NEXT_PUBLIC_SITE_URL is not configured");
 
   const fullyReady = blockers.length === 0;
-  const anythingConfigured = razorpayConfigured || Boolean(pixelId || metaToken) || Boolean(whatsappUrl || whatsappToken || whatsappStatusToken);
+  const anythingConfigured =
+    razorpayConfigured ||
+    Boolean(pixelId || metaToken) ||
+    Boolean(registrationSecret || statusCallbackSecret);
 
   return {
     generatedAt: new Date().toISOString(),
     overall: fullyReady ? "ready" : anythingConfigured ? "partial" : "blocked",
     razorpay: {
-      level: level(razorpayTestReady, Boolean(razorpayKeyId || razorpaySecret || razorpayWebhookSecret)),
+      level: level(razorpayConfigured && Boolean(razorpayWebhookSecret), Boolean(razorpayKeyId || razorpaySecret || razorpayWebhookSecret)),
       configured: razorpayConfigured,
       keyMode: razorpayMode,
       keyIdMasked: mask(razorpayKeyId, 6),
@@ -120,7 +144,7 @@ export function getIntegrationReadiness(): IntegrationReadiness {
       missing: razorpayMissing,
     },
     meta: {
-      level: level(metaReady, Boolean(pixelId || metaToken || metaTestCode)),
+      level: level(Boolean(pixelId), Boolean(pixelId || metaToken || metaTestCode)),
       pixelConfigured: Boolean(pixelId),
       pixelIdMasked: mask(pixelId, 3),
       capiConfigured: Boolean(metaToken),
@@ -130,11 +154,13 @@ export function getIntegrationReadiness(): IntegrationReadiness {
       missing: metaMissing,
     },
     whatsapp: {
-      level: level(whatsappReady, Boolean(whatsappUrl || whatsappToken || whatsappStatusToken)),
-      outboundUrlConfigured: Boolean(whatsappUrl),
-      outboundTokenConfigured: Boolean(whatsappToken),
-      statusTokenConfigured: Boolean(whatsappStatusToken),
-      readyForConnectivityTest: whatsappReady,
+      level: level(whatsappRuntimeReady, Boolean(registrationSecret || statusCallbackSecret || explicitRegistrationUrl)),
+      registrationEndpointSource: explicitRegistrationUrl ? "explicit" : "existing-default",
+      registrationSecretConfigured: Boolean(registrationSecret),
+      statusCallbackSecretConfigured: Boolean(statusCallbackSecret),
+      runtimeReady: whatsappRuntimeReady,
+      safeHealthDiagnosticConfigured: safeHealthDiagnosticReady,
+      readyForConnectivityTest: safeHealthDiagnosticReady,
       missing: whatsappMissing,
     },
     site: {
