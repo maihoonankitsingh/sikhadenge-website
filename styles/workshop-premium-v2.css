@@ -1,0 +1,220 @@
+/* Premium workshop layer — presentation only. Checkout, lead attribution and payment logic are unchanged. */
+
+.workshop-shell {
+  --ws-surface: #061712;
+  --ws-surface-2: #03100c;
+  --ws-soft: #effbf7;
+  --ws-soft-2: #e4f7f0;
+  --ws-line: rgba(255,255,255,.11);
+  --ws-glow: rgba(16,163,127,.24);
+  background:
+    radial-gradient(820px 520px at 8% 4%, var(--ws-glow), transparent 72%),
+    radial-gradient(720px 480px at 88% 11%, rgba(50,214,166,.11), transparent 72%),
+    linear-gradient(155deg, var(--ws-surface-2), var(--ws-surface) 56%, #091721);
+}
+
+.workshop-shell.workshop-theme-blue {
+  --ws-accent: #10a37f;
+  --ws-accent-2: #32d6a6;
+  --ws-surface: #061712;
+  --ws-surface-2: #03100c;
+  --ws-soft: #effbf7;
+  --ws-soft-2: #e4f7f0;
+  --ws-glow: rgba(16,163,127,.25);
+}
+
+.workshop-shell.workshop-theme-amber {
+  --ws-accent: #d97757;
+  --ws-accent-2: #f0a27b;
+  --ws-surface: #1d120e;
+  --ws-surface-2: #100907;
+  --ws-soft: #fff7f2;
+  --ws-soft-2: #fcece4;
+  --ws-glow: rgba(217,119,87,.24);
+  background:
+    radial-gradient(820px 520px at 8% 4%, var(--ws-glow), transparent 72%),
+    radial-gradient(720px 480px at 88% 11%, rgba(240,162,123,.12), transparent 72%),
+    linear-gradient(155deg, #100907, #1d120e 56%, #17120f);
+}
+
+.workshop-topbar {
+  min-height: 82px;
+  border-bottom-color: rgba(255,255,255,.09);
+}
+
+.workshop-topbar span { color: #9eb0ac; }
+.workshop-theme-amber .workshop-topbar span { color: #b9a69d; }
+
+.workshop-hero {
+  position: relative;
+  min-height: 690px;
+  padding-top: 72px;
+  padding-bottom: 94px;
+  grid-template-columns: minmax(0,1.18fr) minmax(340px,.72fr);
+  gap: clamp(44px,6vw,74px);
+}
+
+.workshop-hero-copy h1 {
+  max-width: 790px;
+  font-size: clamp(48px,5.25vw,70px);
+  line-height: .97;
+  text-wrap: balance;
+}
+
+.workshop-hero-copy h1 em {
+  background: linear-gradient(100deg, #fff 0%, color-mix(in srgb, var(--ws-accent-2) 90%, white) 45%, color-mix(in srgb, var(--ws-accent) 82%, white) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.workshop-hero-copy > p {
+  max-width: 690px;
+  color: #b8c7c3;
+}
+.workshop-theme-amber .workshop-hero-copy > p { color: #cbb8ae; }
+
+.workshop-kicker { color: var(--ws-accent-2); }
+.workshop-theme-amber .workshop-kicker { color: var(--ws-accent-2); }
+
+.workshop-proof-row span {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  border-color: color-mix(in srgb, var(--ws-accent) 22%, rgba(255,255,255,.10));
+  background: color-mix(in srgb, var(--ws-accent) 8%, rgba(255,255,255,.035));
+  color: #e3eeeb;
+}
+
+.workshop-offer-card {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-color: color-mix(in srgb, var(--ws-accent) 28%, rgba(255,255,255,.11));
+  border-radius: 30px;
+  background:
+    radial-gradient(430px 260px at 25% -8%, color-mix(in srgb, var(--ws-accent) 27%, transparent), transparent 70%),
+    linear-gradient(165deg, color-mix(in srgb, var(--ws-surface) 94%, white 2%), var(--ws-surface-2));
+  box-shadow: 0 36px 110px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.045);
+}
+
+.workshop-theme-amber .workshop-offer-card {
+  background:
+    radial-gradient(430px 260px at 25% -8%, rgba(217,119,87,.27), transparent 70%),
+    linear-gradient(165deg, #25150f, #100907);
+}
+
+.workshop-offer-card::after {
+  content: "";
+  position: absolute;
+  right: -80px;
+  bottom: -95px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--ws-accent-2) 18%, transparent);
+  box-shadow: 0 0 0 28px color-mix(in srgb, var(--ws-accent) 4%, transparent), 0 0 0 58px color-mix(in srgb, var(--ws-accent) 2%, transparent);
+  pointer-events: none;
+}
+
+.workshop-offer-card > * { position: relative; z-index: 1; }
+.workshop-price { color: #fff; font-size: 62px; }
+.workshop-save { color: var(--ws-accent-2); }
+.workshop-theme-amber .workshop-save { color: var(--ws-accent-2); }
+.workshop-offer-card > p { color: #879b96; }
+.workshop-theme-amber .workshop-offer-card > p { color: #a48f84; }
+
+.workshop-primary-button {
+  min-height: 56px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--ws-accent), var(--ws-accent-2));
+  box-shadow: 0 18px 46px color-mix(in srgb, var(--ws-accent) 28%, transparent), inset 0 1px rgba(255,255,255,.2);
+}
+
+.workshop-section { padding-top: 96px; padding-bottom: 96px; }
+.workshop-section-light {
+  background:
+    radial-gradient(620px 300px at 90% 0%, color-mix(in srgb, var(--ws-accent) 6%, transparent), transparent 72%),
+    var(--ws-soft);
+}
+.workshop-theme-amber .workshop-section-light { background: radial-gradient(620px 300px at 90% 0%, rgba(217,119,87,.06), transparent 72%), var(--ws-soft); }
+.workshop-section-light .workshop-kicker { color: var(--ws-accent); }
+
+.workshop-section-head h2,
+.workshop-mentor-grid h2,
+.workshop-final-cta h2 {
+  letter-spacing: -.05em;
+  text-wrap: balance;
+}
+
+.workshop-three-grid article,
+.workshop-deliverables > div {
+  border-color: color-mix(in srgb, var(--ws-accent) 10%, #dfe6e5);
+  border-radius: 22px;
+  box-shadow: 0 14px 46px rgba(15,23,42,.055);
+}
+.workshop-three-grid article > strong,
+.workshop-deliverables span { color: var(--ws-accent); }
+
+.workshop-curriculum { gap: 11px; }
+.workshop-curriculum article {
+  min-height: 72px;
+  border-color: color-mix(in srgb, var(--ws-accent) 18%, rgba(255,255,255,.08));
+  border-radius: 18px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ws-accent) 9%, rgba(255,255,255,.035)), rgba(255,255,255,.025));
+}
+.workshop-curriculum span,
+.workshop-theme-amber .workshop-curriculum span { color: var(--ws-accent-2); }
+
+.workshop-mentor-grid {
+  gap: 64px;
+  padding-top: 104px;
+  padding-bottom: 104px;
+}
+.workshop-mentor-image {
+  border: 1px solid color-mix(in srgb, var(--ws-accent) 18%, rgba(255,255,255,.08));
+  box-shadow: 0 30px 80px rgba(0,0,0,.25);
+}
+
+.workshop-faqs details { border-radius: 18px; }
+.workshop-faqs summary { min-height: 56px; display: flex; align-items: center; }
+
+.workshop-final-cta {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--ws-accent) 22%, rgba(255,255,255,.10));
+  border-radius: 32px;
+  background:
+    radial-gradient(760px 360px at 50% -8%, color-mix(in srgb, var(--ws-accent) 28%, transparent), transparent 72%),
+    linear-gradient(145deg, var(--ws-surface-2), var(--ws-surface));
+  box-shadow: 0 34px 100px rgba(0,0,0,.24);
+}
+.workshop-theme-amber .workshop-final-cta {
+  background: radial-gradient(760px 360px at 50% -8%, rgba(217,119,87,.25), transparent 72%), linear-gradient(145deg, #100907, #21130e);
+}
+
+.workshop-footer nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 4px;
+}
+
+@media (max-width: 860px) {
+  .workshop-hero { min-height: auto; }
+  .workshop-offer-card { max-width: 680px; }
+}
+
+@media (max-width: 560px) {
+  .workshop-hero { padding-top: 40px; padding-bottom: 58px; }
+  .workshop-hero-copy h1 { font-size: clamp(40px,10.5vw,46px); }
+  .workshop-proof-row span { min-height: 36px; }
+  .workshop-offer-card { padding: 24px; border-radius: 22px; }
+  .workshop-price { font-size: 54px; }
+  .workshop-section { padding-top: 68px; padding-bottom: 68px; }
+  .workshop-mentor-grid { padding-top: 70px; padding-bottom: 70px; }
+  .workshop-final-cta { margin-top: 54px; margin-bottom: 54px; border-radius: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workshop-primary-button { transition: none !important; }
+}
