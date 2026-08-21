@@ -4,6 +4,7 @@ import { fetchRazorpayOrder, fetchRazorpayPayment, verifyRazorpayWebhookSignatur
 import { paymentPurposeDetails } from "../../../../lib/funnel/paymentPurpose";
 import { getCoreProgramEligibility } from "../../../../lib/funnel/coreProgram";
 import { sendMetaCapiEvent } from "../../../../lib/funnel/metaCapi";
+import { activateExistingWhatsAppMasterclass } from "../../../../lib/funnel/whatsappActivation";
 
 export const config = { api: { bodyParser: false } };
 
@@ -12,6 +13,11 @@ function record(value: unknown): Record<string, any> { return value && typeof va
 async function rawBody(req: NextApiRequest) { const chunks: Buffer[] = []; for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); return Buffer.concat(chunks); }
 function siteUrl(path: string) { const base = (process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://sikhadenge.in").replace(/\/$/, ""); return `${base}${path.startsWith("/") ? path : `/${path}`}`; }
 async function registrationContext(leadId: string) { return prisma.funnelEvent.findFirst({ where: { leadId, eventName: "generate_lead" }, orderBy: { createdAt: "desc" }, select: { entryPrice: true } }); }
+async function activatePaidEntryWhatsApp(purpose: string, leadId: string) {
+  if (purpose !== "masterclass_entry") return;
+  const result = await activateExistingWhatsAppMasterclass(leadId);
+  if (result.attempted && !result.ok) console.error("Webhook WhatsApp paid-entry activation failed:", result);
+}
 
 async function reconcileCaptured(orderId: string, paymentId: string) {
   const stored = await prisma.funnelPayment.findUnique({ where: { providerOrderId: orderId } });
@@ -53,11 +59,14 @@ async function reconcileCaptured(orderId: string, paymentId: string) {
     await tx.lead.update({ where: { id: stored.leadId }, data: { status: details.leadStatus } });
   });
 
-  const capi = await sendMetaCapiEvent({
-    eventName: "Purchase", eventId: purchaseEventId, eventSourceUrl: siteUrl(details.pagePath), email: text(metadata.email, 220), phone: text(metadata.phone, 30),
-    fbp: text(metadata.fbp, 300), fbc: text(metadata.fbc, 500), externalId: stored.leadId, value: amountRupees, currency: stored.currency,
-    contentName: details.contentName, customData: { payment_provider: "razorpay", payment_purpose: stored.purpose, reconciliation: "webhook", batch_id: stored.batchId || "" },
-  });
+  const [capi] = await Promise.all([
+    sendMetaCapiEvent({
+      eventName: "Purchase", eventId: purchaseEventId, eventSourceUrl: siteUrl(details.pagePath), email: text(metadata.email, 220), phone: text(metadata.phone, 30),
+      fbp: text(metadata.fbp, 300), fbc: text(metadata.fbc, 500), externalId: stored.leadId, value: amountRupees, currency: stored.currency,
+      contentName: details.contentName, customData: { payment_provider: "razorpay", payment_purpose: stored.purpose, reconciliation: "webhook", batch_id: stored.batchId || "" },
+    }),
+    activatePaidEntryWhatsApp(stored.purpose, stored.leadId),
+  ]);
   if (capi.attempted && !capi.ok) console.error("Webhook Meta CAPI Purchase failed:", capi);
   return { handled: true, purchaseEventId };
 }
