@@ -4,6 +4,7 @@ import { fetchRazorpayOrder, fetchRazorpayPayment, verifyRazorpayCheckoutSignatu
 import { paymentPurposeDetails } from "../../../../lib/funnel/paymentPurpose";
 import { getCoreProgramEligibility } from "../../../../lib/funnel/coreProgram";
 import { sendMetaCapiEvent } from "../../../../lib/funnel/metaCapi";
+import { activateExistingWhatsAppMasterclass } from "../../../../lib/funnel/whatsappActivation";
 
 function text(value: unknown, max = 300) { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
 function record(value: unknown): Record<string, any> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {}; }
@@ -15,6 +16,11 @@ function clientIp(req: NextApiRequest) {
 function siteUrl(path: string) {
   const base = (process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://sikhadenge.in").replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+async function activatePaidEntryWhatsApp(purpose: string, leadId: string) {
+  if (purpose !== "masterclass_entry") return;
+  const result = await activateExistingWhatsAppMasterclass(leadId);
+  if (result.attempted && !result.ok) console.error("Existing WhatsApp paid-entry activation failed:", result);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -41,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (stored.status === "captured" && stored.providerPaymentId === paymentId) {
+      await activatePaidEntryWhatsApp(stored.purpose, stored.leadId);
       return res.status(200).json({ ok: true, purchaseEventId: stored.purchaseEventId, confirmationUrl: details.confirmationUrl });
     }
     if (stored.provider !== "razorpay" || stored.providerOrderId !== returnedOrderId) return res.status(409).json({ ok: false, error: "Payment order mismatch" });
@@ -76,12 +83,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const lead = await prisma.lead.findUnique({ where: { id: stored.leadId } });
-    const capiResult = await sendMetaCapiEvent({
-      eventName: "Purchase", eventId: purchaseEventId, eventSourceUrl: siteUrl(details.pagePath), email: text(metadata.email, 220),
-      phone: text(metadata.phone || lead?.phone, 30), clientIp: clientIp(req), clientUserAgent: text(req.headers["user-agent"], 500),
-      fbp: text(metadata.fbp, 300), fbc: text(metadata.fbc, 500), externalId: stored.leadId, value: amountRupees, currency: stored.currency,
-      contentName: details.contentName, customData: { payment_provider: "razorpay", payment_purpose: stored.purpose, offer_mode: stored.offerMode, batch_id: stored.batchId || "" },
-    });
+    const [capiResult] = await Promise.all([
+      sendMetaCapiEvent({
+        eventName: "Purchase", eventId: purchaseEventId, eventSourceUrl: siteUrl(details.pagePath), email: text(metadata.email, 220),
+        phone: text(metadata.phone || lead?.phone, 30), clientIp: clientIp(req), clientUserAgent: text(req.headers["user-agent"], 500),
+        fbp: text(metadata.fbp, 300), fbc: text(metadata.fbc, 500), externalId: stored.leadId, value: amountRupees, currency: stored.currency,
+        contentName: details.contentName, customData: { payment_provider: "razorpay", payment_purpose: stored.purpose, offer_mode: stored.offerMode, batch_id: stored.batchId || "" },
+      }),
+      activatePaidEntryWhatsApp(stored.purpose, stored.leadId),
+    ]);
     if (capiResult.attempted && !capiResult.ok) console.error("Meta CAPI purchase event failed:", capiResult);
     return res.status(200).json({ ok: true, purchaseEventId, confirmationUrl: details.confirmationUrl });
   } catch (error) {
