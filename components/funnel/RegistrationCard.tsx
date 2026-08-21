@@ -120,9 +120,23 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
 
   return (
     <div id="register" className="funnel-register-card" aria-label="Masterclass registration">
+      <div className="funnel-register-ribbon">
+        <span>Secure registration</span>
+        <span>WhatsApp joining updates</span>
+      </div>
+
       <div className="funnel-register-head">
-        <span className="funnel-kicker">RESERVE YOUR SEAT</span>
-        <strong>{priceLabel}</strong>
+        <div>
+          <span className="funnel-kicker">RESERVE YOUR SEAT</span>
+          <strong>{priceLabel}</strong>
+        </div>
+        <div className="funnel-register-step" aria-label="Registration process">
+          <span>01</span>
+          <p>Share details</p>
+          <i />
+          <span>02</span>
+          <p>{config.offerMode === "paid" ? "Secure checkout" : "Get confirmation"}</p>
+        </div>
         <p>
           {config.offerMode === "free"
             ? "Complete the form once. We will send the live-session instructions on WhatsApp."
@@ -245,6 +259,11 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
         >
           {status === "sending" ? "Saving..." : config.ctaLabel}
         </button>
+
+        <div className="funnel-form-assurance" aria-label="Registration assurances">
+          <span>✓ No hidden browser-controlled price</span>
+          <span>✓ Important joining details on WhatsApp</span>
+        </div>
 
         <p className="funnel-form-note">
           Your registration details are used to manage this masterclass and its communication. Promotional communication can be opted out separately.
