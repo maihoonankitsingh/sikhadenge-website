@@ -91,7 +91,7 @@ Requires admin authentication.
 - The private WhatsApp service must explicitly support this health-check event for the diagnostic to pass.
 - Real message delivery/read callbacks still require a controlled test learner.
 
-## Automated CI self-test
+## Automated readiness self-test
 
 `npm run test:funnel-integrations` validates that:
 
@@ -101,7 +101,26 @@ Requires admin authentication.
 - Meta is blocked without `META_TEST_EVENT_CODE`,
 - secret values are not present in readiness JSON.
 
-The permanent Funnel v2 CI remains read-only and runs this test before the dependency audit/database/build gates.
+## Automated HTTP lifecycle rehearsal
+
+After the full production build, CI starts the real Next.js server against the temporary PostgreSQL database and runs `scripts/phase10-lifecycle-smoke.cjs`.
+
+The rehearsal exercises the actual website APIs rather than inserting only synthetic database rows:
+
+1. registers a ChatGPT FREE learner through `POST /api/funnel/register`,
+2. verifies no checkout is created for FREE registration,
+3. registers a Claude paid-entry learner at the configured ₹9 test price,
+4. verifies a signed paid checkout handoff is returned,
+5. sends authenticated WhatsApp `sent → delivered → read` callbacks through `POST /api/funnel/whatsapp/status`,
+6. replays the delivered callback and verifies idempotency,
+7. verifies Meta/UTM campaign and ad attribution is inherited into WhatsApp status events,
+8. verifies FREE and paid acquisition cohorts remain distinct,
+9. verifies this rehearsal creates no fake payment records,
+10. cleans up the synthetic leads after assertions.
+
+This proves the website-side registration, checkout-handoff and WhatsApp status-ingestion chain. It does **not** claim that Razorpay, Meta or the private WhatsApp provider has been externally verified.
+
+The permanent Funnel v2 CI remains read-only and runs readiness/security/database/build/lifecycle/route gates from committed source.
 
 ## Real external gates still required
 
@@ -125,6 +144,7 @@ Code readiness is not the same as provider verification. Before production activ
 - `NEXT_PUBLIC_RAZORPAY_KEY_ID` and `NEXT_PUBLIC_META_PIXEL_ID` may be public identifiers; secrets may not.
 - Phase 10 admin diagnostics must remain behind `requireAdmin`.
 - Live Razorpay keys are not accepted by the diagnostic endpoint.
+- `FUNNEL_CHECKOUT_SECRET` should be dedicated signing material rather than reusing payment/admin secrets.
 
 ## Release state
 
