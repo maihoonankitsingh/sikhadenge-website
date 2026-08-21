@@ -1,0 +1,53 @@
+/* Final visual QA corrections for the dedicated Claude FREE page. */
+
+.claude-future-page .claude-brand {
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: #171717;
+}
+
+.claude-future-page .claude-brand img {
+  filter: none;
+  opacity: 1;
+}
+
+.claude-future-page .claude-announcement-link {
+  min-height: 44px;
+  padding-block: 8px;
+}
+
+.claude-future-page .claude-nav nav a {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.claude-future-page .claude-nav-cta {
+  min-height: 44px;
+}
+
+.claude-future-page .claude-mentor-photo {
+  background-image: url('/funnels/shared/mentor.jpg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.claude-future-page .claude-footer img {
+  filter: none;
+  opacity: 1;
+}
+
+.claude-future-page .claude-footer nav a {
+  min-width: 44px;
+  min-height: 44px;
+  padding-block: 5px;
+}
+
+@media (max-width: 600px) {
+  .claude-future-page .claude-announcement-link,
+  .claude-future-page .claude-nav-cta {
+    min-height: 44px;
+  }
+}
