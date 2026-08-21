@@ -70,6 +70,7 @@ export default function AdminDashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <Card title="Funnel CRM" desc="Learner lifecycle, advisor workflow, follow-ups, revenue and audit trail" href="/admin/funnel-crm" />
             <Card title="Funnel Dashboard" desc="ChatGPT vs Claude, Free vs Paid, conversion stages and tracked revenue" href="/admin/funnel-dashboard" />
+            <Card title="Integration Console" desc="Phase 10 readiness and safe diagnostics for Razorpay Test Mode, Meta Test Events and WhatsApp" href="/admin/funnel-integrations" />
             <Card title="Influencers" desc="Create/disable promo codes, reset passwords" href="/admin/influencers" />
             <Card title="Leads" desc="Legacy lead view, promo attribution and generic status updates" href="/admin/leads" />
           </div>
