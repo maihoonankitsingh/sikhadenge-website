@@ -97,3 +97,25 @@ jobs:
           echo 'TEMP_BUNDLE_FETCH=PASS'
           echo 'DIAGNOSTIC_COMPLETE=PASS'
           REMOTE
+
+      - name: Fresh public edge checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          check_url() {
+            label="$1"
+            url="$2"
+            headers="$RUNNER_TEMP/${label}.headers"
+            body="$RUNNER_TEMP/${label}.html"
+            status="$(curl -sS --retry 3 --retry-delay 2 --max-time 30 -D "$headers" -o "$body" -w '%{http_code}' -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url")"
+            echo "${label}_STATUS=$status"
+            grep -Ei '^(date|server|cf-cache-status|cf-ray|age|cache-control|x-cache|x-vercel-cache):' "$headers" || true
+            test "$status" = '200'
+            grep -Fq 'Stop collecting prompts.' "$body"
+            grep -Fq 'Build real work with ChatGPT.' "$body"
+            grep -Fq 'Reserve My Free Seat' "$body"
+            echo "${label}_CONTENT=PASS"
+          }
+          check_url EXACT 'https://sikhadenge.in/masterclass/chatgpt/free'
+          check_url BUSTED "https://sikhadenge.in/masterclass/chatgpt/free?edgecheck=${RUN_KEY}"
+          echo 'PUBLIC_EDGE_DIAGNOSTIC=PASS'
