@@ -63,9 +63,9 @@ export default function FunnelIntegrationsPage() {
         <a href="/admin" style={{ color: "#7dd3fc", textDecoration: "none", fontWeight: 800 }}>← Admin</a>
         <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", color: "#67e8f9", fontWeight: 900 }}>Phase 10</div>
-            <h1 style={{ margin: "8px 0 6px", fontSize: 34 }}>Funnel Integration Console</h1>
-            <p style={{ margin: 0, maxWidth: 760, color: "#9fb0c3", lineHeight: 1.65 }}>Masked, admin-only readiness for Razorpay Test Mode, Meta Test Events and the private WhatsApp bridge. No API secrets are returned to the browser.</p>
+            <div style={{ fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", color: "#67e8f9", fontWeight: 900 }}>Phase 12A</div>
+            <h1 style={{ margin: "8px 0 6px", fontSize: 34 }}>Existing Integration Console</h1>
+            <p style={{ margin: 0, maxWidth: 820, color: "#9fb0c3", lineHeight: 1.65 }}>Masked, admin-only readiness for the existing SikhaDenge Razorpay, Meta and WhatsApp integrations. This console does not create or reveal a duplicate provider credential stack.</p>
           </div>
           {readiness ? <span style={{ ...pill[readiness.overall], alignSelf: "flex-start", padding: "8px 12px", borderRadius: 999, fontWeight: 900, textTransform: "uppercase", fontSize: 12 }}>{readiness.overall}</span> : null}
         </div>
@@ -78,29 +78,32 @@ export default function FunnelIntegrationsPage() {
             <div style={{ marginTop: 26, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
               <ProviderCard title="Razorpay" status={readiness.razorpay.level} rows={[
                 ["Key mode", readiness.razorpay.keyMode],
-                ["Key ID", readiness.razorpay.keyIdMasked || "missing"],
-                ["Secret", readiness.razorpay.keySecretConfigured ? "configured" : "missing"],
-                ["Webhook secret", readiness.razorpay.webhookSecretConfigured ? "configured" : "missing"],
+                ["Existing Key ID", readiness.razorpay.keyIdMasked || "missing"],
+                ["Existing Key Secret", readiness.razorpay.keySecretConfigured ? "available" : "missing"],
+                ["Signed webhook secret", readiness.razorpay.webhookSecretConfigured ? "configured" : "missing"],
               ]} missing={readiness.razorpay.missing} onTest={() => run("razorpay")} disabled={!readiness.razorpay.safeForTestDiagnostics || running !== null} result={results.razorpay} />
 
               <ProviderCard title="Meta" status={readiness.meta.level} rows={[
-                ["Pixel", readiness.meta.pixelIdMasked || "missing"],
-                ["CAPI token", readiness.meta.capiConfigured ? "configured" : "missing"],
-                ["Test event code", readiness.meta.testEventCodeConfigured ? "configured" : "missing"],
+                ["Existing Pixel", readiness.meta.pixelIdMasked || "missing"],
+                ["Server CAPI", readiness.meta.capiConfigured ? "available" : "not detected"],
+                ["Test Event Code", readiness.meta.testEventCodeConfigured ? "configured" : "not configured"],
                 ["Graph API", readiness.meta.graphApiVersion],
               ]} missing={readiness.meta.missing} onTest={() => run("meta")} disabled={!readiness.meta.readyForTestEvents || running !== null} result={results.meta} />
 
               <ProviderCard title="WhatsApp" status={readiness.whatsapp.level} rows={[
-                ["Outbound URL", readiness.whatsapp.outboundUrlConfigured ? "configured" : "missing"],
-                ["Outbound token", readiness.whatsapp.outboundTokenConfigured ? "configured" : "missing"],
-                ["Status token", readiness.whatsapp.statusTokenConfigured ? "configured" : "missing"],
+                ["Masterclass agent", readiness.whatsapp.registrationEndpointSource === "existing-default" ? "existing whatsapp.sikhadenge.in" : "explicit endpoint"],
+                ["Registration secret", readiness.whatsapp.registrationSecretConfigured ? "available" : "missing"],
+                ["Status callback auth", readiness.whatsapp.statusCallbackSecretConfigured ? "available" : "missing"],
+                ["Runtime bridge", readiness.whatsapp.runtimeReady ? "ready" : "blocked"],
+                ["Safe health diagnostic", readiness.whatsapp.safeHealthDiagnosticConfigured ? "available" : "optional / not detected"],
               ]} missing={readiness.whatsapp.missing} onTest={() => run("whatsapp")} disabled={!readiness.whatsapp.readyForConnectivityTest || running !== null} result={results.whatsapp} />
             </div>
 
             <section style={{ marginTop: 18, background: "#0d1b2b", border: "1px solid #20344a", borderRadius: 18, padding: 18 }}>
               <h2 style={{ marginTop: 0 }}>Release blockers</h2>
-              {readiness.blockers.length ? <ul style={{ color: "#c6d3df", lineHeight: 1.8 }}>{readiness.blockers.map((item) => <li key={item}>{item}</li>)}</ul> : <div style={{ color: "#86efac", fontWeight: 800 }}>Provider configuration readiness is complete. Run each real diagnostic before launch.</div>}
+              {readiness.blockers.length ? <ul style={{ color: "#c6d3df", lineHeight: 1.8 }}>{readiness.blockers.map((item) => <li key={item}>{item}</li>)}</ul> : <div style={{ color: "#86efac", fontWeight: 800 }}>Existing provider runtime configuration is available. Controlled real-provider evidence is still required before production activation.</div>}
               <div style={{ marginTop: 12, fontSize: 13, color: "#8294a8" }}>Public site: {readiness.site.publicSiteUrl || "not configured"} · Checkout signing secret: {readiness.site.checkoutSigningSecretConfigured ? "configured" : "missing"}</div>
+              {!readiness.whatsapp.safeHealthDiagnosticConfigured && readiness.whatsapp.runtimeReady ? <div style={{ marginTop: 10, fontSize: 12, color: "#fcd34d", lineHeight: 1.55 }}>WhatsApp runtime can be ready even when the optional safe-health button is disabled. In that case, validate the existing agent with one controlled learner; never send a fake registration payload as a healthcheck.</div> : null}
             </section>
           </>
         ) : null}
@@ -113,7 +116,7 @@ function ProviderCard(props: { title: string; status: string; rows: [string, any
   return <section style={{ background: "#0d1b2b", border: "1px solid #20344a", borderRadius: 18, padding: 18 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><h2 style={{ margin: 0 }}>{props.title}</h2><span style={{ ...pill[props.status], padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>{props.status}</span></div>
     <div style={{ marginTop: 16, display: "grid", gap: 8 }}>{props.rows.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingBottom: 8, borderBottom: "1px solid #1b2d40" }}><span style={{ color: "#8fa1b5" }}>{k}</span><strong style={{ textAlign: "right" }}>{String(v)}</strong></div>)}</div>
-    {props.missing.length ? <div style={{ marginTop: 14, fontSize: 12, color: "#fca5a5", lineHeight: 1.6 }}>Missing/blocking: {props.missing.join(", ")}</div> : null}
+    {props.missing.length ? <div style={{ marginTop: 14, fontSize: 12, color: "#fca5a5", lineHeight: 1.6 }}>Missing / additional validation: {props.missing.join(", ")}</div> : null}
     <button onClick={props.onTest} disabled={props.disabled} style={{ marginTop: 16, width: "100%", padding: "11px 14px", borderRadius: 12, border: 0, background: props.disabled ? "#334155" : "#0ea5e9", color: "white", fontWeight: 900, cursor: props.disabled ? "not-allowed" : "pointer" }}>Run safe diagnostic</button>
     {props.result ? <div style={{ marginTop: 12, fontSize: 12, color: props.result.startsWith("PASS") ? "#86efac" : props.result.startsWith("FAIL") ? "#fca5a5" : "#cbd5e1", wordBreak: "break-word", lineHeight: 1.5 }}>{props.result}</div> : null}
   </section>;
