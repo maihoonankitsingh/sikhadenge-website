@@ -1,14 +1,37 @@
+import Image from "next/image";
 import type { FunnelConfig } from "../../../lib/funnel/types";
 import ProductGlyph from "../ProductGlyph";
 import TrackedCta from "../TrackedCta";
 
-const workflowSteps = [
-  ["01", "Context", "Give the AI the right background"],
-  ["02", "Method", "Turn intent into a repeatable process"],
-  ["03", "Output", "Get work you can review and reuse"],
-] as const;
+const productVisuals = {
+  chatgpt: {
+    lab: "AI WORKFLOW LAB",
+    title: "Prompt → Research → Professional Output",
+    subtitle: "Turn everyday tasks into a clearer, repeatable working system.",
+    steps: [
+      ["01", "Context", "Define goal, background and constraints"],
+      ["02", "Workflow", "Research, structure and execute the task"],
+      ["03", "Output", "Reviewable work you can reuse and improve"],
+    ],
+    result: "Prompt system • Research • Documents • Productivity",
+  },
+  claude: {
+    lab: "DEEP WORK LAB",
+    title: "Source → Synthesis → Working Artifact",
+    subtitle: "Organize long-form and complex work before asking for the final answer.",
+    steps: [
+      ["01", "Deep Context", "Set source material, purpose and constraints"],
+      ["02", "Synthesis", "Extract, connect and structure the important ideas"],
+      ["03", "Artifact", "Move from analysis to a usable working output"],
+    ],
+    result: "Long docs • Research • Writing • Projects • Artifacts",
+  },
+} as const;
 
 export default function HeroSection({ config }: { config: FunnelConfig }) {
+  const visual = productVisuals[config.product];
+  const entryLabel = config.offerMode === "free" ? "FREE" : `₹${config.entryPrice}`;
+
   return (
     <section className="funnel-hero funnel-container">
       <div className="funnel-hero-copy">
@@ -31,12 +54,18 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
           <div><small>FORMAT</small><strong>{config.durationLabel}</strong></div>
         </div>
 
+        <div className="funnel-hero-offerbar">
+          <div><small>CURRENT ENTRY</small><strong>{entryLabel}</strong></div>
+          <div><small>DELIVERY</small><strong>Live + WhatsApp</strong></div>
+          <div><small>FOCUS</small><strong>Practical workflows</strong></div>
+        </div>
+
         <div className="funnel-hero-actions">
           <TrackedCta config={config} location="hero" />
           <p>
             {config.offerMode === "free"
-              ? "Free entry • joining details on WhatsApp"
-              : `One-time entry fee ₹${config.entryPrice} • secure checkout`}
+              ? "No payment required • joining details on WhatsApp"
+              : `One-time ₹${config.entryPrice} entry • secure Razorpay checkout`}
           </p>
         </div>
       </div>
@@ -48,7 +77,7 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
         <div className="funnel-command-window">
           <div className="funnel-command-topbar">
             <div className="funnel-window-dots" aria-hidden="true"><i /><i /><i /></div>
-            <span>SIKHADENGE • AI WORKFLOW LAB</span>
+            <span>SIKHADENGE • {visual.lab}</span>
             <b>LIVE</b>
           </div>
 
@@ -56,13 +85,13 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
             <ProductGlyph product={config.product} />
             <div>
               <small>{config.productLabel.toUpperCase()} WORKFLOW</small>
-              <strong>From prompt to professional output</strong>
-              <span>Structure the task before asking AI to execute it.</span>
+              <strong>{visual.title}</strong>
+              <span>{visual.subtitle}</span>
             </div>
           </div>
 
           <div className="funnel-command-steps">
-            {workflowSteps.map(([number, title, description]) => (
+            {visual.steps.map(([number, title, description]) => (
               <article key={number}>
                 <span>{number}</span>
                 <div><strong>{title}</strong><small>{description}</small></div>
@@ -71,19 +100,20 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
           </div>
 
           <div className="funnel-command-result">
-            <span>WORKFLOW RESULT</span>
-            <strong>Clear • Repeatable • Reviewable</strong>
+            <span>MASTERCLASS WORKFLOW MAP</span>
+            <strong>{visual.result}</strong>
             <i aria-hidden="true" />
           </div>
+        </div>
+
+        <div className="funnel-mentor-chip">
+          <Image src="/funnels/shared/mentor.jpg" width={56} height={56} alt="SikhaDenge mentor" />
+          <div><small>LIVE MENTOR-LED</small><strong>Learn the method while you watch it being applied.</strong></div>
         </div>
 
         <div className="funnel-floating-note funnel-floating-note-one">
           <small>MASTERCLASS FOCUS</small>
           <strong>Real work, not prompt collecting</strong>
-        </div>
-        <div className="funnel-floating-note funnel-floating-note-two">
-          <small>LEARNING STYLE</small>
-          <strong>Watch → understand → apply</strong>
         </div>
       </div>
     </section>
