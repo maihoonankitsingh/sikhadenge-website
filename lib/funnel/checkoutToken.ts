@@ -1,6 +1,9 @@
 import crypto from "crypto";
 
-export type CheckoutPurpose = "masterclass_entry" | "implementation_workshop";
+export type CheckoutPurpose =
+  | "masterclass_entry"
+  | "implementation_workshop"
+  | "core_program";
 
 function secret() {
   const value =
@@ -51,7 +54,7 @@ export function verifyCheckoutToken(token: string) {
       !parsed ||
       typeof parsed.leadId !== "string" ||
       !["chatgpt", "claude"].includes(parsed.funnel) ||
-      !["masterclass_entry", "implementation_workshop"].includes(purpose) ||
+      !["masterclass_entry", "implementation_workshop", "core_program"].includes(purpose) ||
       typeof parsed.exp !== "number" ||
       parsed.exp < Math.floor(Date.now() / 1000)
     ) {
