@@ -1,0 +1,147 @@
+/* Phase 13 — transaction-screen visual alignment. Presentation only. */
+
+.funnel-checkout-shell {
+  background:
+    radial-gradient(820px 500px at 16% 2%, color-mix(in srgb, var(--funnel-accent, #2563eb) 24%, transparent), transparent 72%),
+    radial-gradient(680px 440px at 88% 12%, color-mix(in srgb, var(--funnel-accent-2, #06b6d4) 13%, transparent), transparent 72%),
+    #030b16;
+}
+
+.funnel-checkout-shell::before {
+  height: 820px;
+  opacity: .82;
+}
+
+.funnel-checkout-topbar { min-height: 82px; }
+.funnel-checkout-topbar img { height: 44px; }
+
+.funnel-checkout-wrap {
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .74fr);
+  gap: clamp(44px, 6vw, 76px);
+  padding-top: 92px;
+  padding-bottom: 84px;
+}
+
+.funnel-checkout-copy h1 {
+  font-size: clamp(48px, 6vw, 78px);
+  line-height: .97;
+  text-wrap: balance;
+}
+
+.funnel-checkout-copy > p {
+  max-width: 650px;
+  color: #b4c3d5;
+}
+
+.funnel-checkout-trust > div {
+  min-height: 112px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.03);
+  box-shadow: inset 0 1px rgba(255,255,255,.025);
+}
+
+.funnel-payment-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 30px;
+  padding: 32px;
+  border-color: rgba(255,255,255,.72);
+  box-shadow: 0 38px 110px rgba(0,0,0,.42);
+}
+
+.funnel-payment-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 150px;
+  pointer-events: none;
+  background: radial-gradient(480px 170px at 75% -20%, color-mix(in srgb, var(--funnel-accent, #2563eb) 12%, transparent), transparent 72%);
+}
+
+.funnel-payment-card > * { position: relative; z-index: 1; }
+.funnel-payment-title strong { font-size: 36px; }
+.funnel-payment-total { padding-top: 20px; padding-bottom: 20px; }
+.funnel-payment-total strong { font-size: 31px; }
+
+.funnel-pay-button {
+  min-height: 56px;
+  border-radius: 14px;
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--funnel-accent, #2563eb) 27%, transparent), inset 0 1px rgba(255,255,255,.2);
+}
+
+.funnel-confirmation {
+  padding-top: 34px;
+  background:
+    radial-gradient(820px 500px at 50% -8%, color-mix(in srgb, var(--funnel-accent, #2563eb) 22%, transparent), transparent 70%),
+    radial-gradient(540px 360px at 82% 15%, color-mix(in srgb, var(--funnel-accent-2, #06b6d4) 10%, transparent), transparent 72%),
+    #030b16;
+}
+
+.funnel-confirmation-card {
+  overflow: hidden;
+  border-radius: 32px;
+  border-color: rgba(255,255,255,.12);
+  background:
+    radial-gradient(620px 260px at 50% -6%, color-mix(in srgb, var(--funnel-accent, #2563eb) 13%, transparent), transparent 72%),
+    linear-gradient(180deg, rgba(14,26,43,.97), rgba(6,14,24,.98));
+  box-shadow: 0 42px 120px rgba(0,0,0,.42), inset 0 1px rgba(255,255,255,.04);
+}
+
+.funnel-confirmation-check {
+  width: 72px;
+  height: 72px;
+  border-radius: 23px;
+  box-shadow: 0 18px 52px color-mix(in srgb, var(--funnel-accent, #2563eb) 28%, transparent);
+}
+
+.funnel-confirmation-card h1 {
+  font-size: clamp(38px, 5vw, 60px);
+  text-wrap: balance;
+}
+
+.funnel-confirmation-event { border-radius: 20px; }
+.funnel-confirmation-steps article {
+  border-radius: 18px;
+  background: rgba(255,255,255,.028);
+}
+
+.funnel-secondary-button {
+  border-radius: 14px;
+  background: rgba(255,255,255,.045);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.funnel-secondary-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.25);
+  background: rgba(255,255,255,.07);
+}
+
+.core-confirmation-shell {
+  background:
+    radial-gradient(760px 480px at 50% -5%, rgba(37,99,235,.22), transparent 72%),
+    radial-gradient(520px 360px at 80% 12%, rgba(20,184,166,.09), transparent 72%),
+    #030b16;
+}
+
+.core-confirmation-card {
+  border: 1px solid #e6ebf2;
+  border-radius: 30px;
+  box-shadow: 0 40px 110px rgba(0,0,0,.38);
+}
+
+@media (max-width: 900px) {
+  .funnel-checkout-wrap { grid-template-columns: 1fr; padding-top: 60px; }
+  .funnel-payment-card { max-width: 660px; }
+}
+
+@media (max-width: 640px) {
+  .funnel-checkout-wrap { padding-top: 44px; padding-bottom: 58px; }
+  .funnel-checkout-copy h1 { font-size: clamp(40px, 12vw, 52px); }
+  .funnel-payment-card { padding: 23px; border-radius: 22px; }
+  .funnel-confirmation-card { border-radius: 23px; }
+  .core-confirmation-card { border-radius: 23px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .funnel-secondary-button { transition: none !important; }
+}
