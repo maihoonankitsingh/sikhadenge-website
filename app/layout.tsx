@@ -1,10 +1,11 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import dynamic from "next/dynamic";
 
 import MetaPixel from "./_components/MetaPixel";
 import JsonLd from "./_components/JsonLd";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -77,9 +78,6 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const Header = dynamic(() => import("../components/Header"), { ssr: false });
-const Footer = dynamic(() => import("../components/Footer"), { ssr: false });
-
 export default function RootLayout({
   children,
 }: {
@@ -97,5 +95,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
