@@ -6,14 +6,19 @@ import { ArrowRight, Star } from "lucide-react";
 
 export const dynamicParams = false;
 
+type SkillPageProps = {
+  params: Promise<{ skill: string }>;
+};
+
 export async function generateStaticParams() {
   return skillsData.map((skill) => ({
     skill: skill.slug,
   }));
 }
 
-export function generateMetadata({ params }: { params: { skill: string } }): Metadata {
-  const skillInfo = skillsData.find((s) => s.slug === params.skill);
+export async function generateMetadata({ params }: SkillPageProps): Promise<Metadata> {
+  const { skill } = await params;
+  const skillInfo = skillsData.find((s) => s.slug === skill);
   if (!skillInfo) return { title: "Skill Not Found", robots: { index: false } };
 
   return {
@@ -31,8 +36,9 @@ export function generateMetadata({ params }: { params: { skill: string } }): Met
   };
 }
 
-export default function SkillPage({ params }: { params: { skill: string } }) {
-  const skillInfo = skillsData.find((s) => s.slug === params.skill);
+export default async function SkillPage({ params }: SkillPageProps) {
+  const { skill } = await params;
+  const skillInfo = skillsData.find((s) => s.slug === skill);
 
   if (!skillInfo) {
     notFound();
