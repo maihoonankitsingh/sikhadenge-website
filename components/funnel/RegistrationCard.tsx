@@ -11,6 +11,7 @@ type FormState = {
   occupation: string;
   goal: string;
   laptop: string;
+  consent: boolean;
   hp: string;
 };
 
@@ -21,6 +22,7 @@ const initialState: FormState = {
   occupation: "",
   goal: "",
   laptop: "",
+  consent: false,
   hp: "",
 };
 
@@ -38,6 +40,11 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (status === "sending") return;
+    if (!form.consent) {
+      setStatus("error");
+      setMessage("Please allow WhatsApp masterclass updates so we can send your joining instructions.");
+      return;
+    }
 
     setStatus("sending");
     setMessage("");
@@ -68,7 +75,7 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
         void trackFunnelEvent(
           config,
           "generate_lead",
-          { registration_status: "success" },
+          { registration_status: "success", whatsapp_consent: true },
           data.leadId,
           { persist: false, eventId: data.registrationEventId }
         );
@@ -94,15 +101,11 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
           return;
         }
 
-        setMessage(
-          "Your details are saved. Paid checkout is not active on this preview yet."
-        );
+        setMessage("Your details are saved. Paid checkout is not active on this preview yet.");
         return;
       }
 
-      setMessage(
-        "Registration confirmed. Opening your masterclass confirmation page…"
-      );
+      setMessage("Registration confirmed. Opening your masterclass confirmation page…");
 
       if (data.confirmationUrl) {
         window.setTimeout(() => {
@@ -111,11 +114,7 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
       }
     } catch (error) {
       setStatus("error");
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong. Please try again."
-      );
+      setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   }
 
@@ -216,6 +215,18 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
           </select>
         </label>
 
+        <label className="funnel-consent-row">
+          <input
+            required
+            type="checkbox"
+            checked={form.consent}
+            onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+          />
+          <span>
+            I agree to receive this masterclass&apos;s registration confirmation, joining link and related reminders on WhatsApp from SikhaDenge. I can opt out later.
+          </span>
+        </label>
+
         <input
           tabIndex={-1}
           autoComplete="off"
@@ -236,8 +247,7 @@ export default function RegistrationCard({ config }: { config: FunnelConfig }) {
         </button>
 
         <p className="funnel-form-note">
-          By registering, you agree to receive masterclass-related updates from SikhaDenge.
-          You can opt out of promotional communication later.
+          Your registration details are used to manage this masterclass and its communication. Promotional communication can be opted out separately.
         </p>
 
         {message ? (
