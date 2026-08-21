@@ -35,6 +35,11 @@ function statusMetadata(input: {
   occurredAt: string;
   errorCode: string;
   errorMessage: string;
+  messageType: string;
+  journeyStage: string;
+  templateName: string;
+  automationId: string;
+  scheduledFor: string;
 }): Prisma.InputJsonObject {
   const out: Record<string, Prisma.InputJsonValue> = {
     provider: input.provider,
@@ -44,6 +49,11 @@ function statusMetadata(input: {
   if (input.occurredAt) out.occurredAt = input.occurredAt;
   if (input.errorCode) out.errorCode = input.errorCode;
   if (input.errorMessage) out.errorMessage = input.errorMessage;
+  if (input.messageType) out.messageType = input.messageType;
+  if (input.journeyStage) out.journeyStage = input.journeyStage;
+  if (input.templateName) out.templateName = input.templateName;
+  if (input.automationId) out.automationId = input.automationId;
+  if (input.scheduledFor) out.scheduledFor = input.scheduledFor;
   return out;
 }
 
@@ -64,6 +74,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const occurredAt = text(req.body?.occurredAt, 80);
   const errorCode = text(req.body?.errorCode, 120);
   const errorMessage = text(req.body?.errorMessage, 500);
+  const messageType = text(req.body?.messageType ?? req.body?.message_type ?? req.body?.step, 120).toLowerCase();
+  const journeyStage = text(req.body?.journeyStage ?? req.body?.journey_stage, 120).toLowerCase();
+  const templateName = text(req.body?.templateName ?? req.body?.template_name, 180);
+  const automationId = text(req.body?.automationId ?? req.body?.automation_id, 180);
+  const scheduledFor = text(req.body?.scheduledFor ?? req.body?.scheduled_for, 80);
 
   if (!eventName || !leadId || !providerMessageId) {
     return res.status(400).json({ ok: false, error: "status, leadId and providerMessageId are required" });
@@ -79,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const eventId = `wa_${status}_${crypto.createHash("sha256").update(providerMessageId).digest("hex").slice(0, 32)}`;
-    const metadata = statusMetadata({ provider, providerMessageId, status, occurredAt, errorCode, errorMessage });
+    const metadata = statusMetadata({ provider, providerMessageId, status, occurredAt, errorCode, errorMessage, messageType, journeyStage, templateName, automationId, scheduledFor });
 
     await prisma.funnelEvent.upsert({
       where: { eventId },
@@ -112,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       update: { metadata },
     });
 
-    return res.status(200).json({ ok: true, eventName, eventId });
+    return res.status(200).json({ ok: true, eventName, eventId, messageType: messageType || null, journeyStage: journeyStage || null });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return res.status(200).json({ ok: true, duplicate: true });
