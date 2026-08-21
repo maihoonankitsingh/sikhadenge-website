@@ -95,6 +95,41 @@ jobs:
           done
           exit 1
 
+      - name: Transfer verified release bundle to VPS
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bundle="$RUNNER_TEMP/chatgpt-release-${RUN_KEY}.bundle"
+          remote_bundle="/tmp/chatgpt-release-${RUN_KEY}.bundle"
+          git branch -f chatgpt-release-bundle "$TARGET_SHA"
+          git bundle create "$bundle" chatgpt-release-bundle
+          git bundle verify "$bundle"
+          git bundle list-heads "$bundle" | grep -Fq "$TARGET_SHA refs/heads/chatgpt-release-bundle"
+          BUNDLE_SHA="$(sha256sum "$bundle" | awk '{print $1}')"
+          for attempt in 1 2 3; do
+            if scp \
+              -P "$SSH_PORT" \
+              -i "$HOME/.ssh/public-site-production" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=15 \
+              "$bundle" "$SSH_USER@$SSH_HOST:$remote_bundle"; then
+              break
+            fi
+            [[ "$attempt" -lt 3 ]] || exit 1
+            sleep 5
+          done
+          remote_sha="$(ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/public-site-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" "sha256sum '$remote_bundle' | awk '{print \\$1}'")"
+          test "$remote_sha" = "$BUNDLE_SHA"
+          echo 'PASS: exact release bundle transferred and hash verified'
+
       - name: Deploy exact public-site release
         shell: bash
         run: |
@@ -112,6 +147,8 @@ jobs:
           LIVE_APP=/var/www/sikhadenge.in/sikhadenge-website-space
           RELEASE_BRANCH=live-clean-sync-20260424
           RELEASE_REF=refs/remotes/origin/live-clean-sync-20260424
+          BUNDLE_REF=refs/heads/chatgpt-release-bundle
+          BUNDLE_PATH="/tmp/chatgpt-release-${RUN_KEY}.bundle"
           PM2_PROCESS=sikhadenge-in
           PUBLIC_URL=https://sikhadenge.in/masterclass/chatgpt/free
           STAGE_ROOT="/tmp/sikhadenge-chatgpt-stage-${RUN_KEY}"
@@ -144,7 +181,7 @@ jobs:
 
           cleanup() {
             git -C "$LIVE_APP" worktree remove --force "$STAGE_ROOT" >/dev/null 2>&1 || true
-            rm -rf "$NEW_NEXT" >/dev/null 2>&1 || true
+            rm -rf "$NEW_NEXT" "$BUNDLE_PATH" >/dev/null 2>&1 || true
           }
 
           rollback() {
@@ -178,6 +215,7 @@ jobs:
           trap cleanup EXIT
 
           test -d "$LIVE_APP/.git"
+          test -s "$BUNDLE_PATH"
           cd "$LIVE_APP"
           test "$(git rev-parse --abbrev-ref HEAD)" = "$RELEASE_BRANCH"
           BASELINE_SHA="$(git rev-parse HEAD)"
@@ -188,12 +226,14 @@ jobs:
           pm2 describe "$PM2_PROCESS" | grep -qi 'online'
           verify_local_drift
 
-          git fetch origin "+refs/heads/$RELEASE_BRANCH:$RELEASE_REF"
+          git bundle verify "$BUNDLE_PATH" >/dev/null
+          git bundle list-heads "$BUNDLE_PATH" | grep -Fq "$TARGET_SHA $BUNDLE_REF"
+          git fetch "$BUNDLE_PATH" "+$BUNDLE_REF:$RELEASE_REF"
           test "$(git rev-parse "$RELEASE_REF")" = "$TARGET_SHA"
           git merge-base --is-ancestor "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA"
           actual_release="$(git diff --name-only "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA" | sort)"
           test "$actual_release" = "$EXPECTED_RELEASE"
-          echo "PASS: production identity and known local drift verified at $BASELINE_SHA"
+          echo "PASS: production identity, release bundle and known local drift verified at $BASELINE_SHA"
 
           git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
           for env_file in .env .env.local .env.production .env.production.local; do
@@ -254,7 +294,7 @@ jobs:
 
           ACTIVATED=0
           LOCAL_CLEARED=0
-          rm -rf "$ROLLBACK_NEXT" "$LOCAL_PATCH"
+          rm -rf "$ROLLBACK_NEXT" "$LOCAL_PATCH" "$BUNDLE_PATH"
           cleanup
           trap - ERR EXIT
           REMOTE
