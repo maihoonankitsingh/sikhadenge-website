@@ -47,6 +47,15 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
           <span>Practical takeaways</span>
         </div>
 
+        <div className="funnel-hero-actions">
+          <TrackedCta config={config} location="hero" />
+          <p>
+            {config.offerMode === "free"
+              ? "No payment required • joining details on WhatsApp"
+              : `One-time ₹${config.entryPrice} entry • secure Razorpay checkout`}
+          </p>
+        </div>
+
         <div className="funnel-event-grid" aria-label="Masterclass details">
           <div><small>DATE</small><strong>{config.dateLabel}</strong></div>
           <div><small>TIME</small><strong>{config.timeLabel}</strong></div>
@@ -58,15 +67,6 @@ export default function HeroSection({ config }: { config: FunnelConfig }) {
           <div><small>CURRENT ENTRY</small><strong>{entryLabel}</strong></div>
           <div><small>DELIVERY</small><strong>Live + WhatsApp</strong></div>
           <div><small>FOCUS</small><strong>Practical workflows</strong></div>
-        </div>
-
-        <div className="funnel-hero-actions">
-          <TrackedCta config={config} location="hero" />
-          <p>
-            {config.offerMode === "free"
-              ? "No payment required • joining details on WhatsApp"
-              : `One-time ₹${config.entryPrice} entry • secure Razorpay checkout`}
-          </p>
         </div>
       </div>
 
