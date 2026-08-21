@@ -18,6 +18,7 @@ on:
       - 'scripts/funnel-db-smoke.cjs'
       - 'scripts/phase9-route-smoke.cjs'
       - 'scripts/phase10-integration-readiness-check.cjs'
+      - 'scripts/phase10-lifecycle-smoke.cjs'
       - 'styles/funnel*.css'
       - 'styles/workshop-funnel.css'
       - 'package.json'
@@ -52,6 +53,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
       SHADOW_DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_shadow
+      PUBLIC_SITE_URL: http://127.0.0.1:3001
+      FUNNEL_CHECKOUT_SECRET: phase10-ci-checkout-secret
+      WHATSAPP_FUNNEL_STATUS_TOKEN: phase10-ci-whatsapp-status-token
       NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE: '9'
       NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE: '1499'
       NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE: '1999'
@@ -95,6 +99,9 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
+
+      - name: Phase 10 HTTP lifecycle rehearsal
+        run: node scripts/phase10-lifecycle-smoke.cjs
 
       - name: Production route smoke test
         run: node scripts/phase9-route-smoke.cjs
