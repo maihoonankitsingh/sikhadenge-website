@@ -6,6 +6,11 @@ type StageName =
   | "views"
   | "ctaClicks"
   | "leads"
+  | "whatsappSent"
+  | "whatsappDelivered"
+  | "whatsappRead"
+  | "whatsappFailed"
+  | "communityJoined"
   | "checkoutStarts"
   | "entryPurchases"
   | "masterclassJoined"
@@ -37,6 +42,11 @@ const stageNames: StageName[] = [
   "views",
   "ctaClicks",
   "leads",
+  "whatsappSent",
+  "whatsappDelivered",
+  "whatsappRead",
+  "whatsappFailed",
+  "communityJoined",
   "checkoutStarts",
   "entryPurchases",
   "masterclassJoined",
@@ -96,6 +106,17 @@ function stageForEvent(eventName: string): StageName | null {
       return "ctaClicks";
     case "generate_lead":
       return "leads";
+    case "whatsapp_message_sent":
+      return "whatsappSent";
+    case "whatsapp_delivered":
+      return "whatsappDelivered";
+    case "whatsapp_read":
+      return "whatsappRead";
+    case "whatsapp_failed":
+      return "whatsappFailed";
+    case "community_joined":
+    case "join_group":
+      return "communityJoined";
     case "begin_checkout":
       return "checkoutStarts";
     case "purchase":
@@ -201,6 +222,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           uniqueVisitors: group.uniqueVisitors.size,
           ...s,
           leadConversionRate: percent(s.leads, s.views),
+          whatsappSendRate: percent(s.whatsappSent, s.leads),
+          whatsappDeliveryRate: percent(s.whatsappDelivered, s.whatsappSent),
+          whatsappReadRate: percent(s.whatsappRead, s.whatsappDelivered),
+          communityJoinFromReadRate: percent(s.communityJoined, s.whatsappRead),
+          communityJoinFromLeadRate: percent(s.communityJoined, s.leads),
           checkoutConversionRate: percent(s.entryPurchases, s.checkoutStarts),
           showUpRate: percent(s.masterclassJoined, s.leads),
           retention30Rate: percent(s.masterclass30m, s.masterclassJoined),
@@ -224,6 +250,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         acc.uniqueVisitors += row.uniqueVisitors;
         acc.views += row.views;
         acc.leads += row.leads;
+        acc.whatsappSent += row.whatsappSent;
+        acc.whatsappDelivered += row.whatsappDelivered;
+        acc.whatsappRead += row.whatsappRead;
+        acc.communityJoined += row.communityJoined;
         acc.masterclassJoined += row.masterclassJoined;
         acc.workshopPurchases += row.workshopPurchases;
         acc.corePurchases += row.corePurchases;
@@ -236,6 +266,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         uniqueVisitors: 0,
         views: 0,
         leads: 0,
+        whatsappSent: 0,
+        whatsappDelivered: 0,
+        whatsappRead: 0,
+        communityJoined: 0,
         masterclassJoined: 0,
         workshopPurchases: 0,
         corePurchases: 0,
@@ -252,7 +286,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       summary,
       rows,
       note:
-        "First-party funnel events only. Meta ad spend, CPL, CAC and ROAS are intentionally excluded until a verified Meta Ads reporting source is connected. Revenue appears only when verified purchase events carry eventValue.",
+        "First-party funnel events only. WhatsApp delivery/read metrics appear only after the private WhatsApp service posts authenticated status callbacks. Meta ad spend, CPL, CAC and ROAS remain excluded until a verified Meta Ads reporting source is connected.",
     });
   } catch (error) {
     console.error("Funnel dashboard failed:", error);
