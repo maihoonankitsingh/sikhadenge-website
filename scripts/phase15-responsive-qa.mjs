@@ -1,5 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import net from "node:net";
 import path from "node:path";
 
 const root = process.cwd();
@@ -8,6 +10,7 @@ const chromeProfile = path.join(root, ".tmp", "phase15-chrome-profile");
 const port = Number(process.env.PHASE15_QA_PORT || 3001);
 const baseUrl = `http://127.0.0.1:${port}`;
 const debuggingPort = Number(process.env.PHASE15_CDP_PORT || 9222);
+const WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 const routes = [
   { key: "chatgpt", path: "/masterclass/chatgpt/free" },
@@ -66,6 +69,200 @@ async function waitForJson(url, timeoutMs = 20000) {
   throw new Error(`Timed out waiting for ${url}${lastError ? `: ${lastError.message}` : ""}`);
 }
 
+class LocalWebSocket {
+  constructor(url) {
+    this.url = new URL(url);
+    this.socket = null;
+    this.buffer = Buffer.alloc(0);
+    this.fragmentOpcode = null;
+    this.fragments = [];
+    this.onMessage = null;
+    this.onClose = null;
+    this.onError = null;
+  }
+
+  async connect(timeoutMs = 10000) {
+    if (this.url.protocol !== "ws:") throw new Error(`Only local ws:// CDP URLs are supported: ${this.url.href}`);
+    const host = this.url.hostname;
+    const port = Number(this.url.port || 80);
+    const key = randomBytes(16).toString("base64");
+    const expectedAccept = createHash("sha1").update(key + WS_GUID).digest("base64");
+
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      let handshakeBuffer = Buffer.alloc(0);
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        this.socket?.destroy();
+        reject(new Error("CDP websocket handshake timeout"));
+      }, timeoutMs);
+
+      const fail = (error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        } else if (this.onError) {
+          this.onError(error);
+        }
+      };
+
+      this.socket = net.createConnection({ host, port }, () => {
+        const request = [
+          `GET ${this.url.pathname}${this.url.search} HTTP/1.1`,
+          `Host: ${host}:${port}`,
+          "Upgrade: websocket",
+          "Connection: Upgrade",
+          `Sec-WebSocket-Key: ${key}`,
+          "Sec-WebSocket-Version: 13",
+          "\r\n",
+        ].join("\r\n");
+        this.socket.write(request);
+      });
+
+      this.socket.on("error", fail);
+      this.socket.on("close", () => this.onClose?.());
+      this.socket.on("data", (chunk) => {
+        if (!settled) {
+          handshakeBuffer = Buffer.concat([handshakeBuffer, chunk]);
+          const marker = handshakeBuffer.indexOf("\r\n\r\n");
+          if (marker === -1) return;
+          const headerText = handshakeBuffer.subarray(0, marker).toString("utf8");
+          const remainder = handshakeBuffer.subarray(marker + 4);
+          const lines = headerText.split("\r\n");
+          if (!/^HTTP\/1\.1 101\b/.test(lines[0] || "")) {
+            fail(new Error(`CDP websocket upgrade failed: ${lines[0] || "missing status"}`));
+            return;
+          }
+          const headers = new Map(
+            lines.slice(1).map((line) => {
+              const index = line.indexOf(":");
+              return index === -1 ? [line.toLowerCase(), ""] : [line.slice(0, index).trim().toLowerCase(), line.slice(index + 1).trim()];
+            }),
+          );
+          if (headers.get("sec-websocket-accept") !== expectedAccept) {
+            fail(new Error("CDP websocket accept key mismatch"));
+            return;
+          }
+          settled = true;
+          clearTimeout(timer);
+          if (remainder.length) this.consume(remainder);
+          resolve();
+          return;
+        }
+        this.consume(chunk);
+      });
+    });
+  }
+
+  consume(chunk) {
+    this.buffer = Buffer.concat([this.buffer, chunk]);
+    while (this.buffer.length >= 2) {
+      const first = this.buffer[0];
+      const second = this.buffer[1];
+      const fin = Boolean(first & 0x80);
+      const opcode = first & 0x0f;
+      const masked = Boolean(second & 0x80);
+      let length = second & 0x7f;
+      let offset = 2;
+
+      if (length === 126) {
+        if (this.buffer.length < 4) return;
+        length = this.buffer.readUInt16BE(2);
+        offset = 4;
+      } else if (length === 127) {
+        if (this.buffer.length < 10) return;
+        const bigLength = this.buffer.readBigUInt64BE(2);
+        if (bigLength > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("CDP websocket frame too large");
+        length = Number(bigLength);
+        offset = 10;
+      }
+
+      let mask;
+      if (masked) {
+        if (this.buffer.length < offset + 4) return;
+        mask = this.buffer.subarray(offset, offset + 4);
+        offset += 4;
+      }
+      if (this.buffer.length < offset + length) return;
+
+      let payload = Buffer.from(this.buffer.subarray(offset, offset + length));
+      this.buffer = this.buffer.subarray(offset + length);
+      if (masked && mask) {
+        for (let i = 0; i < payload.length; i += 1) payload[i] ^= mask[i % 4];
+      }
+
+      if (opcode === 0x8) {
+        this.close();
+        return;
+      }
+      if (opcode === 0x9) {
+        this.sendFrame(0xA, payload);
+        continue;
+      }
+      if (opcode === 0xA) continue;
+
+      if (opcode === 0x1 || opcode === 0x2) {
+        if (fin) {
+          if (opcode === 0x1) this.onMessage?.(payload.toString("utf8"));
+        } else {
+          this.fragmentOpcode = opcode;
+          this.fragments = [payload];
+        }
+        continue;
+      }
+
+      if (opcode === 0x0 && this.fragmentOpcode !== null) {
+        this.fragments.push(payload);
+        if (fin) {
+          const combined = Buffer.concat(this.fragments);
+          if (this.fragmentOpcode === 0x1) this.onMessage?.(combined.toString("utf8"));
+          this.fragmentOpcode = null;
+          this.fragments = [];
+        }
+      }
+    }
+  }
+
+  sendFrame(opcode, payload) {
+    if (!this.socket || this.socket.destroyed) throw new Error("CDP websocket is not connected");
+    const data = Buffer.isBuffer(payload) ? payload : Buffer.from(payload);
+    const mask = randomBytes(4);
+    let header;
+    if (data.length < 126) {
+      header = Buffer.alloc(2);
+      header[1] = 0x80 | data.length;
+    } else if (data.length <= 0xffff) {
+      header = Buffer.alloc(4);
+      header[1] = 0x80 | 126;
+      header.writeUInt16BE(data.length, 2);
+    } else {
+      header = Buffer.alloc(10);
+      header[1] = 0x80 | 127;
+      header.writeBigUInt64BE(BigInt(data.length), 2);
+    }
+    header[0] = 0x80 | opcode;
+    const masked = Buffer.alloc(data.length);
+    for (let i = 0; i < data.length; i += 1) masked[i] = data[i] ^ mask[i % 4];
+    this.socket.write(Buffer.concat([header, mask, masked]));
+  }
+
+  sendText(text) {
+    this.sendFrame(0x1, Buffer.from(text, "utf8"));
+  }
+
+  close() {
+    if (!this.socket || this.socket.destroyed) return;
+    try {
+      this.sendFrame(0x8, Buffer.alloc(0));
+    } catch {
+      // Ignore close-frame errors during teardown.
+    }
+    this.socket.end();
+  }
+}
+
 class CdpClient {
   constructor(url) {
     this.url = url;
@@ -75,43 +272,34 @@ class CdpClient {
   }
 
   async connect() {
-    this.ws = new WebSocket(this.url);
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("CDP websocket connect timeout")), 10000);
-      this.ws.addEventListener("open", () => {
-        clearTimeout(timer);
-        resolve();
-      }, { once: true });
-      this.ws.addEventListener("error", (event) => {
-        clearTimeout(timer);
-        reject(event.error || new Error("CDP websocket connection failed"));
-      }, { once: true });
-    });
-
-    this.ws.addEventListener("message", (event) => {
-      const message = JSON.parse(event.data);
+    this.ws = new LocalWebSocket(this.url);
+    this.ws.onMessage = (data) => {
+      const message = JSON.parse(data);
       if (!message.id) return;
       const pending = this.pending.get(message.id);
       if (!pending) return;
       this.pending.delete(message.id);
       if (message.error) pending.reject(new Error(`${pending.method}: ${message.error.message}`));
       else pending.resolve(message.result || {});
-    });
+    };
+    this.ws.onError = (error) => {
+      for (const pending of this.pending.values()) pending.reject(error);
+      this.pending.clear();
+    };
+    await this.ws.connect();
   }
 
   send(method, params = {}) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error(`CDP is not connected for ${method}`));
-    }
+    if (!this.ws) return Promise.reject(new Error(`CDP is not connected for ${method}`));
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject, method });
-      this.ws.send(JSON.stringify({ id, method, params }));
+      this.ws.sendText(JSON.stringify({ id, method, params }));
     });
   }
 
   close() {
-    if (this.ws && this.ws.readyState <= WebSocket.OPEN) this.ws.close();
+    this.ws?.close();
   }
 }
 
