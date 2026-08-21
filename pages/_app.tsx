@@ -9,6 +9,7 @@ import "../styles/funnel-core.css";
 import "../styles/funnel-premium.css";
 import "../styles/funnel-growthschool.css";
 import "../styles/funnel-growthschool-addons.css";
+import "../styles/funnel-phase15e.css";
 import "../styles/funnel-transaction-premium.css";
 import "../styles/funnel-crm.css";
 import Header from "../components/Header";
