@@ -30,6 +30,30 @@ function siteUrl(path: string) {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function purposeDetails(stored: { purpose: string; funnel: string; leadId: string }) {
+  if (stored.purpose === "implementation_workshop") {
+    return {
+      eventName: "workshop_purchase",
+      eventPrefix: "workshop_purchase",
+      pagePath: `/workshop/${stored.funnel}/checkout`,
+      leadStatus: "paid_workshop",
+      contentName: `${stored.funnel}_implementation_workshop`,
+      confirmationUrl: `/workshop/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}`,
+    };
+  }
+  if (stored.purpose === "masterclass_entry") {
+    return {
+      eventName: "purchase",
+      eventPrefix: "purchase",
+      pagePath: `/masterclass/${stored.funnel}/checkout`,
+      leadStatus: "paid_masterclass",
+      contentName: `${stored.funnel}_masterclass_entry`,
+      confirmationUrl: `/masterclass/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}&mode=paid&paid=1`,
+    };
+  }
+  return null;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -49,11 +73,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stored = await prisma.funnelPayment.findUnique({ where: { id: paymentRecordId } });
     if (!stored) return res.status(404).json({ ok: false, error: "Payment order not found" });
 
+    const details = purposeDetails(stored);
+    if (!details) return res.status(409).json({ ok: false, error: "Unsupported payment purpose" });
+
     if (stored.status === "captured" && stored.providerPaymentId === paymentId) {
       return res.status(200).json({
         ok: true,
         purchaseEventId: stored.purchaseEventId,
-        confirmationUrl: `/masterclass/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}&mode=paid&paid=1`,
+        confirmationUrl: details.confirmationUrl,
       });
     }
 
@@ -71,9 +98,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ ok: false, error: "Payment signature verification failed" });
     }
 
-    const [payment, order] = await Promise.all([
+    const [payment, order, registration] = await Promise.all([
       fetchRazorpayPayment(paymentId),
       fetchRazorpayOrder(stored.providerOrderId),
+      prisma.funnelEvent.findFirst({
+        where: { leadId: stored.leadId, eventName: "generate_lead" },
+        orderBy: { createdAt: "desc" },
+        select: { entryPrice: true },
+      }),
     ]);
 
     const validProviderState =
@@ -95,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const metadata = record(stored.metadata);
-    const purchaseEventId = `purchase_${paymentId}`;
+    const purchaseEventId = `${details.eventPrefix}_${paymentId}`;
     const amountRupees = stored.amountPaise / 100;
 
     await prisma.$transaction(async (tx) => {
@@ -116,15 +148,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         update: {},
         create: {
           eventId: purchaseEventId,
-          eventName: "purchase",
+          eventName: details.eventName,
           visitorId: text(metadata.visitorId, 120) || null,
           sessionId: text(metadata.sessionId, 120) || null,
           leadId: stored.leadId,
           funnel: stored.funnel,
           offerMode: stored.offerMode,
-          entryPrice: Math.round(amountRupees),
+          entryPrice: registration?.entryPrice ?? null,
           batchId: stored.batchId,
-          pagePath: `/masterclass/${stored.funnel}/checkout`,
+          pagePath: details.pagePath,
           source: text(metadata.source, 120) || null,
           medium: text(metadata.medium, 120) || null,
           campaign: text(metadata.campaign, 220) || null,
@@ -142,6 +174,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           currency: stored.currency,
           metadata: {
             provider: "razorpay",
+            purpose: stored.purpose,
             paymentRecordId: stored.id,
             providerOrderId: stored.providerOrderId,
             providerPaymentId: paymentId,
@@ -152,7 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await tx.lead.update({
         where: { id: stored.leadId },
-        data: { status: "paid_masterclass" },
+        data: { status: details.leadStatus },
       });
     });
 
@@ -160,7 +193,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const capiResult = await sendMetaCapiEvent({
       eventName: "Purchase",
       eventId: purchaseEventId,
-      eventSourceUrl: siteUrl(`/masterclass/${stored.funnel}/checkout`),
+      eventSourceUrl: siteUrl(details.pagePath),
       email: text(metadata.email, 220),
       phone: text(metadata.phone || lead?.phone, 30),
       clientIp: clientIp(req),
@@ -170,9 +203,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       externalId: stored.leadId,
       value: amountRupees,
       currency: stored.currency,
-      contentName: `${stored.funnel}_masterclass_entry`,
+      contentName: details.contentName,
       customData: {
         payment_provider: "razorpay",
+        payment_purpose: stored.purpose,
         offer_mode: stored.offerMode,
         batch_id: stored.batchId || "",
       },
@@ -185,10 +219,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       ok: true,
       purchaseEventId,
-      confirmationUrl: `/masterclass/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}&mode=paid&paid=1`,
+      confirmationUrl: details.confirmationUrl,
     });
   } catch (error) {
-    console.error("Masterclass payment verification failed:", error);
+    console.error("Funnel payment verification failed:", error);
     return res.status(500).json({ ok: false, error: "Unable to verify payment" });
   }
 }
