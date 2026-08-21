@@ -117,3 +117,4 @@ jobs:
           name: phase15-responsive-visual-qa
           path: .tmp/phase15-visual-qa
           if-no-files-found: error
+          include-hidden-files: true
