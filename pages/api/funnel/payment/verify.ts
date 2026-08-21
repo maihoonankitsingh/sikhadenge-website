@@ -5,6 +5,7 @@ import {
   fetchRazorpayPayment,
   verifyRazorpayCheckoutSignature,
 } from "../../../../lib/funnel/razorpay";
+import { paymentPurposeDetails } from "../../../../lib/funnel/paymentPurpose";
 import { sendMetaCapiEvent } from "../../../../lib/funnel/metaCapi";
 
 function text(value: unknown, max = 300) {
@@ -30,30 +31,6 @@ function siteUrl(path: string) {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function purposeDetails(stored: { purpose: string; funnel: string; leadId: string }) {
-  if (stored.purpose === "implementation_workshop") {
-    return {
-      eventName: "workshop_purchase",
-      eventPrefix: "workshop_purchase",
-      pagePath: `/workshop/${stored.funnel}/checkout`,
-      leadStatus: "paid_workshop",
-      contentName: `${stored.funnel}_implementation_workshop`,
-      confirmationUrl: `/workshop/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}`,
-    };
-  }
-  if (stored.purpose === "masterclass_entry") {
-    return {
-      eventName: "purchase",
-      eventPrefix: "purchase",
-      pagePath: `/masterclass/${stored.funnel}/checkout`,
-      leadStatus: "paid_masterclass",
-      contentName: `${stored.funnel}_masterclass_entry`,
-      confirmationUrl: `/masterclass/${stored.funnel}/thank-you?lead_id=${encodeURIComponent(stored.leadId)}&mode=paid&paid=1`,
-    };
-  }
-  return null;
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -73,8 +50,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stored = await prisma.funnelPayment.findUnique({ where: { id: paymentRecordId } });
     if (!stored) return res.status(404).json({ ok: false, error: "Payment order not found" });
 
-    const details = purposeDetails(stored);
+    const details = paymentPurposeDetails(stored);
     if (!details) return res.status(409).json({ ok: false, error: "Unsupported payment purpose" });
+    if (stored.status === "refunded") {
+      return res.status(409).json({ ok: false, error: "This payment has been fully refunded and cannot confirm enrollment." });
+    }
 
     if (stored.status === "captured" && stored.providerPaymentId === paymentId) {
       return res.status(200).json({
@@ -88,13 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ ok: false, error: "Payment order mismatch" });
     }
 
-    if (
-      !verifyRazorpayCheckoutSignature({
-        orderId: stored.providerOrderId,
-        paymentId,
-        signature,
-      })
-    ) {
+    if (!verifyRazorpayCheckoutSignature({ orderId: stored.providerOrderId, paymentId, signature })) {
       return res.status(400).json({ ok: false, error: "Payment signature verification failed" });
     }
 
@@ -120,10 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       order.currency === stored.currency;
 
     if (!validProviderState) {
-      return res.status(409).json({
-        ok: false,
-        error: "Payment is not fully captured yet. Please retry verification shortly.",
-      });
+      return res.status(409).json({ ok: false, error: "Payment is not fully captured yet. Please retry verification shortly." });
     }
 
     const metadata = record(stored.metadata);
@@ -183,10 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
-      await tx.lead.update({
-        where: { id: stored.leadId },
-        data: { status: details.leadStatus },
-      });
+      await tx.lead.update({ where: { id: stored.leadId }, data: { status: details.leadStatus } });
     });
 
     const lead = await prisma.lead.findUnique({ where: { id: stored.leadId } });
@@ -212,15 +180,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    if (capiResult.attempted && !capiResult.ok) {
-      console.error("Meta CAPI purchase event failed:", capiResult);
-    }
+    if (capiResult.attempted && !capiResult.ok) console.error("Meta CAPI purchase event failed:", capiResult);
 
-    return res.status(200).json({
-      ok: true,
-      purchaseEventId,
-      confirmationUrl: details.confirmationUrl,
-    });
+    return res.status(200).json({ ok: true, purchaseEventId, confirmationUrl: details.confirmationUrl });
   } catch (error) {
     console.error("Funnel payment verification failed:", error);
     return res.status(500).json({ ok: false, error: "Unable to verify payment" });
