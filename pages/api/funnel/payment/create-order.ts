@@ -20,6 +20,12 @@ function parseNotes(value: string | null) {
 }
 
 function configuredAmount(purpose: CheckoutPurpose) {
+  if (purpose === "core_program") {
+    return Math.max(
+      1,
+      Math.round(Number(process.env.NEXT_PUBLIC_AI_EXPERT_PROGRAM_PRICE || "14999") || 14999)
+    );
+  }
   if (purpose === "implementation_workshop") {
     return Math.max(
       1,
@@ -33,6 +39,9 @@ function configuredAmount(purpose: CheckoutPurpose) {
 }
 
 function confirmationUrl(purpose: CheckoutPurpose, funnel: string, leadId: string) {
+  if (purpose === "core_program") {
+    return `/program/ai-expert/thank-you?lead_id=${encodeURIComponent(leadId)}`;
+  }
   if (purpose === "implementation_workshop") {
     return `/workshop/${funnel}/thank-you?lead_id=${encodeURIComponent(leadId)}`;
   }
@@ -41,9 +50,9 @@ function confirmationUrl(purpose: CheckoutPurpose, funnel: string, leadId: strin
 
 function description(purpose: CheckoutPurpose, funnel: string) {
   const product = funnel === "chatgpt" ? "ChatGPT" : "Claude";
-  return purpose === "implementation_workshop"
-    ? `${product} Implementation Workshop`
-    : `${product} Live Masterclass`;
+  if (purpose === "core_program") return "SikhaDenge AI Expert Program";
+  if (purpose === "implementation_workshop") return `${product} Implementation Workshop`;
+  return `${product} Live Masterclass`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -61,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (
     !leadId ||
     !["chatgpt", "claude"].includes(funnel) ||
-    !["masterclass_entry", "implementation_workshop"].includes(purpose) ||
+    !["masterclass_entry", "implementation_workshop", "core_program"].includes(purpose) ||
     !token ||
     token.leadId !== leadId ||
     token.funnel !== funnel ||
@@ -91,6 +100,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (purpose === "masterclass_entry" && (notes.offerMode !== "paid" || lead.source !== `funnel:${funnel}:paid`)) {
       return res.status(409).json({ ok: false, error: "This registration is not a paid masterclass registration" });
+    }
+
+    if (purpose === "core_program") {
+      const workshop = await prisma.funnelPayment.findFirst({
+        where: {
+          leadId,
+          funnel,
+          purpose: "implementation_workshop",
+          status: "captured",
+        },
+        orderBy: { paidAt: "desc" },
+        select: { id: true },
+      });
+      if (!workshop) {
+        return res.status(409).json({
+          ok: false,
+          error: "AI Expert Program checkout is available only after a verified implementation workshop purchase.",
+        });
+      }
     }
 
     const amountRupees = configuredAmount(purpose);
@@ -141,7 +169,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const prefix = purpose === "implementation_workshop" ? "ws" : "mc";
+    const prefix =
+      purpose === "core_program"
+        ? "core"
+        : purpose === "implementation_workshop"
+          ? "ws"
+          : "mc";
     const receipt = `${prefix}_${leadId.slice(-10)}_${Date.now().toString(36)}`.slice(0, 40);
     const attrs = notes.attribution && typeof notes.attribution === "object" ? notes.attribution : {};
 
