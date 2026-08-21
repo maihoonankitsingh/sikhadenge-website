@@ -158,7 +158,7 @@ const metricsExpression = String.raw`(() => {
   };
   const name = (el) => {
     const cls = typeof el.className === "string" ? el.className.trim().replace(/\s+/g, ".") : "";
-    return [el.tagName.toLowerCase(), el.id ? `#${el.id}` : "", cls ? `.${cls}` : ""].join("");
+    return el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (cls ? "." + cls : "");
   };
 
   const overflowOffenders = [...document.querySelectorAll("*")]
@@ -176,7 +176,7 @@ const metricsExpression = String.raw`(() => {
     .slice(0, 60)
     .map(({ el, r }) => ({ selector: name(el), text: (el.innerText || el.value || "").trim().slice(0, 120), width: r.width, height: r.height }));
 
-  const stickyCta = document.querySelector(".funnel-mobile-sticky, .funnel-mobile-sticky-cta, [class*='mobile-sticky']");
+  const stickyCta = document.querySelector(".funnel-mobile-cta, .funnel-mobile-sticky, .funnel-mobile-sticky-cta, [class*='mobile-sticky']");
   const hero = document.querySelector(".funnel-hero");
   const heroVisual = document.querySelector(".funnel-hero-visual");
   const h1 = document.querySelector(".funnel-hero h1");
