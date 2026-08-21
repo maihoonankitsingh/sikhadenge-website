@@ -9,17 +9,19 @@ datasource db {
 }
 
 model Lead {
-  id           String      @id @default(cuid())
-  name         String?
-  phone        String?
-  source       String?
-  status       String?
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  promoCode    String?
-  influencerId String?
-  influencer   Influencer? @relation(fields: [influencerId], references: [id])
+  id                  String               @id @default(cuid())
+  name                String?
+  phone               String?
+  source              String?
+  status              String?
+  notes               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  promoCode           String?
+  influencerId        String?
+  influencer          Influencer?          @relation(fields: [influencerId], references: [id])
+  funnelCrmProfile    FunnelCrmProfile?
+  funnelCrmActivities FunnelCrmActivity[]
 }
 
 model Admission {
@@ -145,6 +147,7 @@ model FunnelCrmProfile {
   updatedBy      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  lead           Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([pipelineStage, updatedAt])
   @@index([owner, nextFollowUpAt])
@@ -164,6 +167,7 @@ model FunnelCrmActivity {
   adminId      String?
   metadata     Json?
   createdAt    DateTime @default(now())
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId, createdAt])
   @@index([activityType, createdAt])
