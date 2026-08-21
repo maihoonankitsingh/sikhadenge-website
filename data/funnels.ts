@@ -21,6 +21,8 @@ const EVENT_TIME = process.env.NEXT_PUBLIC_MASTERCLASS_TIME_LABEL || "8:00 PM IS
 const ENTRY_PRICE = Number(process.env.NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE || "9") || 9;
 const WORKSHOP_PRICE = Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE || "1499") || 1499;
 const WORKSHOP_REGULAR_PRICE = Number(process.env.NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE || "1999") || 1999;
+const CORE_PROGRAM_PRICE = Number(process.env.NEXT_PUBLIC_AI_EXPERT_PROGRAM_PRICE || "14999") || 14999;
+const CORE_PROGRAM_DURATION = process.env.NEXT_PUBLIC_AI_EXPERT_PROGRAM_DURATION || "10-week structured program";
 
 const CHATGPT_BATCH_ID =
   process.env.NEXT_PUBLIC_CHATGPT_MASTERCLASS_BATCH_ID ||
@@ -78,6 +80,9 @@ const productBase: Record<
     workshopName: "ChatGPT Implementation Workshop",
     workshopPrice: WORKSHOP_PRICE,
     workshopRegularPrice: WORKSHOP_REGULAR_PRICE,
+    coreProgramName: "SikhaDenge AI Expert Program",
+    coreProgramPrice: CORE_PROGRAM_PRICE,
+    coreProgramDuration: CORE_PROGRAM_DURATION,
   },
   claude: {
     batchId: CLAUDE_BATCH_ID,
@@ -124,6 +129,9 @@ const productBase: Record<
     workshopName: "Claude Deep Work & Implementation Workshop",
     workshopPrice: WORKSHOP_PRICE,
     workshopRegularPrice: WORKSHOP_REGULAR_PRICE,
+    coreProgramName: "SikhaDenge AI Expert Program",
+    coreProgramPrice: CORE_PROGRAM_PRICE,
+    coreProgramDuration: CORE_PROGRAM_DURATION,
   },
 };
 
