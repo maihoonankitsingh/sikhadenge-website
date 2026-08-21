@@ -1,0 +1,182 @@
+name: Deploy Public Claude Once
+
+on:
+  push:
+    branches:
+      - ops/deploy-public-claude-20260821
+    paths:
+      - .github/workflows/deploy-public-claude-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-claude-production-once
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      TARGET_SHA: 16bab0d58675016411ca097a39cbac3336085811
+      EXPECTED_PREVIOUS_SHA: 911a2aa5306bb048b9c46d9901f6ac328269b0a5
+      RUN_KEY: github-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout deployment definition
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Validate target and production secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_PREVIOUS_SHA" =~ ^[0-9a-f]{40}$ ]]
+          for key in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_HOST_KEY; do
+            test -n "${!key:-}" || { echo "Missing required production secret: $key" >&2; exit 1; }
+          done
+          if [[ -z "${SSH_PORT:-}" ]]; then echo 'SSH_PORT=22' >> "$GITHUB_ENV"; fi
+          echo 'PASS: target and secret gate'
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          if printf '%s' "$SSH_PRIVATE_KEY" | grep -q 'BEGIN .*PRIVATE KEY'; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/public-site-production"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$HOME/.ssh/public-site-production"
+          fi
+          chmod 600 "$HOME/.ssh/public-site-production"
+          printf '%s\n' "$SSH_HOST_KEY" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/public-site-production" >/dev/null
+          test -s "$HOME/.ssh/known_hosts"
+          echo 'PASS: pinned SSH identity configured'
+
+      - name: Deploy exact public-site release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/public-site-production" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "TARGET_SHA='$TARGET_SHA' EXPECTED_PREVIOUS_SHA='$EXPECTED_PREVIOUS_SHA' RUN_KEY='$RUN_KEY' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          LIVE_APP=/var/www/sikhadenge.in/sikhadenge-website-space
+          RELEASE_BRANCH=live-clean-sync-20260424
+          RELEASE_REF=refs/remotes/origin/live-clean-sync-20260424
+          PM2_PROCESS=sikhadenge-in
+          PUBLIC_URL=https://sikhadenge.in/masterclass/claude/free
+          STAGE_ROOT="/tmp/sikhadenge-public-stage-${RUN_KEY}"
+          NEW_NEXT="$LIVE_APP/.next.release-${RUN_KEY}"
+          ROLLBACK_NEXT="$LIVE_APP/.next.rollback-${RUN_KEY}"
+          ACTIVATED=0
+
+          cleanup() {
+            git -C "$LIVE_APP" worktree remove --force "$STAGE_ROOT" >/dev/null 2>&1 || true
+            rm -rf "$NEW_NEXT" >/dev/null 2>&1 || true
+          }
+
+          rollback() {
+            code=$?
+            if [[ "$ACTIVATED" = "1" ]]; then
+              echo 'Activation verification failed; restoring previous source/build.' >&2
+              cd "$LIVE_APP"
+              git reset --hard "$EXPECTED_PREVIOUS_SHA"
+              rm -rf "$LIVE_APP/.next"
+              if [[ -d "$ROLLBACK_NEXT" ]]; then mv "$ROLLBACK_NEXT" "$LIVE_APP/.next"; fi
+              pm2 restart "$PM2_PROCESS" >/dev/null
+              pm2 save >/dev/null || true
+            fi
+            cleanup
+            exit "$code"
+          }
+          trap rollback ERR
+          trap cleanup EXIT
+
+          # Fail-closed production identity checks: no mutation before all pass.
+          test -d "$LIVE_APP/.git"
+          cd "$LIVE_APP"
+          test "$(git rev-parse --abbrev-ref HEAD)" = "$RELEASE_BRANCH"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_PREVIOUS_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          pm2 describe "$PM2_PROCESS" >/dev/null
+
+          git fetch origin "+refs/heads/$RELEASE_BRANCH:$RELEASE_REF"
+          test "$(git rev-parse "$RELEASE_REF")" = "$TARGET_SHA"
+          git merge-base --is-ancestor "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA"
+
+          expected_files=$'pages/_app.tsx\npages/masterclass/claude/free.tsx\nstyles/claude-masterclass-live.module.css'
+          actual_files="$(git diff --name-only "$EXPECTED_PREVIOUS_SHA" "$TARGET_SHA" | sort)"
+          test "$actual_files" = "$expected_files"
+          echo 'PASS: production identity, clean worktree and exact 3-file release verified'
+
+          # Build exact target away from the live worktree.
+          git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
+          for env_file in .env .env.local .env.production .env.production.local; do
+            if [[ -f "$LIVE_APP/$env_file" ]]; then ln -s "$LIVE_APP/$env_file" "$STAGE_ROOT/$env_file"; fi
+          done
+          cd "$STAGE_ROOT"
+          npm ci --no-audit --no-fund
+          npm run build
+          test -d "$STAGE_ROOT/.next"
+          echo 'PASS: isolated production build completed'
+
+          # Prepare the new build on the same filesystem before source activation.
+          rm -rf "$NEW_NEXT" "$ROLLBACK_NEXT"
+          cp -a "$STAGE_ROOT/.next" "$NEW_NEXT"
+          test -d "$NEW_NEXT"
+
+          cd "$LIVE_APP"
+          git merge --ff-only "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+
+          if [[ -d "$LIVE_APP/.next" ]]; then mv "$LIVE_APP/.next" "$ROLLBACK_NEXT"; fi
+          mv "$NEW_NEXT" "$LIVE_APP/.next"
+          ACTIVATED=1
+
+          pm2 restart "$PM2_PROCESS"
+          pm2 save >/dev/null
+          sleep 4
+          pm2 describe "$PM2_PROCESS" | grep -qi 'online'
+
+          html="$(curl -fsSL --retry 4 --retry-delay 2 --max-time 30 -H 'Cache-Control: no-cache' "$PUBLIC_URL")"
+          printf '%s' "$html" | grep -Fq 'Build deeper work with'
+          printf '%s' "$html" | grep -Fq 'Claude AI'
+          printf '%s' "$html" | grep -Fq 'Reserve My Free Seat'
+
+          echo "LIVE_SHA=$(git rev-parse HEAD)"
+          echo 'PASS: public Claude page returned expected production content'
+
+          ACTIVATED=0
+          rm -rf "$ROLLBACK_NEXT"
+          cleanup
+          trap - ERR EXIT
+          REMOTE
+
+      - name: Verify public URL from runner
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          html="$(curl -fsSL --retry 4 --retry-delay 2 --max-time 30 -H 'Cache-Control: no-cache' 'https://sikhadenge.in/masterclass/claude/free')"
+          printf '%s' "$html" | grep -Fq 'Build deeper work with'
+          printf '%s' "$html" | grep -Fq 'Reserve My Free Seat'
+          echo 'PASS: external public verification complete'
