@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     <div style={{ minHeight: "100vh", padding: 16 }}>
       <div
         style={{
-          width: "min(980px, 100%)",
+          width: "min(1080px, 100%)",
           margin: "0 auto",
           background: "rgba(255,255,255,.96)",
           borderRadius: 16,
@@ -67,13 +67,15 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <Card title="Funnel CRM" desc="Learner lifecycle, advisor workflow, follow-ups, revenue and audit trail" href="/admin/funnel-crm" />
+            <Card title="Funnel Dashboard" desc="ChatGPT vs Claude, Free vs Paid, conversion stages and tracked revenue" href="/admin/funnel-dashboard" />
             <Card title="Influencers" desc="Create/disable promo codes, reset passwords" href="/admin/influencers" />
-            <Card title="Leads" desc="View leads, promo attribution, update status" href="/admin/leads" />
+            <Card title="Leads" desc="Legacy lead view, promo attribution and generic status updates" href="/admin/leads" />
           </div>
 
           <div style={{ fontSize: 12, color: "rgba(15,23,42,.62)" }}>
-            Next: admissions + payout reports
+            Funnel CRM is the operational workspace for AI Masterclass Funnel v2. Verified payments and funnel events remain the source of truth for commercial lifecycle stages.
           </div>
         </div>
       </div>
@@ -104,4 +106,3 @@ function Card({ title, desc, href }: { title: string; desc: string; href: string
     </a>
   );
 }
-
