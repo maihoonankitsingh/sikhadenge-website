@@ -171,6 +171,7 @@ function metaStandardEvent(eventName: string) {
     case "view_masterclass_offer":
       return "ViewContent";
     case "begin_checkout":
+    case "workshop_checkout_started":
       return "InitiateCheckout";
     case "purchase":
     case "workshop_purchase":
@@ -251,9 +252,10 @@ export async function trackFunnelEvent(
 
   if (typeof w.fbq === "function") {
     const standardEvent = metaStandardEvent(eventName);
+    const isWorkshopEvent = eventName.startsWith("workshop_");
     const metaPayload: Record<string, unknown> = {
-      content_name: `${config.product}_masterclass`,
-      content_category: "masterclass",
+      content_name: `${config.product}_${isWorkshopEvent ? "implementation_workshop" : "masterclass"}`,
+      content_category: isWorkshopEvent ? "implementation_workshop" : "masterclass",
       currency: "INR",
     };
 
@@ -271,6 +273,7 @@ export async function trackFunnelEvent(
           offer_mode: config.offerMode,
           entry_price: config.entryPrice,
           batch_id: config.batchId,
+          content_category: isWorkshopEvent ? "implementation_workshop" : "masterclass",
         },
         { eventID: eventId }
       );
