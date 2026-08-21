@@ -34,7 +34,7 @@ async function testWhatsAppConnectivity() {
       signal: controller.signal,
     });
     if (!response.ok) throw new Error(`WhatsApp webhook returned HTTP ${response.status}`);
-    return { ok: true, status: response.status };
+    return { status: response.status };
   } finally {
     clearTimeout(timer);
   }
@@ -94,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(409).json({ ok: false, error: "WhatsApp outbound/status integration variables are incomplete." });
       }
       const result = await testWhatsAppConnectivity();
-      return res.status(200).json({ ok: true, provider, ...result });
+      return res.status(200).json({ ok: true, provider, status: result.status });
     }
 
     return res.status(400).json({ ok: false, error: "Unknown provider" });
