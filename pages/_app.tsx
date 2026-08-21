@@ -10,6 +10,7 @@ import "../styles/funnel-premium.css";
 import "../styles/funnel-growthschool.css";
 import "../styles/funnel-growthschool-addons.css";
 import "../styles/funnel-phase15e.css";
+import "../styles/funnel-claude-futuristic.css";
 import "../styles/workshop-premium-v2.css";
 import "../styles/funnel-core-premium-v2.css";
 import "../styles/funnel-transaction-premium.css";
