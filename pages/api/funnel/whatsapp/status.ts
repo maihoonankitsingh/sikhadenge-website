@@ -2,6 +2,7 @@ import crypto from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
+import { getWhatsAppStatusSharedSecret } from "../../../../lib/funnel/whatsappAgent";
 
 const STATUS_TO_EVENT: Record<string, string> = {
   queued: "whatsapp_message_queued",
@@ -17,7 +18,7 @@ function text(value: unknown, max = 300) {
 }
 
 function authorized(req: NextApiRequest) {
-  const expected = process.env.WHATSAPP_FUNNEL_STATUS_TOKEN || "";
+  const expected = getWhatsAppStatusSharedSecret();
   if (!expected) return false;
   const auth = text(req.headers.authorization, 500);
   if (!auth.startsWith("Bearer ")) return false;
