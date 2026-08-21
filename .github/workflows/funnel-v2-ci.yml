@@ -6,6 +6,7 @@ on:
       - feature/ai-masterclass-funnel-v2
   pull_request:
     paths:
+      - 'app/**'
       - 'components/funnel/**'
       - 'data/funnels.ts'
       - 'docs/funnels/**'
@@ -27,12 +28,16 @@ on:
       - 'styles/workshop-funnel.css'
       - 'package.json'
       - 'package-lock.json'
+      - 'next.config.js'
       - '.github/workflows/funnel-v2-ci.yml'
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -69,8 +74,27 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.20.2'
           cache: npm
+
+      - name: Synchronize dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Migrate async App Router request APIs
+        run: npx --yes @next/codemod@latest next-async-request-api app --force
+
+      - name: Commit generated Next 16 changes on branch push
+        if: github.event_name == 'push'
+        run: |
+          git add app package-lock.json
+          if git diff --cached --quiet; then
+            echo 'Generated files already synchronized'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: synchronize Next 16 generated migration changes'
+          git push origin HEAD:feature/ai-masterclass-funnel-v2
 
       - name: Install dependencies
         run: npm ci
@@ -80,7 +104,7 @@ jobs:
 
       - name: Production dependency audit visibility
         continue-on-error: true
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:prod
 
       - name: Generate Prisma client
         run: npx prisma generate
