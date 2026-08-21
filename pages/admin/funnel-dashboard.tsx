@@ -9,6 +9,11 @@ type DashboardRow = {
   views: number;
   ctaClicks: number;
   leads: number;
+  whatsappSent: number;
+  whatsappDelivered: number;
+  whatsappRead: number;
+  whatsappFailed: number;
+  communityJoined: number;
   checkoutStarts: number;
   entryPurchases: number;
   masterclassJoined: number;
@@ -25,6 +30,11 @@ type DashboardRow = {
   lostLeads: number;
   refunds: number;
   leadConversionRate: number;
+  whatsappSendRate: number;
+  whatsappDeliveryRate: number;
+  whatsappReadRate: number;
+  communityJoinFromReadRate: number;
+  communityJoinFromLeadRate: number;
   checkoutConversionRate: number;
   showUpRate: number;
   retention30Rate: number;
@@ -48,6 +58,10 @@ type DashboardData = {
     uniqueVisitors: number;
     views: number;
     leads: number;
+    whatsappSent: number;
+    whatsappDelivered: number;
+    whatsappRead: number;
+    communityJoined: number;
     masterclassJoined: number;
     workshopPurchases: number;
     corePurchases: number;
@@ -132,9 +146,12 @@ export default function FunnelDashboardPage() {
   }, [days]);
 
   const summaryRates = useMemo(() => {
-    if (!data) return { showUp: 0, workshop: 0, core: 0 };
+    if (!data) return { delivered: 0, read: 0, community: 0, showUp: 0, workshop: 0, core: 0 };
     const s = data.summary;
     return {
+      delivered: s.whatsappSent ? (s.whatsappDelivered / s.whatsappSent) * 100 : 0,
+      read: s.whatsappDelivered ? (s.whatsappRead / s.whatsappDelivered) * 100 : 0,
+      community: s.leads ? (s.communityJoined / s.leads) * 100 : 0,
       showUp: s.leads ? (s.masterclassJoined / s.leads) * 100 : 0,
       workshop: s.masterclassJoined ? (s.workshopPurchases / s.masterclassJoined) * 100 : 0,
       core: s.leads ? (s.corePurchases / s.leads) * 100 : 0,
@@ -153,7 +170,7 @@ export default function FunnelDashboardPage() {
               AI Masterclass Funnel Dashboard
             </h1>
             <p style={{ margin: "8px 0 0", color: "#64748b" }}>
-              ChatGPT vs Claude • Free vs Paid • Masterclass → Workshop → Core Program
+              ChatGPT vs Claude • Free vs Paid • WhatsApp → Masterclass → Workshop → Core Program
             </p>
           </div>
 
@@ -189,6 +206,9 @@ export default function FunnelDashboardPage() {
           {[
             ["Unique visitors", data?.summary.uniqueVisitors ?? 0],
             ["Registrations", data?.summary.leads ?? 0],
+            ["WA delivered", pct(summaryRates.delivered)],
+            ["WA read", pct(summaryRates.read)],
+            ["Community join", pct(summaryRates.community)],
             ["Live attendees", data?.summary.masterclassJoined ?? 0],
             ["Show-up rate", pct(summaryRates.showUp)],
             ["Workshop buyers", data?.summary.workshopPurchases ?? 0],
@@ -215,7 +235,15 @@ export default function FunnelDashboardPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {[`Lead CVR ${pct(row.leadConversionRate)}`, `Show-up ${pct(row.showUpRate)}`, `60m retention ${pct(row.retention60Rate)}`, `Lead → core ${pct(row.leadToCorePurchaseRate)}`].map((item) => (
+                  {[
+                    `Lead CVR ${pct(row.leadConversionRate)}`,
+                    `WA delivery ${pct(row.whatsappDeliveryRate)}`,
+                    `WA read ${pct(row.whatsappReadRate)}`,
+                    `Community ${pct(row.communityJoinFromLeadRate)}`,
+                    `Show-up ${pct(row.showUpRate)}`,
+                    `60m retention ${pct(row.retention60Rate)}`,
+                    `Lead → core ${pct(row.leadToCorePurchaseRate)}`,
+                  ].map((item) => (
                     <span key={item} style={{ padding: "7px 10px", borderRadius: 999, background: "#eff6ff", color: "#1d4ed8", fontSize: 11, fontWeight: 800 }}>
                       {item}
                     </span>
@@ -229,6 +257,11 @@ export default function FunnelDashboardPage() {
                     ["Views", row.views],
                     ["CTA clicks", row.ctaClicks],
                     ["Leads", row.leads],
+                    ["WA sent", row.whatsappSent],
+                    ["WA delivered", row.whatsappDelivered],
+                    ["WA read", row.whatsappRead],
+                    ["WA failed", row.whatsappFailed],
+                    ["Community joined", row.communityJoined],
                     ["Checkout", row.checkoutStarts],
                     ["Entry paid", row.entryPurchases],
                     ["Live joined", row.masterclassJoined],
@@ -251,6 +284,40 @@ export default function FunnelDashboardPage() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section style={{ marginTop: 26, overflow: "hidden", borderRadius: 18, border: "1px solid #e2e8f0", background: "white" }}>
+          <div style={{ padding: "18px 20px", borderBottom: "1px solid #e2e8f0" }}>
+            <strong>WhatsApp leakage comparison</strong>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc", color: "#64748b", textAlign: "left", fontSize: 11 }}>
+                  {["Funnel", "Entry", "Leads", "WA sent", "WA delivered", "Delivery rate", "WA read", "Read rate", "Community joined", "Join / read", "Join / lead"].map((head) => (
+                    <th key={head} style={thStyle}>{head}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.rows || []).map((row) => (
+                  <tr key={`wa:${row.funnel}:${row.offerMode}`} style={{ fontSize: 13 }}>
+                    <td style={{ ...tdStyle, fontWeight: 900, textTransform: "capitalize" }}>{row.funnel}</td>
+                    <td style={{ ...tdStyle, textTransform: "capitalize" }}>{row.offerMode}</td>
+                    <td style={tdStyle}>{row.leads}</td>
+                    <td style={tdStyle}>{row.whatsappSent}</td>
+                    <td style={tdStyle}>{row.whatsappDelivered}</td>
+                    <td style={tdStyle}>{pct(row.whatsappDeliveryRate)}</td>
+                    <td style={tdStyle}>{row.whatsappRead}</td>
+                    <td style={tdStyle}>{pct(row.whatsappReadRate)}</td>
+                    <td style={tdStyle}>{row.communityJoined}</td>
+                    <td style={tdStyle}>{pct(row.communityJoinFromReadRate)}</td>
+                    <td style={tdStyle}>{pct(row.communityJoinFromLeadRate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section style={{ marginTop: 26, overflow: "hidden", borderRadius: 18, border: "1px solid #e2e8f0", background: "white" }}>
