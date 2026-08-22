@@ -1,8 +1,8 @@
-import ChatGPTFreeV3 from "../../../components/funnel/chatgpt/ChatGPTFreeV3";
+import ChatGPTFreeV4 from "../../../components/funnel/chatgpt/ChatGPTFreeV4";
 import { getFunnelConfig } from "../../../data/funnels";
 
 function ChatGPTFreeMasterclassPage() {
-  return <ChatGPTFreeV3 config={getFunnelConfig("chatgpt", "free")} />;
+  return <ChatGPTFreeV4 config={getFunnelConfig("chatgpt", "free")} />;
 }
 
 (ChatGPTFreeMasterclassPage as typeof ChatGPTFreeMasterclassPage & {
