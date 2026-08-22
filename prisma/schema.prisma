@@ -9,17 +9,19 @@ datasource db {
 }
 
 model Lead {
-  id           String      @id @default(cuid())
-  name         String?
-  phone        String?
-  source       String?
-  status       String?
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  promoCode    String?
-  influencerId String?
-  influencer   Influencer? @relation(fields: [influencerId], references: [id])
+  id                  String               @id @default(cuid())
+  name                String?
+  phone               String?
+  source              String?
+  status              String?
+  notes               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  promoCode           String?
+  influencerId        String?
+  influencer          Influencer?          @relation(fields: [influencerId], references: [id])
+  funnelCrmProfile    FunnelCrmProfile?
+  funnelCrmActivities FunnelCrmActivity[]
 }
 
 model Admission {
@@ -45,14 +47,11 @@ model Influencer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
-  leads Lead[]
+  leads    Lead[]
   sessions InfluencerSession[]
-
 }
 
 model InfluencerSession {
-
   id           String   @id @default(cuid())
   influencerId String
   tokenHash    String   @unique
@@ -63,4 +62,114 @@ model InfluencerSession {
 
   @@index([influencerId])
   @@index([expiresAt])
+}
+
+model FunnelEvent {
+  id             String   @id @default(cuid())
+  eventId        String?  @unique
+  eventName      String
+  visitorId      String?
+  sessionId      String?
+  leadId         String?
+  funnel         String?
+  offerMode      String?
+  entryPrice     Int?
+  batchId        String?
+  pagePath       String?
+  source         String?
+  medium         String?
+  campaign       String?
+  content        String?
+  term           String?
+  campaignId     String?
+  adsetId        String?
+  adId           String?
+  fbclid         String?
+  fbp            String?
+  fbc            String?
+  gclid          String?
+  landingVariant String?
+  eventValue     Int?
+  currency       String?  @default("INR")
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([funnel, offerMode, createdAt])
+  @@index([visitorId])
+  @@index([sessionId])
+  @@index([leadId])
+  @@index([campaignId])
+  @@index([adId])
+}
+
+model FunnelPayment {
+  id                String    @id @default(cuid())
+  provider          String    @default("razorpay")
+  purpose           String    @default("masterclass_entry")
+  leadId            String
+  funnel            String
+  offerMode         String
+  batchId           String?
+  amountPaise       Int
+  currency          String    @default("INR")
+  status            String    @default("created")
+  receipt           String    @unique
+  providerOrderId   String    @unique
+  providerPaymentId String?   @unique
+  purchaseEventId   String?   @unique
+  failureCode       String?
+  failureReason     String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  paidAt            DateTime?
+  failedAt          DateTime?
+  refundedAt        DateTime?
+
+  @@index([leadId, createdAt])
+  @@index([funnel, offerMode, createdAt])
+  @@index([status, createdAt])
+  @@index([batchId])
+}
+
+model FunnelCrmProfile {
+  id             String    @id @default(cuid())
+  leadId         String    @unique
+  pipelineStage  String    @default("new_lead")
+  owner          String?
+  priority       String    @default("normal")
+  advisorStatus  String    @default("not_started")
+  qualification  String?
+  lostReason     String?
+  nextFollowUpAt DateTime?
+  lastContactAt  DateTime?
+  updatedBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lead           Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([pipelineStage, updatedAt])
+  @@index([owner, nextFollowUpAt])
+  @@index([advisorStatus, updatedAt])
+  @@index([priority, updatedAt])
+  @@index([nextFollowUpAt])
+}
+
+model FunnelCrmActivity {
+  id           String   @id @default(cuid())
+  leadId       String
+  activityType String
+  field        String?
+  oldValue     String?
+  newValue     String?
+  note         String?
+  adminId      String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@index([activityType, createdAt])
+  @@index([adminId, createdAt])
 }

@@ -1,0 +1,243 @@
+/* Final masterclass UX standardization layer.
+   Scope: ChatGPT + Claude acquisition funnels only.
+   Presentation only: no registration, payment, attribution or tracking behavior changes. */
+
+/* Landing pages intentionally use a distraction-free funnel shell. */
+.funnel-shell .funnel-announcement,
+.funnel-shell .funnel-topbar,
+.funnel-shell .funnel-footer,
+.claude-future-page .claude-announcement,
+.claude-future-page .claude-nav,
+.claude-future-page .claude-footer {
+  display: none !important;
+}
+
+/* Shared reading system. */
+:where(.funnel-shell, .claude-future-page) {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(.funnel-shell, .claude-future-page) :where(p, li, label, input, select, textarea, button, a) {
+  font-size: 1rem;
+}
+
+:where(.funnel-shell, .claude-future-page) p {
+  line-height: 1.7;
+}
+
+:where(.funnel-shell, .claude-future-page) :where(.funnel-container, .claude-future-container) {
+  width: min(1180px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+:where(.funnel-shell, .claude-future-page) :where(
+  .funnel-hero-copy > p,
+  .funnel-section-head > p,
+  .funnel-register-copy > p,
+  .claude-hero-lead,
+  .claude-section-head > p,
+  .claude-story-copy > p,
+  .claude-mentor-copy > p
+) {
+  max-width: 68ch;
+}
+
+/* Display type: large enough to establish hierarchy without oversized billboard text. */
+.funnel-shell .funnel-hero h1,
+.claude-future-page .claude-hero-copy h1 {
+  font-size: clamp(3rem, 5vw, 4.5rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -.045em !important;
+  text-wrap: balance;
+}
+
+.funnel-shell :where(.funnel-section-head h2, .funnel-register-copy h2, .funnel-final-card h2),
+.claude-future-page :where(.claude-section-head h2, .claude-mentor-copy h2, .claude-final-cta h2) {
+  font-size: clamp(2.25rem, 3.8vw, 3.5rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -.04em !important;
+  text-wrap: balance;
+}
+
+.funnel-shell :where(h3, .funnel-card h3),
+.claude-future-page :where(h3, .claude-story-copy h3) {
+  font-size: clamp(1.2rem, 1.5vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+
+/* Section rhythm. */
+.funnel-shell .funnel-hero,
+.claude-future-page .claude-future-hero {
+  padding-top: clamp(3.5rem, 7vw, 6.25rem) !important;
+  padding-bottom: clamp(4.25rem, 8vw, 7rem) !important;
+}
+
+.funnel-shell .funnel-section,
+.claude-future-page .claude-section {
+  padding-top: clamp(4.25rem, 7vw, 6.5rem) !important;
+  padding-bottom: clamp(4.25rem, 7vw, 6.5rem) !important;
+}
+
+/* Comfortable body sizing for long-form funnel copy. */
+.funnel-shell :where(
+  .funnel-hero-copy > p,
+  .funnel-section-head > p,
+  .funnel-card p,
+  .funnel-register-copy > p,
+  .funnel-faqs p
+),
+.claude-future-page :where(
+  .claude-hero-lead,
+  .claude-section-head > p,
+  .claude-story-copy > p,
+  .claude-benefit-grid p,
+  .claude-use-grid p,
+  .claude-audience-grid p,
+  .claude-faqs p
+) {
+  font-size: clamp(1rem, .3vw + .94rem, 1.125rem) !important;
+  line-height: 1.7 !important;
+}
+
+/* Eyebrows and metadata remain compact but readable. */
+.funnel-shell :where(.funnel-kicker, .funnel-proof-row span, small),
+.claude-future-page :where(.claude-eyebrow, .claude-live-pill, small) {
+  font-size: .8125rem;
+  line-height: 1.35;
+}
+
+/* Controls: 44px+ practical target, 16px form text to avoid mobile zoom. */
+.funnel-shell :where(
+  .funnel-primary-button,
+  .funnel-secondary-button,
+  .funnel-nav-cta,
+  .funnel-mobile-cta a,
+  button,
+  input,
+  select,
+  textarea
+),
+.claude-future-page :where(
+  .claude-primary-cta,
+  .claude-secondary-cta,
+  .claude-nav-cta,
+  .claude-announcement-link,
+  .funnel-mobile-cta a,
+  button,
+  input,
+  select,
+  textarea
+) {
+  min-height: 48px;
+  font-size: 1rem !important;
+}
+
+.funnel-shell :where(input, select, textarea),
+.claude-future-page :where(input, select, textarea) {
+  line-height: 1.4;
+}
+
+.funnel-shell :where(.funnel-primary-button, .funnel-secondary-button, .funnel-mobile-cta a),
+.claude-future-page :where(.claude-primary-cta, .claude-secondary-cta, .funnel-mobile-cta a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .9rem 1.25rem;
+  font-weight: 800;
+}
+
+/* Keep registration copy and form visually scannable. */
+.funnel-shell .funnel-form label,
+.claude-future-page .funnel-form label {
+  line-height: 1.45;
+}
+
+.funnel-shell .funnel-register-card,
+.claude-future-page .funnel-register-card {
+  border-radius: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+/* Cards use consistent internal rhythm. */
+.funnel-shell :where(.funnel-card, .funnel-proof-card, .funnel-demo-card),
+.claude-future-page :where(
+  .claude-story-stack article,
+  .claude-benefit-grid article,
+  .claude-use-grid article,
+  .claude-audience-grid article,
+  .claude-agenda-grid article,
+  .claude-action-gallery article
+) {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  :where(.funnel-shell, .claude-future-page) :where(.funnel-container, .claude-future-container) {
+    width: min(100% - 36px, 1180px);
+  }
+
+  .funnel-shell .funnel-hero h1,
+  .claude-future-page .claude-hero-copy h1 {
+    font-size: clamp(2.5rem, 8vw, 3.5rem) !important;
+  }
+
+  .funnel-shell :where(.funnel-section-head h2, .funnel-register-copy h2, .funnel-final-card h2),
+  .claude-future-page :where(.claude-section-head h2, .claude-mentor-copy h2, .claude-final-cta h2) {
+    font-size: clamp(2rem, 6vw, 2.75rem) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  :where(.funnel-shell, .claude-future-page) :where(.funnel-container, .claude-future-container) {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .funnel-shell .funnel-hero,
+  .claude-future-page .claude-future-hero {
+    padding-top: 2.75rem !important;
+    padding-bottom: 4rem !important;
+  }
+
+  .funnel-shell .funnel-section,
+  .claude-future-page .claude-section {
+    padding-top: 3.75rem !important;
+    padding-bottom: 3.75rem !important;
+  }
+
+  .funnel-shell .funnel-hero h1,
+  .claude-future-page .claude-hero-copy h1 {
+    font-size: clamp(2.35rem, 10.3vw, 2.85rem) !important;
+    line-height: 1.02 !important;
+  }
+
+  .funnel-shell :where(.funnel-section-head h2, .funnel-register-copy h2, .funnel-final-card h2),
+  .claude-future-page :where(.claude-section-head h2, .claude-mentor-copy h2, .claude-final-cta h2) {
+    font-size: clamp(1.8rem, 8vw, 2.25rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  :where(.funnel-shell, .claude-future-page) p {
+    line-height: 1.65;
+  }
+
+  .funnel-shell :where(.funnel-primary-button, .funnel-secondary-button, .funnel-mobile-cta a),
+  .claude-future-page :where(.claude-primary-cta, .claude-secondary-cta, .funnel-mobile-cta a) {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 360px) {
+  :where(.funnel-shell, .claude-future-page) :where(.funnel-container, .claude-future-container) {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .funnel-shell .funnel-hero h1,
+  .claude-future-page .claude-hero-copy h1 {
+    font-size: 2.25rem !important;
+  }
+}

@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     <div style={{ minHeight: "100vh", padding: 16 }}>
       <div
         style={{
-          width: "min(980px, 100%)",
+          width: "min(1080px, 100%)",
           margin: "0 auto",
           background: "rgba(255,255,255,.96)",
           borderRadius: 16,
@@ -67,13 +67,18 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <Card title="Funnel CRM" desc="Learner lifecycle, advisor workflow, follow-ups, revenue and audit trail" href="/admin/funnel-crm" />
+            <Card title="Decision Intelligence" desc="Calendar-period activity, executive economics, campaign/ad revenue and operational bottlenecks" href="/admin/funnel-dashboard" />
+            <Card title="Cohort Economics" desc="Lead-quality view: acquire leads in a selected window, then follow their lifetime downstream conversion and revenue" href="/admin/funnel-cohorts" />
+            <Card title="Follow-up Intelligence" desc="Reminder-by-reminder WhatsApp sent, delivered, read, failure and send-delay telemetry" href="/admin/funnel-followups" />
+            <Card title="Integration Console" desc="Safe readiness diagnostics for existing Razorpay, Meta and SikhaDenge WhatsApp integrations" href="/admin/funnel-integrations" />
             <Card title="Influencers" desc="Create/disable promo codes, reset passwords" href="/admin/influencers" />
-            <Card title="Leads" desc="View leads, promo attribution, update status" href="/admin/leads" />
+            <Card title="Leads" desc="Legacy lead view, promo attribution and generic status updates" href="/admin/leads" />
           </div>
 
           <div style={{ fontSize: 12, color: "rgba(15,23,42,.62)" }}>
-            Next: admissions + payout reports
+            Funnel CRM is the operational workspace. Verified FunnelEvent and FunnelPayment records remain the source of truth. Decision Intelligence and Cohort Economics intentionally separate calendar-period activity from acquisition-cohort quality so revenue and conversion denominators are not mixed.
           </div>
         </div>
       </div>
@@ -104,4 +109,3 @@ function Card({ title, desc, href }: { title: string; desc: string; href: string
     </a>
   );
 }
-

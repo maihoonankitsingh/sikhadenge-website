@@ -1,0 +1,133 @@
+name: Funnel v2 CI
+
+on:
+  push:
+    branches:
+      - feature/ai-masterclass-funnel-v2
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'components/funnel/**'
+      - 'data/funnels.ts'
+      - 'docs/funnels/**'
+      - 'eslint.config.mjs'
+      - 'lib/funnel/**'
+      - 'pages/**'
+      - 'prisma/**'
+      - 'scripts/funnel-security-check.cjs'
+      - 'scripts/funnel-db-smoke.cjs'
+      - 'scripts/phase9-route-smoke.cjs'
+      - 'scripts/phase10-integration-readiness-check.cjs'
+      - 'scripts/phase10-lifecycle-smoke.cjs'
+      - 'scripts/phase15-responsive-qa.mjs'
+      - 'scripts/phase16-workshop-visual-qa.mjs'
+      - 'styles/funnel*.css'
+      - 'styles/workshop*.css'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/funnel-v2-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+      SHADOW_DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_shadow
+      PUBLIC_SITE_URL: http://127.0.0.1:3001
+      FUNNEL_CHECKOUT_SECRET: phase10-ci-checkout-secret
+      WHATSAPP_FUNNEL_STATUS_TOKEN: phase10-ci-whatsapp-status-token
+      NEXT_PUBLIC_MASTERCLASS_ENTRY_PRICE: '9'
+      NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_PRICE: '1499'
+      NEXT_PUBLIC_IMPLEMENTATION_WORKSHOP_REGULAR_PRICE: '1999'
+      NEXT_PUBLIC_AI_EXPERT_PROGRAM_PRICE: '14999'
+      NEXT_PUBLIC_AI_EXPERT_PROGRAM_DURATION: '10-week structured program'
+      NEXT_PUBLIC_MASTERCLASS_DATE_LABEL: 'CI Test Batch'
+      NEXT_PUBLIC_MASTERCLASS_TIME_LABEL: '8:00 PM IST'
+      NEXT_PUBLIC_CHATGPT_MASTERCLASS_BATCH_ID: 'chatgpt-ci'
+      NEXT_PUBLIC_CLAUDE_MASTERCLASS_BATCH_ID: 'claude-ci'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.20.2'
+          cache: npm
+
+      - name: Install dependencies from committed lockfile
+        run: npm ci
+
+      - name: Payment security self-tests
+        run: npm run test:funnel-security
+
+      - name: Phase 10 integration readiness self-tests
+        run: npm run test:funnel-integrations
+
+      - name: Production dependency audit — zero high required
+        run: npm run audit:prod
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Fresh database migration rehearsal
+        run: npm run db:migrate:deploy
+
+      - name: Database integrity smoke test
+        run: npm run test:funnel-db
+
+      - name: Build Next.js application
+        run: npm run build
+
+      - name: Phase 10 HTTP lifecycle rehearsal
+        run: node scripts/phase10-lifecycle-smoke.cjs
+
+      - name: Production route smoke test
+        run: node scripts/phase9-route-smoke.cjs
+
+      - name: Phase 15 responsive visual QA
+        run: node scripts/phase15-responsive-qa.mjs
+
+      - name: Upload Phase 15 responsive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase15-responsive-visual-qa
+          path: .tmp/phase15-visual-qa
+          if-no-files-found: error
+          include-hidden-files: true
+
+      - name: Phase 16 workshop visual QA
+        run: node scripts/phase16-workshop-visual-qa.mjs
+
+      - name: Upload Phase 16 workshop visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-workshop-visual-qa
+          path: .tmp/phase16-workshop-visual-qa
+          if-no-files-found: error
+          include-hidden-files: true

@@ -381,11 +381,12 @@ export async function generateStaticParams() {
 export const dynamicParams = true;
 export const revalidate = 2592000;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const post = getBlogs().find((item) => item.slug === params.slug);
   const parsed = parseSlug(params.slug, post);
   const title = post?.title || buildHeadline(parsed);
@@ -433,7 +434,8 @@ export async function generateMetadata({
   };
 }
 
-export default function BlogPost({ params }: { params: { slug: string } }) {
+export default async function BlogPost(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const allBlogs = getBlogs();
   const post = allBlogs.find((item) => item.slug === params.slug);
   const parsed = parseSlug(params.slug, post);

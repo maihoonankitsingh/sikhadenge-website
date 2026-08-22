@@ -1,0 +1,298 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+import type { FunnelConfig } from "../../lib/funnel/types";
+import { getAttribution, trackFunnelEvent } from "../../lib/funnel/client";
+
+type FormState = {
+  fullName: string;
+  email: string;
+  phone: string;
+  occupation: string;
+  goal: string;
+  laptop: string;
+  consent: boolean;
+  hp: string;
+};
+
+const initialState: FormState = {
+  fullName: "",
+  email: "",
+  phone: "",
+  occupation: "",
+  goal: "",
+  laptop: "",
+  consent: false,
+  hp: "",
+};
+
+export default function RegistrationCard({ config }: { config: FunnelConfig }) {
+  const [form, setForm] = useState<FormState>(initialState);
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [message, setMessage] = useState("");
+  const [checkoutUrl, setCheckoutUrl] = useState("");
+
+  const priceLabel = useMemo(
+    () => (config.offerMode === "free" ? "FREE" : `₹${config.entryPrice}`),
+    [config.entryPrice, config.offerMode]
+  );
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (status === "sending") return;
+    if (!form.consent) {
+      setStatus("error");
+      setMessage("Please allow WhatsApp masterclass updates so we can send your joining instructions.");
+      return;
+    }
+
+    setStatus("sending");
+    setMessage("");
+
+    const attribution = getAttribution();
+
+    try {
+      const response = await fetch("/api/funnel/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          funnel: config.product,
+          offerMode: config.offerMode,
+          entryPrice: config.entryPrice,
+          batchId: config.batchId,
+          page: window.location.pathname,
+          attribution,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "Registration failed");
+      }
+
+      if (data.shouldTrackLead && data.registrationEventId) {
+        void trackFunnelEvent(
+          config,
+          "generate_lead",
+          { registration_status: "success", whatsapp_consent: true },
+          data.leadId,
+          { persist: false, eventId: data.registrationEventId }
+        );
+      }
+
+      setStatus("done");
+
+      if (config.offerMode === "paid") {
+        if (data.checkoutUrl) {
+          setCheckoutUrl(data.checkoutUrl);
+          setMessage(`Registration details saved. Opening the secure ₹${config.entryPrice} checkout…`);
+
+          void trackFunnelEvent(
+            config,
+            "begin_checkout",
+            { value: config.entryPrice, currency: "INR" },
+            data.leadId
+          );
+
+          window.setTimeout(() => {
+            window.location.assign(data.checkoutUrl);
+          }, 350);
+          return;
+        }
+
+        setMessage("Your details are saved. Paid checkout is not active on this preview yet.");
+        return;
+      }
+
+      setMessage("Registration confirmed. Opening your masterclass confirmation page…");
+
+      if (data.confirmationUrl) {
+        window.setTimeout(() => {
+          window.location.assign(data.confirmationUrl);
+        }, 300);
+      }
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
+    }
+  }
+
+  return (
+    <div id="register" className="funnel-register-card" aria-label="Masterclass registration">
+      <div className="funnel-register-ribbon">
+        <span>Secure registration</span>
+        <span>WhatsApp joining updates</span>
+      </div>
+
+      <div className="funnel-register-head">
+        <div>
+          <span className="funnel-kicker">RESERVE YOUR SEAT</span>
+          <strong>{priceLabel}</strong>
+        </div>
+        <div className="funnel-register-step" aria-label="Registration process">
+          <span>01</span>
+          <p>Share details</p>
+          <i />
+          <span>02</span>
+          <p>{config.offerMode === "paid" ? "Secure checkout" : "Get confirmation"}</p>
+        </div>
+        <p>
+          {config.offerMode === "free"
+            ? "Complete the form once. We will send the live-session instructions on WhatsApp."
+            : `Complete the form, then continue to the ₹${config.entryPrice} secure checkout.`}
+        </p>
+      </div>
+
+      <form onSubmit={submit} className="funnel-form">
+        <label>
+          Full name
+          <input
+            required
+            minLength={2}
+            autoComplete="name"
+            value={form.fullName}
+            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+            placeholder="Your full name"
+          />
+        </label>
+
+        <div className="funnel-form-grid">
+          <label>
+            WhatsApp number
+            <input
+              required
+              inputMode="numeric"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="10-digit mobile number"
+            />
+          </label>
+          <label>
+            Email
+            <input
+              required
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="you@example.com"
+            />
+          </label>
+        </div>
+
+        <div className="funnel-form-grid">
+          <label>
+            Current status
+            <select
+              required
+              value={form.occupation}
+              onChange={(e) => setForm({ ...form, occupation: e.target.value })}
+            >
+              <option value="">Select one</option>
+              <option>Student / Job Seeker</option>
+              <option>Working Professional</option>
+              <option>Freelancer / Creator</option>
+              <option>Business Owner</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>
+            Primary goal
+            <select
+              required
+              value={form.goal}
+              onChange={(e) => setForm({ ...form, goal: e.target.value })}
+            >
+              <option value="">Select one</option>
+              <option>Career / Job</option>
+              <option>Work Productivity</option>
+              <option>Freelancing / Content</option>
+              <option>Business Growth</option>
+              <option>Study / Research</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Laptop access for practical work
+          <select
+            required
+            value={form.laptop}
+            onChange={(e) => setForm({ ...form, laptop: e.target.value })}
+          >
+            <option value="">Select one</option>
+            <option value="yes">Yes, I have access</option>
+            <option value="sometimes">Sometimes / shared device</option>
+            <option value="no">No, mobile only</option>
+          </select>
+        </label>
+
+        <label className="funnel-consent-row">
+          <input
+            required
+            type="checkbox"
+            checked={form.consent}
+            onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+          />
+          <span>
+            I agree to receive this masterclass&apos;s registration confirmation, joining link and related reminders on WhatsApp from SikhaDenge. I can opt out later.
+          </span>
+        </label>
+
+        <input
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="funnel-hp"
+          value={form.hp}
+          onChange={(e) => setForm({ ...form, hp: e.target.value })}
+          name="company_website"
+        />
+
+        <button
+          type="submit"
+          className="funnel-primary-button"
+          disabled={status === "sending"}
+          onClick={() => void trackFunnelEvent(config, "registration_submit_click")}
+        >
+          {status === "sending" ? "Saving..." : config.ctaLabel}
+        </button>
+
+        <div className="funnel-form-assurance" aria-label="Registration assurances">
+          <span>✓ No hidden browser-controlled price</span>
+          <span>✓ Important joining details on WhatsApp</span>
+        </div>
+
+        <p className="funnel-form-note">
+          Your registration details are used to manage this masterclass and its communication. Promotional communication can be opted out separately.
+        </p>
+
+        {message ? (
+          <div
+            className={`funnel-status ${status === "error" ? "is-error" : "is-success"}`}
+            role="status"
+          >
+            {message}
+            {checkoutUrl ? (
+              <a
+                className="funnel-checkout-link"
+                href={checkoutUrl}
+                onClick={() =>
+                  void trackFunnelEvent(
+                    config,
+                    "begin_checkout",
+                    { value: config.entryPrice, currency: "INR" }
+                  )
+                }
+              >
+                Continue to secure checkout →
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+      </form>
+    </div>
+  );
+}

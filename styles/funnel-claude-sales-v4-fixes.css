@@ -1,0 +1,63 @@
+/* Claude sales v4 targeted visual-QA fixes. */
+
+@media (max-width: 640px) {
+  .claude-future-page .claude-event-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+  }
+
+  .claude-future-page .claude-event-row > div {
+    min-height: 76px;
+    padding: .72rem .45rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: center;
+    justify-items: center;
+    gap: .3rem;
+    text-align: center;
+    border-radius: 15px;
+  }
+
+  .claude-future-page .claude-event-row span {
+    font-size: .56rem;
+    letter-spacing: .1em;
+  }
+
+  .claude-future-page .claude-event-row strong {
+    font-size: .72rem;
+    line-height: 1.25;
+  }
+
+  .claude-future-page .claude-hero-note {
+    margin-top: .8rem;
+  }
+
+  .claude-future-page .claude-hero-actions {
+    margin-top: 1.2rem;
+  }
+
+  .claude-future-page .claude-price-chip {
+    display: none;
+  }
+
+  .claude-future-page .funnel-mobile-cta {
+    min-height: 68px;
+    padding: .55rem .75rem calc(.55rem + env(safe-area-inset-bottom));
+  }
+
+  .claude-future-page .funnel-mobile-cta a {
+    min-height: 48px;
+    padding: .72rem 1rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .claude-future-page .claude-event-row > div {
+    min-height: 72px;
+    padding-inline: .35rem;
+  }
+
+  .claude-future-page .claude-event-row strong {
+    font-size: .68rem;
+  }
+}

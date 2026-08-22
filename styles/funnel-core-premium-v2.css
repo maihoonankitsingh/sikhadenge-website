@@ -1,0 +1,237 @@
+/* AI Expert premium presentation layer. Business, eligibility and checkout logic stay unchanged. */
+.core-shell {
+  --core-blue: #2563eb;
+  --core-cyan: #22d3ee;
+  --core-teal: #5eead4;
+  --core-ink: #050b18;
+  --core-panel: #0b1628;
+  background:
+    radial-gradient(860px 540px at 7% 4%, rgba(37,99,235,.24), transparent 70%),
+    radial-gradient(760px 520px at 92% 10%, rgba(34,211,238,.12), transparent 70%),
+    linear-gradient(160deg, #030816 0%, #07111f 52%, #081624 100%);
+}
+
+.core-topbar {
+  min-height: 82px;
+  padding: 18px 0;
+  border-bottom-color: rgba(148,163,184,.14);
+}
+
+.core-topbar span { color: #a7b7cf; }
+
+.core-hero {
+  min-height: 700px;
+  grid-template-columns: minmax(0,1.16fr) minmax(340px,.74fr);
+  gap: clamp(44px,6vw,76px);
+  padding-top: 76px;
+  padding-bottom: 92px;
+}
+
+.core-kicker {
+  color: #7dd3fc;
+  letter-spacing: .16em;
+}
+
+.core-hero h1 {
+  max-width: 850px;
+  font-size: clamp(50px,5.2vw,72px);
+  line-height: .96;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+
+.core-hero h1 em {
+  background: linear-gradient(100deg,#93c5fd 0%,#22d3ee 52%,#5eead4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.core-hero-copy > p {
+  max-width: 710px;
+  color: #b3c1d5;
+  font-size: 18px;
+  line-height: 1.72;
+}
+
+.core-proof-row { gap: 10px; margin-top: 30px; }
+.core-proof-row span {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 13px;
+  border-color: rgba(96,165,250,.24);
+  background: linear-gradient(180deg,rgba(37,99,235,.12),rgba(15,23,42,.58));
+  color: #e5eefb;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+}
+
+.core-source-note {
+  max-width: 760px;
+  padding: 17px 18px;
+  border-radius: 20px;
+  border-color: rgba(148,163,184,.15);
+  background: rgba(8,18,34,.68);
+  backdrop-filter: blur(12px);
+}
+
+.core-hero-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-radius: 30px;
+  border-color: rgba(96,165,250,.28);
+  background:
+    radial-gradient(500px 290px at 20% -12%, rgba(37,99,235,.32), transparent 70%),
+    radial-gradient(360px 260px at 108% 80%, rgba(34,211,238,.12), transparent 70%),
+    linear-gradient(155deg,#101d33,#07111f 70%);
+  box-shadow: 0 38px 110px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.05);
+}
+
+.core-hero-panel::after {
+  content: "";
+  position: absolute;
+  right: -86px;
+  bottom: -96px;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 1px solid rgba(34,211,238,.14);
+  box-shadow: 0 0 0 30px rgba(37,99,235,.035), 0 0 0 62px rgba(34,211,238,.018);
+  pointer-events: none;
+}
+
+.core-hero-panel > * { position: relative; z-index: 1; }
+.core-panel-label { color: #7dd3fc; }
+.core-hero-panel h2 { font-size: 30px; }
+.core-price { font-size: 58px; }
+.core-hero-panel li { color: #cad6e7; }
+.core-hero-panel li::before { color: #5eead4; }
+
+.core-section { padding-top: 96px; padding-bottom: 96px; }
+.core-section-light {
+  background:
+    radial-gradient(720px 360px at 92% 0%, rgba(37,99,235,.06), transparent 72%),
+    linear-gradient(180deg,#f8fbff 0%,#f4f8fc 100%);
+}
+
+.core-section-head h2,
+.core-enrollment-copy h2 {
+  letter-spacing: -.055em;
+  text-wrap: balance;
+}
+
+.core-outcome-grid { gap: 16px; margin-top: 42px; }
+.core-outcome-grid article {
+  min-height: 210px;
+  padding: 26px;
+  border-radius: 22px;
+  border-color: #e1e8f2;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 16px 46px rgba(15,23,42,.06);
+}
+.core-outcome-grid article > span { color: #2563eb; }
+.core-outcome-grid h3 { font-size: 19px; }
+
+.core-roadmap { gap: 14px; margin-top: 42px; }
+.core-roadmap article {
+  min-height: 92px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  border-color: rgba(125,211,252,.12);
+  background: linear-gradient(120deg,rgba(37,99,235,.08),rgba(15,23,42,.56));
+}
+.core-roadmap article > span {
+  flex-basis: 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: linear-gradient(145deg,rgba(37,99,235,.26),rgba(34,211,238,.12));
+  color: #a5f3fc;
+}
+.core-roadmap strong { color: #e9f2ff; }
+
+.core-enrollment-section {
+  position: relative;
+  overflow: hidden;
+  grid-template-columns: minmax(0,1.18fr) minmax(330px,.68fr);
+  gap: 58px;
+  background:
+    radial-gradient(720px 440px at 8% 12%, rgba(37,99,235,.28), transparent 72%),
+    radial-gradient(600px 380px at 90% 72%, rgba(34,211,238,.10), transparent 70%),
+    linear-gradient(140deg,#08162b,#030816 72%);
+}
+
+.core-decision-grid div {
+  min-height: 104px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(9,23,45,.62);
+}
+
+.core-enrollment-card {
+  padding: 32px;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 28px;
+  box-shadow: 0 32px 90px rgba(0,0,0,.32);
+}
+.core-enrollment-card > strong { font-size: 50px; }
+.core-primary-button,
+.core-secondary-button {
+  min-height: 56px;
+  border-radius: 14px;
+}
+.core-primary-button {
+  background: linear-gradient(135deg,#2563eb,#0ea5e9);
+  box-shadow: 0 18px 44px rgba(37,99,235,.28), inset 0 1px rgba(255,255,255,.18);
+}
+.core-primary-button:hover { background: linear-gradient(135deg,#1d4ed8,#0284c7); }
+
+.core-faqs details { border-radius: 18px; }
+.core-faqs summary {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.core-footer nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 4px;
+}
+
+.core-confirmation-shell {
+  background:
+    radial-gradient(760px 480px at 18% 4%, rgba(37,99,235,.24), transparent 72%),
+    radial-gradient(620px 440px at 88% 90%, rgba(34,211,238,.10), transparent 72%),
+    #050c19;
+}
+.core-confirmation-card {
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 30px;
+  box-shadow: 0 36px 100px rgba(0,0,0,.38);
+}
+
+@media (max-width: 900px) {
+  .core-hero { min-height: auto; }
+  .core-hero-panel { max-width: 720px; }
+  .core-enrollment-card { max-width: 680px; }
+}
+
+@media (max-width: 600px) {
+  .core-hero { padding-top: 42px; padding-bottom: 62px; }
+  .core-hero h1 { font-size: clamp(40px,10.4vw,46px); }
+  .core-proof-row span { min-height: 38px; }
+  .core-hero-panel { padding: 24px; border-radius: 22px; }
+  .core-price { font-size: 52px; }
+  .core-section { padding-top: 68px; padding-bottom: 68px; }
+  .core-outcome-grid article { min-height: auto; }
+  .core-enrollment-card { padding: 24px; border-radius: 22px; }
+  .core-enrollment-card > strong { font-size: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-primary-button,
+  .core-secondary-button { transition: none !important; }
+}

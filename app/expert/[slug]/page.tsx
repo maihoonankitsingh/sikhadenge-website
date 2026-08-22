@@ -14,7 +14,8 @@ export async function generateStaticParams() {
 export const dynamicParams = true;
 export const revalidate = 2592000; // 30 days cache
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const pageData = generatedPages.find((p) => p.slug === params.slug);
   if (!pageData) return { title: "Not Found", robots: { index: false } };
   const url = `https://sikhadenge.in/expert/${pageData.slug}`;
@@ -30,7 +31,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function ExpertPage({ params }: { params: { slug: string } }) {
+export default async function ExpertPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const pageData = generatedPages.find((p) => p.slug === params.slug);
 
   if (!pageData) return notFound();
