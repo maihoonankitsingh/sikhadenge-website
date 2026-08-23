@@ -6,7 +6,7 @@
     "dev": "next dev",
     "blog:db:generate": "node scripts/generate-blog-prisma-client.mjs",
     "prebuild": "npm run blog:db:generate",
-    "build": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=./scripts/mock-google-fonts.cjs next build",
+    "build": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=\"$PWD/scripts/mock-google-fonts.cjs\" next build",
     "start": "next start",
     "lint": "next lint",
     "seo:check": "node scripts/seo-guard.mjs",
