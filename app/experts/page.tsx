@@ -1,5 +1,5 @@
 import Link from "next/link";
-import generatedPages from "../../data/generated-seo-merged.json";
+import generatedPages from "../../data/generated-seo.json";
 import { Search, MapPin, GraduationCap } from "lucide-react";
 
 export const metadata = {
