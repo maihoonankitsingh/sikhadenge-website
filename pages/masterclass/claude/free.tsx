@@ -621,260 +621,67 @@ function ClaudeFreeMasterclassPage() {
         <section className={`${styles.section} ${styles.soft} ${styles.aiShiftSection}`}>
           <div className={styles.container}>
 
-            <div className={styles.aiShiftWrap}>
+            <div className={styles.aiShiftCleanShell}>
 
-              <div className={styles.aiShiftHead}>
-                <span className={styles.aiShiftEyebrow}>THE AI SHIFT</span>
+              <div className={styles.aiShiftCleanIntro}>
+                <span className={styles.aiShiftCleanEyebrow}>THE AI SHIFT</span>
 
                 <h2>
-                  AI is changing the way
-                  <span> professionals work.</span>
+                  Why AI-skilled professionals are
+                  <span> moving ahead faster.</span>
                 </h2>
 
                 <p>
-                  Major research reports and business signals point in one direction:
-                  work is being reshaped by AI. The opportunity is moving toward
-                  professionals who can read better, think better and produce better
-                  output with AI workflows.
+                  Real market signals, workforce reports and hiring patterns all point in one direction:
+                  professionals who can use AI workflows effectively will have a stronger advantage.
                 </p>
               </div>
 
+              <div className={styles.aiShiftCleanGrid}>
 
-              <div className={styles.aiShiftHeroVisual}>
-                <img
-                  src="/funnels/claude/ai-shift/the_ai_shift_professionals_at_work.png"
-                  alt="AI powered professional workflow transformation"
-                  loading="lazy"
-                />
-              </div>
+                <figure className={styles.aiShiftCleanCard}>
+                  <img
+                    src="/funnels/claude/ai-shift/the_ai_shift_professionals_at_work.png"
+                    alt="AI is changing the way professionals work"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
 
+                <figure className={styles.aiShiftCleanCard}>
+                  <img
+                    src="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png"
+                    alt="AI workforce transformation and industry signals"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
 
-              <div className={styles.aiShiftSignalGrid}>
-
-                <article className={styles.aiShiftSignalCard}>
-                  <div className={styles.aiShiftSignalNo}>01</div>
-                  <h3>Research Faster</h3>
-                  <p>
-                    Analyze documents, reports and scattered information with a
-                    more structured AI workflow.
-                  </p>
-                  <span>Research • Analysis</span>
-                </article>
-
-                <article className={styles.aiShiftSignalCard}>
-                  <div className={styles.aiShiftSignalNo}>02</div>
-                  <h3>Create Better Output</h3>
-                  <p>
-                    Turn raw notes into clearer writing, sharper summaries,
-                    briefs and business communication.
-                  </p>
-                  <span>Writing • Strategy</span>
-                </article>
-
-                <article className={styles.aiShiftSignalCard}>
-                  <div className={styles.aiShiftSignalNo}>03</div>
-                  <h3>Automate Repetitive Work</h3>
-                  <p>
-                    Reduce manual effort and build reusable workflows that
-                    improve speed, consistency and productivity.
-                  </p>
-                  <span>Automation • Productivity</span>
-                </article>
+                <figure className={styles.aiShiftCleanCard}>
+                  <img
+                    src="/funnels/claude/ai-shift/ai_powered_professional_workflows.png"
+                    alt="AI powered professional workflows and opportunity signals"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
 
               </div>
 
-              <div className={styles.aiShiftTicker}>
-                <small>INDUSTRY SIGNAL</small>
+              <div className={styles.aiShiftCleanFooter}>
+                <span>
+                  Jobs are moving toward AI-enabled professionals. Become AI-enabled before the shift leaves you behind.
+                </span>
 
-                <div className={styles.aiShiftTickerLine}>
-                  <span>AI skill is becoming a professional advantage.</span>
-                  <i />
-                  <span>Goldman Sachs</span>
-                  <span>McKinsey</span>
-                  <span>World Economic Forum</span>
-                  <span>Microsoft</span>
-                  <span>LinkedIn</span>
-                </div>
-              </div>
-
-              <div className={styles.aiShiftNewsImage}>
-                <img
-                  src="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png"
-                  alt="AI workforce transformation"
-                  loading="lazy"
-                />
-              </div>
-
-
-              <div className={styles.aiShiftStatsWrap}>
-                <div className={styles.aiShiftStatsHead}>
-                  <h3>What major reports are signaling</h3>
-                  <p>
-                    These are the types of shifts serious professionals are already watching.
-                  </p>
-                </div>
-
-                <div className={styles.aiShiftStatsGrid}>
-
-                  <article className={styles.aiShiftStatCard}>
-                    <div className={styles.aiShiftStatBrand}>Goldman Sachs</div>
-                    <strong>300M</strong>
-                    <p>jobs globally exposed to AI-driven automation</p>
-                    <span>Global labour exposure estimate</span>
-                  </article>
-
-                  <article className={styles.aiShiftStatCard}>
-                    <div className={styles.aiShiftStatBrand}>McKinsey</div>
-                    <strong>75M–375M</strong>
-                    <p>workers may need to switch occupational categories by 2030</p>
-                    <span>Workforce transition estimate</span>
-                  </article>
-
-                  <article className={styles.aiShiftStatCard}>
-                    <div className={styles.aiShiftStatBrand}>World Economic Forum</div>
-                    <strong>83M</strong>
-                    <p>jobs expected to be displaced by 2027 while 69M new roles emerge</p>
-                    <span>Future of Jobs outlook</span>
-                  </article>
-
-                </div>
-              </div>
-
-              <div className={styles.aiShiftNewsGroup}>
-
-                <div className={styles.aiShiftNewsBlock}>
-                  <div className={styles.aiShiftNewsHead}>
-                    <h3>Rise in AI-related opportunities</h3>
-                    <p>
-                      Demand is rising for professionals who know how to work with AI tools.
-                    </p>
-                  </div>
-
-                  <div className={styles.aiShiftNewsGrid}>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>Forbes</span>
-                        <span className={styles.aiShiftNewsMeta}>Career Signal</span>
-                      </div>
-                      <h4>High-value AI communication and prompt-based roles are gaining visibility.</h4>
-                      <p>
-                        Professionals who can combine domain knowledge with AI-assisted execution
-                        are seeing stronger career upside.
-                      </p>
-                    </article>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>India Today</span>
-                        <span className={styles.aiShiftNewsMeta}>Hiring Signal</span>
-                      </div>
-                      <h4>Companies are opening more AI-related roles across research, operations and content.</h4>
-                      <p>
-                        AI skills are no longer niche. They are becoming relevant across multiple
-                        business functions.
-                      </p>
-                    </article>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>CNBC Make It</span>
-                        <span className={styles.aiShiftNewsMeta}>Future of Work</span>
-                      </div>
-                      <h4>New jobs are emerging as AI reshapes the global workforce.</h4>
-                      <p>
-                        The advantage moves toward people who adapt early and build
-                        practical workflow skills.
-                      </p>
-                    </article>
-
-                  </div>
-                </div>
-
-                <div className={styles.aiShiftNewsBlock}>
-                  <div className={styles.aiShiftNewsHead}>
-                    <h3>Industry warnings and workforce pressure</h3>
-                    <p>
-                      The risk is real too: routine work is becoming more vulnerable.
-                    </p>
-                  </div>
-
-                  <div className={styles.aiShiftNewsGrid}>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>India Today</span>
-                        <span className={styles.aiShiftNewsMeta}>Workforce Shift</span>
-                      </div>
-                      <h4>Business leaders are increasingly warning that routine digital tasks will be heavily impacted.</h4>
-                      <p>
-                        Repetitive work is under pressure. Judgment, communication and workflow skill matter more.
-                      </p>
-                    </article>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>CNBC TV18</span>
-                        <span className={styles.aiShiftNewsMeta}>Market Signal</span>
-                      </div>
-                      <h4>AI-driven productivity is changing expectations inside knowledge work teams.</h4>
-                      <p>
-                        Teams are expected to do more with better tools, better systems and less manual effort.
-                      </p>
-                    </article>
-
-                    <article className={styles.aiShiftNewsCard}>
-                      <div className={styles.aiShiftNewsBar}>
-                        <span className={styles.aiShiftNewsBrand}>Mint</span>
-                        <span className={styles.aiShiftNewsMeta}>Business Signal</span>
-                      </div>
-                      <h4>Companies are under pressure to integrate AI into execution, cost control and output quality.</h4>
-                      <p>
-                        Learning how to work with AI is shifting from optional advantage to practical necessity.
-                      </p>
-                    </article>
-
-                  </div>
-                </div>
-
-              </div>
-
-              <div className={styles.aiShiftWorkflowVisual}>
-                <img
-                  src="/funnels/claude/ai-shift/ai_powered_professional_workflows.png"
-                  alt="AI powered professional workflows"
-                  loading="lazy"
-                />
-              </div>
-
-
-              <div className={styles.aiShiftBottomLine}>
-                Jobs are moving toward AI-enabled professionals.
-                <span> Become AI-enabled before the shift leaves you behind.</span>
+                <a href={registerHref}>
+                  Reserve My Free Seat
+                </a>
               </div>
 
             </div>
 
           </div>
         </section>
-
-        <section className={styles.section}>
-          <div className={styles.container}>
-            <div className={styles.head}><span className={styles.eyebrow}>WHAT YOU GET</span><h2>A complete practical starting kit for Claude AI.</h2></div>
-            <div className={styles.benefitGrid}>{benefits.map(([tag, title, text]) => <article key={title}><b>{tag}</b><strong>{title}</strong><p>{text}</p></article>)}</div>
-          </div>
-        </section>
-
-        <section className={`${styles.section} ${styles.soft}`}>
-          <div className={styles.container}>
-            <div className={styles.head}><span className={styles.eyebrow}>USE CLAUDE TO</span><h2>Connect Claude to the work you already do.</h2></div>
-            <div className={styles.useGrid}>{useCases.map(([tag, text]) => <article key={tag}><b>{tag}</b><span>{text}</span></article>)}</div>
-            <div className={styles.tools}><span>Email</span><span>Docs</span><span>Sheets</span><span>Slides</span><span>Notion</span><span>Research</span><span>Automation</span><span>Workspace</span></div>
-          </div>
-        </section>
-
-                  <section className={styles.section}>
-            <div className={styles.container}>
 
               {/* CLAUDE V13.3 WORKFLOW PREMIUM START */}
               <div className={styles.workflowPremiumWrap}>
