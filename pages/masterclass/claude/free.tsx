@@ -18,7 +18,22 @@ const benefits = [
   ["02", "Prompt + context framework", "A reusable way to structure requests so outputs become more useful and reviewable."],
   ["03", "Real workflow demos", "See long-document, research, content and analysis examples built step by step."],
   ["04", "Masterclass workbook", "Use the session as a working reference instead of scattered notes."],
+  ["05", "Deep-work checklist", "A practical checklist for deliberate professional use of Claude."],
   ["Q&A", "Live question time", "Bring your use case and understand how to adapt the workflow."],
+  ["WA", "WhatsApp joining flow", "Continue through SikhaDenge's existing registration and joining workflow."],
+] as const;
+
+const useCases = [
+  ["Research", "Research & summarize long sources"],
+  ["Write", "Draft emails, reports & proposals"],
+  ["Analyze", "Extract insights from complex information"],
+  ["Plan", "Create project plans & roadmaps"],
+  ["Docs", "Review documents & briefs"],
+  ["Ideas", "Brainstorm and structure ideas"],
+  ["Context", "Build reusable project context"],
+  ["Present", "Structure presentations & narratives"],
+  ["SOP", "Create SOPs & training documents"],
+  ["Decide", "Compare options and make clearer decisions"],
 ] as const;
 
 const audience = [
@@ -224,21 +239,150 @@ function ClaudeFreeMasterclassPage() {
           </div>
         </section>
 
-        <section id="agenda" className={`${styles.section} ${styles.white}`}>
-          <div className={styles.container}>
-            <div className={styles.head}>
-              <span className={styles.eyebrow}>LIVE MASTERCLASS ROADMAP</span>
-              <h2>Exactly what you’ll learn in the live session.</h2>
-              <p>A focused path from Claude fundamentals to practical professional workflows.</p>
+        <section className={styles.batchAdvantage}>
+          <div className={`${styles.container} ${styles.batchAdvantageInner}`}>
+            <div className={styles.batchAdvantageIntro}>
+              <div className={styles.batchAdvantageBadge}>
+                <span className={styles.batchSpark} aria-hidden="true">✦</span>
+                <span>CURRENT BATCH ADVANTAGE</span>
+              </div>
+
+              <h2>
+                Start learning Claude with a simple,
+                practical <em>live session.</em>
+              </h2>
+
+              <p className={styles.batchAdvantageLead}>
+                Live practical learning for research, writing, analysis and reusable workflows —
+                explained step by step in easy Hinglish and designed for beginners.
+              </p>
+
+              <div className={styles.batchUrgency}>
+                <span className={styles.batchUrgencyIcon} aria-hidden="true">◷</span>
+                <span>Registration open for the current live batch</span>
+                <i>•</i>
+                <span>Next live batch: <strong>8:00 PM IST</strong></span>
+              </div>
+
+              <div className={styles.batchActions}>
+                <a href={registerHref} className={styles.batchPrimaryCta}>
+                  <span className={styles.batchCtaIcon} aria-hidden="true">◫</span>
+                  <strong>Reserve My Free Seat</strong>
+                  <span className={styles.batchArrow} aria-hidden="true">→</span>
+                </a>
+
+                <a href="#agenda" className={styles.batchSecondaryCta}>
+                  <span className={styles.batchCtaIcon} aria-hidden="true">▤</span>
+                  <strong>See Workshop Agenda</strong>
+                  <span className={styles.batchSecondaryArrow} aria-hidden="true">→</span>
+                </a>
+              </div>
             </div>
-            <div className={styles.agendaGrid}>
-              {agenda.map(([n, title, text]) => (
-                <article key={n}>
-                  <b>{n}</b>
-                  <strong>{title}</strong>
-                  <p>{text}</p>
+
+            <div className={styles.batchFeatureGrid}>
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">✓</div>
+                <strong>PRACTICAL</strong>
+                <p>Real workflows</p>
+                <span className={styles.batchFeatureAccent} />
+              </article>
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">◉</div>
+                <strong>LIVE</strong>
+                <p>Practical session</p>
+                <span className={styles.batchFeatureAccent} />
+              </article>
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">•••</div>
+                <strong>HINGLISH</strong>
+                <p>Easy to follow</p>
+                <span className={styles.batchFeatureAccent} />
+              </article>
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">&lt;/&gt;</div>
+                <strong>NO CODE</strong>
+                <p>Beginner friendly</p>
+                <span className={styles.batchFeatureAccent} />
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section} id="agenda">
+          <div className={styles.container}>
+            <div className={styles.roadmapHeader}>
+              <span className={styles.eyebrow}>LIVE MASTERCLASS ROADMAP</span>
+              <h2>
+                From first prompt to <span>professional Claude workflow.</span>
+              </h2>
+              <p>
+                A practical AI journey where you learn research, writing, analysis and reusable
+                workflows step by step.
+              </p>
+            </div>
+
+            <div className={styles.aiRoadmap}>
+              {agenda.map(([number, title, text]) => (
+                <article key={number} className={styles.aiRoadmapCard}>
+                  <div className={styles.aiStep}>
+                    <span>{number}</span>
+                    <i />
+                  </div>
+                  <div className={styles.aiCardContent}>
+                    <small>MODULE {number}</small>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                  <div className={styles.aiGlow} />
                 </article>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={`${styles.section} ${styles.soft} ${styles.freeExperience}`}>
+          <div className={styles.container}>
+            <div className={styles.freeExperiencePanel}>
+              <div className={styles.freeExperienceIntro}>
+                <span className={styles.eyebrow}>WHY START HERE?</span>
+                <h2>
+                  Your first step into <span>practical AI mastery.</span>
+                </h2>
+                <p>
+                  This free Claude AI Masterclass gives you a clear workflow before you invest
+                  deeper into AI learning.
+                </p>
+                <div className={styles.trustChips}>
+                  <span>✓ Live Training</span>
+                  <span>✓ No Coding</span>
+                  <span>✓ Beginner Friendly</span>
+                  <span>✓ Practical Use Cases</span>
+                </div>
+              </div>
+
+              <div className={styles.freeJourney}>
+                <article>
+                  <b>01</b>
+                  <div>
+                    <h3>Discover The Workflow</h3>
+                    <p>Understand how professionals use Claude for research, writing and analysis.</p>
+                  </div>
+                </article>
+                <article>
+                  <b>02</b>
+                  <div>
+                    <h3>See Real Examples</h3>
+                    <p>Watch practical demonstrations connected with daily work.</p>
+                  </div>
+                </article>
+                <article>
+                  <b>03</b>
+                  <div>
+                    <h3>Build Your Next Step</h3>
+                    <p>Decide your AI learning path with clarity.</p>
+                  </div>
+                </article>
+              </div>
             </div>
           </div>
         </section>
@@ -260,17 +404,11 @@ function ClaudeFreeMasterclassPage() {
               <div className={styles.aiShiftCleanGrid}>
                 <figure className={styles.aiShiftCleanCard}>
                   <picture>
-                    <source
-                      media="(max-width: 767px)"
-                      srcSet="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png"
-                    />
-                    <source
-                      media="(max-width: 1024px)"
-                      srcSet="/funnels/claude/ai-shift/ai_powered_professional_workflows.png"
-                    />
+                    <source media="(max-width:767px)" srcSet="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png" />
+                    <source media="(max-width:1024px)" srcSet="/funnels/claude/ai-shift/ai_powered_professional_workflows.png" />
                     <img
                       src="/funnels/claude/ai-shift/the_ai_shift_professionals_at_work.png"
-                      alt="AI powered professional workflow transformation"
+                      alt="AI powered professional workflows"
                       loading="lazy"
                       decoding="async"
                     />
@@ -292,15 +430,122 @@ function ClaudeFreeMasterclassPage() {
           <div className={styles.container}>
             <div className={styles.head}>
               <span className={styles.eyebrow}>WHAT YOU GET</span>
-              <h2>A practical starting kit for Claude AI.</h2>
+              <h2>A complete practical starting kit for Claude AI.</h2>
             </div>
             <div className={styles.benefitGrid}>
               {benefits.map(([tag, title, text]) => (
                 <article key={title}>
-                  <b>{tag}</b><strong>{title}</strong><p>{text}</p>
+                  <b>{tag}</b>
+                  <strong>{title}</strong>
+                  <p>{text}</p>
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className={`${styles.section} ${styles.soft}`}>
+          <div className={styles.container}>
+            <div className={styles.head}>
+              <span className={styles.eyebrow}>USE CLAUDE TO</span>
+              <h2>Connect Claude to the work you already do.</h2>
+            </div>
+            <div className={styles.useGrid}>
+              {useCases.map(([tag, text]) => (
+                <article key={tag}><b>{tag}</b><span>{text}</span></article>
+              ))}
+            </div>
+            <div className={styles.tools}>
+              <span>Email</span><span>Docs</span><span>Sheets</span><span>Slides</span>
+              <span>Notion</span><span>Research</span><span>Automation</span><span>Workspace</span>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.container}>
+            {/* CLAUDE V13.3 WORKFLOW PREMIUM START */}
+            <div className={styles.workflowPremiumWrap}>
+              <div className={styles.workflowPremiumHead}>
+                <span className={styles.workflowPremiumEyebrow}>WHY CLAUDE FOR PROFESSIONAL WORK?</span>
+                <h2>
+                  Move from quick answers to
+                  <br />
+                  structured, reviewable work.
+                </h2>
+                <p>
+                  Claude becomes more useful when you give it context, define the output and use
+                  it inside a repeatable workflow.
+                </p>
+              </div>
+
+              <div className={styles.workflowPremiumStack}>
+                <article className={styles.workflowPremiumCard}>
+                  <div className={styles.workflowPremiumCopy}>
+                    <span className={styles.workflowPremiumStep}>01</span>
+                    <h3>Work through long information without losing the thread</h3>
+                    <p>
+                      Organize PDFs, notes and source material into summaries, questions,
+                      evidence and action points you can carefully review.
+                    </p>
+                  </div>
+                  <div className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualDocs}`} aria-hidden="true">
+                    <div className={styles.workflowPremiumScreen}>
+                      <div className={styles.workflowPremiumScreenTop}>
+                        <span>Research brief</span><span>3 sources</span>
+                      </div>
+                      <div className={styles.workflowPremiumDocGrid}>
+                        <div className={styles.workflowPremiumDocCard}><b>PDF</b><span>Market research</span><small>42 pages</small></div>
+                        <div className={styles.workflowPremiumDocCard}><b>DOC</b><span>Customer notes</span><small>12 pages</small></div>
+                        <div className={styles.workflowPremiumDocCard}><b>WEB</b><span>Industry signals</span><small>7 sources</small></div>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article className={`${styles.workflowPremiumCard} ${styles.workflowPremiumCardReverse}`}>
+                  <div className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualChart}`} aria-hidden="true">
+                    <div className={styles.workflowPremiumScreen}>
+                      <div className={styles.workflowPremiumScreenTop}>
+                        <span>Decision analysis</span><span>Ready</span>
+                      </div>
+                      <div className={styles.workflowPremiumBars}><i /><i /><i /><i /><i /><i /></div>
+                    </div>
+                  </div>
+                  <div className={styles.workflowPremiumCopy}>
+                    <span className={styles.workflowPremiumStep}>02</span>
+                    <h3>Turn analysis into clearer decisions</h3>
+                    <p>
+                      Compare options, identify patterns, surface risks and transform unstructured
+                      information into a decision-ready working brief.
+                    </p>
+                  </div>
+                </article>
+
+                <article className={styles.workflowPremiumCard}>
+                  <div className={styles.workflowPremiumCopy}>
+                    <span className={styles.workflowPremiumStep}>03</span>
+                    <h3>Build reusable systems instead of restarting every chat</h3>
+                    <p>
+                      Create repeatable project context and working structures so recurring tasks
+                      become faster and more consistent over time.
+                    </p>
+                  </div>
+                  <div className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualFlow}`} aria-hidden="true">
+                    <div className={styles.workflowPremiumScreen}>
+                      <div className={styles.workflowPremiumFlow}>
+                        <div className={styles.workflowPremiumFlowNode}>Upload context</div>
+                        <div className={styles.workflowPremiumFlowArrow}>→</div>
+                        <div className={styles.workflowPremiumFlowNode}>Synthesize</div>
+                        <div className={styles.workflowPremiumFlowArrow}>→</div>
+                        <div className={styles.workflowPremiumFlowNode}>Ship output</div>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            {/* CLAUDE V13.3 WORKFLOW PREMIUM END */}
           </div>
         </section>
 
@@ -318,11 +563,34 @@ function ClaudeFreeMasterclassPage() {
           </div>
         </section>
 
+        <section className={styles.section}>
+          <div className={styles.container}>
+            <div className={styles.host}>
+              <div className={styles.hostImage} role="img" aria-label="SikhaDenge live learning environment" />
+              <div className={styles.hostCopy}>
+                <span className={styles.eyebrow}>SIKHADENGE LIVE LEARNING</span>
+                <h2>Practical teaching. Clear workflows. Real digital work.</h2>
+                <p>
+                  The session is designed around guided demonstrations, structured explanations
+                  and practical examples so learners can understand how Claude fits into everyday
+                  professional work.
+                </p>
+                <div className={styles.hostList}>
+                  <span>Live guided learning</span>
+                  <span>Beginner-friendly Hinglish</span>
+                  <span>Practical workflow demos</span>
+                  <span>Focused Q&A</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className={styles.ctaBand}>
           <div className={`${styles.container} ${styles.ctaGrid}`}>
             <div>
               <h2>Learn. Apply. Work smarter.</h2>
-              <p>Reserve your free seat and continue through SikhaDenge's live registration flow.</p>
+              <p>Reserve your free seat and continue through SikhaDenge's existing live registration flow.</p>
             </div>
             <Cta>Register Now for Free</Cta>
           </div>
@@ -336,10 +604,11 @@ function ClaudeFreeMasterclassPage() {
             </div>
             <div className={styles.faq}>
               <details><summary>Is this Claude masterclass really free?</summary><p>Yes. The current entry is free. Register through the SikhaDenge registration page to receive the joining flow.</p></details>
-              <details><summary>Do I need coding experience?</summary><p>No. The session is designed for beginners and working professionals.</p></details>
-              <details><summary>Which language is used?</summary><p>The session is delivered in easy Hinglish.</p></details>
-              <details><summary>Do I need a paid Claude subscription?</summary><p>No paid plan is required to understand the core workflows.</p></details>
-              <details><summary>Where will I get the joining details?</summary><p>Complete the SikhaDenge registration flow with the WhatsApp number you actively use.</p></details>
+              <details><summary>Do I need coding experience?</summary><p>No. The session is designed for beginners and working professionals. Basic comfort with a browser and online tools is enough.</p></details>
+              <details><summary>Which language is used?</summary><p>The session is delivered in easy Hinglish so practical concepts stay clear and accessible.</p></details>
+              <details><summary>Do I need a paid Claude subscription?</summary><p>No paid plan is required to understand the core workflows. Some advanced capabilities may vary by product plan.</p></details>
+              <details><summary>Where will I get the joining details?</summary><p>Complete the SikhaDenge registration flow with the WhatsApp number you actively use. Joining updates are shared through the official flow.</p></details>
+              <details><summary>Is SikhaDenge affiliated with Anthropic?</summary><p>No. SikhaDenge is an independent education provider. Claude is a product of Anthropic.</p></details>
             </div>
           </div>
         </section>
@@ -349,7 +618,7 @@ function ClaudeFreeMasterclassPage() {
             <div>
               <span className={styles.eyebrow}>NEXT LIVE BATCH</span>
               <h2>Your first Claude workflow starts with one live session.</h2>
-              <p>Reserve your free seat and continue to the SikhaDenge registration page.</p>
+              <p>Reserve your free seat and continue to the existing SikhaDenge registration page.</p>
             </div>
             <Cta>Yes, Reserve My Free Seat</Cta>
           </div>
