@@ -4,6 +4,7 @@ import { Bricolage_Grotesque } from "next/font/google";
 import dynamic from "next/dynamic";
 
 import JsonLd from "./_components/JsonLd";
+import HideSiteChromeOnMasterclass from "./components/HideSiteChromeOnMasterclass";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { ConsentManager } from "@/components/consent/ConsentManager";
 import { GoogleConsentDefaults } from "@/components/consent/GoogleConsentDefaults";
@@ -117,10 +118,10 @@ export default function RootLayout({
         <ConsentProvider>
           <ConsentManager />
         <JsonLd />
-        <Header />
+        <HideSiteChromeOnMasterclass><Header /></HideSiteChromeOnMasterclass>
         <div className="sd-header-spacer" aria-hidden="true" />
         {children}
-        <Footer />
+        <HideSiteChromeOnMasterclass><Footer /></HideSiteChromeOnMasterclass>
         </ConsentProvider>
       </body>
     </html>

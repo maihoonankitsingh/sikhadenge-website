@@ -1,6 +1,14 @@
 import Head from "next/head";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import styles from "../../../styles/claude-masterclass-live.module.css";
+
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 const registerHref = "/gen-ai-masterclass/register-one-step";
 
@@ -80,64 +88,400 @@ function ClaudeFreeMasterclassPage() {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      <main className={styles.page}>
-        <section className={styles.hero}>
-          <div className={`${styles.container} ${styles.heroGrid}`}>
-            <div>
-              <span className={styles.livePill}><i /> Live Claude AI Masterclass</span>
-              <h1>Build deeper work with <em>Claude AI.</em></h1>
-              <p className={styles.lead}>Learn practical Claude workflows for research, long documents, professional writing, analysis and reusable project context — live, structured and beginner friendly.</p>
-              <div className={styles.eventGrid}>
-                <div><span>DATE</span><strong>Next Live Batch</strong></div>
-                <div><span>TIME</span><strong>8:00 PM IST</strong></div>
-                <div><span>FORMAT</span><strong>Live Online</strong></div>
-              </div>
-              <p className={styles.note}>Easy Hinglish · No coding required · Practical live demonstrations</p>
-              <div className={styles.heroActions}>
-                <Cta>Reserve My Free Seat</Cta>
-                <a className={styles.secondary} href="#agenda">See Workshop Agenda</a>
-              </div>
-              <div className={styles.price}><span>Participation</span><strong>FREE</strong><small>Current free-entry cohort</small></div>
+      <main className={`${styles.page} ${inter.variable}`}>
+<section className={styles.hero}>
+          <div className={styles.heroBurst} aria-hidden="true">
+            <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
+          </div>
+
+          <div className={`${styles.container} ${styles.heroCenter}`}>
+            <div className={styles.heroTopBadge}>NO CODING EXPERIENCE NEEDED</div>
+
+            <div className={styles.heroBrand}>
+              <img
+                src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
+                alt="SikhaDenge"
+                className={styles.heroBrandLogo}
+              />
             </div>
-            <ClaudeVisual />
+
+            <h1 className={styles.heroHeadline}>
+              Master the <mark>Claude workflow</mark> for sharper research,
+              better writing &amp; faster decisions.
+            </h1>
+
+            <p className={styles.heroSub}>
+              Learn a repeatable system to turn long documents, research and ideas into
+              clear professional output — live, step by step, in easy Hinglish.
+            </p>
+
+            <div className={styles.heroProofRow}>
+
+              <div className={styles.proofCard}>
+                <span className={styles.proofIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M8 11a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 8 11Z" />
+                    <path d="M16.2 10a2.6 2.6 0 1 0 0-5.2" />
+                    <path d="M2.8 19.4c.4-3.5 2.3-5.5 5.2-5.5s4.8 2 5.2 5.5" />
+                    <path d="M14.2 14.2c3.7-.5 6 1.3 6.5 4.8" />
+                  </svg>
+                </span>
+
+                <div className={styles.proofText}>
+                  <small>LEARNER TRUST</small>
+                  <strong>150,000+ Students</strong>
+                </div>
+              </div>
+
+              <div className={styles.proofCard}>
+                <span className={styles.proofIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3l2.65 5.36 5.92.86-4.28 4.17 1.01 5.89L12 16.49l-5.3 2.79 1.01-5.89-4.28-4.17 5.92-.86L12 3Z" />
+                  </svg>
+                </span>
+
+                <div className={styles.proofText}>
+                  <small>LEARNER RATING</small>
+                  <strong>4.9/5 Rating</strong>
+                </div>
+              </div>
+
+              <div className={styles.proofCard}>
+                <span className={styles.proofIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 11.5a7.6 7.6 0 0 1-11.3 6.65L4 19.4l1.35-4.45A7.6 7.6 0 1 1 20 11.5Z" />
+                    <path d="M9.2 8.6c.2 2.8 2.2 4.9 5.2 5.6" />
+                  </svg>
+                </span>
+
+                <div className={styles.proofText}>
+                  <small>COMMUNITY</small>
+                  <strong>5Lac+ WhatsApp</strong>
+                </div>
+              </div>
+
+            </div>
+
+            <div className={styles.heroCtas}>
+              <a className={styles.heroPrimary} href={registerHref}>
+                Reserve My Free Seat <b>→</b>
+              </a>
+              <a className={styles.heroSecondary} href="#agenda">
+                View Live Agenda
+              </a>
+            </div>
+
+            <div className={styles.heroBatchLine}>
+              <span className={styles.heroBatchDot} />
+              <strong>Next live batch:</strong>
+              <span>8:00 PM IST · Live Online</span>
+            </div>
+
+            <p className={styles.mobileUrgency}>
+              Limited seats available for the next live workshop
+            </p>
+
+            <div className={styles.heroSeatVisual} aria-hidden="true">
+              {Array.from({ length: 11 }, (_, index) => (
+                <span key={index} className={index < 8 ? styles.seatFilled : styles.seatOpen}>
+                  <i />
+                </span>
+              ))}
+            </div>
+
+            <div className={styles.mobileConversion}>
+
+              <div className={styles.mobileOfferValue}>
+                <small>CURRENT LIVE BATCH</small>
+                <span>Today you can join for</span>
+                <strong>FREE</strong>
+              </div>
+
+              <div className={styles.mobileSchedule}>
+
+                <div>
+                  <span className={styles.mobileScheduleIcon} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <rect x="3.5" y="5.5" width="17" height="15" rx="3" />
+                      <path d="M7 3.5v4M17 3.5v4M3.5 10h17" />
+                    </svg>
+                  </span>
+
+                  <span>
+                    <small>DATE</small>
+                    <strong>Next Live Batch</strong>
+                  </span>
+                </div>
+
+                <div>
+                  <span className={styles.mobileScheduleIcon} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="8.5" />
+                      <path d="M12 7.5V12l3 2" />
+                    </svg>
+                  </span>
+
+                  <span>
+                    <small>TIME</small>
+                    <strong>8:00 PM IST</strong>
+                  </span>
+                </div>
+
+              </div>
+
+              <a
+                className={styles.mobileRegisterButton}
+                href={registerHref}
+              >
+                Reserve My Free Seat
+                <span>→</span>
+              </a>
+
+              <div className={styles.mobileTrustLine}>
+                Live Online
+                <i />
+                Easy Hinglish
+                <i />
+                No Coding Required
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className={styles.heroOfferBar}>
+            <div className={`${styles.container} ${styles.heroOfferInner}`}>
+              <div className={styles.heroOfferCopy}>
+                <small>FREE LIVE CLAUDE AI MASTERCLASS</small>
+                <div><strong>FREE</strong><span>Next batch · 8:00 PM IST</span></div>
+              </div>
+
+              <div className={styles.heroOfferMeta}>
+                <span>Easy Hinglish</span>
+                <i />
+                <span>No coding required</span>
+              </div>
+
+              <a className={styles.heroOfferButton} href={registerHref}>
+                Reserve My Free Seat <b>→</b>
+              </a>
+            </div>
           </div>
         </section>
 
         <section className={styles.community}>
-          <div className={styles.container}>
-            <p>Join SikhaDenge learners building practical AI skills for real work.</p>
-            <div className={styles.avatars} aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <span key={i}>{String.fromCharCode(65 + (i % 10))}{(i % 7) + 1}</span>)}</div>
-          </div>
-        </section>
+          <div className={`${styles.container} ${styles.realWorkSection}`}>
+            <div className={styles.realWorkPanel}>
 
-        <section className={styles.proof}>
-          <div className={`${styles.container} ${styles.proofGrid}`}>
-            <div className={styles.quote}><i>“</i><p>The goal is not to collect more prompts. It is to learn a deliberate workflow you can reuse on real tasks.</p><small>SikhaDenge learning philosophy</small></div>
-            <div className={styles.metrics}>
-              <div className={styles.metric}><strong>FREE</strong><span>Current entry</span></div>
-              <div className={styles.metric}><strong>LIVE</strong><span>Practical session</span></div>
-              <div className={styles.metric}><strong>HINGLISH</strong><span>Easy to follow</span></div>
-              <div className={styles.metric}><strong>NO CODE</strong><span>Beginner friendly</span></div>
+              <div className={styles.realWorkPicture}>
+                <img
+                  className={styles.realWorkDesktopArt}
+                  src="/funnels/claude/real-work/real-work-desktop-v2.png"
+                  alt="Use Claude for work you already do: Research and Long Docs, Professional Writing, Structured Analysis and Reusable Workflows."
+                  loading="lazy"
+                  decoding="async"
+                />
+
+                <img
+                  className={styles.realWorkTabletArt}
+                  src="/funnels/claude/real-work/real-work-tablet-v2.png"
+                  alt="Use Claude for work you already do: Research and Long Docs, Professional Writing, Structured Analysis and Reusable Workflows."
+                  loading="lazy"
+                  decoding="async"
+                />
+
+                <img
+                  className={styles.realWorkMobileArt}
+                  src="/funnels/claude/real-work/real-work-mobile-v2.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+
+              <div className={styles.realWorkOverlay}>
+                <span className={styles.realWorkEyebrow}>
+                  BUILT FOR REAL WORK
+                </span>
+
+                <h2>
+                  Use Claude for <em>work you already do.</em>
+                </h2>
+
+                <p>
+                  Research, writing, analysis and repeatable workflows —
+                  shown live with a practical, step-by-step approach.
+                </p>
+
+                <div className={styles.realWorkTags} aria-label="Claude workflow examples">
+                  <span>Research &amp; Long Docs</span>
+                  <span>Professional Writing</span>
+                  <span>Structured Analysis</span>
+                  <span>Reusable Workflows</span>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.soft}`} id="why">
-          <div className={styles.container}>
-            <div className={styles.head}><span className={styles.eyebrow}>WHY CLAUDE FOR PROFESSIONAL WORK?</span><h2>Move from quick answers to structured, reviewable work.</h2><p>Claude becomes more useful when you give it context, define the output and use it inside a repeatable workflow.</p></div>
-            <div className={styles.storyStack}>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>01</span><h3>Work through long information without losing the thread</h3><p>Organize PDFs, notes and source material into summaries, questions, evidence and action points you can actually review.</p></div>
-                <div className={styles.mock}><div className={styles.mockTop}><span>Research brief</span><span>3 sources</span></div><div className={styles.docs}><div><small>PDF</small><strong>Market research</strong><span>42 pages</span></div><div><small>DOC</small><strong>Customer notes</strong><span>18 pages</span></div><div><small>WEB</small><strong>Industry signals</strong><span>12 sources</span></div></div></div>
+        <section className={styles.batchAdvantage}>
+          <div className={`${styles.container} ${styles.batchAdvantageInner}`}>
+
+            <div className={styles.batchAdvantageIntro}>
+
+              <div className={styles.batchAdvantageBadge}>
+                <span className={styles.batchSpark} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2.8c.65 4.8 3.45 7.6 8.2 8.2-4.75.65-7.55 3.45-8.2 8.2-.65-4.75-3.45-7.55-8.2-8.2 4.75-.6 7.55-3.4 8.2-8.2Z" />
+                  </svg>
+                </span>
+
+                <span>CURRENT BATCH ADVANTAGE</span>
+              </div>
+
+
+              <h2>
+                Start learning Claude with a simple,
+                practical <em>live session.</em>
+              </h2>
+
+
+              <p className={styles.batchAdvantageLead}>
+                Live practical learning for research, writing,
+                analysis and reusable workflows — explained
+                step by step in easy Hinglish and designed
+                for beginners.
+              </p>
+
+
+
+              <div className={styles.batchUrgency}>
+                <span className={styles.batchUrgencyIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M12 7.4v5.1l3.25 2" />
+                  </svg>
+                </span>
+
+                <span>Registration open for the current live batch</span>
+
+                <i>•</i>
+
+                <span>
+                  Next live batch:
+                  <strong>8:00 PM IST</strong>
+                </span>
+              </div>
+
+
+              <div className={styles.batchActions}>
+
+                <a
+                  href="/gen-ai-masterclass/register-one-step"
+                  className={styles.batchPrimaryCta}
+                >
+                  <span className={styles.batchCtaIcon} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <rect x="4" y="5.5" width="16" height="14" rx="2.5" />
+                      <path d="M8 3.5v4M16 3.5v4M4 9.5h16" />
+                    </svg>
+                  </span>
+
+                  <strong>Reserve My Free Seat</strong>
+
+                  <span className={styles.batchArrow} aria-hidden="true">
+                    →
+                  </span>
+                </a>
+
+
+                <a
+                  href="#agenda"
+                  className={styles.batchSecondaryCta}
+                >
+                  <span className={styles.batchCtaIcon} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M7 3.5h7l4 4V20H7V3.5Z" />
+                      <path d="M14 3.5V8h4M10 12h5M10 15h5" />
+                    </svg>
+                  </span>
+
+                  <strong>See Workshop Agenda</strong>
+
+                  <span className={styles.batchSecondaryArrow} aria-hidden="true">
+                    →
+                  </span>
+                </a>
+
+              </div>
+            </div>
+
+
+            <div className={styles.batchFeatureGrid}>
+
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 18.5V9.8l7-4.3 7 4.3v8.7" />
+                    <path d="M8.2 18.5v-5.2h7.6v5.2" />
+                    <path d="m9.4 9.8 1.7 1.7 3.7-3.7" />
+                  </svg>
+                </div>
+
+                <strong>PRACTICAL</strong>
+                <p>Real workflows</p>
+
+                <span className={styles.batchFeatureAccent} />
               </article>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>02</span><h3>Turn analysis into clearer decisions</h3><p>Compare options, identify patterns, surface risks and transform unstructured information into a decision-ready working brief.</p></div>
-                <div className={styles.mock}><div className={styles.mockTop}><span>Decision analysis</span><span>Ready</span></div><div className={styles.bars}><i /><i /><i /><i /><i /><i /></div></div>
+
+
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="2.6" />
+                    <path d="M7.8 7.8a5.95 5.95 0 0 0 0 8.4M16.2 7.8a5.95 5.95 0 0 1 0 8.4" />
+                    <path d="M4.8 4.8a10.2 10.2 0 0 0 0 14.4M19.2 4.8a10.2 10.2 0 0 1 0 14.4" />
+                  </svg>
+                </div>
+
+                <strong>LIVE</strong>
+                <p>Practical session</p>
+
+                <span className={styles.batchFeatureAccent} />
               </article>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>03</span><h3>Build reusable systems instead of restarting every chat</h3><p>Create repeatable project context and working structures so recurring tasks become faster and more consistent over time.</p></div>
-                <div className={`${styles.mock} ${styles.flow}`}><div><span>01</span><strong>Upload context</strong></div><i>→</i><div><span>02</span><strong>Synthesize</strong></div><i>→</i><div><span>03</span><strong>Ship output</strong></div></div>
+
+
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 5.5h14v10H9l-4 3v-13Z" />
+                    <circle cx="9" cy="10.5" r=".8" />
+                    <circle cx="12" cy="10.5" r=".8" />
+                    <circle cx="15" cy="10.5" r=".8" />
+                  </svg>
+                </div>
+
+                <strong>HINGLISH</strong>
+                <p>Easy to follow</p>
+
+                <span className={styles.batchFeatureAccent} />
               </article>
+
+
+              <article className={styles.batchFeatureCard}>
+                <div className={styles.batchFeatureIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M14 4l-4 16" />
+                  </svg>
+                </div>
+
+                <strong>NO CODE</strong>
+                <p>Beginner friendly</p>
+
+                <span className={styles.batchFeatureAccent} />
+              </article>
+
             </div>
           </div>
         </section>
@@ -175,13 +519,127 @@ function ClaudeFreeMasterclassPage() {
           </div>
         </section>
 
-        <section className={styles.section}>
-          <div className={styles.container}>
-            <div className={styles.head}><span className={styles.eyebrow}>SEE CLAUDE IN ACTION</span><h2>From source material to useful professional output.</h2></div>
-            <div className={styles.gallery}>
-              {[["Research & summarize", "Turn long information into structured, reviewable insight."], ["Analyze & decide", "Compare information, surface patterns and organize next actions."], ["Create professional output", "Build polished reports, briefs, emails and longer-form documents."]].map(([title, text]) => <article key={title}><div className={styles.galleryScreen}><small>{title}</small><b /><b /><b /></div><h3>{title}</h3><p>{text}</p></article>)}
-            </div>
-          </div>
+                  <section className={styles.section}>
+            <div className={styles.container}>
+              {/* CLAUDE V13.3 WORKFLOW PREMIUM START */}
+              <div className={styles.workflowPremiumWrap}>
+                <div className={styles.workflowPremiumHead}>
+                  <span className={styles.workflowPremiumEyebrow}>
+                    WHY CLAUDE FOR PROFESSIONAL WORK?
+                  </span>
+
+                  <h2>
+                    Move from quick answers to
+                    <br />
+                    structured, reviewable work.
+                  </h2>
+
+                  <p>
+                    Claude becomes more useful when you give it context, define the output
+                    and use it inside a repeatable workflow.
+                  </p>
+                </div>
+
+                <div className={styles.workflowPremiumStack}>
+                  <article className={styles.workflowPremiumCard}>
+                    <div className={styles.workflowPremiumCopy}>
+                      <span className={styles.workflowPremiumStep}>01</span>
+                      <h3>Work through long information without losing the thread</h3>
+                      <p>
+                        Organize PDFs, notes and source material into summaries, questions,
+                        evidence and action points you can carefully review.
+                      </p>
+                    </div>
+
+                    <div
+                      className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualDocs}`}
+                      aria-hidden="true"
+                    >
+                      <div className={styles.workflowPremiumScreen}>
+                        <div className={styles.workflowPremiumScreenTop}>
+                          <span>Research brief</span>
+                          <span>3 sources</span>
+                        </div>
+
+                        <div className={styles.workflowPremiumDocGrid}>
+                          <div className={styles.workflowPremiumDocCard}>
+                            <b>PDF</b>
+                            <span>Market research</span>
+                            <small>42 pages</small>
+                          </div>
+
+                          <div className={styles.workflowPremiumDocCard}>
+                            <b>DOC</b>
+                            <span>Customer notes</span>
+                            <small>12 pages</small>
+                          </div>
+
+                          <div className={styles.workflowPremiumDocCard}>
+                            <b>WEB</b>
+                            <span>Industry signals</span>
+                            <small>7 sources</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article className={`${styles.workflowPremiumCard} ${styles.workflowPremiumCardReverse}`}>
+                    <div
+                      className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualChart}`}
+                      aria-hidden="true"
+                    >
+                      <div className={styles.workflowPremiumScreen}>
+                        <div className={styles.workflowPremiumScreenTop}>
+                          <span>Decision analysis</span>
+                          <span>Ready</span>
+                        </div>
+
+                        <div className={styles.workflowPremiumBars}>
+                          <i /><i /><i /><i /><i /><i />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.workflowPremiumCopy}>
+                      <span className={styles.workflowPremiumStep}>02</span>
+                      <h3>Turn analysis into clearer decisions</h3>
+                      <p>
+                        Compare options, identify patterns, surface risks and transform
+                        unstructured information into a decision-ready working brief.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article className={styles.workflowPremiumCard}>
+                    <div className={styles.workflowPremiumCopy}>
+                      <span className={styles.workflowPremiumStep}>03</span>
+                      <h3>Build reusable systems instead of restarting every chat</h3>
+                      <p>
+                        Create repeatable project context and working structures so recurring
+                        tasks become faster and more consistent over time.
+                      </p>
+                    </div>
+
+                    <div
+                      className={`${styles.workflowPremiumVisual} ${styles.workflowPremiumVisualFlow}`}
+                      aria-hidden="true"
+                    >
+                      <div className={styles.workflowPremiumScreen}>
+                        <div className={styles.workflowPremiumFlow}>
+                          <div className={styles.workflowPremiumFlowNode}>Upload context</div>
+                          <div className={styles.workflowPremiumFlowArrow}>→</div>
+                          <div className={styles.workflowPremiumFlowNode}>Synthesize</div>
+                          <div className={styles.workflowPremiumFlowArrow}>→</div>
+                          <div className={styles.workflowPremiumFlowNode}>Ship output</div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+              {/* CLAUDE V13.3 WORKFLOW PREMIUM END */}
+</div>
         </section>
 
         <section className={`${styles.section} ${styles.soft}`}>

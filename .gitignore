@@ -67,3 +67,5 @@ public/uploads/admission/
 # Local backups and failed build artifacts.
 _safe_backups/
 .next.phase2b-failed-*/
+_safe_backups/
+_safe_backups/

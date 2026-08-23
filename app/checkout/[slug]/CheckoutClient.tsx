@@ -693,8 +693,12 @@ export default function CheckoutClient({ product }: Props) {
         <div className="mx-auto mt-8 max-w-[460px]">
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(2,6,23,0.08)]">
             <div className="bg-[#0B1220] px-6 py-7 text-center text-white">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white text-lg font-black text-[#0B1220] shadow-sm">
-                SG
+              <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 shadow-sm">
+                <img
+                  src="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
+                  alt="Sikhadenge"
+                  className="block h-10 w-auto object-contain"
+                />
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
                 Sikhadenge Workshop Checkout

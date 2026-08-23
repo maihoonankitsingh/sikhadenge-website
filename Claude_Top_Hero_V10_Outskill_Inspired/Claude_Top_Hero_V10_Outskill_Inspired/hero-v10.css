@@ -1,0 +1,52 @@
+/* CLAUDE TOP HERO V10 OUTSKILL-INSPIRED START */
+.hero{position:relative;isolation:isolate;overflow:hidden;padding:0;border-bottom:0;background:radial-gradient(620px 420px at 92% 18%,rgba(221,106,70,.12),transparent 72%),linear-gradient(180deg,#fff 0%,#fff 78%,#fbf7f2 100%)}
+.hero::before{content:"";position:absolute;inset:0;z-index:-3;pointer-events:none;background:radial-gradient(500px 280px at 50% 12%,rgba(248,231,222,.28),transparent 72%),linear-gradient(90deg,transparent,rgba(214,99,66,.025),transparent)}
+.heroCenter{position:relative;z-index:2;display:flex;min-height:720px;flex-direction:column;align-items:center;justify-content:center;padding-top:54px;padding-bottom:62px;text-align:center}
+.heroTopBadge{display:inline-flex;min-height:48px;align-items:center;justify-content:center;margin-bottom:38px;padding:0 28px;border-radius:0 0 18px 18px;background:linear-gradient(135deg,#bb5335,#d96845);box-shadow:0 14px 34px rgba(186,80,51,.16);color:#fff;font-size:12px;font-weight:800;letter-spacing:.16em}
+.heroBrand{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:28px}
+.heroBrand strong{color:#0e0e0e;font-size:54px;font-weight:500;line-height:1;letter-spacing:-.045em}
+.heroBrand span{color:#9a8c83;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.heroHeadline{position:relative;z-index:2;max-width:1120px!important;margin:0!important;color:#111!important;font-size:clamp(42px,3.55vw,60px)!important;font-weight:760!important;line-height:1.08!important;letter-spacing:-.05em!important;text-wrap:balance}
+.heroHeadline mark{display:inline-block;padding:.04em .12em .08em;border-radius:4px;background:#cb633f;color:#fff;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.desktopBreak{display:block}
+.heroSub{max-width:810px;margin:28px auto 0;color:#3f3a36;font-size:19px;font-weight:450;line-height:1.6;letter-spacing:-.018em}
+.heroProofRow{display:flex;flex-wrap:wrap;justify-content:center;gap:28px;margin-top:30px}
+.heroProofRow>div{display:flex;min-width:180px;min-height:58px;align-items:center;justify-content:center;gap:9px;padding:0 18px;border-radius:9px;background:#cb633f;box-shadow:0 12px 30px rgba(181,78,48,.12);color:#fff}
+.heroProofRow span{font-size:10px;font-weight:900;letter-spacing:.10em}
+.heroProofRow strong{font-size:13px;font-weight:720}
+.heroCtas{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:30px}
+.heroPrimary,.heroSecondary{display:inline-flex;min-height:56px;align-items:center;justify-content:center;border-radius:12px;padding:0 24px;text-decoration:none;font-size:14px;font-weight:760;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.heroPrimary{border:1px solid rgba(119,38,18,.10);background:linear-gradient(135deg,#ae452b,#d96845);box-shadow:0 17px 36px rgba(179,72,41,.22);color:#fff}
+.heroPrimary b,.heroOfferButton b{margin-left:10px;font-size:16px}
+.heroPrimary:hover,.heroOfferButton:hover{transform:translateY(-2px);box-shadow:0 22px 44px rgba(179,72,41,.27)}
+.heroSecondary{border:1px solid rgba(71,52,43,.13);background:#fff;color:#302b27;box-shadow:0 10px 24px rgba(63,43,31,.04)}
+.heroSecondary:hover{transform:translateY(-2px);border-color:rgba(71,52,43,.22)}
+.heroBatchLine{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px;color:#71665f;font-size:12px}
+.heroBatchLine strong{color:#2b2724;font-weight:760}
+.heroBatchDot{width:8px;height:8px;border-radius:50%;background:#d86845;box-shadow:0 0 0 5px rgba(216,104,69,.10)}
+.heroSeatVisual{display:flex;align-items:end;justify-content:center;gap:8px;height:36px;margin-top:12px}
+.heroSeatVisual>span{position:relative;display:block;width:20px;height:24px}
+.heroSeatVisual>span::before{content:"";position:absolute;left:4px;top:0;width:12px;height:10px;border-radius:3px 3px 2px 2px}
+.heroSeatVisual>span::after{content:"";position:absolute;left:2px;bottom:4px;width:16px;height:9px;border-radius:3px 3px 1px 1px}
+.heroSeatVisual>span i::before,.heroSeatVisual>span i::after{content:"";position:absolute;bottom:0;width:2px;height:6px}
+.heroSeatVisual>span i::before{left:5px}.heroSeatVisual>span i::after{right:5px}
+.seatFilled::before,.seatFilled::after,.seatFilled i::before,.seatFilled i::after{background:#1c1a18}
+.seatOpen::before,.seatOpen::after{border:1.5px solid #1c1a18;background:#fff}
+.seatOpen i::before,.seatOpen i::after{background:#1c1a18}
+.heroBurst{position:absolute;z-index:0;right:3.5%;top:170px;width:270px;height:270px;opacity:.22;pointer-events:none}
+.heroBurst i{position:absolute;left:50%;top:50%;width:18px;height:132px;border-radius:999px;background:#df8c72;transform-origin:50% 0%}
+.heroBurst i:nth-child(1){transform:rotate(0deg) translateY(-5px)}.heroBurst i:nth-child(2){transform:rotate(30deg) translateY(-5px)}.heroBurst i:nth-child(3){transform:rotate(60deg) translateY(-5px)}.heroBurst i:nth-child(4){transform:rotate(90deg) translateY(-5px)}.heroBurst i:nth-child(5){transform:rotate(120deg) translateY(-5px)}.heroBurst i:nth-child(6){transform:rotate(150deg) translateY(-5px)}.heroBurst i:nth-child(7){transform:rotate(180deg) translateY(-5px)}.heroBurst i:nth-child(8){transform:rotate(210deg) translateY(-5px)}.heroBurst i:nth-child(9){transform:rotate(240deg) translateY(-5px)}.heroBurst i:nth-child(10){transform:rotate(270deg) translateY(-5px)}.heroBurst i:nth-child(11){transform:rotate(300deg) translateY(-5px)}.heroBurst i:nth-child(12){transform:rotate(330deg) translateY(-5px)}
+.heroOfferBar{position:relative;z-index:4;border-top:1px solid rgba(76,56,45,.08);border-bottom:1px solid rgba(76,56,45,.08);background:#eee9df;box-shadow:0 -10px 30px rgba(68,48,36,.03)}
+.heroOfferInner{display:grid;grid-template-columns:1fr auto auto;gap:34px;align-items:center;min-height:108px}
+.heroOfferCopy small{display:block;margin-bottom:5px;color:#8e8178;font-size:8px;font-weight:800;letter-spacing:.14em}
+.heroOfferCopy div{display:flex;align-items:baseline;gap:9px}
+.heroOfferCopy strong{color:#1d1a18;font-size:30px;font-weight:600;letter-spacing:-.04em}
+.heroOfferCopy span{color:#7b6e66;font-size:12px}
+.heroOfferMeta{display:flex;align-items:center;gap:11px;color:#6e625a;font-size:11px}
+.heroOfferMeta i{width:4px;height:4px;border-radius:50%;background:#c36545}
+.heroOfferButton{display:inline-flex;min-height:52px;align-items:center;justify-content:center;padding:0 22px;border-radius:10px;background:linear-gradient(135deg,#c05a3a,#dc7653);box-shadow:0 14px 30px rgba(177,76,47,.17);color:#fff;font-size:13px;font-weight:760;text-decoration:none;transition:transform .18s ease,box-shadow .18s ease}
+@media(max-width:1100px){.heroBurst{right:-70px;top:185px;transform:scale(.82)}.heroHeadline{max-width:940px!important}}
+@media(max-width:820px){.heroCenter{min-height:auto;padding-top:38px;padding-bottom:52px}.heroTopBadge{min-height:42px;margin-bottom:30px;padding:0 20px;border-radius:0 0 14px 14px;font-size:10px}.heroBrand strong{font-size:46px}.heroHeadline{max-width:720px!important;font-size:clamp(38px,7vw,52px)!important}.desktopBreak{display:none}.heroSub{max-width:650px;font-size:17px}.heroProofRow{gap:10px}.heroProofRow>div{min-width:160px}.heroBurst{right:-110px;top:200px;opacity:.12;transform:scale(.72)}.heroOfferInner{grid-template-columns:1fr auto;gap:20px;padding-block:18px}.heroOfferMeta{display:none}}
+@media(max-width:640px){.heroCenter{width:min(100% - 26px,1160px)!important;padding-top:22px;padding-bottom:42px}.heroTopBadge{min-height:38px;margin-bottom:24px;padding:0 15px;font-size:8px;letter-spacing:.12em}.heroBrand{margin-bottom:22px}.heroBrand strong{font-size:38px}.heroBrand span{font-size:8px}.heroHeadline{font-size:clamp(34px,10.7vw,46px)!important;line-height:1.03!important;letter-spacing:-.055em!important}.heroSub{margin-top:20px;font-size:15px;line-height:1.58}.heroProofRow{display:grid;width:100%;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:22px}.heroProofRow>div{min-width:0;min-height:68px;flex-direction:column;gap:4px;padding:8px 5px}.heroProofRow span{font-size:7px}.heroProofRow strong{font-size:9px}.heroCtas{display:grid;width:100%;margin-top:22px}.heroPrimary,.heroSecondary{width:100%;min-height:54px}.heroBatchLine{flex-wrap:wrap;gap:6px;margin-top:19px;font-size:10px}.heroSeatVisual{gap:5px;transform:scale(.9)}.heroBurst{display:none}.heroOfferInner{width:min(100% - 26px,1160px)!important;grid-template-columns:1fr;gap:12px;min-height:auto;padding-block:16px;text-align:center}.heroOfferCopy div{justify-content:center}.heroOfferCopy strong{font-size:26px}.heroOfferButton{width:100%}}
+@media(prefers-reduced-motion:reduce){.heroPrimary,.heroSecondary,.heroOfferButton{transition:none!important;transform:none!important}}
+/* CLAUDE TOP HERO V10 OUTSKILL-INSPIRED END */

@@ -1,1 +1,9896 @@
-.page{--accent:#d76343;--accent2:#f39a78;--ink:#171412;--muted:#695f59;--line:#eadfd8;--soft:#fbf6f2;min-height:100vh;background:#fffdfb;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}.page *{box-sizing:border-box}.container{width:min(1160px,calc(100% - 40px));margin:0 auto}.hero{position:relative;padding:76px 0 64px;background:radial-gradient(620px 380px at 88% 12%,rgba(215,99,67,.14),transparent 70%),radial-gradient(520px 300px at 10% 6%,rgba(243,154,120,.08),transparent 72%),linear-gradient(180deg,#fffdfa,#fff8f3);border-bottom:1px solid var(--line)}.heroGrid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:64px;align-items:center}.livePill{display:inline-flex;align-items:center;gap:9px;min-height:34px;padding:7px 12px;border:1px solid rgba(215,99,67,.24);border-radius:999px;background:#fff;color:#a7442d;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.livePill i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(215,99,67,.11)}.hero h1{max-width:760px;margin:20px 0 18px;font-size:clamp(52px,5.4vw,76px);line-height:.98;letter-spacing:-.055em;font-weight:850;text-wrap:balance}.hero h1 em{font-style:normal;color:var(--accent)}.lead{max-width:690px;margin:0;color:#5f554f;font-size:18px;line-height:1.7}.eventGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:26px 0 0}.eventGrid div{padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.86);box-shadow:0 9px 28px rgba(77,49,34,.05)}.eventGrid span{display:block;margin-bottom:5px;color:#a07160;font-size:10px;font-weight:900;letter-spacing:.11em}.eventGrid strong{font-size:14px}.note{margin-top:18px;color:#756a63;font-size:13px;line-height:1.6}.heroActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.primary,.secondary{display:inline-flex;min-height:52px;align-items:center;justify-content:center;border-radius:13px;padding:0 22px;text-decoration:none;font-weight:850;font-size:15px}.primary{background:linear-gradient(135deg,var(--accent),#c24d31);color:#fff;box-shadow:0 16px 36px rgba(199,73,42,.22)}.primary:hover{filter:brightness(.97);transform:translateY(-1px)}.secondary{border:1px solid #d9c8be;color:#352f2b;background:#fff}.price{display:flex;align-items:center;gap:10px;width:max-content;margin-top:18px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.price span,.price small{color:#83766e;font-size:11px}.price strong{color:var(--accent);font-size:16px}.visual{position:relative;min-height:490px;display:grid;place-items:center}.orbit,.orbit2,.orbit3{position:absolute;border-radius:50%;border:1px solid rgba(215,99,67,.18)}.orbit{width:440px;height:440px}.orbit2{width:350px;height:350px}.orbit3{width:270px;height:270px;background:radial-gradient(circle,rgba(243,154,120,.16),transparent 68%)}.window{position:relative;z-index:2;width:min(420px,100%);padding:14px;border:1px solid rgba(132,83,58,.16);border-radius:24px;background:rgba(255,255,255,.92);box-shadow:0 34px 90px rgba(85,54,36,.18);backdrop-filter:blur(10px)}.windowTop{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee4de;font-size:12px;font-weight:850}.dots{display:flex;gap:5px}.dots i{width:7px;height:7px;border-radius:50%;background:#e1d4cd}.prompt{margin:14px;padding:14px 15px;border-radius:12px;background:#f8f2ee;color:#504741;font-size:13px;line-height:1.55}.answer{margin:14px;padding:18px;border:1px solid #eee3dc;border-radius:16px}.answer strong{font-size:12px}.answer b{display:block;height:8px;margin-top:10px;border-radius:99px;background:#efe7e2}.answer b:nth-child(3){width:82%}.answer b:nth-child(4){width:62%}.answerGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:15px}.answerGrid span{padding:9px;border-radius:9px;background:#fff5ef;color:#944b37;text-align:center;font-size:10px;font-weight:800}.chip{position:absolute;z-index:3;display:grid;place-items:center;width:64px;height:64px;border:1px solid rgba(215,99,67,.18);border-radius:18px;background:#fff;color:#ad4d35;font-size:11px;font-weight:900;box-shadow:0 14px 36px rgba(94,56,35,.08)}.chip1{top:56px;left:4px}.chip2{top:86px;right:2px}.chip3{bottom:52px;right:42px}.chip4{bottom:72px;left:24px}.community{padding:34px 0;border-bottom:1px solid var(--line);background:#fff}.community p{text-align:center;margin:0 0 18px;font-size:16px;font-weight:750}.avatars{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.avatars span{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f3ddd2,#f8eee8);border:2px solid #fff;box-shadow:0 3px 12px rgba(70,50,40,.08);font-size:11px;font-weight:850;color:#7a4f42}.proof{padding:44px 0;background:#fbf7f4}.proofGrid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:22px}.quote,.metric{border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:0 14px 38px rgba(74,48,34,.045)}.quote{padding:26px}.quote i{display:block;color:var(--accent);font-family:Georgia,serif;font-size:44px;line-height:.8}.quote p{margin:10px 0;color:#453d38;font-size:17px;line-height:1.65}.quote small{color:#8a7d75}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:22px 16px;text-align:center}.metric strong{display:block;font-size:21px}.metric span{display:block;margin-top:6px;color:#81756e;font-size:11px;line-height:1.4}.section{padding:88px 0}.soft{background:var(--soft)}.head{max-width:780px;margin:0 auto 38px;text-align:center}.eyebrow{display:block;color:#ad5138;font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.head h2{margin:10px 0 14px;font-size:clamp(34px,4vw,54px);line-height:1.04;letter-spacing:-.045em;text-wrap:balance}.head p{margin:0;color:var(--muted);font-size:17px;line-height:1.7}.storyStack{display:grid;gap:14px}.story{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;align-items:center;padding:24px;border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 14px 42px rgba(69,45,33,.05)}.storyNum{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#fff1e9;color:#c2583b;font-weight:900;font-size:12px}.story h3{margin:14px 0 8px;font-size:23px;letter-spacing:-.025em}.story p{margin:0;color:var(--muted);line-height:1.65}.mock{min-height:210px;border:1px solid #e8ddd6;border-radius:18px;background:linear-gradient(180deg,#fff,#fbf5f1);padding:18px;overflow:hidden}.mockTop{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:850}.docs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.docs div{padding:14px 10px;border-radius:12px;background:#fff;border:1px solid #eee3dc}.docs small{display:block;color:var(--accent);font-weight:900}.docs strong{display:block;margin-top:8px;font-size:12px}.docs span{display:block;margin-top:5px;color:#8b7c74;font-size:10px}.bars{height:130px;display:flex;gap:10px;align-items:flex-end;margin-top:16px}.bars i{flex:1;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#efab91,#d76343)}.bars i:nth-child(1){height:35%}.bars i:nth-child(2){height:52%}.bars i:nth-child(3){height:64%}.bars i:nth-child(4){height:86%}.bars i:nth-child(5){height:72%}.bars i:nth-child(6){height:96%}.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;height:170px}.flow div{padding:18px 12px;text-align:center;border:1px solid #eaded7;border-radius:14px;background:#fff}.flow span{display:block;color:#b96850;font-size:10px;font-weight:900}.flow strong{display:block;margin-top:7px;font-size:12px}.flow i{color:#c98570;font-style:normal;font-weight:900}.agendaGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.agendaGrid article{padding:22px 18px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(74,48,34,.04)}.agendaGrid b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff0e8;color:#bc5539;font-size:11px}.agendaGrid strong{display:block;margin-top:14px;font-size:15px;line-height:1.35}.agendaGrid p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.reasonGrid,.benefitGrid,.useGrid,.audienceGrid{display:grid;gap:12px}.reasonGrid{grid-template-columns:repeat(3,1fr)}.reasonGrid article,.benefitGrid article,.useGrid article,.audienceGrid article{border:1px solid var(--line);border-radius:18px;background:#fff}.reasonGrid article{padding:24px;text-align:center}.reasonGrid b{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 12px;border-radius:50%;background:#fff0e7;color:#bf583c}.reasonGrid strong{display:block;font-size:16px}.reasonGrid p{color:var(--muted);font-size:13px;line-height:1.6}.benefitGrid{grid-template-columns:repeat(4,1fr)}.benefitGrid article{padding:18px}.benefitGrid b{display:block;color:var(--accent);font-size:11px}.benefitGrid strong{display:block;margin-top:9px;font-size:15px}.benefitGrid p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.useGrid{grid-template-columns:repeat(5,1fr)}.useGrid article{padding:16px;text-align:center}.useGrid b{display:block;color:#b85b42;font-size:11px}.useGrid span{display:block;margin-top:7px;font-size:12px;font-weight:750;line-height:1.45}.tools{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:24px}.tools span{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;font-weight:750}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.gallery article{padding:14px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:0 14px 38px rgba(74,48,34,.05)}.gallery article:nth-child(2){transform:translateY(-10px);border-color:rgba(215,99,67,.35)}.galleryScreen{min-height:220px;padding:16px;border-radius:15px;background:linear-gradient(145deg,#1f1a18,#33241f);color:#fff;overflow:hidden}.galleryScreen small{font-size:10px;color:#e8c4b5}.galleryScreen b{display:block;height:9px;margin-top:12px;border-radius:99px;background:rgba(255,255,255,.13)}.galleryScreen b:nth-of-type(2){width:80%}.galleryScreen b:nth-of-type(3){width:61%}.gallery h3{margin:15px 4px 6px;font-size:17px}.gallery p{margin:0 4px 5px;color:var(--muted);font-size:12px;line-height:1.55}.audienceGrid{grid-template-columns:repeat(4,1fr)}.audienceGrid article{padding:18px;text-align:center}.audienceGrid strong{font-size:14px}.audienceGrid p{margin:7px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.host{display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:0 20px 60px rgba(78,49,34,.08)}.hostImage{min-height:390px;background:url('/images/about/about-mission-class.webp') center/cover no-repeat}.hostCopy{padding:42px}.hostCopy h2{margin:10px 0 12px;font-size:38px;letter-spacing:-.04em}.hostCopy p{color:var(--muted);line-height:1.7}.hostList{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}.hostList span{padding:12px;border-radius:12px;background:#fbf4ef;color:#684f45;font-size:12px;font-weight:700}.ctaBand{padding:38px 0;background:linear-gradient(120deg,#b84327,#e97653);color:#fff}.ctaGrid{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}.ctaGrid h2{margin:0 0 8px;font-size:clamp(32px,4vw,50px);letter-spacing:-.045em}.ctaGrid p{margin:0;color:#ffe8df;line-height:1.65}.ctaGrid .primary{background:#fff;color:#b8482d;box-shadow:none}.faq{max-width:920px;margin:0 auto;display:grid;gap:10px}.faq details{border:1px solid var(--line);border-radius:14px;background:#fff;padding:0 18px}.faq summary{display:flex;align-items:center;min-height:56px;cursor:pointer;font-weight:800;font-size:14px}.faq p{margin:-2px 0 18px;color:var(--muted);font-size:13px;line-height:1.65}.final{padding:58px 0 80px;background:#fff8f3}.finalBox{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;padding:34px;border:1px solid var(--line);border-radius:22px;background:#fff}.finalBox h2{margin:7px 0 8px;font-size:clamp(28px,3.4vw,44px);letter-spacing:-.04em}.finalBox p{margin:0;color:var(--muted);line-height:1.65}@media(max-width:1100px){.agendaGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:980px){.heroGrid{grid-template-columns:1fr;gap:30px}.visual{min-height:430px}.proofGrid{grid-template-columns:1fr}.story{grid-template-columns:1fr}.benefitGrid{grid-template-columns:repeat(2,1fr)}.useGrid{grid-template-columns:repeat(2,1fr)}.gallery{grid-template-columns:1fr}.gallery article:nth-child(2){transform:none}.audienceGrid{grid-template-columns:repeat(2,1fr)}.host{grid-template-columns:1fr}.hostImage{min-height:330px}.ctaGrid,.finalBox{grid-template-columns:1fr}.ctaGrid .primary,.finalBox .primary{width:max-content}}@media(max-width:640px){.container{width:min(100% - 24px,1160px)}.hero{padding:44px 0}.hero h1{font-size:clamp(40px,11.2vw,48px)}.lead{font-size:16px}.eventGrid{grid-template-columns:1fr}.heroActions{display:grid}.primary,.secondary{width:100%;min-height:54px}.price{width:100%;justify-content:center}.visual{min-height:350px}.orbit{width:320px;height:320px}.orbit2{width:260px;height:260px}.orbit3{width:205px;height:205px}.chip{width:52px;height:52px;border-radius:15px}.chip1{top:34px}.chip2{top:54px}.chip3{bottom:35px;right:12px}.chip4{bottom:48px;left:10px}.window{width:88%;padding:10px}.community{padding:28px 0}.proof{padding:34px 0}.metrics{grid-template-columns:repeat(2,1fr)}.section{padding:66px 0}.head{margin-bottom:28px}.head h2{font-size:clamp(30px,9vw,39px)}.head p{font-size:15px}.story{padding:18px;gap:18px}.story h3{font-size:20px}.docs{grid-template-columns:1fr}.mock{min-height:200px}.flow{grid-template-columns:1fr;height:auto}.flow i{transform:rotate(90deg);text-align:center}.agendaGrid,.reasonGrid,.benefitGrid,.useGrid,.audienceGrid{grid-template-columns:1fr}.hostCopy{padding:26px}.hostCopy h2{font-size:32px}.hostList{grid-template-columns:1fr}.ctaBand{padding:32px 0}.ctaGrid .primary,.finalBox .primary{width:100%}.final{padding:44px 0 70px}.finalBox{padding:24px}.faq details{padding:0 15px}}@media(prefers-reduced-motion:reduce){.primary{transition:none;transform:none!important}}
+.page{--accent:#d76343;--accent2:#f39a78;--ink:#171412;--muted:#695f59;--line:#eadfd8;--soft:#fbf6f2;min-height:100vh;background:#fffdfb;color:var(--ink);font-family:var(--font-inter),Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}.page *{box-sizing:border-box}.container{width:min(1160px,calc(100% - 40px));margin:0 auto}.hero{position:relative;padding:76px 0 64px;background:radial-gradient(620px 380px at 88% 12%,rgba(215,99,67,.14),transparent 70%),radial-gradient(520px 300px at 10% 6%,rgba(243,154,120,.08),transparent 72%),linear-gradient(180deg,#fffdfa,#fff8f3);border-bottom:1px solid var(--line)}.heroGrid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:64px;align-items:center}.livePill{display:inline-flex;align-items:center;gap:9px;min-height:34px;padding:7px 12px;border:1px solid rgba(215,99,67,.24);border-radius:999px;background:#fff;color:#a7442d;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.livePill i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(215,99,67,.11)}.hero h1{max-width:760px;margin:20px 0 18px;font-size:clamp(52px,5.4vw,76px);line-height:.98;letter-spacing:-.055em;font-weight:850;text-wrap:balance}.hero h1 em{font-style:normal;color:var(--accent)}.lead{max-width:690px;margin:0;color:#5f554f;font-size:18px;line-height:1.7}.eventGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:26px 0 0}.eventGrid div{padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.86);box-shadow:0 9px 28px rgba(77,49,34,.05)}.eventGrid span{display:block;margin-bottom:5px;color:#a07160;font-size:10px;font-weight:900;letter-spacing:.11em}.eventGrid strong{font-size:14px}.note{margin-top:18px;color:#756a63;font-size:13px;line-height:1.6}.heroActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.primary,.secondary{display:inline-flex;min-height:52px;align-items:center;justify-content:center;border-radius:13px;padding:0 22px;text-decoration:none;font-weight:850;font-size:15px}.primary{background:linear-gradient(135deg,var(--accent),#c24d31);color:#fff;box-shadow:0 16px 36px rgba(199,73,42,.22)}.primary:hover{filter:brightness(.97);transform:translateY(-1px)}.secondary{border:1px solid #d9c8be;color:#352f2b;background:#fff}.price{display:flex;align-items:center;gap:10px;width:max-content;margin-top:18px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.price span,.price small{color:#83766e;font-size:11px}.price strong{color:var(--accent);font-size:16px}.visual{position:relative;min-height:490px;display:grid;place-items:center}.orbit,.orbit2,.orbit3{position:absolute;border-radius:50%;border:1px solid rgba(215,99,67,.18)}.orbit{width:440px;height:440px}.orbit2{width:350px;height:350px}.orbit3{width:270px;height:270px;background:radial-gradient(circle,rgba(243,154,120,.16),transparent 68%)}.window{position:relative;z-index:2;width:min(420px,100%);padding:14px;border:1px solid rgba(132,83,58,.16);border-radius:24px;background:rgba(255,255,255,.92);box-shadow:0 34px 90px rgba(85,54,36,.18);backdrop-filter:blur(10px)}.windowTop{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee4de;font-size:12px;font-weight:850}.dots{display:flex;gap:5px}.dots i{width:7px;height:7px;border-radius:50%;background:#e1d4cd}.prompt{margin:14px;padding:14px 15px;border-radius:12px;background:#f8f2ee;color:#504741;font-size:13px;line-height:1.55}.answer{margin:14px;padding:18px;border:1px solid #eee3dc;border-radius:16px}.answer strong{font-size:12px}.answer b{display:block;height:8px;margin-top:10px;border-radius:99px;background:#efe7e2}.answer b:nth-child(3){width:82%}.answer b:nth-child(4){width:62%}.answerGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:15px}.answerGrid span{padding:9px;border-radius:9px;background:#fff5ef;color:#944b37;text-align:center;font-size:10px;font-weight:800}.chip{position:absolute;z-index:3;display:grid;place-items:center;width:64px;height:64px;border:1px solid rgba(215,99,67,.18);border-radius:18px;background:#fff;color:#ad4d35;font-size:11px;font-weight:900;box-shadow:0 14px 36px rgba(94,56,35,.08)}.chip1{top:56px;left:4px}.chip2{top:86px;right:2px}.chip3{bottom:52px;right:42px}.chip4{bottom:72px;left:24px}.community{padding:34px 0;border-bottom:1px solid var(--line);background:#fff}.community p{text-align:center;margin:0 0 18px;font-size:16px;font-weight:750}.avatars{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.avatars span{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f3ddd2,#f8eee8);border:2px solid #fff;box-shadow:0 3px 12px rgba(70,50,40,.08);font-size:11px;font-weight:850;color:#7a4f42}.proof{padding:44px 0;background:#fbf7f4}.proofGrid{display:grid;grid-template-columns:1.05fr 1.35fr;gap:22px}.quote,.metric{border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:0 14px 38px rgba(74,48,34,.045)}.quote{padding:26px}.quote i{display:block;color:var(--accent);font-family:inherit;font-size:44px;line-height:.8}.quote p{margin:10px 0;color:#453d38;font-size:17px;line-height:1.65}.quote small{color:#8a7d75}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:22px 16px;text-align:center}.metric strong{display:block;font-size:21px}.metric span{display:block;margin-top:6px;color:#81756e;font-size:11px;line-height:1.4}.section{padding:88px 0}.soft{background:var(--soft)}.head{max-width:780px;margin:0 auto 38px;text-align:center}.eyebrow{display:block;color:#ad5138;font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.head h2{margin:10px 0 14px;font-size:clamp(34px,4vw,54px);line-height:1.04;letter-spacing:-.045em;text-wrap:balance}.head p{margin:0;color:var(--muted);font-size:17px;line-height:1.7}.storyStack{display:grid;gap:14px}.story{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;align-items:center;padding:24px;border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 14px 42px rgba(69,45,33,.05)}.storyNum{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#fff1e9;color:#c2583b;font-weight:900;font-size:12px}.story h3{margin:14px 0 8px;font-size:23px;letter-spacing:-.025em}.story p{margin:0;color:var(--muted);line-height:1.65}.mock{min-height:210px;border:1px solid #e8ddd6;border-radius:18px;background:linear-gradient(180deg,#fff,#fbf5f1);padding:18px;overflow:hidden}.mockTop{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:850}.docs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.docs div{padding:14px 10px;border-radius:12px;background:#fff;border:1px solid #eee3dc}.docs small{display:block;color:var(--accent);font-weight:900}.docs strong{display:block;margin-top:8px;font-size:12px}.docs span{display:block;margin-top:5px;color:#8b7c74;font-size:10px}.bars{height:130px;display:flex;gap:10px;align-items:flex-end;margin-top:16px}.bars i{flex:1;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#efab91,#d76343)}.bars i:nth-child(1){height:35%}.bars i:nth-child(2){height:52%}.bars i:nth-child(3){height:64%}.bars i:nth-child(4){height:86%}.bars i:nth-child(5){height:72%}.bars i:nth-child(6){height:96%}.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;height:170px}.flow div{padding:18px 12px;text-align:center;border:1px solid #eaded7;border-radius:14px;background:#fff}.flow span{display:block;color:#b96850;font-size:10px;font-weight:900}.flow strong{display:block;margin-top:7px;font-size:12px}.flow i{color:#c98570;font-style:normal;font-weight:900}.agendaGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.agendaGrid article{padding:22px 18px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(74,48,34,.04)}.agendaGrid b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff0e8;color:#bc5539;font-size:11px}.agendaGrid strong{display:block;margin-top:14px;font-size:15px;line-height:1.35}.agendaGrid p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.reasonGrid,.benefitGrid,.useGrid,.audienceGrid{display:grid;gap:12px}.reasonGrid{grid-template-columns:repeat(3,1fr)}.reasonGrid article,.benefitGrid article,.useGrid article,.audienceGrid article{border:1px solid var(--line);border-radius:18px;background:#fff}.reasonGrid article{padding:24px;text-align:center}.reasonGrid b{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 12px;border-radius:50%;background:#fff0e7;color:#bf583c}.reasonGrid strong{display:block;font-size:16px}.reasonGrid p{color:var(--muted);font-size:13px;line-height:1.6}.benefitGrid{grid-template-columns:repeat(4,1fr)}.benefitGrid article{padding:18px}.benefitGrid b{display:block;color:var(--accent);font-size:11px}.benefitGrid strong{display:block;margin-top:9px;font-size:15px}.benefitGrid p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.useGrid{grid-template-columns:repeat(5,1fr)}.useGrid article{padding:16px;text-align:center}.useGrid b{display:block;color:#b85b42;font-size:11px}.useGrid span{display:block;margin-top:7px;font-size:12px;font-weight:750;line-height:1.45}.tools{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:24px}.tools span{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;font-weight:750}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.gallery article{padding:14px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:0 14px 38px rgba(74,48,34,.05)}.gallery article:nth-child(2){transform:translateY(-10px);border-color:rgba(215,99,67,.35)}.galleryScreen{min-height:220px;padding:16px;border-radius:15px;background:linear-gradient(145deg,#1f1a18,#33241f);color:#fff;overflow:hidden}.galleryScreen small{font-size:10px;color:#e8c4b5}.galleryScreen b{display:block;height:9px;margin-top:12px;border-radius:99px;background:rgba(255,255,255,.13)}.galleryScreen b:nth-of-type(2){width:80%}.galleryScreen b:nth-of-type(3){width:61%}.gallery h3{margin:15px 4px 6px;font-size:17px}.gallery p{margin:0 4px 5px;color:var(--muted);font-size:12px;line-height:1.55}.audienceGrid{grid-template-columns:repeat(4,1fr)}.audienceGrid article{padding:18px;text-align:center}.audienceGrid strong{font-size:14px}.audienceGrid p{margin:7px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.host{display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:0 20px 60px rgba(78,49,34,.08)}.hostImage{min-height:390px;background:url('/images/about/about-mission-class.webp') center/cover no-repeat}.hostCopy{padding:42px}.hostCopy h2{margin:10px 0 12px;font-size:38px;letter-spacing:-.04em}.hostCopy p{color:var(--muted);line-height:1.7}.hostList{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}.hostList span{padding:12px;border-radius:12px;background:#fbf4ef;color:#684f45;font-size:12px;font-weight:700}.ctaBand{padding:38px 0;background:linear-gradient(120deg,#b84327,#e97653);color:#fff}.ctaGrid{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}.ctaGrid h2{margin:0 0 8px;font-size:clamp(32px,4vw,50px);letter-spacing:-.045em}.ctaGrid p{margin:0;color:#ffe8df;line-height:1.65}.ctaGrid .primary{background:#fff;color:#b8482d;box-shadow:none}.faq{max-width:920px;margin:0 auto;display:grid;gap:10px}.faq details{border:1px solid var(--line);border-radius:14px;background:#fff;padding:0 18px}.faq summary{display:flex;align-items:center;min-height:56px;cursor:pointer;font-weight:800;font-size:14px}.faq p{margin:-2px 0 18px;color:var(--muted);font-size:13px;line-height:1.65}.final{padding:58px 0 80px;background:#fff8f3}.finalBox{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;padding:34px;border:1px solid var(--line);border-radius:22px;background:#fff}.finalBox h2{margin:7px 0 8px;font-size:clamp(28px,3.4vw,44px);letter-spacing:-.04em}.finalBox p{margin:0;color:var(--muted);line-height:1.65}@media(max-width:1100px){.agendaGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:980px){.heroGrid{grid-template-columns:1fr;gap:30px}.visual{min-height:430px}.proofGrid{grid-template-columns:1fr}.story{grid-template-columns:1fr}.benefitGrid{grid-template-columns:repeat(2,1fr)}.useGrid{grid-template-columns:repeat(2,1fr)}.gallery{grid-template-columns:1fr}.gallery article:nth-child(2){transform:none}.audienceGrid{grid-template-columns:repeat(2,1fr)}.host{grid-template-columns:1fr}.hostImage{min-height:330px}.ctaGrid,.finalBox{grid-template-columns:1fr}.ctaGrid .primary,.finalBox .primary{width:max-content}}@media(max-width:640px){.container{width:min(100% - 24px,1160px)}.hero{padding:44px 0}.hero h1{font-size:clamp(40px,11.2vw,48px)}.lead{font-size:16px}.eventGrid{grid-template-columns:1fr}.heroActions{display:grid}.primary,.secondary{width:100%;min-height:54px}.price{width:100%;justify-content:center}.visual{min-height:350px}.orbit{width:320px;height:320px}.orbit2{width:260px;height:260px}.orbit3{width:205px;height:205px}.chip{width:52px;height:52px;border-radius:15px}.chip1{top:34px}.chip2{top:54px}.chip3{bottom:35px;right:12px}.chip4{bottom:48px;left:10px}.window{width:88%;padding:10px}.community{padding:28px 0}.proof{padding:34px 0}.metrics{grid-template-columns:repeat(2,1fr)}.section{padding:66px 0}.head{margin-bottom:28px}.head h2{font-size:clamp(30px,9vw,39px)}.head p{font-size:15px}.story{padding:18px;gap:18px}.story h3{font-size:20px}.docs{grid-template-columns:1fr}.mock{min-height:200px}.flow{grid-template-columns:1fr;height:auto}.flow i{transform:rotate(90deg);text-align:center}.agendaGrid,.reasonGrid,.benefitGrid,.useGrid,.audienceGrid{grid-template-columns:1fr}.hostCopy{padding:26px}.hostCopy h2{font-size:32px}.hostList{grid-template-columns:1fr}.ctaBand{padding:32px 0}.ctaGrid .primary,.finalBox .primary{width:100%}.final{padding:44px 0 70px}.finalBox{padding:24px}.faq details{padding:0 15px}}@media(prefers-reduced-motion:reduce){.primary{transition:none;transform:none!important}}
+
+/* CLAUDE PAGE V8 ADVANCED START
+   Full visual-system overhaul.
+   Content, links, registration route and business logic remain unchanged.
+*/
+
+/* ---------- SYSTEM ---------- */
+.page{
+  --v8-ink:#171513;
+  --v8-muted:#6f655e;
+  --v8-paper:#fffdf9;
+  --v8-warm:#f7f1eb;
+  --v8-warm-2:#f1e7de;
+  --v8-line:rgba(74,54,43,.12);
+  --v8-accent:#d8613f;
+  --v8-accent-deep:#ad4028;
+  --v8-accent-soft:#f2a287;
+  --v8-dark:#1d1a18;
+  --v8-dark-2:#29231f;
+  background:var(--v8-paper);
+  color:var(--v8-ink);
+  font-family:var(--font-inter),Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.page *{box-sizing:border-box}
+
+.container{
+  width:min(1240px,calc(100% - 64px));
+  margin-inline:auto;
+}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;
+  overflow:hidden;
+  padding:96px 0 86px;
+  border-bottom:1px solid rgba(92,61,44,.10);
+  background:
+    radial-gradient(780px 560px at 86% 22%,rgba(216,97,63,.14),transparent 68%),
+    radial-gradient(620px 420px at 8% 0%,rgba(255,214,192,.34),transparent 72%),
+    linear-gradient(180deg,#fffdf9 0%,#fbf5ef 100%);
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.22;
+  background-image:
+    linear-gradient(rgba(119,78,56,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(119,78,56,.055) 1px,transparent 1px);
+  background-size:72px 72px;
+  mask-image:linear-gradient(to bottom,black 0%,rgba(0,0,0,.74) 55%,transparent 100%);
+}
+
+.hero::after{
+  content:"";
+  position:absolute;
+  right:-170px;
+  top:-120px;
+  width:520px;
+  height:520px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(232,128,93,.20),rgba(232,128,93,.04) 48%,transparent 72%);
+  filter:blur(10px);
+  pointer-events:none;
+}
+
+.heroGrid{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:minmax(0,.98fr) minmax(520px,1.02fr);
+  gap:clamp(58px,5.6vw,86px);
+  align-items:center;
+  min-height:650px;
+}
+
+.heroGrid>div:first-child{
+  max-width:650px;
+}
+
+.livePill{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:38px;
+  padding:8px 14px;
+  border:1px solid rgba(168,66,40,.18);
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  box-shadow:0 10px 30px rgba(91,51,31,.05);
+  backdrop-filter:blur(14px);
+  color:#a43f29;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+
+.livePill i{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#de6a47;
+  box-shadow:0 0 0 6px rgba(222,106,71,.10);
+}
+
+.hero h1{
+  max-width:650px;
+  margin:24px 0 22px;
+  color:var(--v8-ink);
+  font-size:clamp(60px,5.35vw,82px);
+  line-height:.94;
+  letter-spacing:-.064em;
+  font-weight:800;
+  text-wrap:balance;
+}
+
+.hero h1 em{
+  font-style:normal;
+  background:linear-gradient(110deg,#a83d27 0%,#d8613f 54%,#ef8d68 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.lead{
+  max-width:625px;
+  margin:0;
+  color:#645b55;
+  font-size:18px;
+  line-height:1.72;
+}
+
+.eventGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  max-width:620px;
+  margin:30px 0 0;
+  overflow:hidden;
+  border:1px solid rgba(87,61,47,.12);
+  border-radius:18px;
+  background:rgba(255,255,255,.82);
+  box-shadow:0 18px 42px rgba(72,44,28,.055);
+  backdrop-filter:blur(14px);
+}
+
+.eventGrid div{
+  min-height:82px;
+  padding:16px 17px;
+  border:0;
+  border-right:1px solid rgba(87,61,47,.10);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.eventGrid div:last-child{border-right:0}
+
+.eventGrid span{
+  display:block;
+  margin-bottom:7px;
+  color:#a17766;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.14em;
+}
+
+.eventGrid strong{
+  color:#29231f;
+  font-size:14px;
+  font-weight:750;
+}
+
+.note{
+  margin-top:17px;
+  color:#786e67;
+  font-size:13px;
+  line-height:1.6;
+}
+
+.heroActions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:25px;
+}
+
+.primary,.secondary{
+  min-height:58px;
+  padding:0 24px;
+  border-radius:15px;
+  font-size:14px;
+  font-weight:750;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+
+.primary{
+  border:1px solid rgba(132,41,20,.12);
+  background:linear-gradient(135deg,#a93b24 0%,#d7603e 58%,#e87a56 100%);
+  color:#fff;
+  box-shadow:0 18px 42px rgba(178,65,34,.26),inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.primary:hover{
+  filter:none;
+  transform:translateY(-2px);
+  box-shadow:0 25px 52px rgba(178,65,34,.31),inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.secondary{
+  border:1px solid rgba(81,58,46,.14);
+  background:rgba(255,255,255,.76);
+  color:#312a26;
+  box-shadow:0 10px 28px rgba(74,45,28,.04);
+  backdrop-filter:blur(10px);
+}
+
+.secondary:hover{
+  transform:translateY(-2px);
+  border-color:rgba(81,58,46,.22);
+}
+
+.price{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  width:auto;
+  margin-top:16px;
+  padding:8px 11px;
+  border:1px solid rgba(87,61,47,.10);
+  border-radius:11px;
+  background:rgba(255,255,255,.58);
+}
+
+.price span,.price small{
+  color:#81756d;
+  font-size:11px;
+}
+
+.price strong{
+  padding:4px 8px;
+  border-radius:8px;
+  background:#fff0e9;
+  color:#b6472d;
+  font-size:13px;
+  font-weight:800;
+}
+
+/* ---------- CLAUDE WORKSPACE VISUAL ---------- */
+.visual{
+  position:relative;
+  min-height:600px;
+  display:grid;
+  place-items:center;
+  isolation:isolate;
+}
+
+.visual::before{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:4% -4%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(231,131,96,.24),rgba(232,169,143,.10) 36%,transparent 68%);
+  filter:blur(12px);
+}
+
+.visual::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:430px;
+  height:430px;
+  border:1px solid rgba(190,99,68,.15);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 54px rgba(205,111,78,.045),
+    0 0 0 108px rgba(205,111,78,.025);
+}
+
+.orbit,.orbit2,.orbit3{
+  position:absolute;
+  border:0;
+  border-radius:0;
+  pointer-events:none;
+}
+
+.orbit{
+  z-index:0;
+  width:470px;
+  height:470px;
+  border-radius:50%;
+  border:1px dashed rgba(177,85,57,.17);
+}
+
+.orbit2{
+  z-index:0;
+  width:360px;
+  height:360px;
+  border-radius:50%;
+  border:1px solid rgba(177,85,57,.09);
+}
+
+.orbit3{
+  z-index:0;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(232,119,82,.13),transparent 70%);
+}
+
+.window{
+  position:relative;
+  z-index:2;
+  width:min(548px,100%);
+  min-height:438px;
+  padding:12px;
+  overflow:hidden;
+  border:1px solid rgba(87,62,49,.18);
+  border-radius:30px;
+  background:linear-gradient(160deg,#28221e 0%,#1c1917 100%);
+  box-shadow:
+    0 40px 90px rgba(63,38,24,.22),
+    0 12px 28px rgba(63,38,24,.12),
+    inset 0 1px 0 rgba(255,255,255,.07);
+  transform:perspective(1100px) rotateY(-3.5deg) rotateX(1deg);
+  transform-origin:center;
+}
+
+.window::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:78px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),
+    radial-gradient(circle at 50% 18%,rgba(226,116,78,.24),transparent 42%);
+  border-right:1px solid rgba(255,255,255,.07);
+}
+
+.window::after{
+  content:"";
+  position:absolute;
+  left:26px;
+  top:78px;
+  width:26px;
+  height:190px;
+  opacity:.55;
+  background:
+    radial-gradient(circle,#e17a58 0 3px,transparent 4px) 50% 0/100% 34px repeat-y;
+}
+
+.windowTop{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:46px;
+  margin-left:78px;
+  padding:0 16px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  color:#f8eee8;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+
+.dots{display:flex;gap:5px}
+.dots i{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:rgba(255,255,255,.28);
+}
+
+.prompt{
+  position:relative;
+  z-index:2;
+  margin:18px 16px 12px 94px;
+  padding:17px 18px;
+  border:1px solid rgba(92,61,45,.09);
+  border-radius:16px;
+  background:#fffaf5;
+  color:#4d433d;
+  box-shadow:0 10px 24px rgba(0,0,0,.09);
+  font-size:13px;
+  line-height:1.55;
+}
+
+.prompt::before{
+  content:"SOURCE → ANALYSIS";
+  display:block;
+  margin-bottom:8px;
+  color:#b45a3d;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.14em;
+}
+
+.answer{
+  position:relative;
+  z-index:2;
+  margin:12px 16px 18px 94px;
+  padding:20px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:19px;
+  background:linear-gradient(180deg,#302924 0%,#27211e 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.answer strong{
+  color:#f4e8e1;
+  font-size:12px;
+  font-weight:700;
+}
+
+.answer b{
+  display:block;
+  height:7px;
+  margin-top:11px;
+  border-radius:99px;
+  background:linear-gradient(90deg,rgba(246,223,211,.25),rgba(246,223,211,.07));
+}
+
+.answer b:nth-child(2){width:94%}
+.answer b:nth-child(3){width:78%}
+.answer b:nth-child(4){width:61%}
+
+.answerGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:18px;
+}
+
+.answerGrid span{
+  padding:10px 8px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;
+  background:rgba(255,255,255,.045);
+  color:#e9c0ae;
+  font-size:9px;
+  font-weight:700;
+  text-align:center;
+}
+
+.chip{
+  z-index:4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  min-width:68px;
+  height:auto;
+  min-height:46px;
+  padding:10px 13px;
+  border:1px solid rgba(113,72,50,.13);
+  border-radius:14px;
+  background:rgba(255,255,255,.90);
+  box-shadow:0 18px 42px rgba(76,45,28,.10);
+  backdrop-filter:blur(14px);
+  color:#a8462d;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.chip1{top:14%;left:0}
+.chip2{top:22%;right:-1%}
+.chip3{right:4%;bottom:15%}
+.chip4{left:5%;bottom:19%}
+
+/* ---------- COMMUNITY / PROOF ---------- */
+.community{
+  padding:24px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:var(--v8-dark);
+}
+
+.community .container{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:30px;
+}
+
+.community p{
+  margin:0;
+  color:#f4e9e3;
+  font-size:14px;
+  font-weight:600;
+  text-align:left;
+}
+
+.avatars{
+  flex-wrap:nowrap;
+  justify-content:flex-end;
+  gap:0;
+}
+
+.avatars span{
+  width:34px;
+  height:34px;
+  margin-left:-7px;
+  border:2px solid var(--v8-dark);
+  background:linear-gradient(135deg,#f0b39d,#d96746);
+  box-shadow:none;
+  color:#fff;
+  font-size:8px;
+  font-weight:700;
+}
+
+.proof{
+  padding:64px 0;
+  background:#fff;
+}
+
+.proofGrid{
+  grid-template-columns:1.1fr 1fr;
+  gap:48px;
+  align-items:stretch;
+}
+
+.quote{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:36px 0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.quote i{
+  color:var(--v8-accent);
+  font-family:inherit;
+  font-size:54px;
+  font-weight:500;
+}
+
+.quote p{
+  max-width:610px;
+  margin:4px 0 18px;
+  color:#302a26;
+  font-size:22px;
+  line-height:1.55;
+  letter-spacing:-.02em;
+}
+
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+
+.metric{
+  display:flex;
+  min-height:132px;
+  flex-direction:column;
+  justify-content:flex-end;
+  padding:22px;
+  border:1px solid var(--v8-line);
+  border-radius:20px;
+  background:linear-gradient(180deg,#fff,#faf5f1);
+  box-shadow:none;
+  text-align:left;
+}
+
+.metric strong{
+  color:#28221f;
+  font-size:23px;
+  letter-spacing:-.025em;
+}
+
+.metric span{
+  margin-top:7px;
+  color:#84766e;
+  font-size:11px;
+}
+
+/* ---------- TYPOGRAPHY / SECTION RHYTHM ---------- */
+.section{
+  padding:108px 0;
+}
+
+.soft{
+  background:
+    radial-gradient(640px 380px at 100% 0%,rgba(227,133,98,.08),transparent 70%),
+    #f8f3ee;
+}
+
+.head{
+  max-width:860px;
+  margin:0 0 48px;
+  text-align:left;
+}
+
+.eyebrow{
+  display:block;
+  color:#b75135;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.16em;
+}
+
+.head h2{
+  margin:11px 0 16px;
+  color:#201c19;
+  font-size:clamp(40px,4.4vw,58px);
+  line-height:1.02;
+  letter-spacing:-.052em;
+  font-weight:760;
+  text-wrap:balance;
+}
+
+.head p{
+  max-width:760px;
+  margin:0;
+  color:#6d625c;
+  font-size:17px;
+  line-height:1.72;
+}
+
+/* ---------- STORY ---------- */
+.storyStack{gap:20px}
+
+.story{
+  grid-template-columns:.9fr 1.1fr;
+  gap:46px;
+  align-items:center;
+  padding:34px;
+  border:1px solid var(--v8-line);
+  border-radius:28px;
+  background:rgba(255,255,255,.86);
+  box-shadow:0 18px 50px rgba(66,42,28,.045);
+}
+
+.story:nth-child(even)>div:first-child{order:2}
+
+.storyNum{
+  width:42px;
+  height:42px;
+  background:#feece4;
+  color:#b84c31;
+}
+
+.story h3{
+  max-width:470px;
+  margin:18px 0 10px;
+  font-size:27px;
+  line-height:1.15;
+  letter-spacing:-.035em;
+}
+
+.story p{
+  max-width:500px;
+  color:#70645d;
+  font-size:14px;
+  line-height:1.72;
+}
+
+.mock{
+  min-height:250px;
+  padding:20px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:22px;
+  background:
+    radial-gradient(360px 220px at 100% 0%,rgba(216,96,63,.18),transparent 70%),
+    linear-gradient(160deg,#29231f,#1f1b18);
+  box-shadow:0 20px 48px rgba(51,34,24,.14);
+  color:#f6ece6;
+}
+
+.mockTop{
+  padding-bottom:13px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  color:#ead7cd;
+}
+
+.docs div{
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.045);
+}
+
+.docs small{color:#e98d6e}
+.docs strong{color:#f2e8e2}
+.docs span{color:#ae9f96}
+
+.bars i{
+  background:linear-gradient(180deg,#ef9a79,#b94c31);
+  box-shadow:0 -8px 22px rgba(218,96,63,.10);
+}
+
+.flow div{
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.045);
+}
+.flow span{color:#e88969}
+.flow strong{color:#f4e9e3}
+.flow i{color:#d77b5c}
+
+/* ---------- AGENDA ---------- */
+.agendaGrid{
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+}
+
+.agendaGrid article{
+  position:relative;
+  min-height:250px;
+  padding:24px 20px;
+  overflow:hidden;
+  border:1px solid var(--v8-line);
+  border-radius:22px;
+  background:#fff;
+  box-shadow:none;
+}
+
+.agendaGrid article::after{
+  content:"";
+  position:absolute;
+  right:-26px;
+  bottom:-32px;
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(222,109,72,.14),transparent 68%);
+}
+
+.agendaGrid b{
+  width:36px;
+  height:36px;
+  border-radius:11px;
+  background:#fcede6;
+  color:#b74b30;
+}
+
+.agendaGrid strong{
+  margin-top:28px;
+  color:#28221f;
+  font-size:16px;
+  line-height:1.4;
+}
+
+.agendaGrid p{
+  margin-top:10px;
+  color:#796c64;
+  font-size:12px;
+  line-height:1.65;
+}
+
+/* ---------- BENTO / BENEFITS ---------- */
+.reasonGrid{
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.reasonGrid article,
+.benefitGrid article,
+.useGrid article,
+.audienceGrid article{
+  border:1px solid var(--v8-line);
+  background:#fff;
+  box-shadow:none;
+}
+
+.reasonGrid article{
+  padding:30px;
+  border-radius:24px;
+  text-align:left;
+}
+
+.reasonGrid b{
+  margin:0 0 18px;
+  background:#fbe9e1;
+  color:#b84d31;
+}
+
+.reasonGrid strong{
+  color:#29231f;
+  font-size:17px;
+}
+
+.reasonGrid p{
+  color:#766a63;
+  line-height:1.7;
+}
+
+.benefitGrid{
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+
+.benefitGrid article{
+  min-height:190px;
+  padding:24px;
+  border-radius:22px;
+}
+
+.benefitGrid article:nth-child(1),
+.benefitGrid article:nth-child(6){
+  background:linear-gradient(155deg,#2a2420,#1c1917);
+  border-color:rgba(255,255,255,.06);
+}
+
+.benefitGrid article:nth-child(1) strong,
+.benefitGrid article:nth-child(6) strong{color:#fff}
+.benefitGrid article:nth-child(1) p,
+.benefitGrid article:nth-child(6) p{color:#c4b6ae}
+
+.benefitGrid b{
+  color:#c95739;
+  font-size:10px;
+  letter-spacing:.12em;
+}
+
+.benefitGrid strong{
+  margin-top:18px;
+  color:#27221f;
+  font-size:16px;
+  line-height:1.35;
+}
+
+.benefitGrid p{
+  margin-top:9px;
+  color:#756962;
+  line-height:1.65;
+}
+
+/* ---------- USE CASES ---------- */
+.useGrid{
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+}
+
+.useGrid article{
+  min-height:118px;
+  padding:18px;
+  border-radius:18px;
+  text-align:left;
+}
+
+.useGrid b{
+  color:#b65237;
+  font-size:9px;
+  letter-spacing:.1em;
+}
+
+.useGrid span{
+  margin-top:10px;
+  color:#322c28;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.tools{
+  justify-content:flex-start;
+  gap:8px;
+  margin-top:26px;
+}
+
+.tools span{
+  padding:9px 13px;
+  border:1px solid rgba(84,59,46,.12);
+  border-radius:999px;
+  background:rgba(255,255,255,.70);
+  color:#64574f;
+  font-size:11px;
+}
+
+/* ---------- GALLERY ---------- */
+.gallery{
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.gallery article{
+  padding:12px 12px 20px;
+  border:1px solid var(--v8-line);
+  border-radius:24px;
+  background:#fff;
+  box-shadow:none;
+}
+
+.gallery article:nth-child(2){
+  transform:translateY(-14px);
+  border-color:rgba(189,80,48,.24);
+  box-shadow:0 24px 56px rgba(84,49,29,.08);
+}
+
+.galleryScreen{
+  min-height:260px;
+  padding:18px;
+  border-radius:18px;
+  background:
+    radial-gradient(280px 180px at 100% 0%,rgba(223,103,68,.20),transparent 70%),
+    linear-gradient(155deg,#26211e,#181614);
+}
+
+.galleryScreen small{
+  color:#e7a78f;
+  font-size:9px;
+  letter-spacing:.08em;
+}
+
+.galleryScreen b{
+  height:8px;
+  margin-top:14px;
+  background:rgba(255,255,255,.10);
+}
+
+.gallery h3{
+  margin:17px 7px 7px;
+  color:#27221f;
+  font-size:17px;
+}
+
+.gallery p{
+  margin:0 7px;
+  color:#756961;
+  line-height:1.65;
+}
+
+/* ---------- AUDIENCE ---------- */
+.audienceGrid{
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+
+.audienceGrid article{
+  min-height:160px;
+  padding:24px;
+  border-radius:22px;
+  text-align:left;
+}
+
+.audienceGrid strong{
+  color:#29231f;
+  font-size:15px;
+}
+
+.audienceGrid p{
+  margin-top:10px;
+  color:#786c64;
+  font-size:12px;
+  line-height:1.65;
+}
+
+/* ---------- HOST ---------- */
+.host{
+  grid-template-columns:1fr 1.08fr;
+  overflow:hidden;
+  border:1px solid var(--v8-line);
+  border-radius:30px;
+  background:#fff;
+  box-shadow:0 26px 70px rgba(72,45,29,.07);
+}
+
+.hostImage{
+  min-height:460px;
+  filter:saturate(.84) contrast(.98);
+}
+
+.hostCopy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:54px;
+}
+
+.hostCopy h2{
+  margin:12px 0 14px;
+  font-size:42px;
+  line-height:1.05;
+  letter-spacing:-.048em;
+}
+
+.hostCopy p{
+  color:#70645d;
+  line-height:1.75;
+}
+
+.hostList{
+  gap:8px;
+  margin-top:25px;
+}
+
+.hostList span{
+  padding:12px 13px;
+  border:1px solid rgba(87,61,47,.09);
+  border-radius:11px;
+  background:#faf5f1;
+  color:#604f46;
+}
+
+/* ---------- CTA ---------- */
+.ctaBand{
+  position:relative;
+  overflow:hidden;
+  padding:58px 0;
+  background:
+    radial-gradient(540px 220px at 86% 50%,rgba(223,103,68,.34),transparent 72%),
+    linear-gradient(120deg,#1d1a18,#2d2420);
+  color:#fff;
+}
+
+.ctaBand::after{
+  content:"";
+  position:absolute;
+  right:5%;
+  top:50%;
+  width:210px;
+  height:210px;
+  transform:translateY(-50%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:50%;
+  box-shadow:0 0 0 42px rgba(255,255,255,.025),0 0 0 84px rgba(255,255,255,.015);
+}
+
+.ctaGrid{
+  position:relative;
+  z-index:1;
+  grid-template-columns:1fr auto;
+  gap:40px;
+}
+
+.ctaGrid h2{
+  max-width:680px;
+  font-size:clamp(38px,4.3vw,56px);
+  line-height:1;
+  letter-spacing:-.05em;
+}
+
+.ctaGrid p{
+  max-width:650px;
+  color:#cdbfb8;
+}
+
+.ctaGrid .primary{
+  min-width:220px;
+  background:#fff;
+  color:#9f3d27;
+  box-shadow:none;
+}
+
+/* ---------- FAQ ---------- */
+.faq{
+  max-width:960px;
+  margin:0;
+  gap:8px;
+}
+
+.faq details{
+  padding:0 20px;
+  border:0;
+  border-bottom:1px solid var(--v8-line);
+  border-radius:0;
+  background:transparent;
+}
+
+.faq summary{
+  min-height:68px;
+  color:#2c2622;
+  font-size:15px;
+}
+
+.faq p{
+  max-width:760px;
+  margin:0 0 22px;
+  color:#756960;
+  font-size:13px;
+  line-height:1.7;
+}
+
+/* ---------- FINAL ---------- */
+.final{
+  padding:72px 0 90px;
+  background:#f7f1eb;
+}
+
+.finalBox{
+  padding:46px;
+  border:1px solid rgba(92,61,44,.11);
+  border-radius:28px;
+  background:
+    radial-gradient(420px 220px at 100% 0%,rgba(225,119,83,.12),transparent 70%),
+    #fff;
+  box-shadow:0 24px 66px rgba(73,44,28,.06);
+}
+
+.finalBox h2{
+  max-width:680px;
+  font-size:clamp(34px,4vw,50px);
+  line-height:1.05;
+  letter-spacing:-.05em;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:1180px){
+  .container{width:min(100% - 44px,1240px)}
+  .heroGrid{
+    grid-template-columns:minmax(0,1fr) minmax(460px,.92fr);
+    gap:48px;
+  }
+  .hero h1{font-size:clamp(56px,5.8vw,74px)}
+  .window{width:min(510px,100%)}
+  .agendaGrid{grid-template-columns:repeat(3,1fr)}
+  .benefitGrid{grid-template-columns:repeat(3,1fr)}
+  .useGrid{grid-template-columns:repeat(3,1fr)}
+}
+
+@media(max-width:960px){
+  .hero{padding:72px 0 68px}
+  .heroGrid{
+    min-height:auto;
+    grid-template-columns:1fr;
+    gap:34px;
+  }
+  .heroGrid>div:first-child{
+    max-width:760px;
+    margin-inline:auto;
+    text-align:center;
+  }
+  .hero h1{
+    max-width:780px;
+    margin-inline:auto;
+    font-size:clamp(56px,8.5vw,74px);
+  }
+  .lead,.eventGrid{margin-left:auto;margin-right:auto}
+  .heroActions,.price{justify-content:center}
+  .visual{
+    width:min(100%,650px);
+    min-height:570px;
+    margin-inline:auto;
+  }
+  .window{transform:none}
+  .community .container{flex-direction:column;text-align:center}
+  .community p{text-align:center}
+  .proofGrid{grid-template-columns:1fr}
+  .quote{padding-bottom:8px}
+  .story{grid-template-columns:1fr}
+  .story:nth-child(even)>div:first-child{order:0}
+  .benefitGrid{grid-template-columns:repeat(2,1fr)}
+  .useGrid{grid-template-columns:repeat(2,1fr)}
+  .audienceGrid{grid-template-columns:repeat(2,1fr)}
+  .host{grid-template-columns:1fr}
+  .hostImage{min-height:380px}
+  .ctaGrid,.finalBox{grid-template-columns:1fr}
+  .ctaGrid .primary,.finalBox .primary{width:max-content}
+}
+
+@media(max-width:640px){
+  .container{width:min(100% - 28px,1240px)}
+  .hero{padding:46px 0 54px}
+  .hero h1{
+    margin-top:18px;
+    margin-bottom:16px;
+    font-size:clamp(41px,12.2vw,54px);
+    line-height:.96;
+    letter-spacing:-.058em;
+  }
+  .livePill{min-height:34px;padding:7px 11px;font-size:9px}
+  .lead{font-size:15.5px;line-height:1.65}
+  .eventGrid{
+    grid-template-columns:repeat(3,1fr);
+    margin-top:22px;
+    border-radius:14px;
+  }
+  .eventGrid div{
+    min-height:74px;
+    padding:11px 6px;
+    text-align:center;
+  }
+  .eventGrid span{font-size:7px}
+  .eventGrid strong{font-size:10px;line-height:1.25}
+  .note{font-size:11px}
+  .heroActions{
+    display:grid;
+    width:100%;
+    margin-top:20px;
+  }
+  .primary,.secondary{
+    width:100%;
+    min-height:55px;
+  }
+  .price{display:none}
+  .visual{
+    min-height:430px;
+    margin-top:2px;
+  }
+  .visual::after{
+    width:300px;
+    height:300px;
+    box-shadow:0 0 0 38px rgba(205,111,78,.04),0 0 0 76px rgba(205,111,78,.02);
+  }
+  .orbit{width:330px;height:330px}
+  .orbit2{width:270px;height:270px}
+  .orbit3{width:195px;height:195px}
+  .window{
+    width:88%;
+    min-height:340px;
+    padding:8px;
+    border-radius:22px;
+  }
+  .window::before{width:54px}
+  .window::after{left:18px;top:65px}
+  .windowTop{
+    min-height:40px;
+    margin-left:54px;
+    padding-inline:11px;
+    font-size:9px;
+  }
+  .prompt{
+    margin:13px 10px 9px 64px;
+    padding:13px;
+    font-size:10px;
+  }
+  .answer{
+    margin:9px 10px 13px 64px;
+    padding:14px;
+  }
+  .answer strong{font-size:10px}
+  .answerGrid span{padding:8px 4px;font-size:7px}
+  .chip{
+    min-width:52px;
+    min-height:38px;
+    padding:8px 9px;
+    border-radius:12px;
+    font-size:7px;
+  }
+  .chip1{top:12%;left:0}
+  .chip2{top:20%;right:0}
+  .chip3{right:2%;bottom:11%}
+  .chip4{left:2%;bottom:14%}
+  .section{padding:72px 0}
+  .head{margin-bottom:32px}
+  .head h2{font-size:clamp(33px,10vw,43px)}
+  .head p{font-size:15px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .story{padding:20px;gap:22px;border-radius:22px}
+  .story h3{font-size:22px}
+  .mock{min-height:220px}
+  .docs{grid-template-columns:1fr}
+  .agendaGrid,.reasonGrid,.benefitGrid,.useGrid,.audienceGrid{grid-template-columns:1fr}
+  .agendaGrid article{min-height:190px}
+  .gallery{grid-template-columns:1fr}
+  .gallery article:nth-child(2){transform:none}
+  .hostCopy{padding:28px}
+  .hostCopy h2{font-size:34px}
+  .hostList{grid-template-columns:1fr}
+  .ctaBand{padding:42px 0}
+  .ctaGrid .primary,.finalBox .primary{width:100%}
+  .final{padding:54px 0 72px}
+  .finalBox{padding:26px}
+}
+
+@media(max-width:380px){
+  .container{width:min(100% - 22px,1240px)}
+  .hero h1{font-size:clamp(38px,12vw,46px)}
+  .visual{min-height:390px}
+  .window{width:92%}
+  .chip{min-width:46px;font-size:6.5px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .primary,.secondary,.window{transition:none!important;transform:none!important}
+}
+
+/* CLAUDE PAGE V8 ADVANCED END */
+
+/* CLAUDE TOP HERO V10 OUTSKILL-INSPIRED START */
+.hero{position:relative;isolation:isolate;overflow:hidden;padding:0;border-bottom:0;background:radial-gradient(620px 420px at 92% 18%,rgba(221,106,70,.12),transparent 72%),linear-gradient(180deg,#fff 0%,#fff 78%,#fbf7f2 100%)}
+.hero::before{content:"";position:absolute;inset:0;z-index:-3;pointer-events:none;background:radial-gradient(500px 280px at 50% 12%,rgba(248,231,222,.28),transparent 72%),linear-gradient(90deg,transparent,rgba(214,99,66,.025),transparent)}
+.heroCenter{position:relative;z-index:2;display:flex;min-height:720px;flex-direction:column;align-items:center;justify-content:center;padding-top:54px;padding-bottom:62px;text-align:center}
+.heroTopBadge{display:inline-flex;min-height:48px;align-items:center;justify-content:center;margin-bottom:38px;padding:0 28px;border-radius:0 0 18px 18px;background:linear-gradient(135deg,#bb5335,#d96845);box-shadow:0 14px 34px rgba(186,80,51,.16);color:#fff;font-size:12px;font-weight:800;letter-spacing:.16em}
+.heroBrand{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:28px}
+.heroBrand strong{color:#0e0e0e;font-size:54px;font-weight:500;line-height:1;letter-spacing:-.045em}
+.heroBrand span{color:#9a8c83;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.heroHeadline{position:relative;z-index:2;max-width:1120px!important;margin:0!important;color:#111!important;font-size:clamp(42px,3.55vw,60px)!important;font-weight:760!important;line-height:1.08!important;letter-spacing:-.05em!important;text-wrap:balance}
+.heroHeadline mark{display:inline-block;padding:.04em .12em .08em;border-radius:4px;background:#cb633f;color:#fff;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.desktopBreak{display:block}
+.heroSub{max-width:810px;margin:28px auto 0;color:#3f3a36;font-size:19px;font-weight:450;line-height:1.6;letter-spacing:-.018em}
+.heroProofRow{display:flex;flex-wrap:wrap;justify-content:center;gap:28px;margin-top:30px}
+.heroProofRow>div{display:flex;min-width:180px;min-height:58px;align-items:center;justify-content:center;gap:9px;padding:0 18px;border-radius:9px;background:#cb633f;box-shadow:0 12px 30px rgba(181,78,48,.12);color:#fff}
+.heroProofRow span{font-size:10px;font-weight:900;letter-spacing:.10em}
+.heroProofRow strong{font-size:13px;font-weight:720}
+.heroCtas{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:30px}
+.heroPrimary,.heroSecondary{display:inline-flex;min-height:56px;align-items:center;justify-content:center;border-radius:12px;padding:0 24px;text-decoration:none;font-size:14px;font-weight:760;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.heroPrimary{border:1px solid rgba(119,38,18,.10);background:linear-gradient(135deg,#ae452b,#d96845);box-shadow:0 17px 36px rgba(179,72,41,.22);color:#fff}
+.heroPrimary b,.heroOfferButton b{margin-left:10px;font-size:16px}
+.heroPrimary:hover,.heroOfferButton:hover{transform:translateY(-2px);box-shadow:0 22px 44px rgba(179,72,41,.27)}
+.heroSecondary{border:1px solid rgba(71,52,43,.13);background:#fff;color:#302b27;box-shadow:0 10px 24px rgba(63,43,31,.04)}
+.heroSecondary:hover{transform:translateY(-2px);border-color:rgba(71,52,43,.22)}
+.heroBatchLine{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px;color:#71665f;font-size:12px}
+.heroBatchLine strong{color:#2b2724;font-weight:760}
+.heroBatchDot{width:8px;height:8px;border-radius:50%;background:#d86845;box-shadow:0 0 0 5px rgba(216,104,69,.10)}
+.heroSeatVisual{display:flex;align-items:end;justify-content:center;gap:8px;height:36px;margin-top:12px}
+.heroSeatVisual>span{position:relative;display:block;width:20px;height:24px}
+.heroSeatVisual>span::before{content:"";position:absolute;left:4px;top:0;width:12px;height:10px;border-radius:3px 3px 2px 2px}
+.heroSeatVisual>span::after{content:"";position:absolute;left:2px;bottom:4px;width:16px;height:9px;border-radius:3px 3px 1px 1px}
+.heroSeatVisual>span i::before,.heroSeatVisual>span i::after{content:"";position:absolute;bottom:0;width:2px;height:6px}
+.heroSeatVisual>span i::before{left:5px}.heroSeatVisual>span i::after{right:5px}
+.seatFilled::before,.seatFilled::after,.seatFilled i::before,.seatFilled i::after{background:#1c1a18}
+.seatOpen::before,.seatOpen::after{border:1.5px solid #1c1a18;background:#fff}
+.seatOpen i::before,.seatOpen i::after{background:#1c1a18}
+.heroBurst{position:absolute;z-index:0;right:3.5%;top:170px;width:270px;height:270px;opacity:.22;pointer-events:none}
+.heroBurst i{position:absolute;left:50%;top:50%;width:18px;height:132px;border-radius:999px;background:#df8c72;transform-origin:50% 0%}
+.heroBurst i:nth-child(1){transform:rotate(0deg) translateY(-5px)}.heroBurst i:nth-child(2){transform:rotate(30deg) translateY(-5px)}.heroBurst i:nth-child(3){transform:rotate(60deg) translateY(-5px)}.heroBurst i:nth-child(4){transform:rotate(90deg) translateY(-5px)}.heroBurst i:nth-child(5){transform:rotate(120deg) translateY(-5px)}.heroBurst i:nth-child(6){transform:rotate(150deg) translateY(-5px)}.heroBurst i:nth-child(7){transform:rotate(180deg) translateY(-5px)}.heroBurst i:nth-child(8){transform:rotate(210deg) translateY(-5px)}.heroBurst i:nth-child(9){transform:rotate(240deg) translateY(-5px)}.heroBurst i:nth-child(10){transform:rotate(270deg) translateY(-5px)}.heroBurst i:nth-child(11){transform:rotate(300deg) translateY(-5px)}.heroBurst i:nth-child(12){transform:rotate(330deg) translateY(-5px)}
+.heroOfferBar{position:relative;z-index:4;border-top:1px solid rgba(76,56,45,.08);border-bottom:1px solid rgba(76,56,45,.08);background:#eee9df;box-shadow:0 -10px 30px rgba(68,48,36,.03)}
+.heroOfferInner{display:grid;grid-template-columns:1fr auto auto;gap:34px;align-items:center;min-height:108px}
+.heroOfferCopy small{display:block;margin-bottom:5px;color:#8e8178;font-size:8px;font-weight:800;letter-spacing:.14em}
+.heroOfferCopy div{display:flex;align-items:baseline;gap:9px}
+.heroOfferCopy strong{color:#1d1a18;font-size:30px;font-weight:600;letter-spacing:-.04em}
+.heroOfferCopy span{color:#7b6e66;font-size:12px}
+.heroOfferMeta{display:flex;align-items:center;gap:11px;color:#6e625a;font-size:11px}
+.heroOfferMeta i{width:4px;height:4px;border-radius:50%;background:#c36545}
+.heroOfferButton{display:inline-flex;min-height:52px;align-items:center;justify-content:center;padding:0 22px;border-radius:10px;background:linear-gradient(135deg,#c05a3a,#dc7653);box-shadow:0 14px 30px rgba(177,76,47,.17);color:#fff;font-size:13px;font-weight:760;text-decoration:none;transition:transform .18s ease,box-shadow .18s ease}
+@media(max-width:1100px){.heroBurst{right:-70px;top:185px;transform:scale(.82)}.heroHeadline{max-width:940px!important}}
+@media(max-width:820px){.heroCenter{min-height:auto;padding-top:38px;padding-bottom:52px}.heroTopBadge{min-height:42px;margin-bottom:30px;padding:0 20px;border-radius:0 0 14px 14px;font-size:10px}.heroBrand strong{font-size:46px}.heroHeadline{max-width:720px!important;font-size:clamp(38px,7vw,52px)!important}.desktopBreak{display:none}.heroSub{max-width:650px;font-size:17px}.heroProofRow{gap:10px}.heroProofRow>div{min-width:160px}.heroBurst{right:-110px;top:200px;opacity:.12;transform:scale(.72)}.heroOfferInner{grid-template-columns:1fr auto;gap:20px;padding-block:18px}.heroOfferMeta{display:none}}
+@media(max-width:640px){.heroCenter{width:min(100% - 26px,1160px)!important;padding-top:22px;padding-bottom:42px}.heroTopBadge{min-height:38px;margin-bottom:24px;padding:0 15px;font-size:8px;letter-spacing:.12em}.heroBrand{margin-bottom:22px}.heroBrand strong{font-size:38px}.heroBrand span{font-size:8px}.heroHeadline{font-size:clamp(34px,10.7vw,46px)!important;line-height:1.03!important;letter-spacing:-.055em!important}.heroSub{margin-top:20px;font-size:15px;line-height:1.58}.heroProofRow{display:grid;width:100%;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:22px}.heroProofRow>div{min-width:0;min-height:68px;flex-direction:column;gap:4px;padding:8px 5px}.heroProofRow span{font-size:7px}.heroProofRow strong{font-size:9px}.heroCtas{display:grid;width:100%;margin-top:22px}.heroPrimary,.heroSecondary{width:100%;min-height:54px}.heroBatchLine{flex-wrap:wrap;gap:6px;margin-top:19px;font-size:10px}.heroSeatVisual{gap:5px;transform:scale(.9)}.heroBurst{display:none}.heroOfferInner{width:min(100% - 26px,1160px)!important;grid-template-columns:1fr;gap:12px;min-height:auto;padding-block:16px;text-align:center}.heroOfferCopy div{justify-content:center}.heroOfferCopy strong{font-size:26px}.heroOfferButton{width:100%}}
+@media(prefers-reduced-motion:reduce){.heroPrimary,.heroSecondary,.heroOfferButton{transition:none!important;transform:none!important}}
+/* CLAUDE TOP HERO V10 OUTSKILL-INSPIRED END */
+
+/* CLAUDE HERO V10.1 TOP SPACING START */
+
+/* Remove dead space above the hero badge */
+.heroCenter{
+  min-height:650px;
+  justify-content:flex-start;
+  padding-top:0;
+  padding-bottom:46px;
+}
+
+/* Tighten first-screen vertical rhythm */
+.heroTopBadge{
+  margin-top:0;
+  margin-bottom:26px;
+}
+
+.heroBrand{
+  margin-bottom:20px;
+}
+
+.heroSub{
+  margin-top:21px;
+}
+
+.heroProofRow{
+  margin-top:23px;
+}
+
+.heroCtas{
+  margin-top:23px;
+}
+
+.heroBatchLine{
+  margin-top:20px;
+}
+
+.heroSeatVisual{
+  margin-top:9px;
+}
+
+/* Tablet */
+@media(max-width:820px){
+  .heroCenter{
+    min-height:auto;
+    justify-content:flex-start;
+    padding-top:0;
+    padding-bottom:40px;
+  }
+
+  .heroTopBadge{
+    margin-bottom:24px;
+  }
+}
+
+/* Mobile */
+@media(max-width:640px){
+  .heroCenter{
+    padding-top:0;
+    padding-bottom:34px;
+  }
+
+  .heroTopBadge{
+    margin-bottom:20px;
+  }
+
+  .heroBrand{
+    margin-bottom:18px;
+  }
+
+  .heroSub{
+    margin-top:17px;
+  }
+
+  .heroProofRow{
+    margin-top:19px;
+  }
+
+  .heroCtas{
+    margin-top:19px;
+  }
+}
+
+/* CLAUDE HERO V10.1 TOP SPACING END */
+
+/* CLAUDE HERO V10.2 OFFER BAR CLEAN START */
+
+/* Remove center meta content from the bottom offer bar */
+.heroOfferMeta{
+  display:none !important;
+}
+
+/* Rebalance offer bar to left + right only */
+.heroOfferInner{
+  grid-template-columns:1fr auto !important;
+  gap:24px !important;
+}
+
+/* Keep right CTA aligned cleanly */
+.heroOfferButton{
+  justify-self:end;
+}
+
+@media(max-width:640px){
+  .heroOfferInner{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  .heroOfferButton{
+    justify-self:stretch;
+  }
+}
+
+/* CLAUDE HERO V10.2 OFFER BAR CLEAN END */
+
+/* CLAUDE HERO V10.3 STICKY OFFER START */
+
+/*
+  Bottom conversion bar:
+  - removed from normal page flow
+  - appears after ~1.4 seconds
+  - remains pinned while scrolling
+*/
+
+.heroOfferBar{
+  position:fixed !important;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:9999;
+
+  width:100%;
+
+  border-top:1px solid rgba(76,56,45,.10);
+  border-bottom:0;
+
+  background:rgba(238,233,223,.96);
+
+  box-shadow:
+    0 -18px 48px rgba(54,38,29,.10),
+    0 -1px 0 rgba(255,255,255,.55);
+
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+
+  opacity:0;
+  transform:translateY(115%);
+
+  animation:
+    claudeStickyOfferIn
+    .48s
+    cubic-bezier(.22,.8,.24,1)
+    1.4s
+    forwards;
+}
+
+@keyframes claudeStickyOfferIn{
+  from{
+    opacity:0;
+    transform:translateY(115%);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.heroOfferInner{
+  min-height:88px !important;
+  grid-template-columns:1fr auto !important;
+  gap:28px !important;
+}
+
+/* Middle text stays removed */
+.heroOfferMeta{
+  display:none !important;
+}
+
+.heroOfferCopy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.heroOfferButton{
+  justify-self:end;
+  min-width:250px;
+}
+
+/*
+  Prevent bottom bar from covering the final
+  content/CTA while scrolling.
+*/
+.page{
+  padding-bottom:88px;
+}
+
+
+/* ---------- TABLET ---------- */
+
+@media(max-width:820px){
+
+  .heroOfferInner{
+    min-height:82px !important;
+    grid-template-columns:1fr auto !important;
+    gap:18px !important;
+    padding-block:12px !important;
+  }
+
+  .heroOfferButton{
+    min-width:220px;
+  }
+
+  .page{
+    padding-bottom:82px;
+  }
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media(max-width:640px){
+
+  .heroOfferBar{
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+
+  .heroOfferInner{
+    width:min(100% - 20px,1160px) !important;
+
+    min-height:auto !important;
+
+    grid-template-columns:1fr auto !important;
+
+    gap:10px !important;
+
+    padding:10px 0 !important;
+
+    text-align:left !important;
+  }
+
+  .heroOfferCopy small{
+    display:none;
+  }
+
+  .heroOfferCopy div{
+    display:block !important;
+  }
+
+  .heroOfferCopy strong{
+    display:block;
+
+    font-size:22px !important;
+    line-height:1;
+  }
+
+  .heroOfferCopy span{
+    display:block;
+
+    margin-top:4px;
+
+    font-size:9px !important;
+    line-height:1.2;
+  }
+
+  .heroOfferButton{
+    width:auto !important;
+    min-width:0 !important;
+    min-height:48px;
+
+    justify-self:end;
+
+    padding:0 15px !important;
+
+    white-space:nowrap;
+
+    font-size:11px !important;
+  }
+
+  .heroOfferButton b{
+    margin-left:6px;
+  }
+
+  .page{
+    padding-bottom:76px;
+  }
+}
+
+
+/* Very small phones */
+
+@media(max-width:380px){
+
+  .heroOfferInner{
+    width:min(100% - 14px,1160px) !important;
+  }
+
+  .heroOfferCopy strong{
+    font-size:19px !important;
+  }
+
+  .heroOfferCopy span{
+    font-size:8px !important;
+  }
+
+  .heroOfferButton{
+    min-height:46px;
+    padding:0 11px !important;
+    font-size:10px !important;
+  }
+}
+
+
+/* Accessibility */
+
+@media(prefers-reduced-motion:reduce){
+
+  .heroOfferBar{
+    animation:none;
+    opacity:1;
+    transform:none;
+  }
+}
+
+/* CLAUDE HERO V10.3 STICKY OFFER END */
+
+/* CLAUDE HERO V10.4 PREMIUM TYPOGRAPHY START */
+
+
+/* ---------- MAIN HEADLINE ---------- */
+
+.heroHeadline{
+  max-width:1080px !important;
+
+  color:#171412 !important;
+
+  font-size:clamp(48px,3.7vw,64px) !important;
+  font-weight:720 !important;
+
+  line-height:1.025 !important;
+
+  letter-spacing:-.058em !important;
+
+  text-wrap:balance;
+}
+
+.heroHeadline mark{
+  display:inline-block;
+
+  padding:.055em .16em .09em;
+
+  border-radius:9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #b84b2f 0%,
+      #cf6340 56%,
+      #df7956 100%
+    );
+
+  box-shadow:
+    0 10px 28px rgba(182,75,47,.16),
+    inset 0 1px 0 rgba(255,255,255,.20);
+
+  color:#fff;
+
+  font-weight:730;
+}
+
+
+/* ---------- SUPPORTING COPY ---------- */
+
+.heroSub{
+  max-width:790px;
+
+  margin-top:24px;
+
+  color:#5d534d;
+
+  font-size:18px;
+  font-weight:440;
+
+  line-height:1.64;
+
+  letter-spacing:-.015em;
+}
+
+
+/* ---------- PREMIUM VALUE CARDS ---------- */
+
+.heroProofRow{
+  gap:12px;
+
+  margin-top:27px;
+}
+
+.heroProofRow > div{
+  display:flex;
+
+  min-width:205px;
+  min-height:66px;
+
+  align-items:center;
+  justify-content:flex-start;
+
+  gap:11px;
+
+  padding:0 17px;
+
+  border:
+    1px solid
+    rgba(76,52,40,.11);
+
+  border-radius:15px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.96),
+      rgba(252,247,243,.94)
+    );
+
+  box-shadow:
+    0 12px 30px rgba(70,44,29,.055),
+    inset 0 1px 0 rgba(255,255,255,.92);
+
+  color:#241f1c;
+}
+
+.heroProofRow span{
+  display:inline-flex;
+
+  min-height:26px;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:0 8px;
+
+  border-radius:7px;
+
+  background:#f5e4dc;
+
+  color:#b74c31;
+
+  font-size:8px;
+  font-weight:850;
+
+  letter-spacing:.12em;
+}
+
+.heroProofRow strong{
+  color:#2c2622;
+
+  font-size:12px;
+  font-weight:720;
+
+  letter-spacing:-.01em;
+}
+
+
+/* ---------- CTA AREA ---------- */
+
+.heroCtas{
+  gap:11px;
+
+  margin-top:25px;
+}
+
+
+/* Primary premium CTA */
+
+.heroPrimary{
+  position:relative;
+
+  min-width:245px;
+  min-height:60px;
+
+  overflow:hidden;
+
+  padding:0 20px 0 24px;
+
+  border:
+    1px solid
+    rgba(117,37,18,.12);
+
+  border-radius:15px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a84229 0%,
+      #ca5d3b 55%,
+      #dd7652 100%
+    );
+
+  box-shadow:
+    0 18px 38px rgba(167,64,35,.22),
+    inset 0 1px 0 rgba(255,255,255,.22);
+
+  color:#fff;
+
+  font-size:14px;
+  font-weight:760;
+
+  letter-spacing:-.012em;
+}
+
+.heroPrimary::before{
+  content:"";
+
+  position:absolute;
+
+  top:-90%;
+  left:-35%;
+
+  width:42%;
+  height:280%;
+
+  transform:rotate(24deg);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.18),
+      transparent
+    );
+}
+
+.heroPrimary b{
+  display:grid;
+
+  width:27px;
+  height:27px;
+
+  margin-left:13px;
+
+  place-items:center;
+
+  border-radius:50%;
+
+  background:rgba(255,255,255,.17);
+
+  color:#fff;
+
+  font-size:13px;
+  font-weight:600;
+}
+
+
+/* Secondary premium CTA */
+
+.heroSecondary{
+  min-width:190px;
+  min-height:60px;
+
+  padding:0 21px;
+
+  border:
+    1px solid
+    rgba(70,49,39,.13);
+
+  border-radius:15px;
+
+  background:
+    rgba(255,255,255,.90);
+
+  box-shadow:
+    0 12px 28px rgba(67,43,29,.045),
+    inset 0 1px 0 #fff;
+
+  color:#2e2824;
+
+  font-size:14px;
+  font-weight:710;
+
+  letter-spacing:-.012em;
+}
+
+.heroSecondary::after{
+  content:"↗";
+
+  display:grid;
+
+  width:24px;
+  height:24px;
+
+  margin-left:10px;
+
+  place-items:center;
+
+  border-radius:50%;
+
+  background:#f3ece7;
+
+  color:#a94a31;
+
+  font-size:11px;
+}
+
+
+/* Button hover */
+
+.heroPrimary:hover,
+.heroSecondary:hover{
+  transform:translateY(-2px);
+}
+
+.heroPrimary:hover{
+  box-shadow:
+    0 24px 48px rgba(167,64,35,.28),
+    inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.heroSecondary:hover{
+  border-color:rgba(70,49,39,.22);
+
+  box-shadow:
+    0 17px 34px rgba(67,43,29,.07);
+}
+
+
+/* ---------- BATCH LINE ---------- */
+
+.heroBatchLine{
+  margin-top:21px;
+
+  color:#83766e;
+
+  font-size:11px;
+}
+
+.heroBatchLine strong{
+  color:#322c28;
+
+  font-weight:740;
+}
+
+
+/* ---------- STICKY BOTTOM CTA ---------- */
+
+.heroOfferCopy small{
+  color:#9c7768;
+
+  font-size:7px;
+  font-weight:850;
+
+  letter-spacing:.15em;
+}
+
+.heroOfferCopy strong{
+  color:#1e1a18;
+
+  font-size:28px;
+  font-weight:640;
+
+  letter-spacing:-.045em;
+}
+
+.heroOfferCopy span{
+  color:#766961;
+
+  font-size:11px;
+  font-weight:500;
+}
+
+
+/* Sticky premium button */
+
+.heroOfferButton{
+  min-width:230px;
+
+  border:
+    1px solid
+    rgba(117,37,18,.10);
+
+  border-radius:13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a84229,
+      #cf633f 62%,
+      #de7753
+    );
+
+  box-shadow:
+    0 15px 34px rgba(168,65,37,.20),
+    inset 0 1px 0 rgba(255,255,255,.20);
+
+  font-size:13px;
+  font-weight:760;
+
+  letter-spacing:-.01em;
+}
+
+.heroOfferButton b{
+  display:grid;
+
+  width:25px;
+  height:25px;
+
+  margin-left:10px;
+
+  place-items:center;
+
+  border-radius:50%;
+
+  background:rgba(255,255,255,.16);
+
+  font-size:12px;
+}
+
+
+/* ---------- TABLET ---------- */
+
+@media(max-width:820px){
+
+  .heroHeadline{
+    max-width:780px !important;
+
+    font-size:
+      clamp(40px,7vw,54px)
+      !important;
+  }
+
+  .heroProofRow > div{
+    min-width:175px;
+  }
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media(max-width:640px){
+
+  .heroHeadline{
+    font-size:
+      clamp(35px,10.5vw,46px)
+      !important;
+
+    line-height:1.02 !important;
+  }
+
+  .heroHeadline mark{
+    border-radius:7px;
+  }
+
+  .heroSub{
+    margin-top:18px;
+
+    font-size:15px;
+
+    line-height:1.58;
+  }
+
+  .heroProofRow{
+    gap:7px;
+  }
+
+  .heroProofRow > div{
+    min-width:0;
+    min-height:66px;
+
+    flex-direction:column;
+
+    gap:5px;
+
+    padding:9px 5px;
+
+    justify-content:center;
+
+    text-align:center;
+  }
+
+  .heroProofRow span{
+    min-height:22px;
+
+    padding:0 6px;
+
+    font-size:6.5px;
+  }
+
+  .heroProofRow strong{
+    font-size:9px;
+  }
+
+  .heroPrimary,
+  .heroSecondary{
+    min-width:0;
+
+    width:100%;
+
+    min-height:56px;
+  }
+
+  .heroOfferButton{
+    min-width:0;
+  }
+}
+
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media(prefers-reduced-motion:reduce){
+
+  .heroPrimary,
+  .heroSecondary,
+  .heroOfferButton{
+    transition:none !important;
+
+    transform:none !important;
+  }
+}
+
+
+/* CLAUDE HERO V10.4 PREMIUM TYPOGRAPHY END */
+
+/* CLAUDE HERO V10.5 OFFICIAL LOGO START */
+
+.heroBrand{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
+  gap:9px;
+
+  margin-bottom:27px;
+}
+
+.heroBrandLogo{
+  display:block;
+
+  width:auto;
+  height:auto;
+
+  max-width:285px;
+
+  object-fit:contain;
+
+  filter:
+    drop-shadow(
+      0 8px 18px
+      rgba(38,30,26,.055)
+    );
+}
+
+.heroBrand span{
+  color:#92786d;
+
+  font-size:9px;
+  font-weight:750;
+
+  line-height:1;
+
+  letter-spacing:.17em;
+
+  text-transform:uppercase;
+}
+
+
+/* Disable old text-wordmark styling */
+.heroBrand strong{
+  display:none !important;
+}
+
+
+/* ---------- TABLET ---------- */
+
+@media(max-width:820px){
+
+  .heroBrandLogo{
+    max-width:250px;
+  }
+
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media(max-width:640px){
+
+  .heroBrand{
+    gap:7px;
+    margin-bottom:22px;
+  }
+
+  .heroBrandLogo{
+    max-width:215px;
+  }
+
+  .heroBrand span{
+    font-size:7.5px;
+    letter-spacing:.15em;
+  }
+
+}
+
+
+/* ---------- SMALL MOBILE ---------- */
+
+@media(max-width:380px){
+
+  .heroBrandLogo{
+    max-width:195px;
+  }
+
+}
+
+/* CLAUDE HERO V10.5 OFFICIAL LOGO END */
+
+/* CLAUDE HERO V10.6 PREMIUM ICON SYSTEM START */
+
+/* Logo area */
+.heroBrand{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin-bottom:22px;
+}
+
+.heroBrand span{
+  display:none !important;
+}
+
+.heroBrandLogo{
+  max-width:255px;
+}
+
+/* Heading: reduce heaviness */
+.heroHeadline{
+  max-width:1120px !important;
+  font-size:clamp(44px,3.45vw,60px) !important;
+  font-weight:640 !important;
+  line-height:1.06 !important;
+  letter-spacing:-.05em !important;
+  color:#181513 !important;
+}
+
+.heroHeadline mark{
+  font-weight:675 !important;
+  border-radius:10px !important;
+  padding:.06em .16em .10em !important;
+}
+
+.heroSub{
+  max-width:820px !important;
+  margin-top:20px !important;
+  font-size:17px !important;
+  line-height:1.62 !important;
+  color:#5e534d !important;
+}
+
+/* Premium icon cards */
+.heroProofRow{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px !important;
+  width:min(100%,760px);
+  margin:28px auto 0 !important;
+}
+
+.proofCard{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:78px;
+  padding:14px 16px;
+  border:1px solid rgba(83,58,44,.10);
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,246,242,.95));
+  box-shadow:
+    0 12px 28px rgba(56,39,27,.05),
+    inset 0 1px 0 rgba(255,255,255,.92);
+}
+
+.proofIcon{
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fff7f2,#f7e8df);
+  border:1px solid rgba(199,116,78,.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 6px 14px rgba(180,86,48,.08);
+}
+
+.proofIcon svg{
+  width:20px;
+  height:20px;
+  stroke:#c75f3a;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.proofIconFill{
+  fill:#dc7a57;
+  stroke:none !important;
+}
+
+.proofIconTick{
+  stroke:#dc7a57 !important;
+}
+
+.proofText{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.proofText small{
+  color:#b85a37;
+  font-size:10px;
+  font-weight:780;
+  letter-spacing:.12em;
+  line-height:1;
+}
+
+.proofText strong{
+  color:#241f1b;
+  font-size:15px;
+  font-weight:660;
+  line-height:1.2;
+  letter-spacing:-.018em;
+}
+
+/* Buttons cleaner */
+.heroCtas{
+  gap:12px !important;
+  margin-top:24px !important;
+}
+
+.heroPrimary,
+.heroSecondary{
+  min-height:58px !important;
+  font-size:15px !important;
+  font-weight:680 !important;
+  letter-spacing:-.01em !important;
+  border-radius:16px !important;
+}
+
+.heroPrimary{
+  min-width:260px !important;
+}
+
+.heroSecondary{
+  min-width:210px !important;
+}
+
+/* Sticky bar icon/text tone preserved */
+.heroOfferButton{
+  font-weight:700 !important;
+  min-height:54px !important;
+}
+
+/* Tablet */
+@media(max-width:980px){
+  .heroHeadline{
+    font-size:clamp(40px,5.8vw,54px) !important;
+    max-width:900px !important;
+  }
+
+  .heroProofRow{
+    width:min(100%,720px);
+    gap:12px !important;
+  }
+
+  .proofCard{
+    min-height:74px;
+    padding:13px 14px;
+  }
+
+  .proofText strong{
+    font-size:14px;
+  }
+
+  .heroBrandLogo{
+    max-width:235px;
+  }
+}
+
+/* Mobile */
+@media(max-width:640px){
+  .heroBrand{
+    margin-bottom:18px;
+  }
+
+  .heroBrandLogo{
+    max-width:198px;
+  }
+
+  .heroHeadline{
+    font-size:clamp(33px,10vw,42px) !important;
+    line-height:1.08 !important;
+    letter-spacing:-.045em !important;
+  }
+
+  .heroSub{
+    font-size:15px !important;
+    line-height:1.58 !important;
+    margin-top:16px !important;
+  }
+
+  .heroProofRow{
+    grid-template-columns:1fr !important;
+    width:100%;
+    gap:10px !important;
+    margin-top:22px !important;
+  }
+
+  .proofCard{
+    min-height:70px;
+    padding:12px 14px;
+    border-radius:16px;
+  }
+
+  .proofIcon{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+  }
+
+  .proofIcon svg{
+    width:18px;
+    height:18px;
+  }
+
+  .proofText small{
+    font-size:9px;
+  }
+
+  .proofText strong{
+    font-size:14px;
+  }
+
+  .heroPrimary,
+  .heroSecondary{
+    width:100% !important;
+    min-width:0 !important;
+    min-height:54px !important;
+    font-size:14px !important;
+  }
+}
+
+/* Small mobile */
+@media(max-width:380px){
+  .heroHeadline{
+    font-size:31px !important;
+  }
+
+  .heroBrandLogo{
+    max-width:184px;
+  }
+
+  .proofText strong{
+    font-size:13px;
+  }
+}
+
+/* CLAUDE HERO V10.6 PREMIUM ICON SYSTEM END */
+
+/* CLAUDE HERO V10.7 MOBILE CONVERSION START */
+
+
+/* Hidden from desktop */
+.mobileUrgency,
+.mobileConversion{
+  display:none;
+}
+
+
+/* =======================================================
+   TABLET
+   ======================================================= */
+
+@media(max-width:820px){
+
+  .heroCenter{
+    padding-bottom:42px !important;
+  }
+
+  .heroProofRow{
+    max-width:650px;
+  }
+
+  .proofCard{
+    min-height:72px;
+  }
+
+  .mobileUrgency{
+    display:block;
+
+    max-width:600px;
+
+    margin:24px auto 6px;
+
+    color:#29231f;
+
+    font-size:15px;
+    font-weight:660;
+
+    line-height:1.4;
+
+    text-align:center;
+  }
+
+}
+
+
+/* =======================================================
+   MOBILE — REFERENCE-STYLE CONVERSION FLOW
+   ======================================================= */
+
+@media(max-width:640px){
+
+  /*
+    Existing desktop/tablet CTAs are replaced
+    by the stronger mobile conversion panel.
+  */
+
+  .heroCtas{
+    display:none !important;
+  }
+
+  .heroBatchLine{
+    display:none !important;
+  }
+
+
+  /* ---------- COMPACT VALUE CARDS ---------- */
+
+  .heroProofRow{
+    display:grid !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    width:100%;
+
+    gap:10px !important;
+
+    margin-top:24px !important;
+  }
+
+  .proofCard{
+    min-height:72px !important;
+
+    padding:11px 12px !important;
+
+    gap:8px;
+
+    border:0 !important;
+
+    border-radius:13px !important;
+
+    background:
+      linear-gradient(
+        135deg,
+        #bc5133,
+        #d56d48
+      ) !important;
+
+    box-shadow:
+      0 13px 26px
+      rgba(176,70,40,.15)
+      !important;
+
+    color:#fff !important;
+  }
+
+
+  /*
+    FREE card centered on second row,
+    similar to supplied reference.
+  */
+
+  .proofCard:nth-child(3){
+    grid-column:1 / -1;
+
+    width:58%;
+
+    justify-self:center;
+  }
+
+
+  .proofIcon{
+    width:32px !important;
+    height:32px !important;
+
+    border:1px solid rgba(255,255,255,.20)
+      !important;
+
+    border-radius:9px !important;
+
+    background:
+      rgba(255,255,255,.13)
+      !important;
+
+    box-shadow:none !important;
+  }
+
+  .proofIcon svg{
+    width:16px;
+    height:16px;
+
+    stroke:#fff !important;
+  }
+
+  .proofIconFill{
+    fill:#fff !important;
+  }
+
+  .proofIconTick{
+    stroke:#fff !important;
+  }
+
+  .proofText{
+    gap:3px;
+  }
+
+  .proofText small{
+    color:
+      rgba(255,255,255,.78)
+      !important;
+
+    font-size:7px !important;
+  }
+
+  .proofText strong{
+    color:#fff !important;
+
+    font-size:11px !important;
+    font-weight:650 !important;
+
+    line-height:1.2;
+  }
+
+
+  /* ---------- URGENCY ---------- */
+
+  .mobileUrgency{
+    display:block;
+
+    max-width:330px;
+
+    margin:32px auto 4px;
+
+    color:#29231f;
+
+    font-size:16px;
+    font-weight:570;
+
+    line-height:1.42;
+
+    text-align:center;
+  }
+
+
+  /* ---------- SEATS ---------- */
+
+  .heroSeatVisual{
+    height:48px !important;
+
+    margin-top:16px !important;
+
+    gap:6px !important;
+
+    transform:none !important;
+  }
+
+  .heroSeatVisual > span{
+    width:22px !important;
+    height:27px !important;
+  }
+
+
+  /* ---------- MOBILE OFFER ---------- */
+
+  .mobileConversion{
+    display:block;
+
+    width:100%;
+
+    margin-top:25px;
+
+    text-align:center;
+  }
+
+
+  /* FREE panel */
+
+  .mobileOfferValue{
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    margin-bottom:20px;
+  }
+
+  .mobileOfferValue small{
+    color:#98786a;
+
+    font-size:8px;
+    font-weight:800;
+
+    letter-spacing:.14em;
+  }
+
+  .mobileOfferValue span{
+    margin-top:8px;
+
+    color:#71645d;
+
+    font-size:13px;
+  }
+
+  .mobileOfferValue strong{
+    display:inline-flex;
+
+    min-width:128px;
+    min-height:66px;
+
+    align-items:center;
+    justify-content:center;
+
+    margin-top:8px;
+
+    padding:0 24px;
+
+    border-radius:13px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #b94d30,
+        #d56c47
+      );
+
+    box-shadow:
+      0 15px 30px
+      rgba(179,70,40,.20);
+
+    color:#fff;
+
+    font-size:29px;
+    font-weight:700;
+
+    letter-spacing:-.03em;
+  }
+
+
+  /* ---------- DATE / TIME ---------- */
+
+  .mobileSchedule{
+    display:grid;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap:10px;
+
+    width:100%;
+
+    margin-top:8px;
+  }
+
+  .mobileSchedule > div{
+    display:flex;
+
+    min-height:72px;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:12px 13px;
+
+    border-radius:15px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #b94d30,
+        #d56c47
+      );
+
+    box-shadow:
+      0 12px 25px
+      rgba(177,68,38,.13);
+
+    color:#fff;
+
+    text-align:left;
+  }
+
+  .mobileScheduleIcon{
+    flex:0 0 auto;
+
+    display:grid;
+
+    width:31px;
+    height:31px;
+
+    place-items:center;
+
+    border-radius:9px;
+
+    background:
+      rgba(255,255,255,.13);
+
+    border:
+      1px solid
+      rgba(255,255,255,.18);
+  }
+
+  .mobileScheduleIcon svg{
+    width:16px;
+    height:16px;
+
+    stroke:#fff;
+
+    stroke-width:1.8;
+
+    stroke-linecap:round;
+
+    stroke-linejoin:round;
+  }
+
+  .mobileSchedule > div > span:last-child{
+    display:flex;
+
+    min-width:0;
+
+    flex-direction:column;
+
+    gap:3px;
+  }
+
+  .mobileSchedule small{
+    color:
+      rgba(255,255,255,.72);
+
+    font-size:7px;
+    font-weight:800;
+
+    letter-spacing:.12em;
+  }
+
+  .mobileSchedule strong{
+    color:#fff;
+
+    font-size:11px;
+    font-weight:650;
+
+    white-space:normal;
+
+    line-height:1.25;
+  }
+
+
+  /* ---------- PRIMARY MOBILE CTA ---------- */
+
+  .mobileRegisterButton{
+    display:flex;
+
+    width:100%;
+
+    min-height:68px;
+
+    align-items:center;
+    justify-content:center;
+
+    margin-top:16px;
+
+    border:
+      1px solid
+      rgba(110,36,18,.10);
+
+    border-radius:16px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #a9432a,
+        #ca5c3b 55%,
+        #dd7753
+      );
+
+    box-shadow:
+      0 18px 34px
+      rgba(171,64,35,.23);
+
+    color:#fff;
+
+    font-size:17px;
+    font-weight:680;
+
+    letter-spacing:-.015em;
+
+    text-decoration:none;
+  }
+
+  .mobileRegisterButton span{
+    display:grid;
+
+    width:31px;
+    height:31px;
+
+    margin-left:13px;
+
+    place-items:center;
+
+    border-radius:50%;
+
+    background:
+      rgba(255,255,255,.16);
+
+    font-size:14px;
+  }
+
+
+  /* ---------- MICRO TRUST ---------- */
+
+  .mobileTrustLine{
+    display:flex;
+
+    flex-wrap:wrap;
+
+    align-items:center;
+    justify-content:center;
+
+    gap:7px;
+
+    margin-top:15px;
+
+    color:#8a7b72;
+
+    font-size:9px;
+    font-weight:530;
+  }
+
+  .mobileTrustLine i{
+    width:3px;
+    height:3px;
+
+    border-radius:50%;
+
+    background:#d06a47;
+  }
+
+
+  /* ---------- STICKY BAR LIKE REFERENCE ---------- */
+
+  .heroOfferBar{
+    background:
+      rgba(249,244,239,.97)
+      !important;
+
+    border-top:
+      1px solid
+      rgba(87,61,47,.10)
+      !important;
+
+    box-shadow:
+      0 -14px 38px
+      rgba(55,37,26,.10)
+      !important;
+  }
+
+  .heroOfferInner{
+    width:
+      min(
+        100% - 20px,
+        1160px
+      ) !important;
+
+    grid-template-columns:
+      1fr auto
+      !important;
+
+    gap:10px !important;
+
+    padding:10px 0 !important;
+  }
+
+  .heroOfferCopy{
+    text-align:left;
+  }
+
+  .heroOfferCopy small{
+    display:none !important;
+  }
+
+  .heroOfferCopy div{
+    display:block !important;
+  }
+
+  .heroOfferCopy strong{
+    display:block;
+
+    font-size:22px !important;
+    font-weight:660 !important;
+  }
+
+  .heroOfferCopy span{
+    display:block;
+
+    margin-top:3px;
+
+    color:#897970 !important;
+
+    font-size:8px !important;
+  }
+
+  .heroOfferButton{
+    width:auto !important;
+
+    min-width:185px !important;
+    min-height:54px !important;
+
+    padding:
+      0 14px
+      !important;
+
+    border-radius:
+      13px
+      !important;
+
+    font-size:
+      11px
+      !important;
+
+    white-space:nowrap;
+  }
+
+}
+
+
+/* =======================================================
+   SMALL PHONES
+   ======================================================= */
+
+@media(max-width:390px){
+
+  .proofCard:nth-child(3){
+    width:66%;
+  }
+
+  .mobileUrgency{
+    font-size:15px;
+  }
+
+  .mobileSchedule{
+    gap:7px;
+  }
+
+  .mobileSchedule > div{
+    min-height:68px;
+
+    gap:7px;
+
+    padding:10px;
+  }
+
+  .mobileScheduleIcon{
+    width:28px;
+    height:28px;
+  }
+
+  .mobileSchedule strong{
+    font-size:10px;
+  }
+
+  .mobileRegisterButton{
+    min-height:64px;
+
+    font-size:16px;
+  }
+
+  .heroOfferButton{
+    min-width:170px !important;
+
+    padding:
+      0 11px
+      !important;
+
+    font-size:
+      10px
+      !important;
+  }
+
+}
+
+
+/* =======================================================
+   VERY SMALL PHONES
+   ======================================================= */
+
+@media(max-width:350px){
+
+  .heroProofRow{
+    grid-template-columns:1fr !important;
+  }
+
+  .proofCard:nth-child(3){
+    grid-column:auto;
+
+    width:100%;
+  }
+
+  .mobileSchedule{
+    grid-template-columns:1fr;
+  }
+
+}
+
+
+/* CLAUDE HERO V10.7 MOBILE CONVERSION END */
+
+/* CLAUDE HERO V10.8 REAL SOCIAL PROOF START */
+
+/* Desktop proof treatment */
+
+.heroProofRow{
+  width:min(100%,820px) !important;
+}
+
+.proofCard{
+  min-height:80px !important;
+}
+
+.proofText small{
+  color:#a65a3f !important;
+
+  font-size:8px !important;
+  font-weight:800 !important;
+
+  letter-spacing:.12em !important;
+}
+
+.proofText strong{
+  color:#201c19 !important;
+
+  font-size:15px !important;
+  font-weight:650 !important;
+
+  letter-spacing:-.02em !important;
+}
+
+
+/* ---------- MOBILE REFERENCE STYLE ---------- */
+
+@media(max-width:640px){
+
+  /*
+   First two proof metrics side by side.
+   Community proof becomes centered below,
+   matching the supplied reference hierarchy.
+  */
+
+  .heroProofRow{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:10px !important;
+  }
+
+  .proofCard{
+    min-height:78px !important;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    gap:7px !important;
+
+    padding:10px 8px !important;
+
+    text-align:center;
+  }
+
+  .proofCard:nth-child(3){
+    grid-column:1 / -1;
+
+    width:62% !important;
+
+    justify-self:center;
+  }
+
+  .proofIcon{
+    width:32px !important;
+    height:32px !important;
+  }
+
+  .proofText{
+    align-items:center;
+  }
+
+  .proofText small{
+    color:
+      rgba(255,255,255,.76)
+      !important;
+
+    font-size:6.5px !important;
+
+    text-align:center;
+  }
+
+  .proofText strong{
+    color:#fff !important;
+
+    font-size:11px !important;
+    font-weight:650 !important;
+
+    text-align:center;
+  }
+
+}
+
+
+/* Small phones */
+
+@media(max-width:390px){
+
+  .proofCard:nth-child(3){
+    width:70% !important;
+  }
+
+}
+
+
+/* Very small phones */
+
+@media(max-width:350px){
+
+  .heroProofRow{
+    grid-template-columns:1fr !important;
+  }
+
+  .proofCard:nth-child(3){
+    grid-column:auto;
+
+    width:100% !important;
+  }
+
+}
+
+/* CLAUDE HERO V10.8 REAL SOCIAL PROOF END */
+
+/* CLAUDE HERO V10.9 MOBILE TYPOGRAPHY START */
+
+
+/* =======================================================
+   TABLET
+   ======================================================= */
+
+@media(max-width:820px){
+
+  .proofText small{
+    font-size:9px !important;
+  }
+
+  .proofText strong{
+    font-size:15px !important;
+  }
+
+  .mobileUrgency{
+    font-size:18px !important;
+    line-height:1.42 !important;
+  }
+
+}
+
+
+/* =======================================================
+   MOBILE
+   ======================================================= */
+
+@media(max-width:640px){
+
+  /* ---------------- SOCIAL PROOF CARDS ---------------- */
+
+  .proofCard{
+    min-height:104px !important;
+
+    padding:
+      16px 12px
+      !important;
+
+    gap:10px !important;
+  }
+
+  .proofCard:nth-child(3){
+    width:68% !important;
+  }
+
+  .proofIcon{
+    width:42px !important;
+    height:42px !important;
+
+    border-radius:12px !important;
+  }
+
+  .proofIcon svg{
+    width:21px !important;
+    height:21px !important;
+  }
+
+  .proofText{
+    gap:6px !important;
+  }
+
+  .proofText small{
+    font-size:9px !important;
+    font-weight:800 !important;
+
+    letter-spacing:.115em !important;
+  }
+
+  .proofText strong{
+    font-size:15px !important;
+    font-weight:690 !important;
+
+    line-height:1.22 !important;
+  }
+
+
+  /* ---------------- URGENCY ---------------- */
+
+  .mobileUrgency{
+    max-width:365px !important;
+
+    margin-top:36px !important;
+
+    font-size:20px !important;
+    font-weight:590 !important;
+
+    line-height:1.4 !important;
+
+    letter-spacing:-.02em;
+  }
+
+
+  /* ---------------- SEAT ROW ---------------- */
+
+  .heroSeatVisual{
+    height:55px !important;
+
+    margin-top:20px !important;
+    margin-bottom:10px !important;
+
+    gap:7px !important;
+  }
+
+  .heroSeatVisual > span{
+    width:24px !important;
+    height:30px !important;
+  }
+
+
+  /* ---------------- CURRENT BATCH LABEL ---------------- */
+
+  .mobileOfferValue{
+    margin-top:16px !important;
+    margin-bottom:24px !important;
+  }
+
+  .mobileOfferValue small{
+    font-size:10px !important;
+    font-weight:800 !important;
+
+    letter-spacing:.145em !important;
+  }
+
+  .mobileOfferValue span{
+    margin-top:10px !important;
+
+    font-size:16px !important;
+    font-weight:470 !important;
+
+    line-height:1.3 !important;
+  }
+
+  .mobileOfferValue strong{
+    min-width:150px !important;
+    min-height:78px !important;
+
+    margin-top:10px !important;
+
+    border-radius:16px !important;
+
+    font-size:36px !important;
+    font-weight:690 !important;
+  }
+
+
+  /* ---------------- DATE + TIME ---------------- */
+
+  .mobileSchedule{
+    gap:12px !important;
+
+    margin-top:12px !important;
+  }
+
+  .mobileSchedule > div{
+    min-height:94px !important;
+
+    gap:12px !important;
+
+    padding:
+      15px 14px
+      !important;
+
+    border-radius:17px !important;
+  }
+
+  .mobileScheduleIcon{
+    width:42px !important;
+    height:42px !important;
+
+    border-radius:12px !important;
+  }
+
+  .mobileScheduleIcon svg{
+    width:21px !important;
+    height:21px !important;
+  }
+
+  .mobileSchedule small{
+    font-size:9px !important;
+
+    letter-spacing:.12em !important;
+  }
+
+  .mobileSchedule strong{
+    font-size:15px !important;
+    font-weight:680 !important;
+
+    line-height:1.25 !important;
+  }
+
+
+  /* ---------------- MAIN MOBILE CTA ---------------- */
+
+  .mobileRegisterButton{
+    min-height:78px !important;
+
+    margin-top:18px !important;
+
+    border-radius:18px !important;
+
+    font-size:20px !important;
+    font-weight:690 !important;
+  }
+
+  .mobileRegisterButton span{
+    width:38px !important;
+    height:38px !important;
+
+    margin-left:15px !important;
+
+    font-size:16px !important;
+  }
+
+
+  /* ---------------- MICRO TRUST LINE ---------------- */
+
+  .mobileTrustLine{
+    gap:9px !important;
+
+    margin-top:18px !important;
+
+    font-size:12px !important;
+    font-weight:540 !important;
+
+    line-height:1.4 !important;
+  }
+
+  .mobileTrustLine i{
+    width:4px !important;
+    height:4px !important;
+  }
+
+
+  /* ---------------- STICKY BAR ---------------- */
+
+  .heroOfferInner{
+    gap:12px !important;
+
+    padding:
+      12px 0
+      !important;
+  }
+
+  .heroOfferCopy strong{
+    font-size:25px !important;
+    font-weight:680 !important;
+  }
+
+  .heroOfferCopy span{
+    margin-top:4px !important;
+
+    font-size:10px !important;
+    line-height:1.25 !important;
+  }
+
+  .heroOfferButton{
+    min-width:205px !important;
+    min-height:60px !important;
+
+    padding:
+      0 16px
+      !important;
+
+    border-radius:15px !important;
+
+    font-size:13px !important;
+    font-weight:700 !important;
+  }
+
+  .heroOfferButton b{
+    width:30px !important;
+    height:30px !important;
+
+    margin-left:8px !important;
+
+    font-size:13px !important;
+  }
+
+}
+
+
+/* =======================================================
+   390px PHONES
+   ======================================================= */
+
+@media(max-width:390px){
+
+  .proofCard{
+    min-height:96px !important;
+  }
+
+  .proofCard:nth-child(3){
+    width:74% !important;
+  }
+
+  .proofText small{
+    font-size:8px !important;
+  }
+
+  .proofText strong{
+    font-size:14px !important;
+  }
+
+  .mobileUrgency{
+    max-width:340px !important;
+
+    font-size:18px !important;
+  }
+
+  .mobileOfferValue span{
+    font-size:15px !important;
+  }
+
+  .mobileOfferValue strong{
+    min-width:140px !important;
+    min-height:72px !important;
+
+    font-size:33px !important;
+  }
+
+  .mobileSchedule > div{
+    min-height:88px !important;
+
+    padding:
+      13px 11px
+      !important;
+  }
+
+  .mobileScheduleIcon{
+    width:38px !important;
+    height:38px !important;
+  }
+
+  .mobileSchedule strong{
+    font-size:13px !important;
+  }
+
+  .mobileRegisterButton{
+    min-height:72px !important;
+
+    font-size:18px !important;
+  }
+
+  .mobileTrustLine{
+    font-size:10.5px !important;
+  }
+
+  .heroOfferCopy strong{
+    font-size:22px !important;
+  }
+
+  .heroOfferButton{
+    min-width:185px !important;
+
+    min-height:56px !important;
+
+    padding:
+      0 12px
+      !important;
+
+    font-size:11.5px !important;
+  }
+
+}
+
+
+/* =======================================================
+   SMALL 350px PHONES
+   ======================================================= */
+
+@media(max-width:350px){
+
+  .proofText strong{
+    font-size:14px !important;
+  }
+
+  .mobileSchedule{
+    grid-template-columns:1fr !important;
+  }
+
+  .mobileSchedule strong{
+    font-size:15px !important;
+  }
+
+  .mobileRegisterButton{
+    font-size:17px !important;
+  }
+
+  .heroOfferCopy strong{
+    font-size:19px !important;
+  }
+
+  .heroOfferButton{
+    min-width:160px !important;
+
+    font-size:10.5px !important;
+  }
+
+}
+
+/* CLAUDE HERO V10.9 MOBILE TYPOGRAPHY END */
+/* CLAUDE V11 REAL WORK IMAGE SECTION START */
+
+.community{
+  position:relative;
+  padding:30px 0 !important;
+  overflow:hidden;
+  background:#f7f2ec !important;
+}
+
+.realWorkSection{
+  position:relative;
+}
+
+.realWorkPanel{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:430px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:28px;
+  background:#111214;
+  box-shadow:
+    0 28px 80px rgba(30,20,15,.14),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.realWorkPicture{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  display:block;
+}
+
+.realWorkPicture img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+
+.realWorkPanel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(14,15,17,.20) 0%,
+      rgba(14,15,17,.08) 42%,
+      rgba(14,15,17,.03) 68%,
+      rgba(14,15,17,.10) 100%
+    );
+}
+
+.realWorkOverlay{
+  position:relative;
+  z-index:2;
+  width:min(38%,470px);
+  min-height:430px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:48px 0 48px 58px;
+}
+
+.realWorkEyebrow{
+  margin-bottom:15px;
+  color:#ec9776;
+  font-size:10px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.16em;
+}
+
+.realWorkOverlay h2{
+  margin:0;
+  color:#fff;
+  font-size:clamp(38px,3.2vw,54px);
+  font-weight:590;
+  line-height:1.03;
+  letter-spacing:-.052em;
+  text-wrap:balance;
+}
+
+.realWorkOverlay h2 em{
+  color:#f0a080;
+  font-style:normal;
+  font-weight:620;
+}
+
+.realWorkOverlay p{
+  max-width:430px;
+  margin:20px 0 0;
+  color:#c3b7b0;
+  font-size:15px;
+  font-weight:430;
+  line-height:1.7;
+}
+
+.realWorkTags{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:24px;
+}
+
+.realWorkTags span{
+  display:flex;
+  min-height:38px;
+  align-items:center;
+  padding:0 12px;
+  border:1px solid rgba(240,151,118,.17);
+  border-radius:11px;
+  background:rgba(255,255,255,.035);
+  color:#eaded7;
+  font-size:10px;
+  font-weight:610;
+  line-height:1.25;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+@media(max-width:1024px){
+  .community{
+    padding:24px 0 !important;
+  }
+
+  .realWorkPanel{
+    min-height:390px;
+    border-radius:24px;
+  }
+
+  .realWorkOverlay{
+    width:min(46%,430px);
+    min-height:390px;
+    padding:38px 0 38px 38px;
+  }
+
+  .realWorkOverlay h2{
+    font-size:clamp(34px,4.8vw,46px);
+  }
+
+  .realWorkOverlay p{
+    font-size:14px;
+  }
+
+  .realWorkTags{
+    grid-template-columns:1fr;
+    max-width:270px;
+  }
+}
+
+@media(max-width:640px){
+  .community{
+    padding:18px 0 !important;
+  }
+
+  .realWorkSection{
+    width:min(100% - 20px,1240px) !important;
+  }
+
+  .realWorkPanel{
+    min-height:0;
+    aspect-ratio:1122 / 1402;
+    border-radius:22px;
+  }
+
+  .realWorkPicture img{
+    object-position:center top;
+  }
+
+  .realWorkPanel::after{
+    background:
+      linear-gradient(
+        180deg,
+        rgba(14,15,17,.18) 0%,
+        rgba(14,15,17,.03) 46%,
+        rgba(14,15,17,.08) 100%
+      );
+  }
+
+  .realWorkOverlay{
+    position:absolute;
+    inset:0 0 auto 0;
+    width:100%;
+    min-height:0;
+    justify-content:flex-start;
+    padding:28px 22px 0;
+    text-align:left;
+  }
+
+  .realWorkEyebrow{
+    margin-bottom:10px;
+    font-size:8px;
+  }
+
+  .realWorkOverlay h2{
+    max-width:330px;
+    font-size:clamp(30px,8.8vw,38px);
+    line-height:1.04;
+  }
+
+  .realWorkOverlay p{
+    max-width:330px;
+    margin-top:12px;
+    font-size:13px;
+    line-height:1.55;
+  }
+
+  .realWorkTags{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+    width:100%;
+    max-width:350px;
+    margin-top:14px;
+  }
+
+  .realWorkTags span{
+    min-height:34px;
+    padding:0 9px;
+    border-radius:9px;
+    font-size:9px;
+  }
+}
+
+@media(max-width:380px){
+  .realWorkOverlay{
+    padding:23px 18px 0;
+  }
+
+  .realWorkOverlay h2{
+    font-size:28px;
+  }
+
+  .realWorkOverlay p{
+    font-size:12px;
+  }
+
+  .realWorkTags span{
+    min-height:32px;
+    font-size:8px;
+  }
+}
+
+/* CLAUDE V11 REAL WORK IMAGE SECTION END */
+
+/* CLAUDE V11.1 MOBILE VISUAL FIX START */
+
+
+/* =======================================================
+   DESKTOP / TABLET
+   ======================================================= */
+
+.realWorkDesktopArt{
+  display:block !important;
+
+  width:100% !important;
+  height:100% !important;
+
+  object-fit:cover !important;
+  object-position:center !important;
+}
+
+.realWorkMobileArt{
+  display:none !important;
+}
+
+
+/* =======================================================
+   TABLET
+   ======================================================= */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .realWorkDesktopArt{
+    display:block !important;
+  }
+
+  .realWorkMobileArt{
+    display:none !important;
+  }
+
+}
+
+
+/* =======================================================
+   MOBILE
+   ======================================================= */
+
+@media(max-width:640px){
+
+  /*
+    Completely disable desktop artwork.
+    Mobile asset becomes the only visible image.
+  */
+
+  .realWorkDesktopArt{
+    display:none !important;
+  }
+
+  .realWorkMobileArt{
+    display:block !important;
+
+    position:absolute !important;
+
+    inset:0 !important;
+
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    /*
+      Mobile asset has clean dark space on top
+      for HTML copy and workflow visuals below.
+    */
+    object-position:center top !important;
+  }
+
+
+  /*
+    Give the vertical artwork enough physical height.
+    Previous aspect-ratio could compress the artwork
+    too much on real mobile browsers.
+  */
+
+  .realWorkPanel{
+    aspect-ratio:auto !important;
+
+    min-height:760px !important;
+
+    border-radius:22px !important;
+  }
+
+
+  .realWorkPicture{
+    position:absolute !important;
+
+    inset:0 !important;
+
+    display:block !important;
+
+    width:100% !important;
+    height:100% !important;
+  }
+
+
+  /*
+    HTML copy stays on top.
+    Generated artwork remains visible below it.
+  */
+
+  .realWorkOverlay{
+    position:relative !important;
+
+    inset:auto !important;
+
+    z-index:3 !important;
+
+    width:100% !important;
+
+    padding:
+      30px 22px 0
+      !important;
+
+    pointer-events:none;
+  }
+
+
+  .realWorkOverlay h2{
+    max-width:340px !important;
+
+    font-size:
+      clamp(31px,9vw,39px)
+      !important;
+  }
+
+
+  .realWorkOverlay p{
+    max-width:340px !important;
+
+    font-size:14px !important;
+
+    line-height:1.55 !important;
+  }
+
+
+  /*
+    Keep tags compact so they do not hide
+    the visual cards underneath.
+  */
+
+  .realWorkTags{
+    max-width:350px !important;
+
+    margin-top:15px !important;
+  }
+
+  .realWorkTags span{
+    min-height:35px !important;
+
+    font-size:9px !important;
+  }
+
+}
+
+
+/* =======================================================
+   SMALL MOBILE
+   ======================================================= */
+
+@media(max-width:390px){
+
+  .realWorkPanel{
+    min-height:720px !important;
+  }
+
+  .realWorkOverlay{
+    padding:
+      26px 18px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:30px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:13px !important;
+  }
+
+}
+
+
+/* =======================================================
+   VERY SMALL MOBILE
+   ======================================================= */
+
+@media(max-width:350px){
+
+  .realWorkPanel{
+    min-height:690px !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:27px !important;
+  }
+
+}
+
+/* CLAUDE V11.1 MOBILE VISUAL FIX END */
+
+/* CLAUDE V11.2 RESPONSIVE GEOMETRY START */
+
+
+/* ======================================================
+   DESKTOP — USE THE REAL 2172 × 724 WIDE COMPOSITION
+   ====================================================== */
+
+.realWorkSection{
+  width:min(calc(100% - 64px),1560px) !important;
+  max-width:none !important;
+  margin-inline:auto !important;
+}
+
+.realWorkPanel{
+  width:100% !important;
+
+  min-height:0 !important;
+  max-height:none !important;
+
+  aspect-ratio:2172 / 724 !important;
+
+  border-radius:28px !important;
+}
+
+
+/* Full desktop artwork */
+
+.realWorkPicture{
+  position:absolute !important;
+  inset:0 !important;
+
+  display:block !important;
+
+  width:100% !important;
+  height:100% !important;
+}
+
+.realWorkDesktopArt{
+  position:absolute !important;
+  inset:0 !important;
+
+  display:block !important;
+
+  width:100% !important;
+  height:100% !important;
+
+  object-fit:cover !important;
+  object-position:center center !important;
+}
+
+.realWorkMobileArt{
+  display:none !important;
+}
+
+
+/* Desktop HTML copy fits the intentionally empty left area */
+
+.realWorkOverlay{
+  position:absolute !important;
+
+  inset:
+    0 auto 0 0
+    !important;
+
+  width:37% !important;
+  min-height:0 !important;
+
+  display:flex !important;
+
+  flex-direction:column;
+  justify-content:center;
+
+  padding:
+    clamp(32px,3vw,52px)
+    0
+    clamp(32px,3vw,52px)
+    clamp(42px,4vw,68px)
+    !important;
+}
+
+.realWorkEyebrow{
+  margin-bottom:13px !important;
+
+  font-size:9px !important;
+}
+
+.realWorkOverlay h2{
+  max-width:430px !important;
+
+  font-size:
+    clamp(34px,2.75vw,48px)
+    !important;
+
+  font-weight:560 !important;
+
+  line-height:1.04 !important;
+
+  letter-spacing:-.048em !important;
+}
+
+.realWorkOverlay p{
+  max-width:410px !important;
+
+  margin-top:16px !important;
+
+  font-size:
+    clamp(12px,1vw,15px)
+    !important;
+
+  line-height:1.6 !important;
+}
+
+.realWorkTags{
+  width:100% !important;
+  max-width:390px !important;
+
+  grid-template-columns:
+    repeat(2,minmax(0,1fr))
+    !important;
+
+  gap:7px !important;
+
+  margin-top:18px !important;
+}
+
+.realWorkTags span{
+  min-height:35px !important;
+
+  padding:
+    0 10px
+    !important;
+
+  font-size:
+    clamp(8px,.68vw,10px)
+    !important;
+}
+
+
+/* ======================================================
+   LARGE DESKTOP
+   ====================================================== */
+
+@media(min-width:1500px){
+
+  .realWorkOverlay h2{
+    max-width:470px !important;
+
+    font-size:50px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:15px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET — KEEP WIDE ART, RECOMPOSE SAFELY
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .realWorkSection{
+    width:min(calc(100% - 32px),1100px) !important;
+  }
+
+  .realWorkPanel{
+    /*
+      Slightly taller than desktop.
+      Allows text to remain readable on tablet.
+    */
+    aspect-ratio:16 / 7.6 !important;
+
+    min-height:0 !important;
+
+    border-radius:24px !important;
+  }
+
+  .realWorkDesktopArt{
+    display:block !important;
+
+    object-fit:cover !important;
+
+    /*
+      Preserve more of the right-side workflow visual.
+    */
+    object-position:58% center !important;
+  }
+
+  .realWorkMobileArt{
+    display:none !important;
+  }
+
+  .realWorkOverlay{
+    width:45% !important;
+
+    padding:
+      30px 0 30px 32px
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:350px !important;
+
+    font-size:
+      clamp(31px,4.3vw,42px)
+      !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:330px !important;
+
+    font-size:13px !important;
+  }
+
+  .realWorkTags{
+    max-width:300px !important;
+
+    grid-template-columns:1fr !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE — USE ACTUAL 1122 × 1402 VERTICAL COMPOSITION
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .community{
+    padding:
+      16px 0
+      !important;
+  }
+
+  .realWorkSection{
+    width:min(calc(100% - 20px),470px) !important;
+
+    margin-inline:auto !important;
+  }
+
+  .realWorkPanel{
+    /*
+      IMPORTANT:
+      no artificial 700/760px height.
+      Preserve the actual generated image ratio.
+    */
+
+    min-height:0 !important;
+    max-height:none !important;
+
+    aspect-ratio:
+      1122 / 1402
+      !important;
+
+    border-radius:22px !important;
+  }
+
+
+  /* Absolutely remove desktop artwork */
+
+  .realWorkDesktopArt{
+    display:none !important;
+  }
+
+
+  /* Vertical artwork fills mobile card */
+
+  .realWorkMobileArt{
+    position:absolute !important;
+
+    inset:0 !important;
+
+    display:block !important;
+
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    object-position:
+      center top
+      !important;
+  }
+
+
+  /*
+    Text occupies the intentionally clean
+    dark area at the top of the mobile artwork.
+  */
+
+  .realWorkOverlay{
+    position:absolute !important;
+
+    inset:
+      0 0 auto 0
+      !important;
+
+    width:100% !important;
+
+    min-height:0 !important;
+
+    display:block !important;
+
+    padding:
+      24px 20px 0
+      !important;
+  }
+
+  .realWorkEyebrow{
+    margin-bottom:9px !important;
+
+    font-size:7px !important;
+
+    letter-spacing:.15em !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:330px !important;
+
+    font-size:
+      clamp(27px,8vw,34px)
+      !important;
+
+    line-height:1.04 !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:325px !important;
+
+    margin-top:10px !important;
+
+    font-size:12px !important;
+
+    line-height:1.5 !important;
+  }
+
+  .realWorkTags{
+    width:100% !important;
+
+    max-width:330px !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:5px !important;
+
+    margin-top:11px !important;
+  }
+
+  .realWorkTags span{
+    min-height:30px !important;
+
+    padding:
+      0 7px
+      !important;
+
+    border-radius:8px !important;
+
+    font-size:8px !important;
+  }
+
+}
+
+
+/* ======================================================
+   SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:390px){
+
+  .realWorkSection{
+    width:
+      calc(100% - 16px)
+      !important;
+  }
+
+  .realWorkOverlay{
+    padding:
+      21px 17px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:27px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:11px !important;
+  }
+
+  .realWorkTags span{
+    min-height:29px !important;
+
+    font-size:7.5px !important;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:350px){
+
+  .realWorkOverlay{
+    padding:
+      18px 15px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:24px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:10.5px !important;
+  }
+
+}
+
+/* CLAUDE V11.2 RESPONSIVE GEOMETRY END */
+
+/* CLAUDE V11.3 ART DIRECTION POLISH START */
+
+
+/* ======================================================
+   SHARED SECTION
+   ====================================================== */
+
+.community{
+  padding:18px 0 20px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f8f4ef 0%,
+      #f6f0ea 100%
+    ) !important;
+}
+
+.realWorkSection{
+  width:min(calc(100% - 48px),1480px) !important;
+
+  margin-inline:auto !important;
+}
+
+
+/* ======================================================
+   DESKTOP
+   ====================================================== */
+
+@media(min-width:1025px){
+
+  /*
+    Slightly taller than original 3:1 artwork.
+    This makes the section feel like a designed
+    feature panel rather than a thin banner.
+  */
+
+  .realWorkPanel{
+    aspect-ratio:2.78 / 1 !important;
+
+    min-height:0 !important;
+
+    border-radius:30px !important;
+
+    box-shadow:
+      0 30px 80px rgba(39,25,18,.13),
+      0 4px 18px rgba(39,25,18,.06),
+      inset 0 1px 0 rgba(255,255,255,.055)
+      !important;
+  }
+
+
+  /*
+    Stronger left contrast for HTML copy,
+    right artwork remains clean.
+  */
+
+  .realWorkPanel::after{
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9,10,12,.38) 0%,
+        rgba(9,10,12,.19) 31%,
+        rgba(9,10,12,.04) 53%,
+        rgba(9,10,12,.01) 72%
+      )
+      !important;
+  }
+
+
+  /* Give artwork slightly more presence */
+
+  .realWorkDesktopArt{
+    transform:scale(1.025);
+
+    transform-origin:center;
+
+    object-position:
+      54% center
+      !important;
+  }
+
+
+  /* Rebalanced copy block */
+
+  .realWorkOverlay{
+    width:35% !important;
+
+    padding:
+      clamp(38px,3.2vw,56px)
+      0
+      clamp(38px,3.2vw,56px)
+      clamp(48px,4vw,68px)
+      !important;
+  }
+
+  .realWorkEyebrow{
+    margin-bottom:14px !important;
+
+    font-size:9px !important;
+
+    letter-spacing:.17em !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:445px !important;
+
+    font-size:
+      clamp(39px,2.65vw,47px)
+      !important;
+
+    font-weight:570 !important;
+
+    line-height:1.035 !important;
+
+    letter-spacing:-.05em !important;
+  }
+
+  .realWorkOverlay h2 em{
+    font-weight:610 !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:430px !important;
+
+    margin-top:17px !important;
+
+    color:#c8bdb7 !important;
+
+    font-size:15px !important;
+
+    line-height:1.62 !important;
+  }
+
+
+  /* Premium glass workflow chips */
+
+  .realWorkTags{
+    width:100% !important;
+
+    max-width:420px !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:8px !important;
+
+    margin-top:20px !important;
+  }
+
+  .realWorkTags span{
+    position:relative;
+
+    min-height:40px !important;
+
+    padding:
+      0 12px 0 27px
+      !important;
+
+    border:
+      1px solid
+      rgba(238,148,113,.18)
+      !important;
+
+    border-radius:11px !important;
+
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255,255,255,.055),
+        rgba(255,255,255,.025)
+      )
+      !important;
+
+    color:#efe5df !important;
+
+    font-size:10px !important;
+
+    font-weight:610 !important;
+
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.035)
+      !important;
+  }
+
+  .realWorkTags span::before{
+    content:"";
+
+    position:absolute;
+
+    left:12px;
+    top:50%;
+
+    width:6px;
+    height:6px;
+
+    transform:translateY(-50%);
+
+    border-radius:50%;
+
+    background:#ea8d6a;
+
+    box-shadow:
+      0 0 0 4px
+      rgba(234,141,106,.09);
+  }
+
+}
+
+
+/* ======================================================
+   LARGE DESKTOP
+   ====================================================== */
+
+@media(min-width:1500px){
+
+  .realWorkSection{
+    width:min(calc(100% - 64px),1540px) !important;
+  }
+
+  .realWorkOverlay{
+    width:34% !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:49px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET LANDSCAPE / SMALL DESKTOP
+   821px — 1024px
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:821px){
+
+  .community{
+    padding:16px 0 18px !important;
+  }
+
+  .realWorkSection{
+    width:min(calc(100% - 28px),1000px) !important;
+  }
+
+  .realWorkPanel{
+    aspect-ratio:16 / 8.3 !important;
+
+    border-radius:25px !important;
+  }
+
+  .realWorkDesktopArt{
+    display:block !important;
+
+    transform:scale(1.02);
+
+    object-fit:cover !important;
+
+    object-position:
+      58% center
+      !important;
+  }
+
+  .realWorkMobileArt{
+    display:none !important;
+  }
+
+  .realWorkOverlay{
+    width:46% !important;
+
+    padding:
+      30px 0 30px 32px
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:360px !important;
+
+    font-size:
+      clamp(32px,4.2vw,40px)
+      !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:340px !important;
+
+    margin-top:13px !important;
+
+    font-size:13px !important;
+  }
+
+  .realWorkTags{
+    max-width:315px !important;
+
+    margin-top:14px !important;
+  }
+
+  .realWorkTags span{
+    min-height:34px !important;
+
+    font-size:8.5px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET PORTRAIT
+   641px — 820px
+
+   Important:
+   Use vertical artwork instead of squeezing
+   the desktop banner.
+   ====================================================== */
+
+@media(max-width:820px) and (min-width:641px){
+
+  .community{
+    padding:16px 0 18px !important;
+  }
+
+  .realWorkSection{
+    width:min(calc(100% - 28px),700px) !important;
+  }
+
+  .realWorkPanel{
+    aspect-ratio:4 / 5 !important;
+
+    max-height:850px !important;
+
+    border-radius:26px !important;
+  }
+
+  .realWorkDesktopArt{
+    display:none !important;
+  }
+
+  .realWorkMobileArt{
+    position:absolute !important;
+
+    inset:0 !important;
+
+    display:block !important;
+
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    object-position:center top !important;
+  }
+
+  .realWorkPanel::after{
+    background:
+      linear-gradient(
+        180deg,
+        rgba(9,10,12,.32) 0%,
+        rgba(9,10,12,.13) 32%,
+        rgba(9,10,12,.015) 56%
+      )
+      !important;
+  }
+
+  .realWorkOverlay{
+    position:absolute !important;
+
+    inset:0 0 auto 0 !important;
+
+    width:100% !important;
+
+    padding:
+      36px 36px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:540px !important;
+
+    font-size:
+      clamp(36px,6vw,45px)
+      !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:520px !important;
+
+    margin-top:14px !important;
+
+    font-size:14px !important;
+  }
+
+  .realWorkTags{
+    max-width:520px !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    margin-top:16px !important;
+  }
+
+  .realWorkTags span{
+    min-height:36px !important;
+
+    font-size:9px !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .community{
+    padding:
+      12px 0 14px
+      !important;
+  }
+
+  .realWorkSection{
+    width:
+      calc(100% - 14px)
+      !important;
+
+    max-width:470px !important;
+  }
+
+  .realWorkPanel{
+    aspect-ratio:
+      1122 / 1402
+      !important;
+
+    min-height:0 !important;
+    max-height:none !important;
+
+    border-radius:20px !important;
+
+    box-shadow:
+      0 20px 46px rgba(39,25,18,.12)
+      !important;
+  }
+
+
+  /* Desktop image must never appear on mobile */
+
+  .realWorkDesktopArt{
+    display:none !important;
+  }
+
+
+  /* True mobile art */
+
+  .realWorkMobileArt{
+    position:absolute !important;
+
+    inset:0 !important;
+
+    display:block !important;
+
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    object-position:center top !important;
+  }
+
+
+  /*
+    Strong top reading zone.
+    Lower artwork remains visually unobstructed.
+  */
+
+  .realWorkPanel::after{
+    background:
+      linear-gradient(
+        180deg,
+        rgba(8,9,11,.30) 0%,
+        rgba(8,9,11,.10) 29%,
+        rgba(8,9,11,.015) 46%,
+        transparent 65%
+      )
+      !important;
+  }
+
+  .realWorkOverlay{
+    position:absolute !important;
+
+    inset:
+      0 0 auto 0
+      !important;
+
+    width:100% !important;
+
+    padding:
+      23px 19px 0
+      !important;
+  }
+
+  .realWorkEyebrow{
+    margin-bottom:8px !important;
+
+    font-size:7px !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:335px !important;
+
+    font-size:
+      clamp(28px,8.2vw,34px)
+      !important;
+
+    font-weight:580 !important;
+
+    line-height:1.035 !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:330px !important;
+
+    margin-top:10px !important;
+
+    color:#c9bdb6 !important;
+
+    font-size:12.5px !important;
+
+    line-height:1.5 !important;
+  }
+
+
+  /*
+    IMPORTANT:
+    Mobile image already visually explains
+    the four workflows.
+    Do not repeat the same information as chips.
+  */
+
+  .realWorkTags{
+    display:none !important;
+  }
+
+
+  /*
+    Sticky CTA clearance.
+    Prevent next content from sitting behind it.
+  */
+
+  .page{
+    padding-bottom:
+      calc(104px + env(safe-area-inset-bottom))
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   390px MOBILE
+   ====================================================== */
+
+@media(max-width:390px){
+
+  .realWorkSection{
+    width:
+      calc(100% - 12px)
+      !important;
+  }
+
+  .realWorkOverlay{
+    padding:
+      20px 16px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:310px !important;
+
+    font-size:28px !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:305px !important;
+
+    font-size:12px !important;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:350px){
+
+  .realWorkOverlay{
+    padding:
+      18px 14px 0
+      !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:25px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:11px !important;
+  }
+
+}
+
+
+/* ======================================================
+   REDUCED MOTION
+   ====================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+  .realWorkDesktopArt,
+  .realWorkMobileArt{
+    transform:none !important;
+  }
+
+}
+
+/* CLAUDE V11.3 ART DIRECTION POLISH END */
+/* CLAUDE V11.4 FINAL ART ASSETS START */
+
+/* Shared artwork frame */
+.realWorkPicture{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+}
+
+.realWorkPicture img{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+}
+
+.realWorkTabletArt{
+  display:none !important;
+}
+
+/* Desktop: dedicated wide generated visual */
+@media(min-width:1025px){
+  .community{
+    padding:18px 0 20px !important;
+  }
+
+  .realWorkSection{
+    width:min(calc(100% - 48px),1500px) !important;
+    max-width:none !important;
+    margin-inline:auto !important;
+  }
+
+  .realWorkPanel{
+    width:100% !important;
+    min-height:0 !important;
+    max-height:none !important;
+    aspect-ratio:1916 / 821 !important;
+    border-radius:28px !important;
+    overflow:hidden !important;
+    background:#0f1012 !important;
+    box-shadow:
+      0 28px 74px rgba(35,23,17,.13),
+      0 4px 16px rgba(35,23,17,.05)
+      !important;
+  }
+
+  .realWorkDesktopArt{
+    display:block !important;
+    object-position:center center !important;
+    transform:none !important;
+  }
+
+  .realWorkTabletArt,
+  .realWorkMobileArt{
+    display:none !important;
+  }
+
+  .realWorkOverlay{
+    display:none !important;
+  }
+
+  .realWorkPanel::after{
+    display:none !important;
+  }
+}
+
+/* Tablet: dedicated 4:3 generated visual */
+@media(max-width:1024px) and (min-width:641px){
+  .community{
+    padding:16px 0 18px !important;
+  }
+
+  .realWorkSection{
+    width:min(calc(100% - 28px),920px) !important;
+    max-width:none !important;
+    margin-inline:auto !important;
+  }
+
+  .realWorkPanel{
+    width:100% !important;
+    min-height:0 !important;
+    max-height:none !important;
+    aspect-ratio:1448 / 1086 !important;
+    border-radius:24px !important;
+    overflow:hidden !important;
+    background:#0f1012 !important;
+    box-shadow:
+      0 24px 60px rgba(35,23,17,.12)
+      !important;
+  }
+
+  .realWorkDesktopArt,
+  .realWorkMobileArt{
+    display:none !important;
+  }
+
+  .realWorkTabletArt{
+    display:block !important;
+    object-position:center center !important;
+  }
+
+  .realWorkOverlay{
+    display:none !important;
+  }
+
+  .realWorkPanel::after{
+    display:none !important;
+  }
+}
+
+/* Mobile: keep proven vertical art + real HTML copy */
+@media(max-width:640px){
+  .community{
+    padding:12px 0 14px !important;
+  }
+
+  .realWorkSection{
+    width:calc(100% - 14px) !important;
+    max-width:470px !important;
+    margin-inline:auto !important;
+  }
+
+  .realWorkPanel{
+    min-height:0 !important;
+    max-height:none !important;
+    aspect-ratio:1122 / 1402 !important;
+    border-radius:20px !important;
+    overflow:hidden !important;
+  }
+
+  .realWorkDesktopArt,
+  .realWorkTabletArt{
+    display:none !important;
+  }
+
+  .realWorkMobileArt{
+    display:block !important;
+    object-position:center top !important;
+  }
+
+  .realWorkOverlay{
+    display:block !important;
+    position:absolute !important;
+    inset:0 0 auto 0 !important;
+    width:100% !important;
+    padding:23px 19px 0 !important;
+  }
+
+  .realWorkEyebrow{
+    margin-bottom:8px !important;
+    font-size:7px !important;
+  }
+
+  .realWorkOverlay h2{
+    max-width:335px !important;
+    font-size:clamp(28px,8.2vw,34px) !important;
+    font-weight:580 !important;
+    line-height:1.035 !important;
+  }
+
+  .realWorkOverlay p{
+    max-width:330px !important;
+    margin-top:10px !important;
+    color:#c9bdb6 !important;
+    font-size:12.5px !important;
+    line-height:1.5 !important;
+  }
+
+  .realWorkTags{
+    display:none !important;
+  }
+
+  .page{
+    padding-bottom:
+      calc(104px + env(safe-area-inset-bottom))
+      !important;
+  }
+}
+
+@media(max-width:390px){
+  .realWorkSection{
+    width:calc(100% - 12px) !important;
+  }
+
+  .realWorkOverlay{
+    padding:20px 16px 0 !important;
+  }
+
+  .realWorkOverlay h2{
+    font-size:28px !important;
+  }
+
+  .realWorkOverlay p{
+    font-size:12px !important;
+  }
+}
+
+/* CLAUDE V11.4 FINAL ART ASSETS END */
+
+/* CLAUDE V11.5 TOP OFFER + COMPACT VISUAL START */
+
+
+/* ======================================================
+   DESKTOP + TABLET
+   MOVE CONVERSION BAR TO ABSOLUTE TOP
+   ====================================================== */
+
+@media(min-width:641px){
+
+  .heroOfferBar{
+    position:fixed !important;
+
+    top:0 !important;
+    right:0 !important;
+    bottom:auto !important;
+    left:0 !important;
+
+    width:100% !important;
+
+    margin:0 !important;
+
+    opacity:1 !important;
+    visibility:visible !important;
+
+    transform:none !important;
+    translate:none !important;
+
+    animation:none !important;
+    transition:none !important;
+
+    pointer-events:auto !important;
+
+    z-index:10000 !important;
+
+    border-top:0 !important;
+
+    border-bottom:
+      1px solid
+      rgba(76,54,42,.09)
+      !important;
+
+    background:
+      rgba(248,243,236,.975)
+      !important;
+
+    box-shadow:
+      0 9px 30px
+      rgba(53,37,27,.07)
+      !important;
+
+    backdrop-filter:
+      blur(16px)
+      !important;
+
+    -webkit-backdrop-filter:
+      blur(16px)
+      !important;
+  }
+
+
+  /*
+    Give page real space for the fixed top bar.
+    It must not cover the hero content.
+  */
+
+  .page{
+    padding-top:84px !important;
+  }
+
+
+  .heroOfferInner{
+    min-height:84px !important;
+
+    padding:
+      10px 0
+      !important;
+
+    align-items:center !important;
+  }
+
+
+  .heroOfferCopy{
+    display:flex !important;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    min-width:0;
+  }
+
+
+  .heroOfferCopy small{
+    margin-bottom:4px !important;
+  }
+
+
+  .heroOfferCopy strong{
+    line-height:1 !important;
+  }
+
+
+  .heroOfferButton{
+    min-height:54px !important;
+
+    padding:
+      0 21px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   DESKTOP
+   REDUCE DARK VISUAL HEIGHT
+   ====================================================== */
+
+@media(min-width:1025px){
+
+  .community{
+    padding:
+      10px 0 12px
+      !important;
+  }
+
+
+  .realWorkSection{
+    width:
+      min(
+        calc(100% - 48px),
+        1500px
+      )
+      !important;
+  }
+
+
+  /*
+    Do not use the natural 1916x821 height.
+    Use a controlled premium landscape height.
+  */
+
+  .realWorkPanel{
+    aspect-ratio:auto !important;
+
+    height:
+      clamp(
+        430px,
+        30vw,
+        500px
+      )
+      !important;
+
+    min-height:0 !important;
+    max-height:500px !important;
+
+    border-radius:26px !important;
+  }
+
+
+  /*
+    Image remains full bleed.
+    Mild vertical crop only.
+  */
+
+  .realWorkDesktopArt{
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    object-position:
+      center 52%
+      !important;
+
+    transform:none !important;
+  }
+
+}
+
+
+/* ======================================================
+   LARGE DESKTOP
+   ====================================================== */
+
+@media(min-width:1500px){
+
+  .realWorkPanel{
+    height:500px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   KEEP TABLET ART BUT REDUCE HEIGHT
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .page{
+    padding-top:78px !important;
+  }
+
+
+  .heroOfferInner{
+    min-height:78px !important;
+  }
+
+
+  .community{
+    padding:
+      10px 0 12px
+      !important;
+  }
+
+
+  .realWorkSection{
+    width:
+      min(
+        calc(100% - 26px),
+        900px
+      )
+      !important;
+  }
+
+
+  .realWorkPanel{
+    aspect-ratio:auto !important;
+
+    height:
+      clamp(
+        410px,
+        57vw,
+        520px
+      )
+      !important;
+
+    min-height:0 !important;
+    max-height:520px !important;
+
+    border-radius:22px !important;
+  }
+
+
+  .realWorkTabletArt{
+    width:100% !important;
+    height:100% !important;
+
+    object-fit:cover !important;
+
+    object-position:
+      center 51%
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   IMPORTANT: PRESERVE CURRENT GOOD MOBILE VERSION
+   ====================================================== */
+
+@media(max-width:640px){
+
+  /*
+    Explicitly do not inherit desktop/tablet top-bar geometry.
+    Existing mobile sticky-bottom design remains authoritative.
+  */
+
+  .page{
+    padding-top:0 !important;
+  }
+
+}
+
+
+/* CLAUDE V11.5 TOP OFFER + COMPACT VISUAL END */
+
+/* CLAUDE V11.6 TOP LAYER LOCK START */
+
+
+/* ======================================================
+   DESKTOP + TABLET
+   FORCE OFFER BAR ABOVE EVERY PAGE SECTION
+   ====================================================== */
+
+@media(min-width:641px){
+
+  /*
+    Remove stacking contexts from ancestors that can trap
+    position:fixed children underneath later sections.
+  */
+
+  .page,
+  .hero,
+  .heroCenter{
+    transform:none !important;
+    translate:none !important;
+    filter:none !important;
+    perspective:none !important;
+    isolation:auto !important;
+    contain:none !important;
+  }
+
+
+  /*
+    Highest application layer.
+    Keep below browser UI, naturally.
+  */
+
+  .heroOfferBar{
+    position:fixed !important;
+
+    top:0 !important;
+    right:0 !important;
+    bottom:auto !important;
+    left:0 !important;
+
+    width:100vw !important;
+
+    margin:0 !important;
+
+    z-index:2147483000 !important;
+
+    isolation:isolate !important;
+
+    opacity:1 !important;
+    visibility:visible !important;
+
+    transform:translate3d(0,0,0) !important;
+
+    pointer-events:auto !important;
+
+    overflow:visible !important;
+
+    background:
+      rgba(248,243,236,.985)
+      !important;
+
+    border-top:0 !important;
+
+    border-bottom:
+      1px solid
+      rgba(72,48,34,.11)
+      !important;
+
+    box-shadow:
+      0 10px 34px
+      rgba(47,31,22,.13)
+      !important;
+
+    backdrop-filter:
+      blur(18px)
+      saturate(1.05)
+      !important;
+
+    -webkit-backdrop-filter:
+      blur(18px)
+      saturate(1.05)
+      !important;
+  }
+
+
+  /*
+    Make the bar itself its own top stacking context.
+  */
+
+  .heroOfferBar::before{
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    z-index:-1;
+
+    background:
+      rgba(248,243,236,.985);
+  }
+
+
+  /*
+    Ensure its children always stay above
+    the bar background.
+  */
+
+  .heroOfferInner,
+  .heroOfferCopy,
+  .heroOfferButton{
+    position:relative !important;
+
+    z-index:2 !important;
+  }
+
+
+  /*
+    Everything else on the page remains underneath.
+  */
+
+  .hero,
+  .community,
+  .section,
+  .agenda,
+  .faq,
+  .finalCta{
+    position:relative;
+
+    z-index:1 !important;
+  }
+
+
+  /*
+    Reserve physical space below the fixed bar.
+    Prevent first content from hiding beneath it.
+  */
+
+  .page{
+    padding-top:88px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .page{
+    padding-top:82px !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   KEEP CURRENT BOTTOM STICKY BEHAVIOUR
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .heroOfferBar{
+    z-index:2147483000 !important;
+  }
+
+  .page{
+    padding-top:0 !important;
+  }
+
+}
+
+
+/* CLAUDE V11.6 TOP LAYER LOCK END */
+
+/* CLAUDE V11.7 BOTTOM TOP-LAYER LOCK START */
+
+
+/* ======================================================
+   FINAL POSITIONING RULE
+
+   "Top layer" = highest visual layer / z-index.
+   Position itself remains FIXED AT BOTTOM.
+   ====================================================== */
+
+
+/* Prevent ancestors from trapping a fixed child */
+.page,
+.hero,
+.heroCenter{
+  transform:none !important;
+  translate:none !important;
+  filter:none !important;
+  perspective:none !important;
+  isolation:auto !important;
+  contain:none !important;
+}
+
+
+/* ======================================================
+   BOTTOM STICKY CONVERSION BAR — ALL VIEWPORTS
+   ====================================================== */
+
+.heroOfferBar{
+  position:fixed !important;
+
+  top:auto !important;
+  right:0 !important;
+  bottom:0 !important;
+  left:0 !important;
+
+  width:100% !important;
+  max-width:none !important;
+
+  margin:0 !important;
+
+  /*
+    Above page images, FAQ, sections, cards,
+    decorative visuals and normal widgets.
+  */
+  z-index:2147483000 !important;
+
+  isolation:isolate !important;
+
+  visibility:visible !important;
+
+  pointer-events:auto !important;
+
+  overflow:visible !important;
+
+  border-top:
+    1px solid
+    rgba(72,48,34,.10)
+    !important;
+
+  border-bottom:0 !important;
+
+  background:
+    rgba(248,243,236,.985)
+    !important;
+
+  box-shadow:
+    0 -12px 38px
+    rgba(47,31,22,.13)
+    !important;
+
+  backdrop-filter:
+    blur(18px)
+    saturate(1.05)
+    !important;
+
+  -webkit-backdrop-filter:
+    blur(18px)
+    saturate(1.05)
+    !important;
+
+  /*
+    It appears shortly after landing,
+    then remains pinned permanently.
+  */
+  animation:
+    v117BottomOfferIn
+    .42s
+    cubic-bezier(.2,.75,.25,1)
+    1.25s
+    both
+    !important;
+}
+
+
+@keyframes v117BottomOfferIn{
+
+  from{
+    opacity:0;
+    transform:
+      translate3d(0,105%,0);
+  }
+
+  to{
+    opacity:1;
+    transform:
+      translate3d(0,0,0);
+  }
+
+}
+
+
+/* Bar background always under its own content */
+.heroOfferBar::before{
+  content:"";
+
+  position:absolute;
+
+  inset:0;
+
+  z-index:-1;
+
+  pointer-events:none;
+
+  background:
+    rgba(248,243,236,.985);
+}
+
+
+/* Bar's actual text/button sit on foreground layer */
+.heroOfferInner,
+.heroOfferCopy,
+.heroOfferButton{
+  position:relative !important;
+
+  z-index:2 !important;
+}
+
+
+/* ======================================================
+   EVERYTHING ELSE STAYS UNDER THE BAR
+   ====================================================== */
+
+.hero,
+.community,
+.section,
+.agenda,
+.faq,
+.finalCta{
+  position:relative;
+
+  z-index:1 !important;
+}
+
+
+/* ======================================================
+   REMOVE THE WRONG TOP-BAR CLEARANCE
+   ====================================================== */
+
+.page{
+  padding-top:0 !important;
+}
+
+
+/* ======================================================
+   DESKTOP
+   ====================================================== */
+
+@media(min-width:1025px){
+
+  /*
+    Physical clearance at page end so final content
+    can scroll fully above the pinned bar.
+  */
+
+  .page{
+    padding-bottom:
+      104px
+      !important;
+  }
+
+
+  .heroOfferInner{
+    min-height:82px !important;
+
+    padding:
+      10px 0
+      !important;
+
+    align-items:center !important;
+  }
+
+
+  .heroOfferButton{
+    min-height:54px !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .page{
+    padding-top:0 !important;
+
+    padding-bottom:
+      100px
+      !important;
+  }
+
+
+  .heroOfferInner{
+    min-height:78px !important;
+
+    padding:
+      9px 0
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .page{
+    padding-top:0 !important;
+
+    padding-bottom:
+      calc(
+        104px +
+        env(safe-area-inset-bottom)
+      )
+      !important;
+  }
+
+
+  .heroOfferBar{
+    bottom:0 !important;
+
+    padding-bottom:
+      env(safe-area-inset-bottom)
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   REDUCED MOTION
+   ====================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+  .heroOfferBar{
+    animation:none !important;
+
+    opacity:1 !important;
+
+    transform:none !important;
+  }
+
+}
+
+
+/* CLAUDE V11.7 BOTTOM TOP-LAYER LOCK END */
+
+/* CLAUDE V11.8 TRUE ROOT STACKING FIX START */
+
+
+/* ======================================================
+   ROOT CAUSE FIX
+
+   Do NOT create a stacking context on .hero or .page.
+   The fixed offer dock lives inside this tree and must
+   be allowed to participate in the root stacking context.
+   ====================================================== */
+
+.page,
+.hero,
+.heroCenter{
+  z-index:auto !important;
+
+  isolation:auto !important;
+
+  transform:none !important;
+  translate:none !important;
+  scale:none !important;
+  rotate:none !important;
+
+  filter:none !important;
+  perspective:none !important;
+
+  contain:none !important;
+
+  will-change:auto !important;
+}
+
+
+/*
+  Earlier versions gave normal content z-index:1.
+  That trapped/competed with the fixed dock.
+
+  Return normal content to document paint order.
+*/
+
+.community,
+.section,
+.agenda,
+.faq,
+.finalCta{
+  z-index:auto !important;
+
+  isolation:auto !important;
+}
+
+
+/* ======================================================
+   TRUE FOREGROUND DOCK
+   ====================================================== */
+
+.heroOfferBar{
+  position:fixed !important;
+
+  top:auto !important;
+  right:0 !important;
+  bottom:0 !important;
+  left:0 !important;
+
+  width:100% !important;
+
+  /*
+    Highest practical application layer.
+  */
+  z-index:2147483646 !important;
+
+  isolation:isolate !important;
+
+  pointer-events:auto !important;
+
+  overflow:visible !important;
+
+  visibility:visible !important;
+
+  border-bottom:0 !important;
+
+  background:
+    rgba(248,243,236,.99)
+    !important;
+
+  box-shadow:
+    0 -12px 38px
+    rgba(45,29,19,.14)
+    !important;
+
+  backdrop-filter:
+    blur(18px)
+    saturate(1.06)
+    !important;
+
+  -webkit-backdrop-filter:
+    blur(18px)
+    saturate(1.06)
+    !important;
+}
+
+
+/* The dock content itself */
+.heroOfferInner,
+.heroOfferCopy,
+.heroOfferButton{
+  position:relative !important;
+
+  z-index:3 !important;
+}
+
+
+/* Solid dock surface */
+.heroOfferBar::before{
+  content:"";
+
+  position:absolute;
+
+  inset:0;
+
+  z-index:-1;
+
+  pointer-events:none;
+
+  background:
+    rgba(248,243,236,.99);
+}
+
+
+/*
+  Soft transition strip above the dock.
+  Makes content approaching the dock feel intentional.
+*/
+
+.heroOfferBar::after{
+  content:"";
+
+  position:absolute;
+
+  right:0;
+  bottom:100%;
+  left:0;
+
+  height:18px;
+
+  pointer-events:none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(248,243,236,.52),
+      rgba(248,243,236,0)
+    );
+}
+
+
+/* ======================================================
+   DESKTOP — COMPACT DOCK
+   ====================================================== */
+
+@media(min-width:1025px){
+
+  .heroOfferInner{
+    min-height:72px !important;
+
+    padding:
+      8px 0
+      !important;
+  }
+
+  .heroOfferCopy small{
+    font-size:7px !important;
+  }
+
+  .heroOfferCopy strong{
+    font-size:25px !important;
+  }
+
+  .heroOfferCopy span{
+    font-size:10px !important;
+  }
+
+  .heroOfferButton{
+    min-height:50px !important;
+
+    padding:
+      0 19px
+      !important;
+  }
+
+  .page{
+    padding-top:0 !important;
+
+    padding-bottom:
+      96px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .heroOfferInner{
+    min-height:70px !important;
+
+    padding:
+      8px 0
+      !important;
+  }
+
+  .heroOfferButton{
+    min-height:50px !important;
+  }
+
+  .page{
+    padding-top:0 !important;
+
+    padding-bottom:
+      94px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .heroOfferBar{
+    top:auto !important;
+    bottom:0 !important;
+
+    z-index:2147483646 !important;
+
+    padding-bottom:
+      env(safe-area-inset-bottom)
+      !important;
+  }
+
+  .page{
+    padding-top:0 !important;
+
+    padding-bottom:
+      calc(
+        104px +
+        env(safe-area-inset-bottom)
+      )
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   REDUCED MOTION
+   ====================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+  .heroOfferBar{
+    animation:none !important;
+
+    opacity:1 !important;
+
+    transform:none !important;
+  }
+
+}
+
+
+/* CLAUDE V11.8 TRUE ROOT STACKING FIX END */
+
+/* CLAUDE V11.9 PREMIUM BATCH ADVANTAGE START */
+
+
+/* ======================================================
+   SECTION FOUNDATION
+   ====================================================== */
+
+.batchAdvantage{
+  position:relative;
+
+  overflow:hidden;
+
+  padding:
+    clamp(68px,6vw,96px)
+    0
+    !important;
+
+  background:
+    radial-gradient(
+      600px 420px
+      at 8% 92%,
+      rgba(232,103,61,.055),
+      transparent 72%
+    ),
+    radial-gradient(
+      500px 360px
+      at 94% 10%,
+      rgba(232,103,61,.045),
+      transparent 74%
+    ),
+    linear-gradient(
+      180deg,
+      #fffdfa 0%,
+      #fbf7f2 100%
+    );
+}
+
+
+.batchAdvantage::before{
+  content:"";
+
+  position:absolute;
+
+  width:300px;
+  height:300px;
+
+  right:-110px;
+  bottom:-130px;
+
+  pointer-events:none;
+
+  opacity:.26;
+
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(220,94,54,.16) 0,
+      rgba(220,94,54,.16) 1px,
+      transparent 1px,
+      transparent 15px
+    );
+
+  mask-image:
+    linear-gradient(
+      135deg,
+      transparent,
+      #000
+    );
+}
+
+
+.batchAdvantageInner{
+  position:relative;
+
+  z-index:2;
+
+  display:grid;
+
+  grid-template-columns:
+    minmax(0,1.04fr)
+    minmax(460px,.96fr);
+
+  gap:
+    clamp(52px,6vw,90px);
+
+  align-items:center;
+
+  width:
+    min(
+      calc(100% - 56px),
+      1440px
+    )
+    !important;
+}
+
+
+/* ======================================================
+   LEFT CONTENT
+   ====================================================== */
+
+.batchAdvantageIntro{
+  max-width:720px;
+}
+
+
+.batchAdvantageBadge{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:10px;
+
+  min-height:42px;
+
+  padding:
+    0 16px;
+
+  border:
+    1px solid
+    rgba(217,87,47,.22);
+
+  border-radius:10px;
+
+  background:
+    rgba(255,255,255,.66);
+
+  color:#ce512d;
+
+  font-size:11px;
+  font-weight:800;
+
+  line-height:1;
+
+  letter-spacing:.12em;
+
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.8);
+}
+
+
+.batchSpark{
+  display:grid;
+
+  width:18px;
+  height:18px;
+
+  place-items:center;
+}
+
+
+.batchSpark svg{
+  width:17px;
+  height:17px;
+
+  fill:#df633c;
+
+  stroke:none;
+}
+
+
+.batchAdvantageIntro h2{
+  max-width:720px;
+
+  margin:
+    28px 0 0;
+
+  color:#1c1a19;
+
+  font-size:
+    clamp(43px,4.2vw,64px);
+
+  font-weight:620;
+
+  line-height:.99;
+
+  letter-spacing:-.055em;
+
+  text-wrap:balance;
+}
+
+
+.batchAdvantageIntro h2 em{
+  color:#dc633d;
+
+  font-style:normal;
+
+  font-weight:640;
+}
+
+
+.batchAdvantageLead{
+  max-width:640px;
+
+  margin:
+    26px 0 0;
+
+  color:#49413d;
+
+  font-size:
+    clamp(16px,1.22vw,19px);
+
+  font-weight:430;
+
+  line-height:1.68;
+}
+
+
+/* ======================================================
+   ₹9 PRICE CHIP
+   ====================================================== */
+
+.batchPriceChip{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:15px;
+
+  min-height:68px;
+
+  margin-top:30px;
+
+  padding:
+    9px 18px 9px 10px;
+
+  border:
+    1px solid
+    rgba(222,96,57,.25);
+
+  border-radius:18px;
+
+  background:
+    rgba(255,255,255,.78);
+
+  box-shadow:
+    0 14px 32px
+    rgba(168,77,46,.07),
+    inset 0 1px 0
+    rgba(255,255,255,.92);
+}
+
+
+.batchPriceIcon{
+  display:grid;
+
+  width:48px;
+  height:48px;
+
+  flex:0 0 auto;
+
+  place-items:center;
+
+  border-radius:50%;
+
+  color:#fff;
+
+  font-size:22px;
+  font-weight:650;
+
+  background:
+    linear-gradient(
+      145deg,
+      #e8663d,
+      #d84d24
+    );
+
+  box-shadow:
+    0 9px 20px
+    rgba(218,78,37,.21);
+}
+
+
+.batchPriceChip strong{
+  color:#d9532c;
+
+  font-size:23px;
+
+  font-weight:720;
+
+  letter-spacing:-.035em;
+}
+
+
+.batchPriceChip small{
+  padding-left:4px;
+
+  color:#d55531;
+
+  font-size:13px;
+
+  font-weight:570;
+}
+
+
+/* ======================================================
+   URGENCY
+   ====================================================== */
+
+.batchUrgency{
+  display:flex;
+
+  flex-wrap:wrap;
+
+  align-items:center;
+
+  gap:9px;
+
+  margin-top:22px;
+
+  color:#403936;
+
+  font-size:13px;
+
+  font-weight:500;
+
+  line-height:1.45;
+}
+
+
+.batchUrgencyIcon{
+  display:grid;
+
+  width:24px;
+  height:24px;
+
+  place-items:center;
+
+  color:#dc5c34;
+}
+
+
+.batchUrgencyIcon svg{
+  width:22px;
+  height:22px;
+
+  stroke:currentColor;
+
+  stroke-width:1.8;
+
+  stroke-linecap:round;
+
+  stroke-linejoin:round;
+}
+
+
+.batchUrgency i{
+  color:#8a7f78;
+
+  font-style:normal;
+}
+
+
+.batchUrgency strong{
+  margin-left:3px;
+
+  color:#d7542d;
+
+  font-weight:740;
+}
+
+
+/* ======================================================
+   CTA SYSTEM
+   ====================================================== */
+
+.batchActions{
+  display:flex;
+
+  flex-wrap:wrap;
+
+  gap:12px;
+
+  margin-top:28px;
+}
+
+
+.batchPrimaryCta,
+.batchSecondaryCta{
+  display:inline-flex;
+
+  min-height:60px;
+
+  align-items:center;
+
+  justify-content:center;
+
+  gap:12px;
+
+  border-radius:15px;
+
+  text-decoration:none;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+
+.batchPrimaryCta{
+  min-width:270px;
+
+  padding:
+    0 18px;
+
+  color:#fff;
+
+  border:
+    1px solid
+    rgba(194,61,25,.16);
+
+  background:
+    linear-gradient(
+      135deg,
+      #e9643d 0%,
+      #d94c25 100%
+    );
+
+  box-shadow:
+    0 15px 28px
+    rgba(205,69,31,.20),
+    inset 0 1px 0
+    rgba(255,255,255,.20);
+}
+
+
+.batchSecondaryCta{
+  min-width:260px;
+
+  padding:
+    0 18px;
+
+  color:#201e1c;
+
+  border:
+    1px solid
+    rgba(211,91,54,.23);
+
+  background:
+    rgba(255,255,255,.78);
+
+  box-shadow:
+    0 10px 25px
+    rgba(117,78,61,.05),
+    inset 0 1px 0
+    rgba(255,255,255,.9);
+}
+
+
+.batchPrimaryCta:hover,
+.batchSecondaryCta:hover{
+  transform:
+    translateY(-2px);
+}
+
+
+.batchPrimaryCta:hover{
+  box-shadow:
+    0 19px 34px
+    rgba(205,69,31,.25),
+    inset 0 1px 0
+    rgba(255,255,255,.20);
+}
+
+
+.batchSecondaryCta:hover{
+  border-color:
+    rgba(211,91,54,.38);
+
+  box-shadow:
+    0 14px 28px
+    rgba(117,78,61,.09);
+}
+
+
+.batchCtaIcon{
+  display:grid;
+
+  width:25px;
+  height:25px;
+
+  flex:0 0 auto;
+
+  place-items:center;
+}
+
+
+.batchCtaIcon svg{
+  width:22px;
+  height:22px;
+
+  stroke:currentColor;
+
+  stroke-width:1.7;
+
+  stroke-linecap:round;
+
+  stroke-linejoin:round;
+}
+
+
+.batchPrimaryCta strong,
+.batchSecondaryCta strong{
+  font-size:14px;
+
+  font-weight:680;
+}
+
+
+.batchArrow,
+.batchSecondaryArrow{
+  display:grid;
+
+  width:29px;
+  height:29px;
+
+  margin-left:auto;
+
+  place-items:center;
+
+  border-radius:50%;
+
+  font-size:17px;
+
+  line-height:1;
+}
+
+
+.batchArrow{
+  background:
+    rgba(255,255,255,.14);
+}
+
+
+.batchSecondaryArrow{
+  background:
+    rgba(216,84,46,.07);
+}
+
+
+/* ======================================================
+   RIGHT 2 × 2 FEATURE GRID
+   ====================================================== */
+
+.batchFeatureGrid{
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+
+  gap:14px;
+}
+
+
+.batchFeatureCard{
+  position:relative;
+
+  display:flex;
+
+  min-height:224px;
+
+  flex-direction:column;
+
+  align-items:center;
+
+  justify-content:center;
+
+  padding:
+    25px 20px;
+
+  overflow:hidden;
+
+  border:
+    1px solid
+    rgba(210,104,72,.18);
+
+  border-radius:24px;
+
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255,255,255,.93),
+      rgba(251,245,239,.76)
+    );
+
+  box-shadow:
+    0 16px 40px
+    rgba(95,65,52,.05),
+    inset 0 1px 0
+    rgba(255,255,255,.96);
+
+  text-align:center;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+
+.batchFeatureCard::before{
+  content:"";
+
+  position:absolute;
+
+  width:150px;
+  height:110px;
+
+  top:-64px;
+  right:-55px;
+
+  border-radius:50%;
+
+  pointer-events:none;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(231,100,61,.09),
+      transparent 70%
+    );
+}
+
+
+.batchFeatureCard:hover{
+  transform:
+    translateY(-4px);
+
+  border-color:
+    rgba(210,104,72,.30);
+
+  box-shadow:
+    0 22px 48px
+    rgba(95,65,52,.09),
+    inset 0 1px 0
+    rgba(255,255,255,.96);
+}
+
+
+.batchFeatureIcon{
+  position:relative;
+
+  display:grid;
+
+  width:64px;
+  height:64px;
+
+  place-items:center;
+
+  border:
+    1px solid
+    rgba(227,105,66,.20);
+
+  border-radius:50%;
+
+  color:#dc5b33;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff8f2,
+      #fde9dd
+    );
+
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.9);
+}
+
+
+.batchFeatureIcon svg{
+  width:31px;
+  height:31px;
+
+  stroke:currentColor;
+
+  stroke-width:1.75;
+
+  stroke-linecap:round;
+
+  stroke-linejoin:round;
+}
+
+
+.batchFeatureIcon > span{
+  font-size:28px;
+
+  font-weight:600;
+
+  line-height:1;
+}
+
+
+.batchFeatureCard > strong{
+  margin-top:20px;
+
+  color:#24201e;
+
+  font-size:25px;
+
+  font-weight:720;
+
+  line-height:1.05;
+
+  letter-spacing:-.035em;
+}
+
+
+.batchFeatureCard > p{
+  margin:
+    9px 0 0;
+
+  color:#81756e;
+
+  font-size:13px;
+
+  font-weight:480;
+}
+
+
+.batchFeatureAccent{
+  width:34px;
+  height:3px;
+
+  margin-top:19px;
+
+  border-radius:99px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ea7a55,
+      #f0a487
+    );
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px){
+
+  .batchAdvantage{
+    padding:
+      62px 0
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    grid-template-columns:1fr;
+
+    gap:42px;
+
+    width:
+      min(
+        calc(100% - 40px),
+        850px
+      )
+      !important;
+  }
+
+
+  .batchAdvantageIntro{
+    max-width:760px;
+  }
+
+
+  .batchAdvantageIntro h2{
+    max-width:700px;
+
+    font-size:
+      clamp(42px,6.2vw,56px);
+  }
+
+
+  .batchAdvantageLead{
+    max-width:680px;
+  }
+
+
+  .batchFeatureGrid{
+    max-width:760px;
+
+    width:100%;
+  }
+
+
+  .batchFeatureCard{
+    min-height:190px;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .batchAdvantage{
+    padding:
+      44px 0 42px
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 24px)
+      !important;
+
+    gap:30px;
+  }
+
+
+  .batchAdvantageBadge{
+    min-height:36px;
+
+    padding:
+      0 12px;
+
+    font-size:8px;
+
+    border-radius:9px;
+  }
+
+
+  .batchSpark{
+    width:15px;
+    height:15px;
+  }
+
+
+  .batchSpark svg{
+    width:14px;
+    height:14px;
+  }
+
+
+  .batchAdvantageIntro h2{
+    margin-top:22px;
+
+    font-size:
+      clamp(32px,9.3vw,40px);
+
+    line-height:1.02;
+  }
+
+
+  .batchAdvantageLead{
+    margin-top:18px;
+
+    font-size:14px;
+
+    line-height:1.58;
+  }
+
+
+  .batchPriceChip{
+    width:100%;
+
+    min-height:62px;
+
+    margin-top:23px;
+
+    gap:12px;
+
+    padding:
+      7px 13px 7px 8px;
+
+    border-radius:16px;
+  }
+
+
+  .batchPriceIcon{
+    width:45px;
+    height:45px;
+
+    font-size:21px;
+  }
+
+
+  .batchPriceChip strong{
+    font-size:21px;
+  }
+
+
+  .batchPriceChip small{
+    margin-left:auto;
+
+    font-size:11px;
+  }
+
+
+  .batchUrgency{
+    margin-top:17px;
+
+    gap:7px;
+
+    font-size:12px;
+  }
+
+
+  .batchUrgency i{
+    display:none;
+  }
+
+
+  .batchUrgency > span:not(.batchUrgencyIcon){
+    width:
+      calc(100% - 34px);
+  }
+
+
+  .batchActions{
+    flex-direction:column;
+
+    gap:9px;
+
+    margin-top:22px;
+  }
+
+
+  .batchPrimaryCta,
+  .batchSecondaryCta{
+    width:100%;
+
+    min-width:0;
+
+    min-height:58px;
+
+    border-radius:14px;
+  }
+
+
+  .batchPrimaryCta strong,
+  .batchSecondaryCta strong{
+    font-size:14px;
+  }
+
+
+  .batchFeatureGrid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap:9px;
+  }
+
+
+  .batchFeatureCard{
+    min-height:164px;
+
+    padding:
+      18px 10px;
+
+    border-radius:18px;
+  }
+
+
+  .batchFeatureIcon{
+    width:52px;
+    height:52px;
+  }
+
+
+  .batchFeatureIcon svg{
+    width:26px;
+    height:26px;
+  }
+
+
+  .batchFeatureIcon > span{
+    font-size:24px;
+  }
+
+
+  .batchFeatureCard > strong{
+    margin-top:15px;
+
+    font-size:
+      clamp(17px,4.9vw,21px);
+  }
+
+
+  .batchFeatureCard > p{
+    margin-top:6px;
+
+    font-size:11px;
+  }
+
+
+  .batchFeatureAccent{
+    width:28px;
+
+    margin-top:14px;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:360px){
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 18px)
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    font-size:30px;
+  }
+
+
+  .batchFeatureCard{
+    min-height:154px;
+  }
+
+
+  .batchFeatureCard > strong{
+    font-size:16px;
+  }
+
+
+  .batchFeatureCard > p{
+    font-size:10px;
+  }
+
+}
+
+
+/* ======================================================
+   REDUCED MOTION
+   ====================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+  .batchPrimaryCta,
+  .batchSecondaryCta,
+  .batchFeatureCard{
+    transition:none !important;
+  }
+
+}
+
+
+/* CLAUDE V11.9 PREMIUM BATCH ADVANTAGE END */
+
+/* CLAUDE V12 CONVERSION CONSISTENCY START */
+
+
+/* ======================================================
+   CURRENT BATCH SECTION:
+   SUPPORT HERO — DO NOT COMPETE WITH HERO
+   ====================================================== */
+
+.batchAdvantage{
+  padding:
+    clamp(54px,5vw,78px)
+    0
+    !important;
+}
+
+
+.batchAdvantageInner{
+  grid-template-columns:
+    minmax(0,1.02fr)
+    minmax(420px,.88fr)
+    !important;
+
+  gap:
+    clamp(42px,5vw,72px)
+    !important;
+}
+
+
+.batchAdvantageIntro h2{
+  max-width:650px !important;
+
+  font-size:
+    clamp(38px,3.65vw,54px)
+    !important;
+
+  line-height:1.015 !important;
+}
+
+
+.batchAdvantageLead{
+  max-width:610px !important;
+
+  font-size:
+    clamp(15px,1.1vw,18px)
+    !important;
+}
+
+
+/* FREE state should look intentional, not like removed pricing */
+
+.batchPriceChip{
+  min-height:62px !important;
+
+  padding:
+    8px 17px 8px 9px
+    !important;
+}
+
+
+.batchPriceIcon{
+  font-size:19px !important;
+}
+
+
+.batchPriceChip strong{
+  color:#d9532c !important;
+
+  font-size:22px !important;
+
+  letter-spacing:-.03em !important;
+}
+
+
+/* ======================================================
+   MORE COMPACT SUPPORT CARDS
+   ====================================================== */
+
+.batchFeatureCard{
+  min-height:192px !important;
+
+  padding:
+    22px 18px
+    !important;
+}
+
+
+.batchFeatureIcon{
+  width:58px !important;
+  height:58px !important;
+}
+
+
+.batchFeatureIcon svg{
+  width:28px !important;
+  height:28px !important;
+}
+
+
+.batchFeatureCard > strong{
+  margin-top:16px !important;
+
+  font-size:22px !important;
+}
+
+
+.batchFeatureAccent{
+  margin-top:15px !important;
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px){
+
+  .batchAdvantage{
+    padding:
+      52px 0
+      !important;
+  }
+
+  .batchAdvantageInner{
+    grid-template-columns:1fr !important;
+
+    gap:34px !important;
+  }
+
+  .batchAdvantageIntro h2{
+    font-size:
+      clamp(36px,5.5vw,48px)
+      !important;
+  }
+
+  .batchFeatureGrid{
+    max-width:none !important;
+  }
+
+  .batchFeatureCard{
+    min-height:174px !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .batchAdvantage{
+    padding:
+      38px 0 40px
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    gap:26px !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    font-size:
+      clamp(29px,8.7vw,36px)
+      !important;
+  }
+
+
+  .batchAdvantageLead{
+    margin-top:15px !important;
+
+    font-size:13.5px !important;
+  }
+
+
+  .batchPriceChip{
+    margin-top:20px !important;
+  }
+
+
+  .batchUrgency{
+    margin-top:15px !important;
+  }
+
+
+  .batchActions{
+    margin-top:19px !important;
+  }
+
+
+  .batchFeatureGrid{
+    gap:8px !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:148px !important;
+
+    padding:
+      16px 8px
+      !important;
+  }
+
+
+  .batchFeatureIcon{
+    width:48px !important;
+    height:48px !important;
+  }
+
+
+  .batchFeatureCard > strong{
+    margin-top:12px !important;
+
+    font-size:
+      clamp(16px,4.7vw,19px)
+      !important;
+  }
+
+
+  .batchFeatureCard > p{
+    font-size:10.5px !important;
+  }
+
+}
+
+
+/* CLAUDE V12 CONVERSION CONSISTENCY END */
+
+/* CLAUDE V12.1 CENTERED PREMIUM START */
+
+
+/* ======================================================
+   SECTION SHELL
+   ====================================================== */
+
+.batchAdvantage{
+  padding:
+    clamp(46px,5vw,72px)
+    0
+    !important;
+
+  background:
+    radial-gradient(
+      520px 340px
+      at 8% 88%,
+      rgba(224,91,50,.045),
+      transparent 74%
+    ),
+    radial-gradient(
+      500px 320px
+      at 94% 12%,
+      rgba(224,91,50,.035),
+      transparent 75%
+    ),
+    #fbf8f4
+    !important;
+}
+
+
+/*
+  Main premium centered container.
+*/
+
+.batchAdvantageInner{
+  width:
+    min(
+      calc(100% - 48px),
+      1320px
+    )
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  padding:
+    clamp(38px,4vw,58px)
+    !important;
+
+  grid-template-columns:
+    minmax(0,1.02fr)
+    minmax(420px,.98fr)
+    !important;
+
+  gap:
+    clamp(46px,5vw,68px)
+    !important;
+
+  align-items:center !important;
+
+  border:
+    1px solid
+    rgba(204,112,80,.16)
+    !important;
+
+  border-radius:
+    32px
+    !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.95),
+      rgba(255,251,247,.88)
+    )
+    !important;
+
+  box-shadow:
+    0 28px 70px
+    rgba(79,50,35,.07),
+    inset 0 1px 0
+    rgba(255,255,255,.92)
+    !important;
+}
+
+
+/* ======================================================
+   LEFT CONTENT
+   ====================================================== */
+
+.batchAdvantageIntro{
+  width:100% !important;
+
+  max-width:
+    610px
+    !important;
+
+  margin:
+    0 auto 0 0
+    !important;
+}
+
+
+.batchAdvantageBadge{
+  margin-bottom:
+    26px
+    !important;
+}
+
+
+.batchAdvantageIntro h2{
+  max-width:
+    610px
+    !important;
+
+  margin-top:
+    0
+    !important;
+
+  font-size:
+    clamp(42px,3.35vw,56px)
+    !important;
+
+  line-height:
+    1.015
+    !important;
+
+  letter-spacing:
+    -.05em
+    !important;
+}
+
+
+.batchAdvantageLead{
+  max-width:
+    570px
+    !important;
+
+  margin-top:
+    22px
+    !important;
+
+  font-size:
+    clamp(15px,1.05vw,17px)
+    !important;
+
+  line-height:
+    1.65
+    !important;
+}
+
+
+/* ======================================================
+   FREE OFFER CHIP
+   ====================================================== */
+
+.batchPriceChip{
+  margin-top:
+    25px
+    !important;
+
+  min-height:
+    62px
+    !important;
+
+  border-radius:
+    17px
+    !important;
+
+  box-shadow:
+    0 12px 28px
+    rgba(151,73,45,.07),
+    inset 0 1px 0
+    rgba(255,255,255,.95)
+    !important;
+}
+
+
+.batchPriceChip strong{
+  font-size:
+    22px
+    !important;
+}
+
+
+.batchPriceChip small{
+  font-size:
+    12px
+    !important;
+}
+
+
+/* ======================================================
+   URGENCY
+   ====================================================== */
+
+.batchUrgency{
+  margin-top:
+    19px
+    !important;
+
+  font-size:
+    12.5px
+    !important;
+}
+
+
+/* ======================================================
+   CTAS
+   ====================================================== */
+
+.batchActions{
+  margin-top:
+    24px
+    !important;
+
+  gap:
+    10px
+    !important;
+}
+
+
+.batchPrimaryCta,
+.batchSecondaryCta{
+  min-height:
+    56px
+    !important;
+
+  border-radius:
+    14px
+    !important;
+}
+
+
+.batchPrimaryCta{
+  min-width:
+    245px
+    !important;
+}
+
+
+.batchSecondaryCta{
+  min-width:
+    230px
+    !important;
+}
+
+
+/* ======================================================
+   RIGHT CARD GRID
+   ====================================================== */
+
+.batchFeatureGrid{
+  width:100% !important;
+
+  max-width:
+    590px
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  grid-template-columns:
+    repeat(2,minmax(0,1fr))
+    !important;
+
+  gap:
+    14px
+    !important;
+}
+
+
+.batchFeatureCard{
+  min-height:
+    180px
+    !important;
+
+  padding:
+    20px 18px
+    !important;
+
+  border-radius:
+    22px
+    !important;
+
+  background:
+    linear-gradient(
+      150deg,
+      rgba(255,255,255,.97),
+      rgba(252,247,243,.86)
+    )
+    !important;
+
+  box-shadow:
+    0 15px 34px
+    rgba(86,56,41,.055),
+    inset 0 1px 0
+    rgba(255,255,255,.95)
+    !important;
+}
+
+
+.batchFeatureIcon{
+  width:
+    56px
+    !important;
+
+  height:
+    56px
+    !important;
+}
+
+
+.batchFeatureIcon svg{
+  width:
+    27px
+    !important;
+
+  height:
+    27px
+    !important;
+}
+
+
+.batchFeatureCard > strong{
+  margin-top:
+    15px
+    !important;
+
+  font-size:
+    21px
+    !important;
+}
+
+
+.batchFeatureCard > p{
+  margin-top:
+    6px
+    !important;
+
+  font-size:
+    12px
+    !important;
+}
+
+
+.batchFeatureAccent{
+  width:
+    30px
+    !important;
+
+  margin-top:
+    14px
+    !important;
+}
+
+
+/* ======================================================
+   DESKTOP HOVER
+   ====================================================== */
+
+@media(hover:hover) and (pointer:fine){
+
+  .batchFeatureCard:hover{
+    transform:
+      translateY(-4px)
+      !important;
+
+    border-color:
+      rgba(211,97,59,.28)
+      !important;
+
+    box-shadow:
+      0 22px 46px
+      rgba(86,56,41,.10),
+      inset 0 1px 0
+      rgba(255,255,255,.95)
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1100px){
+
+  .batchAdvantage{
+    padding:
+      42px 0
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    width:
+      min(
+        calc(100% - 32px),
+        860px
+      )
+      !important;
+
+    padding:
+      40px 34px
+      !important;
+
+    grid-template-columns:
+      1fr
+      !important;
+
+    gap:
+      34px
+      !important;
+  }
+
+
+  /*
+    Tablet becomes intentionally centered.
+  */
+
+  .batchAdvantageIntro{
+    max-width:
+      720px
+      !important;
+
+    margin:
+      0 auto
+      !important;
+
+    text-align:
+      center
+      !important;
+  }
+
+
+  .batchAdvantageBadge{
+    margin-inline:
+      auto
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    max-width:
+      700px
+      !important;
+
+    margin-inline:
+      auto
+      !important;
+
+    font-size:
+      clamp(38px,5.6vw,50px)
+      !important;
+  }
+
+
+  .batchAdvantageLead{
+    max-width:
+      630px
+      !important;
+
+    margin-inline:
+      auto
+      !important;
+  }
+
+
+  .batchPriceChip{
+    margin-left:
+      auto
+      !important;
+
+    margin-right:
+      auto
+      !important;
+  }
+
+
+  .batchUrgency{
+    justify-content:
+      center
+      !important;
+  }
+
+
+  .batchActions{
+    justify-content:
+      center
+      !important;
+  }
+
+
+  .batchFeatureGrid{
+    max-width:
+      700px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      170px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .batchAdvantage{
+    padding:
+      28px 0 32px
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 16px)
+      !important;
+
+    padding:
+      28px 18px
+      !important;
+
+    gap:
+      26px
+      !important;
+
+    border-radius:
+      24px
+      !important;
+  }
+
+
+  .batchAdvantageBadge{
+    min-height:
+      34px
+      !important;
+
+    padding:
+      0 11px
+      !important;
+
+    font-size:
+      7.5px
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    max-width:
+      390px
+      !important;
+
+    font-size:
+      clamp(29px,8.6vw,36px)
+      !important;
+
+    line-height:
+      1.025
+      !important;
+  }
+
+
+  .batchAdvantageLead{
+    max-width:
+      360px
+      !important;
+
+    margin-top:
+      16px
+      !important;
+
+    font-size:
+      13px
+      !important;
+
+    line-height:
+      1.55
+      !important;
+  }
+
+
+  .batchPriceChip{
+    width:
+      min(100%,350px)
+      !important;
+
+    min-height:
+      58px
+      !important;
+
+    margin-top:
+      20px
+      !important;
+  }
+
+
+  .batchUrgency{
+    max-width:
+      360px
+      !important;
+
+    margin:
+      16px auto 0
+      !important;
+
+    justify-content:
+      center
+      !important;
+
+    text-align:
+      center
+      !important;
+  }
+
+
+  .batchActions{
+    width:100% !important;
+
+    max-width:
+      360px
+      !important;
+
+    margin:
+      20px auto 0
+      !important;
+
+    flex-direction:
+      column
+      !important;
+  }
+
+
+  .batchPrimaryCta,
+  .batchSecondaryCta{
+    width:100% !important;
+
+    min-width:0 !important;
+
+    min-height:
+      54px
+      !important;
+  }
+
+
+  .batchFeatureGrid{
+    width:100% !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:
+      8px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      145px
+      !important;
+
+    padding:
+      15px 8px
+      !important;
+
+    border-radius:
+      17px
+      !important;
+  }
+
+
+  .batchFeatureIcon{
+    width:
+      46px
+      !important;
+
+    height:
+      46px
+      !important;
+  }
+
+
+  .batchFeatureIcon svg{
+    width:
+      23px
+      !important;
+
+    height:
+      23px
+      !important;
+  }
+
+
+  .batchFeatureCard > strong{
+    margin-top:
+      11px
+      !important;
+
+    font-size:
+      clamp(15px,4.6vw,18px)
+      !important;
+  }
+
+
+  .batchFeatureCard > p{
+    font-size:
+      10px
+      !important;
+  }
+
+
+  .batchFeatureAccent{
+    width:
+      25px
+      !important;
+
+    margin-top:
+      11px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:360px){
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 12px)
+      !important;
+
+    padding:
+      24px 14px
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    font-size:
+      28px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      138px
+      !important;
+  }
+
+}
+
+
+/* CLAUDE V12.1 CENTERED PREMIUM END */
+
+/* CLAUDE V12.2 CENTERED OFFER SHOWCASE START */
+
+
+/* ======================================================
+   PURPOSE:
+   Break the repeated left-copy / right-card pattern.
+   This section becomes a centered conversion showcase.
+   ====================================================== */
+
+.batchAdvantage{
+  padding:
+    clamp(40px,4.5vw,64px)
+    0
+    !important;
+}
+
+
+/* Main contained section */
+.batchAdvantageInner{
+  width:
+    min(
+      calc(100% - 48px),
+      1320px
+    )
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  padding:
+    clamp(42px,4vw,58px)
+    clamp(34px,4vw,54px)
+    !important;
+
+  display:grid !important;
+
+  grid-template-columns:
+    1fr
+    !important;
+
+  gap:
+    34px
+    !important;
+
+  align-items:center !important;
+
+  border-radius:
+    32px
+    !important;
+}
+
+
+/* ======================================================
+   CENTER ALL INTRO CONTENT
+   ====================================================== */
+
+.batchAdvantageIntro{
+  width:100% !important;
+
+  max-width:
+    900px
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  text-align:
+    center
+    !important;
+}
+
+
+.batchAdvantageBadge{
+  margin:
+    0 auto 22px
+    !important;
+}
+
+
+.batchAdvantageIntro h2{
+  max-width:
+    820px
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  font-size:
+    clamp(40px,3.55vw,56px)
+    !important;
+
+  line-height:
+    1.01
+    !important;
+
+  letter-spacing:
+    -.052em
+    !important;
+
+  text-align:center !important;
+}
+
+
+.batchAdvantageLead{
+  max-width:
+    680px
+    !important;
+
+  margin:
+    20px auto 0
+    !important;
+
+  font-size:
+    clamp(15px,1.08vw,17px)
+    !important;
+
+  line-height:
+    1.62
+    !important;
+
+  text-align:center !important;
+}
+
+
+/* ======================================================
+   CENTER FREE CHIP
+   ====================================================== */
+
+.batchPriceChip{
+  display:flex !important;
+
+  width:
+    fit-content
+    !important;
+
+  margin:
+    24px auto 0
+    !important;
+
+  min-height:
+    58px
+    !important;
+}
+
+
+/* ======================================================
+   CENTER URGENCY
+   ====================================================== */
+
+.batchUrgency{
+  max-width:
+    760px
+    !important;
+
+  margin:
+    17px auto 0
+    !important;
+
+  justify-content:
+    center
+    !important;
+
+  text-align:
+    center
+    !important;
+}
+
+
+/* ======================================================
+   CENTER CTAs
+   ====================================================== */
+
+.batchActions{
+  margin:
+    23px auto 0
+    !important;
+
+  justify-content:
+    center
+    !important;
+
+  gap:
+    10px
+    !important;
+}
+
+
+.batchPrimaryCta{
+  min-width:
+    250px
+    !important;
+}
+
+
+.batchSecondaryCta{
+  min-width:
+    230px
+    !important;
+}
+
+
+/* ======================================================
+   DESKTOP:
+   FOUR CARDS IN ONE HORIZONTAL ROW
+   ====================================================== */
+
+.batchFeatureGrid{
+  width:100% !important;
+
+  max-width:
+    1080px
+    !important;
+
+  margin:
+    6px auto 0
+    !important;
+
+  display:grid !important;
+
+  grid-template-columns:
+    repeat(4,minmax(0,1fr))
+    !important;
+
+  gap:
+    12px
+    !important;
+}
+
+
+.batchFeatureCard{
+  min-height:
+    168px
+    !important;
+
+  padding:
+    18px 12px
+    !important;
+
+  border-radius:
+    20px
+    !important;
+}
+
+
+.batchFeatureIcon{
+  width:
+    52px
+    !important;
+
+  height:
+    52px
+    !important;
+}
+
+
+.batchFeatureIcon svg{
+  width:
+    25px
+    !important;
+
+  height:
+    25px
+    !important;
+}
+
+
+.batchFeatureCard > strong{
+  margin-top:
+    13px
+    !important;
+
+  font-size:
+    19px
+    !important;
+}
+
+
+.batchFeatureCard > p{
+  margin-top:
+    5px
+    !important;
+
+  font-size:
+    11px
+    !important;
+}
+
+
+.batchFeatureAccent{
+  width:
+    27px
+    !important;
+
+  margin-top:
+    12px
+    !important;
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px){
+
+  .batchAdvantageInner{
+    width:
+      min(
+        calc(100% - 30px),
+        860px
+      )
+      !important;
+
+    padding:
+      38px 30px
+      !important;
+
+    gap:
+      30px
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    max-width:
+      700px
+      !important;
+
+    font-size:
+      clamp(36px,5.3vw,48px)
+      !important;
+  }
+
+
+  .batchAdvantageLead{
+    max-width:
+      610px
+      !important;
+  }
+
+
+  .batchFeatureGrid{
+    max-width:
+      700px
+      !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:
+      10px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      155px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .batchAdvantage{
+    padding:
+      24px 0 30px
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 14px)
+      !important;
+
+    padding:
+      27px 15px
+      !important;
+
+    gap:
+      24px
+      !important;
+
+    border-radius:
+      23px
+      !important;
+  }
+
+
+  .batchAdvantageBadge{
+    margin-bottom:
+      18px
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    max-width:
+      380px
+      !important;
+
+    font-size:
+      clamp(29px,8.4vw,35px)
+      !important;
+
+    line-height:
+      1.025
+      !important;
+  }
+
+
+  .batchAdvantageLead{
+    max-width:
+      350px
+      !important;
+
+    margin-top:
+      15px
+      !important;
+
+    font-size:
+      13px
+      !important;
+
+    line-height:
+      1.52
+      !important;
+  }
+
+
+  .batchPriceChip{
+    width:
+      min(100%,340px)
+      !important;
+
+    margin-top:
+      19px
+      !important;
+
+    justify-content:
+      center
+      !important;
+  }
+
+
+  .batchUrgency{
+    max-width:
+      345px
+      !important;
+
+    margin-top:
+      14px
+      !important;
+
+    font-size:
+      11.5px
+      !important;
+  }
+
+
+  .batchActions{
+    width:100% !important;
+
+    max-width:
+      350px
+      !important;
+
+    flex-direction:
+      column
+      !important;
+
+    margin-top:
+      19px
+      !important;
+  }
+
+
+  .batchPrimaryCta,
+  .batchSecondaryCta{
+    width:100% !important;
+
+    min-width:0 !important;
+
+    min-height:
+      53px
+      !important;
+  }
+
+
+  .batchFeatureGrid{
+    width:100% !important;
+
+    max-width:
+      430px
+      !important;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+      !important;
+
+    gap:
+      8px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      140px
+      !important;
+
+    padding:
+      14px 7px
+      !important;
+
+    border-radius:
+      17px
+      !important;
+  }
+
+
+  .batchFeatureIcon{
+    width:
+      44px
+      !important;
+
+    height:
+      44px
+      !important;
+  }
+
+
+  .batchFeatureIcon svg{
+    width:
+      22px
+      !important;
+
+    height:
+      22px
+      !important;
+  }
+
+
+  .batchFeatureCard > strong{
+    margin-top:
+      10px
+      !important;
+
+    font-size:
+      clamp(15px,4.5vw,18px)
+      !important;
+  }
+
+
+  .batchFeatureCard > p{
+    font-size:
+      9.8px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+   ====================================================== */
+
+@media(max-width:360px){
+
+  .batchAdvantageInner{
+    padding:
+      24px 11px
+      !important;
+  }
+
+
+  .batchAdvantageIntro h2{
+    font-size:
+      27px
+      !important;
+  }
+
+
+  .batchFeatureCard{
+    min-height:
+      134px
+      !important;
+  }
+
+}
+
+
+/* CLAUDE V12.2 CENTERED OFFER SHOWCASE END */
+
+/* CLAUDE V12.3 REPETITION CLEANUP START */
+
+
+/*
+  FREE is already communicated by the persistent bottom dock.
+  This section now focuses on value instead of repeating price.
+*/
+
+.batchAdvantageLead{
+  margin-bottom:0 !important;
+}
+
+
+/* Tighten space where the duplicate FREE chip used to sit */
+
+.batchUrgency{
+  margin-top:
+    24px
+    !important;
+}
+
+
+/* Make the four value cards feel like one supporting system */
+
+.batchFeatureGrid{
+  margin-top:
+    10px
+    !important;
+}
+
+
+.batchFeatureCard > strong{
+  letter-spacing:
+    -.025em
+    !important;
+}
+
+
+/* PRACTICAL is slightly longer than FREE */
+
+@media(min-width:1025px){
+
+  .batchFeatureCard > strong{
+    font-size:
+      18px
+      !important;
+  }
+
+}
+
+
+/* Tablet */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .batchUrgency{
+    margin-top:
+      21px
+      !important;
+  }
+
+}
+
+
+/* Mobile */
+
+@media(max-width:640px){
+
+  .batchUrgency{
+    margin-top:
+      18px
+      !important;
+  }
+
+  .batchFeatureCard > strong{
+    font-size:
+      clamp(14px,4.15vw,17px)
+      !important;
+  }
+
+}
+
+
+/* CLAUDE V12.3 REPETITION CLEANUP END */
+
+/* CLAUDE V12.4 REMOVE OUTER BOX START */
+
+
+/* ======================================================
+   REMOVE LARGE OUTER CARD / SHELL
+   Keep the centered layout but remove the visual box.
+   ====================================================== */
+
+.batchAdvantageInner{
+  width:
+    min(
+      calc(100% - 48px),
+      1180px
+    )
+    !important;
+
+  margin:
+    0 auto
+    !important;
+
+  padding:
+    24px 0 20px
+    !important;
+
+  border:
+    0
+    !important;
+
+  border-radius:
+    0
+    !important;
+
+  background:
+    transparent
+    !important;
+
+  box-shadow:
+    none
+    !important;
+}
+
+
+/*
+  Keep section background soft,
+  but no card-within-card appearance.
+*/
+
+.batchAdvantage{
+  padding:
+    clamp(38px,4.5vw,58px)
+    0
+    !important;
+
+  background:
+    radial-gradient(
+      520px 320px
+      at 50% 35%,
+      rgba(225,96,56,.035),
+      transparent 72%
+    ),
+    #fbf8f4
+    !important;
+}
+
+
+/* Remove any shell decoration leaking behind content */
+
+.batchAdvantageInner::before,
+.batchAdvantageInner::after{
+  display:none !important;
+  content:none !important;
+}
+
+
+/* ======================================================
+   DESKTOP
+   ====================================================== */
+
+@media(min-width:1025px){
+
+  .batchAdvantageInner{
+    padding:
+      20px 0 16px
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   TABLET
+   ====================================================== */
+
+@media(max-width:1024px) and (min-width:641px){
+
+  .batchAdvantageInner{
+    width:
+      min(
+        calc(100% - 32px),
+        820px
+      )
+      !important;
+
+    padding:
+      18px 0
+      !important;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media(max-width:640px){
+
+  .batchAdvantage{
+    padding:
+      26px 0 30px
+      !important;
+  }
+
+
+  .batchAdvantageInner{
+    width:
+      calc(100% - 24px)
+      !important;
+
+    padding:
+      12px 0
+      !important;
+
+    border-radius:
+      0
+      !important;
+  }
+
+}
+
+
+/* CLAUDE V12.4 REMOVE OUTER BOX END */
+
+
+
+/* CLAUDE V13.0 WORKFLOW SHOWCASE CSS START */
+
+.claudeWorkflowShowcase{
+max-width:1200px;
+margin:100px auto;
+padding:80px 40px;
+}
+
+
+.workflowHeader{
+text-align:center;
+max-width:760px;
+margin:auto;
+}
+
+
+.workflowHeader span{
+color:#dc6238;
+font-weight:700;
+letter-spacing:.12em;
+font-size:13px;
+}
+
+
+.workflowHeader h2{
+font-size:52px;
+line-height:1.05;
+margin:20px 0;
+}
+
+
+.workflowHeader h2 span{
+color:#dc6238;
+}
+
+
+.workflowHeader p{
+font-size:18px;
+color:#746c66;
+}
+
+
+.workflowCanvas{
+margin-top:60px;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:22px;
+}
+
+
+.workflowStep,
+.workflowOutput,
+.workflowCore{
+border:1px solid rgba(220,98,56,.2);
+border-radius:24px;
+padding:32px;
+background:white;
+box-shadow:0 20px 50px rgba(0,0,0,.05);
+}
+
+
+.workflowCore{
+background:#171310;
+color:white;
+text-align:center;
+}
+
+
+.claudeBadge{
+color:#dc6238;
+font-weight:800;
+margin-bottom:20px;
+}
+
+
+.outputItem{
+padding:14px 20px;
+border-radius:14px;
+background:#211b18;
+color:white;
+margin:8px;
+}
+
+
+.workflowArrow{
+font-size:32px;
+color:#dc6238;
+}
+
+
+.workflowBottomText{
+margin-top:60px;
+text-align:center;
+font-size:28px;
+font-weight:700;
+}
+
+
+@media(max-width:900px){
+
+.claudeWorkflowShowcase{
+padding:50px 20px;
+}
+
+
+.workflowHeader h2{
+font-size:34px;
+}
+
+
+.workflowCanvas{
+flex-direction:column;
+}
+
+
+.workflowArrow{
+transform:rotate(90deg);
+}
+
+}
+
+
+@media(max-width:600px){
+
+.workflowStep,
+.workflowOutput,
+.workflowCore{
+width:100%;
+padding:24px;
+}
+
+.workflowBottomText{
+font-size:22px;
+}
+
+}
+
+
+/* CLAUDE V13.0 WORKFLOW SHOWCASE CSS END */
+
+
+
+/* CLAUDE V13.1 WORKFLOW POLISH START */
+
+.claudeWorkflowShowcase{
+  position:relative;
+  overflow:hidden;
+}
+
+
+.workflowHeader h2{
+  max-width:760px;
+  margin-left:auto;
+  margin-right:auto;
+  letter-spacing:-0.035em;
+}
+
+
+.workflowCanvas{
+  max-width:1050px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+
+.workflowStep,
+.workflowOutput{
+  min-height:220px;
+}
+
+
+.workflowCore{
+  min-width:180px;
+  min-height:180px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+
+.workflowBottomText{
+  max-width:700px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+
+@media(max-width:600px){
+
+  .workflowHeader p{
+    font-size:16px;
+  }
+
+  .workflowStep,
+  .workflowOutput,
+  .workflowCore{
+    min-height:auto;
+  }
+
+}
+
+
+/* CLAUDE V13.1 WORKFLOW POLISH END */
+
+
+/* CLAUDE V13.3 WORKFLOW PREMIUM START */
+.workflowPremiumWrap{
+  display:grid;
+  gap:30px;
+}
+
+.workflowPremiumHead{
+  max-width:760px;
+}
+
+.workflowPremiumEyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:14px;
+  font-size:11px;
+  line-height:1;
+  letter-spacing:.16em;
+  font-weight:800;
+  color:#d76b42;
+  text-transform:uppercase;
+}
+
+.workflowPremiumHead h2{
+  margin:0;
+  font-size:clamp(32px,4vw,56px);
+  line-height:.98;
+  letter-spacing:-.04em;
+  color:#1a1716;
+}
+
+.workflowPremiumHead p{
+  max-width:620px;
+  margin:14px 0 0;
+  font-size:15px;
+  line-height:1.75;
+  color:#7a6f68;
+}
+
+.workflowPremiumStack{
+  display:grid;
+  gap:18px;
+}
+
+.workflowPremiumCard{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) minmax(320px,1.25fr);
+  align-items:center;
+  gap:26px;
+  padding:18px;
+  border:1px solid rgba(36,24,18,.10);
+  border-radius:22px;
+  background:#ffffff;
+  box-shadow:0 18px 40px rgba(68,39,24,.06);
+}
+
+.workflowPremiumCardReverse{
+  grid-template-columns:minmax(320px,1.25fr) minmax(260px,1fr);
+}
+
+.workflowPremiumCardReverse .workflowPremiumVisual{
+  order:1;
+}
+
+.workflowPremiumCardReverse .workflowPremiumCopy{
+  order:2;
+}
+
+.workflowPremiumCopy{
+  padding:8px 2px 8px 4px;
+}
+
+.workflowPremiumStep{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  background:#fff2ec;
+  border:1px solid rgba(215,107,66,.12);
+  color:#d76b42;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  margin-bottom:16px;
+}
+
+.workflowPremiumCopy h3{
+  margin:0 0 10px;
+  font-size:clamp(24px,2.2vw,36px);
+  line-height:1.05;
+  letter-spacing:-.03em;
+  color:#201b19;
+}
+
+.workflowPremiumCopy p{
+  margin:0;
+  max-width:460px;
+  font-size:14px;
+  line-height:1.72;
+  color:#80736c;
+}
+
+.workflowPremiumVisual{
+  position:relative;
+  min-height:198px;
+  padding:14px;
+  border-radius:18px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(235,136,88,.22), transparent 26%),
+    linear-gradient(135deg, #1a1412 0%, #251915 52%, #3a241c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 18px 34px rgba(27,15,10,.20);
+}
+
+.workflowPremiumVisual::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.03), transparent 40%),
+    radial-gradient(circle at 12% 88%, rgba(233,116,62,.18), transparent 26%);
+  pointer-events:none;
+}
+
+.workflowPremiumScreen{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  border-radius:14px;
+}
+
+.workflowPremiumScreenTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+  font-size:11px;
+  font-weight:700;
+  color:#fff7f0;
+  opacity:.88;
+}
+
+.workflowPremiumDocGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+
+.workflowPremiumDocCard{
+  min-height:74px;
+  padding:12px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.03);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:7px;
+}
+
+.workflowPremiumDocCard b{
+  font-size:11px;
+  line-height:1;
+  color:#f28b59;
+  letter-spacing:.08em;
+}
+
+.workflowPremiumDocCard span{
+  display:block;
+  font-size:12px;
+  line-height:1.3;
+  color:#fffaf5;
+  font-weight:600;
+}
+
+.workflowPremiumDocCard small{
+  display:block;
+  font-size:10px;
+  line-height:1;
+  color:rgba(255,244,236,.62);
+}
+
+.workflowPremiumBars{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  height:128px;
+  padding:16px 10px 6px;
+}
+
+.workflowPremiumBars i{
+  display:block;
+  flex:1 1 0;
+  min-width:24px;
+  border-radius:7px 7px 0 0;
+  background:linear-gradient(180deg,#f39c72 0%,#d85d33 100%);
+  box-shadow:0 8px 18px rgba(219,94,48,.22);
+}
+
+.workflowPremiumBars i:nth-child(1){height:28%;}
+.workflowPremiumBars i:nth-child(2){height:40%;}
+.workflowPremiumBars i:nth-child(3){height:52%;}
+.workflowPremiumBars i:nth-child(4){height:70%;}
+.workflowPremiumBars i:nth-child(5){height:58%;}
+.workflowPremiumBars i:nth-child(6){height:78%;}
+
+.workflowPremiumFlow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  min-height:148px;
+}
+
+.workflowPremiumFlowNode{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:56px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+  text-align:center;
+  font-size:11px;
+  line-height:1.3;
+  font-weight:700;
+  color:#fff8f2;
+}
+
+.workflowPremiumFlowArrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  line-height:1;
+  color:#ef8a58;
+  font-weight:800;
+}
+
+@media (max-width: 1100px){
+  .workflowPremiumCard,
+  .workflowPremiumCardReverse{
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+
+  .workflowPremiumCopy h3{
+    font-size:30px;
+  }
+
+  .workflowPremiumVisual{
+    min-height:186px;
+  }
+}
+
+@media (max-width: 820px){
+  .workflowPremiumHead{
+    max-width:none;
+    text-align:left;
+  }
+
+  .workflowPremiumHead h2{
+    font-size:38px;
+  }
+
+  .workflowPremiumCard,
+  .workflowPremiumCardReverse{
+    grid-template-columns:1fr;
+    padding:16px;
+  }
+
+  .workflowPremiumCardReverse .workflowPremiumVisual,
+  .workflowPremiumCardReverse .workflowPremiumCopy{
+    order:initial;
+  }
+
+  .workflowPremiumCopy{
+    padding:2px 0 0;
+  }
+
+  .workflowPremiumCopy h3{
+    font-size:28px;
+  }
+
+  .workflowPremiumCopy p{
+    max-width:none;
+  }
+
+  .workflowPremiumVisual{
+    min-height:210px;
+  }
+
+  .workflowPremiumDocGrid{
+    grid-template-columns:1fr;
+  }
+
+  .workflowPremiumFlow{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:6px 0;
+  }
+
+  .workflowPremiumFlowArrow{
+    transform:rotate(90deg);
+  }
+}
+
+@media (max-width: 560px){
+  .workflowPremiumWrap{
+    gap:22px;
+  }
+
+  .workflowPremiumHead h2{
+    font-size:30px;
+    line-height:1.02;
+  }
+
+  .workflowPremiumHead p{
+    font-size:13.5px;
+    line-height:1.65;
+  }
+
+  .workflowPremiumStack{
+    gap:14px;
+  }
+
+  .workflowPremiumCard{
+    border-radius:18px;
+    padding:14px;
+  }
+
+  .workflowPremiumCopy h3{
+    font-size:22px;
+  }
+
+  .workflowPremiumCopy p{
+    font-size:13px;
+  }
+
+  .workflowPremiumVisual{
+    min-height:190px;
+    padding:12px;
+    border-radius:16px;
+  }
+
+  .workflowPremiumScreenTop{
+    margin-bottom:10px;
+    font-size:10px;
+  }
+
+  .workflowPremiumBars{
+    gap:8px;
+    height:110px;
+    padding:14px 6px 4px;
+  }
+
+  .workflowPremiumFlowNode{
+    min-height:50px;
+    font-size:10px;
+  }
+}
+/* CLAUDE V13.3 WORKFLOW PREMIUM END */
+

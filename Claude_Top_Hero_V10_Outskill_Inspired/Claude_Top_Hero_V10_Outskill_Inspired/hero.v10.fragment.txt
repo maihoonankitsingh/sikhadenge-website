@@ -1,0 +1,72 @@
+<section className={styles.hero}>
+          <div className={styles.heroBurst} aria-hidden="true">
+            <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
+          </div>
+
+          <div className={`${styles.container} ${styles.heroCenter}`}>
+            <div className={styles.heroTopBadge}>NO CODING EXPERIENCE NEEDED</div>
+
+            <div className={styles.heroBrand}>
+              <strong>SikhaDenge</strong>
+              <span>Claude AI Masterclass</span>
+            </div>
+
+            <h1 className={styles.heroHeadline}>
+              The practical <mark>Claude AI skill</mark> that helps you
+              <br className={styles.desktopBreak} /> research, write &amp; work smarter.
+            </h1>
+
+            <p className={styles.heroSub}>
+              Master practical Claude workflows for research, long documents, professional writing,
+              analysis and everyday productivity — live, structured and beginner friendly.
+            </p>
+
+            <div className={styles.heroProofRow}>
+              <div><span>LIVE</span><strong>Online Workshop</strong></div>
+              <div><span>EASY</span><strong>Hinglish Session</strong></div>
+              <div><span>FREE</span><strong>Current Entry</strong></div>
+            </div>
+
+            <div className={styles.heroCtas}>
+              <a className={styles.heroPrimary} href={registerHref}>
+                Reserve My Free Seat <b>→</b>
+              </a>
+              <a className={styles.heroSecondary} href="#agenda">
+                See Workshop Agenda
+              </a>
+            </div>
+
+            <div className={styles.heroBatchLine}>
+              <span className={styles.heroBatchDot} />
+              <strong>Next live batch:</strong>
+              <span>8:00 PM IST · Live Online</span>
+            </div>
+
+            <div className={styles.heroSeatVisual} aria-hidden="true">
+              {Array.from({ length: 11 }, (_, index) => (
+                <span key={index} className={index < 8 ? styles.seatFilled : styles.seatOpen}>
+                  <i />
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.heroOfferBar}>
+            <div className={`${styles.container} ${styles.heroOfferInner}`}>
+              <div className={styles.heroOfferCopy}>
+                <small>LIVE CLAUDE AI MASTERCLASS</small>
+                <div><strong>FREE</strong><span>for the current batch</span></div>
+              </div>
+
+              <div className={styles.heroOfferMeta}>
+                <span>Easy Hinglish</span>
+                <i />
+                <span>No coding required</span>
+              </div>
+
+              <a className={styles.heroOfferButton} href={registerHref}>
+                Grab Your Spot For Free <b>→</b>
+              </a>
+            </div>
+          </div>
+        </section>
