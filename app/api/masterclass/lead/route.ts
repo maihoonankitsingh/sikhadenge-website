@@ -444,6 +444,12 @@ export async function POST(req: NextRequest) {
       console.error("MASTERCLASS_SUBMISSION_LOG_FAILED_APP", submissionErr);
     }
 
+    await pushToNeodoveRealtime({
+      name,
+      phone,
+      email,
+      page,
+    });
 
     const whatsappConsent =
       raw?.whatsappConsent === true;
