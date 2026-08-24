@@ -389,39 +389,19 @@ function ClaudeFreeMasterclassPage() {
 
         <section className={`${styles.section} ${styles.soft} ${styles.aiShiftSection}`}>
           <div className={styles.container}>
-            <div className={styles.aiShiftCleanShell}>
-              <div className={styles.aiShiftCleanIntro}>
-                <span className={styles.aiShiftCleanEyebrow}>THE AI SHIFT</span>
-                <h2>
-                  Why AI-skilled professionals are <span>moving ahead faster.</span>
-                </h2>
-                <p>
-                  Professionals who can use AI workflows effectively are building a stronger
-                  advantage across research, communication, analysis and execution.
-                </p>
-              </div>
-
-              <div className={styles.aiShiftCleanGrid}>
-                <figure className={styles.aiShiftCleanCard}>
-                  <picture>
-                    <source media="(max-width:767px)" srcSet="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png" />
-                    <source media="(max-width:1024px)" srcSet="/funnels/claude/ai-shift/ai_powered_professional_workflows.png" />
-                    <img
-                      src="/funnels/claude/ai-shift/the_ai_shift_professionals_at_work.png"
-                      alt="AI powered professional workflows"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </picture>
-                </figure>
-              </div>
-
-              <div className={styles.aiShiftCleanFooter}>
-                <span>
-                  Jobs are moving toward AI-enabled professionals. Become AI-enabled before the shift leaves you behind.
-                </span>
-                <a href={registerHref}>Reserve My Free Seat</a>
-              </div>
+            <div className={styles.aiShiftCleanGrid}>
+              <figure className={styles.aiShiftCleanCard}>
+                <picture>
+                  <source media="(max-width:767px)" srcSet="/funnels/claude/ai-shift/the_ai_shift_workforce_transformation.png" />
+                  <source media="(max-width:1024px)" srcSet="/funnels/claude/ai-shift/ai_powered_professional_workflows.png" />
+                  <img
+                    src="/funnels/claude/ai-shift/the_ai_shift_professionals_at_work.png"
+                    alt="AI powered professional workflows"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+              </figure>
             </div>
           </div>
         </section>
