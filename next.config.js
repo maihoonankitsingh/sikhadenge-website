@@ -4,6 +4,14 @@ const nextConfig = {
 
   eslint: { ignoreDuringBuilds: true },
 
+  // Production VPS has 4 vCPUs, while the guarded production build is pinned
+  // to 2 CPUs. Keep Next's worker pool aligned with that limit so hundreds of
+  // static routes do not starve each other and trip the default 60s watchdog.
+  staticPageGenerationTimeout: 300,
+  experimental: {
+    cpus: 2,
+  },
+
   images: {
     remotePatterns: [
       {
