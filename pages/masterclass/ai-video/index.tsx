@@ -134,7 +134,12 @@ function AiVideoMasterclassPage() {
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <main className={styles.page}>
+      <main
+        className={styles.page}
+        style={{
+          fontFamily: 'Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        }}
+      >
         <div className={styles.topStrip}>
           <span><i /> LIVE AI VIDEO GENERATION MASTERCLASS</span>
           <span>TEXT → VIDEO</span>
