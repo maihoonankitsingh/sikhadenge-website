@@ -34,10 +34,11 @@ class MyDocument extends Document {
           />
           <link rel="stylesheet" href="/ai-video-brand-watermarks.css?v=20260827-higgsfield-contrast-v51" />
           <link rel="stylesheet" href="/ai-video-premium-tools-v6.css?v=20260827-premium-tools-v6" />
+          <link rel="stylesheet" href="/ai-video-premium-tools-v6-brand-fix.css?v=20260827-premium-tools-v6b" />
         </Head>
         <body>
           <Main />
-          <script src="/ai-video-premium-tools-v6.js?v=20260827-premium-tools-v6" defer />
+          <script src="/ai-video-premium-tools-v6.js?v=20260827-premium-tools-v6b" defer />
           <NextScript />
         </body>
       </Html>
