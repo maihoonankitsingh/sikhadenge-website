@@ -1,0 +1,364 @@
+/* AI Video masterclass — premium live-build showcase V7 */
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build{
+  position:relative !important;
+  overflow:hidden !important;
+  padding:112px 0 104px !important;
+  background:
+    radial-gradient(circle at 18% 16%,rgba(37,99,235,.18),transparent 30%),
+    radial-gradient(circle at 82% 30%,rgba(124,58,237,.16),transparent 28%),
+    radial-gradient(circle at 52% 100%,rgba(6,182,212,.09),transparent 32%),
+    linear-gradient(180deg,#06111f 0%,#071524 48%,#06111f 100%) !important;
+  isolation:isolate !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:-2 !important;
+  pointer-events:none !important;
+  background-image:
+    linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px) !important;
+  background-size:56px 56px !important;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.92),rgba(0,0,0,.34) 70%,transparent) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build::after{
+  content:"" !important;
+  position:absolute !important;
+  width:760px !important;
+  height:760px !important;
+  right:-390px !important;
+  top:-260px !important;
+  z-index:-1 !important;
+  border:1px solid rgba(96,165,250,.10) !important;
+  border-radius:50% !important;
+  box-shadow:
+    0 0 0 100px rgba(59,130,246,.018),
+    0 0 0 205px rgba(124,58,237,.012) !important;
+  pointer-events:none !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child{
+  width:min(1240px,calc(100% - 48px)) !important;
+  position:relative !important;
+  z-index:2 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child{
+  max-width:940px !important;
+  margin:0 auto 54px !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child > span{
+  color:#67e8f9 !important;
+  font-size:10px !important;
+  font-weight:800 !important;
+  letter-spacing:.16em !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child h2{
+  max-width:820px !important;
+  margin:12px auto 16px !important;
+  color:#f8fbff !important;
+  font-size:clamp(42px,4.8vw,64px) !important;
+  line-height:1.01 !important;
+  letter-spacing:-.05em !important;
+  font-weight:780 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child h2 em{
+  background:linear-gradient(90deg,#60a5fa 0%,#67e8f9 45%,#a78bfa 100%) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child p{
+  max-width:720px !important;
+  color:#93a5bb !important;
+  font-size:15px !important;
+  line-height:1.72 !important;
+}
+
+/* Bento grid */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2){
+  display:grid !important;
+  grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+  gap:18px !important;
+  align-items:stretch !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2)::before{
+  content:"LIVE CREATIVE OUTPUT  •  5 FORMATS" !important;
+  grid-column:1 / -1 !important;
+  display:flex !important;
+  align-items:center !important;
+  min-height:30px !important;
+  margin-bottom:0 !important;
+  color:#5f7690 !important;
+  font-size:9px !important;
+  font-weight:800 !important;
+  letter-spacing:.15em !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article{
+  position:relative !important;
+  overflow:hidden !important;
+  min-width:0 !important;
+  border:1px solid rgba(148,197,255,.14) !important;
+  border-radius:26px !important;
+  background:linear-gradient(180deg,rgba(14,31,51,.96),rgba(8,20,35,.98)) !important;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,.23),
+    inset 0 1px 0 rgba(255,255,255,.035) !important;
+  transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:hover{
+  transform:translateY(-6px) !important;
+  border-color:rgba(125,211,252,.28) !important;
+  box-shadow:
+    0 36px 95px rgba(0,0,0,.32),
+    0 0 0 1px rgba(96,165,250,.05),
+    inset 0 1px 0 rgba(255,255,255,.055) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(1){grid-column:span 5 !important;}
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(2){grid-column:span 7 !important;}
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(3),
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(4),
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(5){grid-column:span 4 !important;}
+
+/* Scene canvas */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:first-child{
+  position:relative !important;
+  min-height:258px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  isolation:isolate !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(n+3) > div:first-child{
+  min-height:224px !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:first-child::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent 30%),
+    linear-gradient(90deg,transparent 49.7%,rgba(255,255,255,.045) 50%,transparent 50.3%),
+    linear-gradient(transparent 49.7%,rgba(255,255,255,.04) 50%,transparent 50.3%) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:first-child::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:14px !important;
+  border:1px solid rgba(255,255,255,.055) !important;
+  border-radius:17px !important;
+  pointer-events:none !important;
+  z-index:5 !important;
+  box-shadow:inset 0 0 42px rgba(0,0,0,.15) !important;
+}
+
+/* Individual cinematic palettes */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(1) > div:first-child{
+  background:
+    radial-gradient(circle at 50% 52%,rgba(73,144,255,.56),transparent 10%),
+    radial-gradient(circle at 50% 54%,rgba(37,99,235,.30),transparent 26%),
+    radial-gradient(circle at 22% 20%,rgba(14,165,233,.09),transparent 34%),
+    linear-gradient(145deg,#07111c,#0b1d31 58%,#07111f) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(2) > div:first-child{
+  background:
+    linear-gradient(174deg,rgba(249,145,92,.96) 0 38%,rgba(33,66,91,.96) 38.4% 48%,#071321 48.4% 100%) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(2) > div:first-child::before{
+  background:
+    linear-gradient(104deg,transparent 0 57%,rgba(255,255,255,.68) 57.3% 57.8%,transparent 58.1%),
+    radial-gradient(circle at 82% 22%,rgba(255,222,180,.34),transparent 18%) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(3) > div:first-child{
+  background:
+    radial-gradient(ellipse at 52% 58%,rgba(139,92,246,.28),transparent 34%),
+    radial-gradient(circle at 52% 35%,#ffd9c8 0 5.5%,transparent 6%),
+    radial-gradient(circle at 52% 52%,#6553b6 0 13%,transparent 13.5%),
+    linear-gradient(145deg,#31134d,#5b2678 50%,#28103f) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(4) > div:first-child{
+  background:
+    linear-gradient(132deg,#0c2a40 0 43%,#f5a071 43.4% 59%,#10263b 59.4% 100%) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(5) > div:first-child{
+  background:
+    radial-gradient(circle at 30% 36%,#75e6ef 0 3.5%,transparent 4%),
+    radial-gradient(circle at 71% 65%,#a78bfa 0 5%,transparent 5.5%),
+    radial-gradient(circle at 52% 52%,rgba(37,99,235,.58),transparent 13%),
+    linear-gradient(145deg,#071827,#0d2a3c 55%,#081724) !important;
+}
+
+/* Keep internal HUD above canvas */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:first-child > *{
+  position:relative !important;
+  z-index:3 !important;
+}
+
+/* Card copy */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:nth-child(2){
+  min-height:104px !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  justify-content:space-between !important;
+  gap:18px !important;
+  padding:18px 20px 20px !important;
+  border-top:1px solid rgba(255,255,255,.065) !important;
+  background:linear-gradient(180deg,rgba(8,20,35,.88),rgba(7,18,31,.98)) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:nth-child(2) small{
+  color:#67e8f9 !important;
+  font-size:8px !important;
+  font-weight:800 !important;
+  letter-spacing:.12em !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:nth-child(2) h3{
+  margin:7px 0 0 !important;
+  color:#f5f9ff !important;
+  font-size:16px !important;
+  line-height:1.3 !important;
+  letter-spacing:-.018em !important;
+  font-weight:700 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(-n+2) > div:nth-child(2) h3{
+  font-size:18px !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:nth-child(2) > span{
+  flex:0 0 auto !important;
+  padding:7px 10px !important;
+  border:1px solid rgba(148,197,255,.12) !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.035) !important;
+  color:#8498af !important;
+  font-size:8px !important;
+  font-weight:750 !important;
+  letter-spacing:.04em !important;
+}
+
+/* Workflow glass strip */
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(3){
+  position:relative !important;
+  width:min(960px,100%) !important;
+  min-height:76px !important;
+  margin:28px auto 0 !important;
+  padding:15px 20px !important;
+  border:1px solid rgba(148,197,255,.16) !important;
+  border-radius:20px !important;
+  background:
+    linear-gradient(90deg,rgba(37,99,235,.10),rgba(255,255,255,.035) 45%,rgba(124,58,237,.08)),
+    rgba(8,22,38,.82) !important;
+  box-shadow:0 22px 70px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035) !important;
+  backdrop-filter:blur(16px) !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(3)::before{
+  content:"" !important;
+  position:absolute !important;
+  left:20px !important;
+  right:20px !important;
+  top:-1px !important;
+  height:1px !important;
+  background:linear-gradient(90deg,transparent,#60a5fa,#67e8f9,#a78bfa,transparent) !important;
+  opacity:.6 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(3) strong{
+  color:#f7fbff !important;
+  font-size:12px !important;
+  font-weight:760 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(3) span{
+  color:#8093aa !important;
+  font-size:9px !important;
+}
+
+@media (max-width:980px){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build{
+    padding:92px 0 86px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(1),
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(2),
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(3),
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(4){
+    grid-column:span 6 !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(5){
+    grid-column:span 12 !important;
+  }
+}
+
+@media (max-width:680px){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build{
+    padding:74px 0 70px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child{
+    width:min(100% - 28px,1240px) !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child{
+    margin-bottom:38px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child h2{
+    font-size:clamp(36px,11vw,48px) !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:first-child p{
+    font-size:14px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2){
+    grid-template-columns:1fr !important;
+    gap:14px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(n){
+    grid-column:1 / -1 !important;
+    border-radius:22px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article > div:first-child,
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article:nth-of-type(n+3) > div:first-child{
+    min-height:220px !important;
+  }
+
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(3){
+    margin-top:20px !important;
+    border-radius:17px !important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #build > div:first-child > div:nth-child(2) > article{
+    transition:none !important;
+  }
+}
