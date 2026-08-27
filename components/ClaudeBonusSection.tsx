@@ -39,67 +39,104 @@ const bonuses = [
     title: "Claude Workflow Playbook",
     description: "A clear framework for research, writing, analysis and repeatable professional work.",
     icon: <PlaybookIcon />,
+    preview: "playbook",
   },
   {
     number: "02",
     title: "Prompt + Context Framework",
     description: "A reusable structure for giving Claude better context and producing clearer, reviewable output.",
     icon: <FrameworkIcon />,
+    preview: "framework",
   },
   {
     number: "03",
     title: "Workbook + Deep-Work Checklist",
     description: "A working reference and practical checklist for deliberate, repeatable Claude workflows.",
     icon: <WorkbookIcon />,
+    preview: "workbook",
   },
 ] as const;
+
+function ResourcePreview({ variant }: { variant: (typeof bonuses)[number]["preview"] }) {
+  return (
+    <div className={`${styles.preview} ${styles[variant]}`} aria-hidden="true">
+      <div className={styles.previewChrome}><i /><i /><i /></div>
+      <div className={styles.previewCanvas}>
+        <span className={styles.previewLead} />
+        <span className={styles.previewLine} />
+        <span className={styles.previewLine} />
+        <span className={styles.previewLine} />
+        <div className={styles.previewTokens}><b /><b /><b /></div>
+      </div>
+    </div>
+  );
+}
 
 export default function ClaudeBonusSection({ registerHref }: ClaudeBonusSectionProps) {
   return (
     <section className={styles.section} aria-labelledby="claude-bonus-title">
       <div className={styles.container}>
-        <div className={styles.offerBar}>
-          <div className={styles.offerCopy}>
-            <span>FREE MASTERCLASS BONUS KIT</span>
-            <strong>Register for the live Claude masterclass and get these practical learning resources included.</strong>
-          </div>
-          <div className={styles.offerBadge}>INCLUDED FREE</div>
-        </div>
-
-        <header className={styles.header}>
-          <span className={styles.eyebrow}>YOUR TAKE-HOME TOOLKIT</span>
-          <h2 id="claude-bonus-title">Learn live. <em>Keep the workflow.</em></h2>
-          <p>Three practical resources that turn the live session into a repeatable system you can use after the masterclass.</p>
-        </header>
-
-        <div className={styles.grid}>
-          {bonuses.map((bonus) => (
-            <article className={styles.card} key={bonus.number}>
-              <div className={styles.cardTop}>
-                <span className={styles.bonusLabel}>Bonus {bonus.number}</span>
-                <span className={styles.freeLabel}>FREE</span>
-              </div>
-              <div className={styles.icon}>{bonus.icon}</div>
-              <h3>{bonus.title}</h3>
-              <p>{bonus.description}</p>
-              <div className={styles.included}><span aria-hidden="true">✓</span> Included with your free live seat</div>
-            </article>
-          ))}
-        </div>
-
-        <div className={styles.bottomBar}>
-          <div className={styles.bottomCopy}>
-            <span className={styles.check} aria-hidden="true">✓</span>
-            <div>
-              <strong>One live session. A practical system you can reuse.</strong>
-              <small>Research · Writing · Analysis · Professional workflows</small>
+        <div className={styles.shell}>
+          <div className={styles.offerBar}>
+            <div className={styles.offerCopy}>
+              <span>FREE MASTERCLASS BONUS KIT</span>
+              <strong>Register for the live Claude masterclass and get these practical learning resources included.</strong>
             </div>
+            <div className={styles.offerBadge}>INCLUDED FREE</div>
           </div>
 
-          <a className={styles.cta} href={registerHref}>
-            Reserve My Free Seat
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M14 7l5 5-5 5" /></svg>
-          </a>
+          <header className={styles.header}>
+            <div className={styles.headerCopy}>
+              <span className={styles.eyebrow}>YOUR TAKE-HOME TOOLKIT</span>
+              <h2 id="claude-bonus-title">Learn live. <em>Keep the workflow.</em></h2>
+              <p>Three practical resources that turn the live session into a repeatable system you can use after the masterclass.</p>
+            </div>
+            <aside className={styles.headerMeta} aria-label="Three practical take-home resources included with your live seat">
+              <span>INCLUDED WITH YOUR LIVE SEAT</span>
+              <strong>03</strong>
+              <small>practical take-home resources</small>
+            </aside>
+          </header>
+
+          <div className={styles.grid}>
+            {bonuses.map((bonus) => (
+              <article className={styles.card} key={bonus.number}>
+                <div className={styles.cardTop}>
+                  <span className={styles.bonusLabel}>Bonus {bonus.number}</span>
+                  <span className={styles.freeLabel}>FREE</span>
+                </div>
+
+                <div className={styles.cardVisual}>
+                  <div className={styles.icon}>{bonus.icon}</div>
+                  <ResourcePreview variant={bonus.preview} />
+                </div>
+
+                <div className={styles.cardCopy}>
+                  <h3>{bonus.title}</h3>
+                  <p>{bonus.description}</p>
+                </div>
+
+                <div className={styles.included}><span aria-hidden="true">✓</span> Included with your free live seat</div>
+              </article>
+            ))}
+          </div>
+
+          <div className={styles.bottomBar}>
+            <div className={styles.bottomCopy}>
+              <span className={styles.check} aria-hidden="true">✓</span>
+              <div>
+                <strong>One live session. A practical system you can reuse.</strong>
+                <small>Research · Writing · Analysis · Professional workflows</small>
+              </div>
+            </div>
+
+            <a className={styles.cta} href={registerHref}>
+              <span>Reserve My Free Seat</span>
+              <span className={styles.ctaArrow} aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 12h13M14 7l5 5-5 5" /></svg>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
