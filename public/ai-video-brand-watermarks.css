@@ -1,0 +1,89 @@
+/* Scoped actual-brand watermarks for AI Video masterclass hero */
+html body:has(a[href*="source=ai-video-masterclass"]) main #top::before{
+  content:"" !important;
+  position:absolute !important;
+  left:34px !important;
+  right:auto !important;
+  top:170px !important;
+  width:220px !important;
+  height:220px !important;
+  border-radius:0 !important;
+  background-color:transparent !important;
+  background-image:url("https://ai.sitebard.com/icons/svg/kling-color.svg") !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  background-size:contain !important;
+  -webkit-background-clip:border-box !important;
+  background-clip:border-box !important;
+  -webkit-text-fill-color:initial !important;
+  color:transparent !important;
+  -webkit-mask:none !important;
+  mask:none !important;
+  opacity:.10 !important;
+  filter:grayscale(.15) saturate(.8) !important;
+  transform:none !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  z-index:1 !important;
+}
+
+html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
+  content:"" !important;
+  position:absolute !important;
+  right:34px !important;
+  left:auto !important;
+  top:170px !important;
+  bottom:auto !important;
+  width:240px !important;
+  height:220px !important;
+  border-radius:0 !important;
+  background-color:transparent !important;
+  background-image:url("https://pb.dashboardicons.com/api/files/community_gallery/vxlr16f60sicu18/higgsfield_logo_light_uwli4q9afs.svg") !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  background-size:contain !important;
+  -webkit-background-clip:border-box !important;
+  background-clip:border-box !important;
+  -webkit-text-fill-color:initial !important;
+  color:transparent !important;
+  -webkit-mask:none !important;
+  mask:none !important;
+  opacity:.10 !important;
+  filter:grayscale(.15) saturate(.8) !important;
+  transform:none !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  z-index:1 !important;
+}
+
+@media (max-width:1280px){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::before{
+    left:16px !important;
+    width:160px !important;
+    height:180px !important;
+    opacity:.075 !important;
+  }
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
+    right:16px !important;
+    width:175px !important;
+    height:180px !important;
+    opacity:.075 !important;
+  }
+}
+
+@media (max-width:900px){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::before,
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
+    width:120px !important;
+    height:140px !important;
+    top:205px !important;
+    opacity:.055 !important;
+  }
+}
+
+@media (max-width:700px){
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::before,
+  html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
+    display:none !important;
+  }
+}

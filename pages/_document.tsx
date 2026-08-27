@@ -32,6 +32,7 @@ class MyDocument extends Document {
             name="twitter:image"
             content="https://sikhadenge.in/images/about/about-hero-desk.webp"
           />
+          <link rel="stylesheet" href="/ai-video-brand-watermarks.css?v=20260827-kling-higgsfield" />
         </Head>
         <body>
           <Main />
