@@ -1,4 +1,4 @@
-/* AI Video masterclass — hero polish V4 */
+/* AI Video masterclass — hero polish V5 official brand assets */
 
 html body:has(a[href*="source=ai-video-masterclass"]) main #top::before{
   content:"" !important;
@@ -8,23 +8,23 @@ html body:has(a[href*="source=ai-video-masterclass"]) main #top::before{
   top:205px !important;
   width:210px !important;
   height:86px !important;
-  border:1px solid rgba(148,163,184,.24) !important;
+  border:1px solid rgba(15,23,42,.10) !important;
   border-radius:22px !important;
-  background-color:rgba(255,255,255,.82) !important;
-  background-image:url("/ai-video-kling-mark.svg") !important;
+  background-color:#050505 !important;
+  background-image:url("https://static-005.klingai-cdn-aws.com/kling-blog/file_by_url/65abea15c635afcac5fb03ce1b0c6e744b80606cff27ca888fa9f49ff08cc684.png?x-oss-process=image%2Fformat%2Cjpg%2Fresize%2Cw_471%3Fx-oss-process%3Dimage%2Fformat%2Cjpg%2Fresize%2Cw_471%2Ch_627") !important;
   background-position:center !important;
   background-repeat:no-repeat !important;
-  background-size:94% auto !important;
-  box-shadow:0 24px 64px rgba(15,23,42,.09), inset 0 1px 0 rgba(255,255,255,.9) !important;
-  -webkit-backdrop-filter:blur(16px) !important;
-  backdrop-filter:blur(16px) !important;
+  background-size:cover !important;
+  box-shadow:0 24px 64px rgba(15,23,42,.12),inset 0 1px 0 rgba(255,255,255,.08) !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
   -webkit-background-clip:border-box !important;
   background-clip:border-box !important;
   -webkit-text-fill-color:initial !important;
   color:transparent !important;
   -webkit-mask:none !important;
   mask:none !important;
-  opacity:.72 !important;
+  opacity:.92 !important;
   transform:rotate(-4deg) !important;
   pointer-events:none !important;
   user-select:none !important;
@@ -40,23 +40,23 @@ html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
   bottom:auto !important;
   width:232px !important;
   height:86px !important;
-  border:1px solid rgba(148,163,184,.24) !important;
+  border:1px solid rgba(148,163,184,.22) !important;
   border-radius:22px !important;
-  background-color:rgba(255,255,255,.82) !important;
-  background-image:url("/ai-video-higgsfield-mark.svg") !important;
+  background-color:#fff !important;
+  background-image:url("https://raw.githubusercontent.com/higgsfield-ai/skills/main/assets/logo.png") !important;
   background-position:center !important;
   background-repeat:no-repeat !important;
-  background-size:94% auto !important;
-  box-shadow:0 24px 64px rgba(15,23,42,.09), inset 0 1px 0 rgba(255,255,255,.9) !important;
-  -webkit-backdrop-filter:blur(16px) !important;
-  backdrop-filter:blur(16px) !important;
+  background-size:88% auto !important;
+  box-shadow:0 24px 64px rgba(15,23,42,.09),inset 0 1px 0 rgba(255,255,255,.9) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+  backdrop-filter:blur(12px) !important;
   -webkit-background-clip:border-box !important;
   background-clip:border-box !important;
   -webkit-text-fill-color:initial !important;
   color:transparent !important;
   -webkit-mask:none !important;
   mask:none !important;
-  opacity:.72 !important;
+  opacity:.90 !important;
   transform:rotate(4deg) !important;
   pointer-events:none !important;
   user-select:none !important;
@@ -134,14 +134,14 @@ html body:has(a[href*="source=ai-video-masterclass"]) main #top h1 + p + div + d
     top:222px !important;
     width:168px !important;
     height:72px !important;
-    opacity:.62 !important;
+    opacity:.88 !important;
   }
   html body:has(a[href*="source=ai-video-masterclass"]) main #top::after{
     right:18px !important;
     top:222px !important;
     width:184px !important;
     height:72px !important;
-    opacity:.62 !important;
+    opacity:.88 !important;
   }
 }
 
@@ -151,7 +151,7 @@ html body:has(a[href*="source=ai-video-masterclass"]) main #top h1 + p + div + d
     top:236px !important;
     width:138px !important;
     height:62px !important;
-    opacity:.46 !important;
+    opacity:.78 !important;
   }
 
   html body:has(a[href*="source=ai-video-masterclass"]) main #top h1{
