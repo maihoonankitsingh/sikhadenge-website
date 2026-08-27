@@ -34,48 +34,38 @@ function WorkbookIcon() {
 }
 
 const bonuses = [
-  {
-    title: "Claude Workflow Playbook",
-    description: "A repeatable Claude workflow.",
-    icon: <PlaybookIcon />,
-  },
-  {
-    title: "Prompt + Context Framework",
-    description: "Clearer prompts with better context.",
-    icon: <FrameworkIcon />,
-  },
-  {
-    title: "Workbook + Deep-Work Checklist",
-    description: "A simple guide for focused work.",
-    icon: <WorkbookIcon />,
-  },
+  { title: "Claude Workflow Playbook", icon: <PlaybookIcon /> },
+  { title: "Prompt + Context Framework", icon: <FrameworkIcon /> },
+  { title: "Workbook + Deep-Work Checklist", icon: <WorkbookIcon /> },
 ] as const;
 
 export default function ClaudeBonusSection({ registerHref }: ClaudeBonusSectionProps) {
   return (
-    <section className={styles.section} aria-labelledby="claude-bonus-title">
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <span className={styles.eyebrow}>FREE BONUS KIT</span>
-          <h2 id="claude-bonus-title">Keep the workflow.</h2>
-          <p>3 practical resources included with your free seat.</p>
-        </header>
+    <section className={styles.section} aria-label="Free Claude masterclass bonus resources">
+      <div className={styles.topBar}>
+        <strong>FREE MASTERCLASS BONUS KIT</strong>
+        <span>3 practical resources included with your free seat.</span>
+      </div>
 
+      <div className={styles.container}>
         <div className={styles.grid}>
-          {bonuses.map((bonus) => (
+          {bonuses.map((bonus, index) => (
             <article className={styles.card} key={bonus.title}>
+              <span className={styles.bonusTag}>Bonus {index + 1}</span>
               <div className={styles.icon}>{bonus.icon}</div>
               <h3>{bonus.title}</h3>
-              <p>{bonus.description}</p>
+              <span className={styles.included}>Included</span>
             </article>
           ))}
         </div>
 
+        <p className={styles.line}>Learn Claude live and keep these practical resources after the session.</p>
+
         <div className={styles.action}>
           <a className={styles.cta} href={registerHref}>
-            Reserve My Free Seat
-            <span aria-hidden="true">→</span>
+            Reserve My Free Seat <span aria-hidden="true">→</span>
           </a>
+          <small>Free live masterclass</small>
         </div>
       </div>
     </section>
