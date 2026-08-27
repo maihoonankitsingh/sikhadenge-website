@@ -35,11 +35,12 @@ class MyDocument extends Document {
           <link rel="stylesheet" href="/ai-video-brand-watermarks.css?v=20260827-higgsfield-contrast-v51" />
           <link rel="stylesheet" href="/ai-video-premium-tools-v6.css?v=20260827-premium-tools-v6" />
           <link rel="stylesheet" href="/ai-video-premium-tools-v6-brand-fix.css?v=20260827-premium-tools-v6b" />
-          <link rel="stylesheet" href="/ai-video-build-showcase-v7.css?v=20260827-build-showcase-v7" />
+          <link rel="stylesheet" href="/ai-video-live-studio-v8.css?v=20260827-live-studio-v8" />
         </Head>
         <body>
           <Main />
           <script src="/ai-video-premium-tools-v6.js?v=20260827-premium-tools-v6b" defer />
+          <script src="/ai-video-live-studio-v8.js?v=20260827-live-studio-v8" defer />
           <NextScript />
         </body>
       </Html>
