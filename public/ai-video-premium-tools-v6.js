@@ -28,12 +28,12 @@
 
     const logo = (tool) => {
       if (tool.cls === "kling") {
-        return '<span class="aitv6-logo aitv6-logo-kling"><span class="aitv6-kling-mark">◉</span><b>KlingAI</b></span>';
+        return '<span class="aitv6-logo aitv6-logo-kling-official"><img src="https://static-005.klingai-cdn-aws.com/kling-blog/file_by_url/65abea15c635afcac5fb03ce1b0c6e744b80606cff27ca888fa9f49ff08cc684.png?x-oss-process=image%2Fformat%2Cjpg%2Fresize%2Cw_471%3Fx-oss-process%3Dimage%2Fformat%2Cjpg%2Fresize%2Cw_471%2Ch_627" alt="Kling AI" loading="lazy" decoding="async"></span>';
       }
       if (tool.cls === "higgsfield") {
-        return '<span class="aitv6-logo aitv6-logo-higgs"><span class="aitv6-higgs-mark">⌁</span><b>Higgsfield</b></span>';
+        return '<span class="aitv6-logo aitv6-logo-higgs-official"><img src="https://raw.githubusercontent.com/higgsfield-ai/skills/main/assets/logo.png" alt="Higgsfield" loading="lazy" decoding="async"></span>';
       }
-      return `<span class="aitv6-logo"><img src="https://www.google.com/s2/favicons?domain=${tool.domain}&sz=128" alt="" loading="lazy" decoding="async"><b>${tool.name}</b></span>`;
+      return `<span class="aitv6-logo"><img src="https://www.google.com/s2/favicons?domain=${tool.domain}&sz=128" alt="${tool.name}" loading="lazy" decoding="async"><b>${tool.name}</b></span>`;
     };
 
     const cards = (items, category) => items.map((tool, index) => `
