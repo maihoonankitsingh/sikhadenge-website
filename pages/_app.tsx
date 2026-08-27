@@ -21,6 +21,9 @@ export default function App({
   const pageKey = router.isReady
     ? router.asPath.split("#", 1)[0] || "/"
     : null;
+  const isAiVideoMasterclass =
+    router.pathname === "/masterclass/ai-video" ||
+    pageKey === "/masterclass/ai-video";
 
   return (
     <ConsentProvider>
@@ -28,6 +31,14 @@ export default function App({
       <ConsentBanner />
       <ConsentPreferences />
       <ConsentSettingsButton />
+      {isAiVideoMasterclass ? (
+        <style>{`
+          body footer { display: none !important; }
+          body main > nav { display: none !important; }
+          body main > div:first-child { display: none !important; }
+          body main > div:last-child { display: none !important; }
+        `}</style>
+      ) : null}
       {!Page.hideGlobalHeader ? <Header /> : null}
       <Component {...pageProps} />
     </ConsentProvider>
