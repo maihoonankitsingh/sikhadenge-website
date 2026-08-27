@@ -1,5 +1,4 @@
 import Head from "next/head";
-import { Bricolage_Grotesque } from "next/font/google";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
@@ -20,12 +19,6 @@ import {
   Workflow,
 } from "lucide-react";
 import styles from "../../../styles/ai-video-masterclass.module.css";
-
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-bricolage-ai-video",
-});
 
 const registerHref = "/gen-ai-masterclass/register-one-step?source=ai-video-masterclass";
 
@@ -136,9 +129,12 @@ function AiVideoMasterclassPage() {
         <title>AI Video Generation Masterclass | SikhaDenge</title>
         <meta name="description" content="Learn practical AI video generation workflows for ads, reels, cinematic clips and image-to-video creation in a live SikhaDenge masterclass." />
         <meta name="robots" content="index,follow" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <main className={`${styles.page} ${bricolage.className} ${bricolage.variable}`}>
+      <main className={styles.page}>
         <div className={styles.topStrip}>
           <span><i /> LIVE AI VIDEO GENERATION MASTERCLASS</span>
           <span>TEXT → VIDEO</span>
