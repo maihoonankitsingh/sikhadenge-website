@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { ReactNode } from "react";
+import ClaudeBonusSection from "../../../components/ClaudeBonusSection";
 import styles from "../../../styles/claude-masterclass-live.module.css";
 
 const registerHref = "/gen-ai-masterclass/register-one-step";
@@ -199,6 +200,8 @@ function ClaudeFreeMasterclassPage() {
             </div>
           </div>
         </section>
+
+        <ClaudeBonusSection registerHref={registerHref} />
 
         <section className={styles.ctaBand}>
           <div className={`${styles.container} ${styles.ctaGrid}`}><div><h2>Learn. Apply. Work smarter.</h2><p>Reserve your free seat and continue through SikhaDenge's existing live registration flow.</p></div><Cta>Register Now for Free</Cta></div>
