@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import styles from "../../../styles/ai-video-masterclass.module.css";
+import processStyles from "../../../styles/ai-video-process-premium.module.css";
 
 const registerHref = "/gen-ai-masterclass/register-one-step?source=ai-video-masterclass";
 
@@ -220,12 +221,38 @@ function AiVideoMasterclassPage() {
               ))}
             </div>
 
-            <div className={styles.processBar}>
-              <span><WandSparkles size={18} /> Prompt</span><b>→</b>
-              <span><Camera size={18} /> Design the shot</span><b>→</b>
-              <span><Zap size={18} /> Generate</span><b>→</b>
-              <span><Repeat2 size={18} /> Refine</span><b>→</b>
-              <span><Film size={18} /> Finish</span>
+            <div className={processStyles.wrap} aria-label="AI video creation workflow">
+              <div className={processStyles.grid}>
+                <div className={processStyles.step}>
+                  <span className={processStyles.number}>01</span>
+                  <span className={processStyles.icon}><WandSparkles /></span>
+                  <span className={processStyles.copy}><strong>Prompt</strong><small>Define the idea, subject and intent</small></span>
+                </div>
+                <span className={processStyles.arrow} aria-hidden="true"><ArrowRight /></span>
+                <div className={processStyles.step}>
+                  <span className={processStyles.number}>02</span>
+                  <span className={processStyles.icon}><Camera /></span>
+                  <span className={processStyles.copy}><strong>Design the shot</strong><small>Frame, camera, lighting and style</small></span>
+                </div>
+                <span className={processStyles.arrow} aria-hidden="true"><ArrowRight /></span>
+                <div className={processStyles.step}>
+                  <span className={processStyles.number}>03</span>
+                  <span className={processStyles.icon}><Zap /></span>
+                  <span className={processStyles.copy}><strong>Generate</strong><small>Create the first controlled variation</small></span>
+                </div>
+                <span className={processStyles.arrow} aria-hidden="true"><ArrowRight /></span>
+                <div className={processStyles.step}>
+                  <span className={processStyles.number}>04</span>
+                  <span className={processStyles.icon}><Repeat2 /></span>
+                  <span className={processStyles.copy}><strong>Refine</strong><small>Compare, iterate and improve details</small></span>
+                </div>
+                <span className={processStyles.arrow} aria-hidden="true"><ArrowRight /></span>
+                <div className={processStyles.step}>
+                  <span className={processStyles.number}>05</span>
+                  <span className={processStyles.icon}><Film /></span>
+                  <span className={processStyles.copy}><strong>Finish</strong><small>Sequence, polish and export</small></span>
+                </div>
+              </div>
             </div>
 
             <div className={styles.center}><Cta>Learn This Workflow Live</Cta></div>
