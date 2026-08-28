@@ -9,10 +9,7 @@ class MyDocument extends Document {
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="Sikhadenge" />
           <meta property="og:url" content="https://sikhadenge.in" />
-          <meta
-            property="og:title"
-            content="Sikhadenge"
-          />
+          <meta property="og:title" content="Sikhadenge" />
           <meta
             property="og:description"
             content="Live online, structured courses with portfolio output and support. Learn industry tools with practical projects."
@@ -32,15 +29,9 @@ class MyDocument extends Document {
             name="twitter:image"
             content="https://sikhadenge.in/images/about/about-hero-desk.webp"
           />
-          <link rel="stylesheet" href="/ai-video-brand-watermarks.css?v=20260827-higgsfield-contrast-v51" />
-          <link rel="stylesheet" href="/ai-video-premium-tools-v6.css?v=20260827-premium-tools-v6" />
-          <link rel="stylesheet" href="/ai-video-premium-tools-v6-brand-fix.css?v=20260827-premium-tools-v6b" />
-          <link rel="stylesheet" href="/ai-video-funnel-outcomes-v9.css?v=20260827-funnel-outcomes-v9" />
         </Head>
         <body>
           <Main />
-          <script src="/ai-video-premium-tools-v6.js?v=20260827-premium-tools-v6b" defer />
-          <script src="/ai-video-funnel-outcomes-v9.js?v=20260827-funnel-outcomes-v9" defer />
           <NextScript />
         </body>
       </Html>
