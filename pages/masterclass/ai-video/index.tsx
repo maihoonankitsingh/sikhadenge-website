@@ -57,25 +57,25 @@ const modules = [
 ] as const;
 
 const videoTools = [
-  ["KL", "Kling AI", "Text & image-to-video"],
-  ["HF", "Higgsfield", "Cinematic motion & camera"],
-  ["VE", "Google Veo", "Cinematic generation"],
-  ["RW", "Runway", "Generation & references"],
-  ["PK", "Pika", "Short-form motion"],
-  ["LU", "Luma AI", "Creative video generation"],
-  ["HL", "Hailuo AI", "Image & text-to-video"],
-  ["SD", "Seedance", "Fast multi-shot generation"],
+  ["KL", "Kling AI", "Text & image-to-video", "kling.ai"],
+  ["HF", "Higgsfield", "Cinematic motion & camera", "higgsfield.ai"],
+  ["VE", "Google Veo", "Cinematic generation", "deepmind.google"],
+  ["RW", "Runway", "Generation & references", "runwayml.com"],
+  ["PK", "Pika", "Short-form motion", "pika.art"],
+  ["LU", "Luma AI", "Creative video generation", "lumalabs.ai"],
+  ["HL", "Hailuo AI", "Image & text-to-video", "hailuoai.video"],
+  ["SD", "Seedance", "Fast multi-shot generation", "seed.bytedance.com"],
 ] as const;
 
 const imageTools = [
-  ["MJ", "Midjourney", "Concepts & cinematic visuals"],
-  ["ID", "Ideogram", "Design, text & posters"],
-  ["FF", "Adobe Firefly", "Creative image workflows"],
-  ["LE", "Leonardo AI", "Characters & visual assets"],
-  ["FL", "FLUX", "Photorealistic generation"],
-  ["OI", "OpenAI Images", "Prompt-driven image creation"],
-  ["RC", "Recraft", "Design assets & visual styles"],
-  ["CA", "Canva AI", "Fast social creative workflows"],
+  ["MJ", "Midjourney", "Concepts & cinematic visuals", "midjourney.com"],
+  ["ID", "Ideogram", "Design, text & posters", "ideogram.ai"],
+  ["FF", "Adobe Firefly", "Creative image workflows", "adobe.com"],
+  ["LE", "Leonardo AI", "Characters & visual assets", "leonardo.ai"],
+  ["FL", "FLUX", "Photorealistic generation", "blackforestlabs.ai"],
+  ["OI", "OpenAI Images", "Prompt-driven image creation", "openai.com"],
+  ["RC", "Recraft", "Design assets & visual styles", "recraft.ai"],
+  ["CA", "Canva AI", "Fast social creative workflows", "canva.com"],
 ] as const;
 
 const audiences = [
@@ -103,12 +103,32 @@ function Cta({ children, className = styles.primary }: { children: ReactNode; cl
   );
 }
 
-function ToolGrid({ tools }: { tools: readonly (readonly [string, string, string])[] }) {
+function ToolGrid({ tools }: { tools: readonly (readonly [string, string, string, string])[] }) {
   return (
     <div className={styles.toolGrid}>
-      {tools.map(([code, name, text]) => (
+      {tools.map(([code, name, text, domain]) => (
         <article className={styles.toolCard} key={name}>
-          <span className={styles.toolIcon}>{code}</span>
+          <span
+            className={styles.toolIcon}
+            style={{ position: "relative", overflow: "hidden", background: "#fff", borderColor: "rgba(255,255,255,.24)" }}
+          >
+            <span aria-hidden="true" style={{ color: "#64748b", fontSize: 9, fontWeight: 850 }}>{code}</span>
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+              alt={`${name} logo`}
+              loading="lazy"
+              decoding="async"
+              style={{
+                position: "absolute",
+                inset: 7,
+                width: "calc(100% - 14px)",
+                height: "calc(100% - 14px)",
+                objectFit: "contain",
+                borderRadius: 7,
+                background: "#fff",
+              }}
+            />
+          </span>
           <div>
             <h3>{name}</h3>
             <p>{text}</p>
