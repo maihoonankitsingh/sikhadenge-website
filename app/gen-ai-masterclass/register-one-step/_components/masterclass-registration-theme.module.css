@@ -70,7 +70,9 @@
 }
 
 .claudeTheme main [class*='goalCardSelected'] svg,
-.claudeTheme main [class*='noticePanel'] > svg {
+.claudeTheme main [class*='noticePanel'] > svg,
+.claudeTheme main [class*='laptopGrid'] [class*='laptopChoice']:last-child svg,
+.claudeTheme main [class*='emailNote'] svg {
   color: #d76343 !important;
 }
 
