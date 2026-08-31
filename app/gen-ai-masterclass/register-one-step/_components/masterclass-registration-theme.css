@@ -1,0 +1,90 @@
+body[data-masterclass-theme='claude'] {
+  background: #fff8f3;
+}
+
+body[data-masterclass-theme='claude'] main {
+  --ink: #171412;
+  --ink-soft: #5f554f;
+  --blue: #d76343;
+  --blue-2: #c24d31;
+  --blue-soft: #fff1e9;
+  --line: #eadfd8;
+  --line-strong: #e3cabb;
+  --page: #fff8f3;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(215, 99, 67, 0.10), transparent 28rem),
+    radial-gradient(circle at 86% 82%, rgba(243, 154, 120, 0.08), transparent 24rem),
+    #fff8f3 !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='brandMark'] {
+  background: linear-gradient(145deg, #d76343, #b84327) !important;
+  box-shadow: 0 8px 20px rgba(199, 73, 42, 0.18) !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='primaryButton'] {
+  border-color: #b94a31 !important;
+  background: linear-gradient(135deg, #d76343, #c24d31) !important;
+  box-shadow: 0 10px 24px rgba(199, 73, 42, 0.18) !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='primaryButton']:hover:not(:disabled) {
+  box-shadow: 0 13px 28px rgba(199, 73, 42, 0.24) !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='infoPanel'],
+body[data-masterclass-theme='claude'] main [class*='goalPanel'],
+body[data-masterclass-theme='claude'] main [class*='laptopPanel'],
+body[data-masterclass-theme='claude'] main [class*='noticePanel'] {
+  background: linear-gradient(180deg, #fffdfb, #fff8f3) !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='infoIcon'],
+body[data-masterclass-theme='claude'] main [class*='sectionIcon'],
+body[data-masterclass-theme='claude'] main [class*='goalIcon'],
+body[data-masterclass-theme='claude'] main [class*='choiceIcon'],
+body[data-masterclass-theme='claude'] main [class*='trustIcon'] {
+  background: #fff0e8 !important;
+  color: #c2583b !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='choiceCardSelected'],
+body[data-masterclass-theme='claude'] main [class*='goalCardSelected'],
+body[data-masterclass-theme='claude'] main [class*='laptopChoiceSelected'] {
+  border-color: #d76343 !important;
+  background: #fffaf7 !important;
+  box-shadow: inset 0 0 0 1px #d76343, 0 8px 22px rgba(215, 99, 67, 0.08) !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='selectedTick'],
+body[data-masterclass-theme='claude'] main [class*='stepItemActive'] [class*='stepDot'],
+body[data-masterclass-theme='claude'] main [class*='stepItemDone'] [class*='stepDot'] {
+  border-color: #d76343 !important;
+  background: #d76343 !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='stepItemActive'],
+body[data-masterclass-theme='claude'] main [class*='stepItemDone'] {
+  color: #c2583b !important;
+}
+
+body[data-masterclass-theme='claude'] main [class*='offerPanel'] {
+  background:
+    radial-gradient(circle at 90% 45%, rgba(215, 99, 67, 0.10), transparent 17rem),
+    linear-gradient(135deg, #fffaf6 0%, #f5fff8 100%) !important;
+}
+
+body[data-masterclass-theme='ai-video'] {
+  background: #f7fbff;
+}
+
+body[data-masterclass-theme='ai-video'] main {
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --blue: #2563eb;
+  --blue-2: #4f46e5;
+  --blue-soft: #eff6ff;
+  --line: #e2e8f0;
+  --line-strong: #c9dcf5;
+  --page: #f7fbff;
+}
