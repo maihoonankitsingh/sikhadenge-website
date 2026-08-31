@@ -22,9 +22,6 @@ export function ConsentTrackingRuntime() {
       <Suspense fallback={null}>
         <MetaConsentBridge />
       </Suspense>
-      <Suspense fallback={null}>
-        <FullFunnelTrackingBridge />
-      </Suspense>
 
       {ready && state.analytics === "granted" ? (
         <>
@@ -33,6 +30,10 @@ export function ConsentTrackingRuntime() {
           <SegmentConsentBridge />
         </>
       ) : null}
+
+      <Suspense fallback={null}>
+        <FullFunnelTrackingBridge />
+      </Suspense>
     </>
   );
 }
