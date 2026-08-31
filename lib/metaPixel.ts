@@ -5,6 +5,7 @@ import {
 declare global {
   interface Window {
     fbq?: (...args: any[]) => void;
+    __sdLastLeadEventId?: string;
   }
 }
 
@@ -130,9 +131,17 @@ export function trackLead(
   payload: MetaPayload = {},
   eventId?: string
 ) {
+  const resolvedEventId =
+    eventId ||
+    (
+      typeof window !== "undefined"
+        ? window.__sdLastLeadEventId
+        : undefined
+    );
+
   return trackMetaEvent(
     "Lead",
     payload,
-    eventId
+    resolvedEventId
   );
 }
