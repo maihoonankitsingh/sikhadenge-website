@@ -1,0 +1,147 @@
+name: Diagnose ChatGPT Runtime Clean
+
+on:
+  pull_request:
+    branches:
+      - live-clean-sync-20260424
+    paths:
+      - .github/workflows/diagnose-chatgpt-runtime-clean.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      TARGET_SHA: 468975301a616e6868647ef5bbb8033de984ec88
+      RUN_KEY: clean-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          key="$HOME/.ssh/public-site-production"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$key"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$key"
+          fi
+          chmod 600 "$key"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = ssh-ed25519
+          test -n "$key_material"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$key" >/dev/null
+          echo 'PINNED_SSH=PASS'
+
+      - name: Inspect active origin runtime read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/public-site-production" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "TARGET_SHA='$TARGET_SHA' bash -s" <<'REMOTE'
+          set -u
+          LIVE_APP=/var/www/sikhadenge.in/sikhadenge-website-space
+          CHATGPT=/masterclass/chatgpt/free
+          CLAUDE=/masterclass/claude/free
+
+          echo "LIVE_SHA=$(git -C "$LIVE_APP" rev-parse HEAD)"
+          echo "LIVE_BRANCH=$(git -C "$LIVE_APP" rev-parse --abbrev-ref HEAD)"
+          echo 'DIRTY_START'
+          git -C "$LIVE_APP" diff --name-only -- . | sort
+          echo 'DIRTY_END'
+
+          echo "NEXT_REALPATH=$(readlink -f "$LIVE_APP/.next")"
+          echo "NEXT_BUILD_ID=$(cat "$LIVE_APP/.next/BUILD_ID" 2>/dev/null || echo MISSING)"
+          stat -c 'NEXT_BUILD_ID_MTIME=%y' "$LIVE_APP/.next/BUILD_ID" 2>/dev/null || true
+          stat -c 'PAGES_MANIFEST_MTIME=%y' "$LIVE_APP/.next/server/pages-manifest.json" 2>/dev/null || true
+
+          node - "$LIVE_APP/.next/server/pages-manifest.json" <<'NODE'
+          const fs=require('fs');
+          const p=process.argv[2];
+          const d=JSON.parse(fs.readFileSync(p,'utf8'));
+          for (const r of ['/masterclass/chatgpt/free','/masterclass/claude/free']) {
+            console.log(`MANIFEST_${r.includes('chatgpt')?'CHATGPT':'CLAUDE'}=${Object.prototype.hasOwnProperty.call(d,r)?'YES':'NO'}`);
+            console.log(`MANIFEST_${r.includes('chatgpt')?'CHATGPT':'CLAUDE'}_FILE=${d[r]||'MISSING'}`);
+          }
+          NODE
+
+          CHATGPT_HTML="$LIVE_APP/.next/server/pages/masterclass/chatgpt/free.html"
+          echo "CHATGPT_HTML_EXISTS=$([[ -f "$CHATGPT_HTML" ]] && echo YES || echo NO)"
+          if [[ -f "$CHATGPT_HTML" ]] && grep -Fq 'Stop collecting prompts.' "$CHATGPT_HTML"; then echo 'CHATGPT_HTML_MARKER=YES'; else echo 'CHATGPT_HTML_MARKER=NO'; fi
+
+          echo 'PM2_SANITIZED_START'
+          pm2 jlist | node -e '
+            let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{
+              const rows=JSON.parse(s).filter(x=>["sikhadenge-in","sikhadenge-build"].includes(x.name)).map(x=>({name:x.name,pid:x.pid,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,exec:x.pm2_env?.pm_exec_path,args:x.pm2_env?.args}));
+              console.log(JSON.stringify(rows));
+            });'
+          echo 'PM2_SANITIZED_END'
+
+          APP_PID="$(pm2 pid sikhadenge-in | head -n1)"
+          echo "APP_PID=$APP_PID"
+          if [[ -n "$APP_PID" && "$APP_PID" != 0 ]]; then
+            echo "APP_PROC_CWD=$(readlink -f "/proc/$APP_PID/cwd" 2>/dev/null || echo UNKNOWN)"
+            echo 'APP_PROCESS_TREE_START'
+            ps -eo pid=,ppid=,comm=,args= | awk -v root="$APP_PID" '$1==root || $2==root {print}'
+            CHILD_PIDS="$(pgrep -P "$APP_PID" | tr '\n' ' ' || true)"
+            echo "APP_CHILD_PIDS=${CHILD_PIDS:-NONE}"
+            for child in $CHILD_PIDS; do
+              ps -eo pid=,ppid=,comm=,args= | awk -v p="$child" '$1==p || $2==p {print}'
+            done
+            echo 'APP_PROCESS_TREE_END'
+          fi
+
+          echo 'NODE_LISTENERS_START'
+          ss -ltnp 2>/dev/null | grep -E 'node|next|npm' || true
+          echo 'NODE_LISTENERS_END'
+
+          for port in 3000 3001 3002 3003 3004 3016; do
+            status="$(curl -sS --max-time 4 -o "/tmp/direct-$port.html" -w '%{http_code}' -H 'Host: sikhadenge.in' "http://127.0.0.1:$port$CHATGPT" 2>/dev/null || echo ERR)"
+            marker=NO
+            [[ -f "/tmp/direct-$port.html" ]] && grep -Fq 'Stop collecting prompts.' "/tmp/direct-$port.html" && marker=YES
+            echo "DIRECT_${port}_STATUS=$status MARKER=$marker"
+            rm -f "/tmp/direct-$port.html"
+          done
+
+          HTTP_STATUS="$(curl -sS --max-time 10 -o /tmp/nginx-http.html -w '%{http_code}' -H 'Host: sikhadenge.in' "http://127.0.0.1$CHATGPT" 2>/dev/null || echo ERR)"
+          echo "LOCAL_NGINX_HTTP_STATUS=$HTTP_STATUS"
+          HTTPS_STATUS="$(curl -ksS --max-time 10 --resolve sikhadenge.in:443:127.0.0.1 -o /tmp/nginx-https.html -w '%{http_code}' "https://sikhadenge.in$CHATGPT" 2>/dev/null || echo ERR)"
+          HTTPS_MARKER=NO
+          [[ -f /tmp/nginx-https.html ]] && grep -Fq 'Stop collecting prompts.' /tmp/nginx-https.html && HTTPS_MARKER=YES
+          echo "LOCAL_NGINX_HTTPS_STATUS=$HTTPS_STATUS MARKER=$HTTPS_MARKER"
+          HTTPS_CLAUDE="$(curl -ksS --max-time 10 --resolve sikhadenge.in:443:127.0.0.1 -o /dev/null -w '%{http_code}' "https://sikhadenge.in$CLAUDE" 2>/dev/null || echo ERR)"
+          echo "LOCAL_NGINX_HTTPS_CLAUDE_STATUS=$HTTPS_CLAUDE"
+          rm -f /tmp/nginx-http.html /tmp/nginx-https.html
+
+          echo 'NGINX_SIKHADENGE_SUMMARY_START'
+          nginx -T 2>/dev/null | grep -A80 -B5 -E 'server_name[[:space:]]+sikhadenge\.in([[:space:]]+www\.sikhadenge\.in)?' | grep -E 'server_name|listen|location|proxy_pass|return 301' | head -n 60 || true
+          echo 'NGINX_SIKHADENGE_SUMMARY_END'
+          echo 'ORIGIN_RUNTIME_TRACE=COMPLETE'
+          REMOTE
+
+      - name: Fresh Cloudflare exact and cache-busted checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for kind in EXACT BUSTED; do
+            if [[ "$kind" = EXACT ]]; then url='https://sikhadenge.in/masterclass/chatgpt/free'; else url="https://sikhadenge.in/masterclass/chatgpt/free?runtime=${RUN_KEY}"; fi
+            headers="$RUNNER_TEMP/$kind.headers"; body="$RUNNER_TEMP/$kind.html"
+            status="$(curl -sS --max-time 30 -D "$headers" -o "$body" -w '%{http_code}' -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url")"
+            marker=NO; grep -Fq 'Stop collecting prompts.' "$body" && marker=YES
+            echo "CLOUDFLARE_${kind}_STATUS=$status MARKER=$marker"
+            grep -Ei '^(date|server|cf-cache-status|cf-ray|age|cache-control):' "$headers" || true
+          done
+          echo 'PUBLIC_TRACE=COMPLETE'
