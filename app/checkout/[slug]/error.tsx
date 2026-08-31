@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export default function Error({
+export default function CheckoutError({
   reset,
 }: {
   error: Error & { digest?: string };
@@ -30,12 +30,12 @@ export default function Error({
           padding: 28,
         }}
       >
-        <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>SIKHADENGE</p>
+        <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>SECURE CHECKOUT</p>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: "10px 0 0" }}>
-          Something went wrong
+          Checkout temporarily unavailable
         </h1>
         <p style={{ margin: "12px 0 0", lineHeight: 1.6, opacity: 0.82 }}>
-          We couldn&apos;t load this page right now. Please retry, or return to the home page.
+          We couldn&apos;t load this checkout. Please retry before attempting payment again.
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 22 }}>
@@ -52,10 +52,10 @@ export default function Error({
               fontWeight: 600,
             }}
           >
-            Retry
+            Retry checkout
           </button>
           <Link
-            href="/"
+            href="/store"
             style={{
               padding: "10px 16px",
               borderRadius: 10,
@@ -65,7 +65,7 @@ export default function Error({
               fontWeight: 600,
             }}
           >
-            Go home
+            Back to store
           </Link>
         </div>
       </section>
