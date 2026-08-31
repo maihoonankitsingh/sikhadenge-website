@@ -5,7 +5,7 @@
 :global(#outcomes)>div{width:min(1120px,calc(100% - 48px))}
 :global(#outcomes)>div>div:first-child{max-width:780px;margin:0 auto 36px;text-align:center}
 :global(#outcomes)>div>div:first-child>span{font-size:10px;font-weight:850;letter-spacing:.14em;color:#5b5cf0}
-:global(#outcomes)>div>div:first-child h2{max-width:760px;margin:9px auto 13px;font-size:clamp(34px,3.5vw,48px);line-height:1.06;letter-spacing:-.045em;font-weight:800;text-wrap:balance}
+:global(#outcomes)>div>div:first-child h2{max-width:760px;margin:9px auto 13px;font-size:clamp(34px,3.5vw,48px);line-height:1.06;letter-spacing:-.045em;text-wrap:balance}
 :global(#outcomes)>div>div:first-child p{max-width:690px;margin:0 auto;color:#667085;font-size:14px;line-height:1.68}
 :global(#outcomes)>div>div:nth-child(2){gap:18px;align-items:stretch}
 :global(#outcomes)>div>div:nth-child(2)>article{display:flex;flex-direction:column;min-height:392px;border:1px solid #e6e9f0;border-radius:20px;background:#fff;box-shadow:0 14px 38px rgba(15,23,42,.045);overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
