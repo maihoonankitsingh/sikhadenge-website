@@ -27,12 +27,18 @@ export default function RegisterOneStepEntry() {
 
   useEffect(() => {
     const nextTheme = getFunnelTheme()
+    const previousBackground = document.body.style.background
 
     if (nextTheme) {
       setTheme(nextTheme)
+      document.body.style.background = nextTheme === 'claude' ? '#fff8f3' : '#f7fbff'
       setMode('new')
     } else {
       setMode('legacy')
+    }
+
+    return () => {
+      document.body.style.background = previousBackground
     }
   }, [])
 
