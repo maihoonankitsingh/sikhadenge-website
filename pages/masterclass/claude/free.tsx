@@ -1,6 +1,7 @@
 import Head from "next/head";
 import type { ReactNode } from "react";
 import ClaudeBonusSection from "../../../components/ClaudeBonusSection";
+import AiShiftV346 from "../../../components/AiShiftV346";
 import styles from "../../../styles/claude-masterclass-live.module.css";
 
 const registerHref = "/gen-ai-masterclass/register-one-step";
@@ -160,6 +161,8 @@ function ClaudeFreeMasterclassPage() {
             </div>
           </div>
         </section>
+
+        <AiShiftV346 registerHref={registerHref} />
 
         <section className={styles.section}>
           <div className={styles.container}>
