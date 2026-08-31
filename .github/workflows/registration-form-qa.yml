@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate blog Prisma client
+        run: npm run blog:db:generate
+
       - name: Type check
         run: npx tsc --noEmit
 
