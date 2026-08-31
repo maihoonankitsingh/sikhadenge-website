@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import MasterclassRegistrationFlow from './MasterclassRegistrationFlow'
 import RegisterOneStepPage from './RegisterOneStepPage'
-import './masterclass-registration-theme.css'
+import themeStyles from './masterclass-registration-theme.module.css'
 
 type Mode = 'checking' | 'new' | 'legacy'
 type FunnelTheme = 'claude' | 'ai-video' | null
@@ -23,20 +23,16 @@ function getFunnelTheme(): FunnelTheme {
 
 export default function RegisterOneStepEntry() {
   const [mode, setMode] = useState<Mode>('checking')
+  const [theme, setTheme] = useState<'claude' | 'ai-video'>('ai-video')
 
   useEffect(() => {
-    const theme = getFunnelTheme()
+    const nextTheme = getFunnelTheme()
 
-    if (theme) {
-      document.body.dataset.masterclassTheme = theme
+    if (nextTheme) {
+      setTheme(nextTheme)
       setMode('new')
     } else {
-      delete document.body.dataset.masterclassTheme
       setMode('legacy')
-    }
-
-    return () => {
-      delete document.body.dataset.masterclassTheme
     }
   }, [])
 
@@ -51,6 +47,13 @@ export default function RegisterOneStepEntry() {
     )
   }
 
-  if (mode === 'new') return <MasterclassRegistrationFlow />
+  if (mode === 'new') {
+    return (
+      <div className={theme === 'claude' ? themeStyles.claudeTheme : themeStyles.aiVideoTheme}>
+        <MasterclassRegistrationFlow />
+      </div>
+    )
+  }
+
   return <RegisterOneStepPage />
 }
