@@ -69,6 +69,11 @@
   color: #c2583b !important;
 }
 
+.claudeTheme main [class*='goalCardSelected'] svg,
+.claudeTheme main [class*='noticePanel'] > svg {
+  color: #d76343 !important;
+}
+
 .claudeTheme main [class*='offerPanel'] {
   background:
     radial-gradient(circle at 90% 45%, rgba(215, 99, 67, 0.10), transparent 17rem),
