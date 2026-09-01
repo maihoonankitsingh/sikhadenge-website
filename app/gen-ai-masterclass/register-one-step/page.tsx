@@ -1,4 +1,4 @@
-import RegisterOneStepPage from "./_components/RegisterOneStepPage";
+import RegisterOneStepEntry from "./_components/RegisterOneStepEntry";
 
 export const metadata = {
   title: "Register for the Sikhadenge AI Masterclass",
@@ -9,5 +9,5 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <RegisterOneStepPage />;
+  return <RegisterOneStepEntry />;
 }
