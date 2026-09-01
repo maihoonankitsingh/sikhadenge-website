@@ -1,0 +1,1 @@
+AI Video tablet desktop mirror is deployed as a live zero-build head patch on the production release. The previous 681–1024 responsive consolidation is reverted in source so tablet-specific reflow does not diverge from desktop.
