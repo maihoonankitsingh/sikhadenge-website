@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import ClarityEvents from "@/app/ClarityEvents";
+import { FullFunnelTrackingGate } from "@/components/analytics/FullFunnelTrackingGate";
 import { SikhadengeAnalyticsRuntime } from "@/components/analytics/SikhadengeAnalyticsRuntime";
 import { ClarityConsentBridge } from "./ClarityConsentBridge";
 import { GoogleConsentBridge } from "./GoogleConsentBridge";
@@ -29,6 +30,10 @@ export function ConsentTrackingRuntime() {
           <SegmentConsentBridge />
         </>
       ) : null}
+
+      <Suspense fallback={null}>
+        <FullFunnelTrackingGate />
+      </Suspense>
     </>
   );
 }

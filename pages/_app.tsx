@@ -6,6 +6,7 @@ import { ConsentBanner } from "@/components/consent/ConsentBanner";
 import { ConsentPreferences } from "@/components/consent/ConsentPreferences";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { ConsentSettingsButton } from "@/components/consent/ConsentSettingsButton";
+import { ConsentTrackingRuntime } from "@/components/consent/ConsentTrackingRuntime";
 import { MetaConsentRuntime } from "@/components/consent/MetaConsentBridge";
 
 type HeaderAwarePage = AppProps["Component"] & {
@@ -20,7 +21,11 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
   return (
     <ConsentProvider>
-      <MetaConsentRuntime pageKey={pageKey} />
+      {isAiVideoMasterclass ? (
+        <ConsentTrackingRuntime />
+      ) : (
+        <MetaConsentRuntime pageKey={pageKey} />
+      )}
       <ConsentBanner />
       <ConsentPreferences />
       <ConsentSettingsButton />
