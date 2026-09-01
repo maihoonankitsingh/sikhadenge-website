@@ -117,6 +117,300 @@ export default function App({ Component, pageProps, router }: AppProps) {
               display: none !important;
             }
 
+            /* AI_VIDEO_TABLET_CONSOLIDATION_V1
+               Tablet-only responsive band. Desktop >1024px and mobile <=680px are untouched. */
+            @media (min-width: 681px) and (max-width: 1024px) {
+              main [class*="container"] {
+                width: min(100% - 40px, 960px) !important;
+              }
+
+              main > section#top {
+                padding-top: 34px !important;
+                padding-bottom: 54px !important;
+              }
+
+              main > section#top [class*="brandFloat"] {
+                display: none !important;
+              }
+
+              main > section#top h1,
+              #ai-video-hero-v125 h1 {
+                max-width: 820px !important;
+                font-size: clamp(42px, 6.2vw, 54px) !important;
+                line-height: 1.06 !important;
+                letter-spacing: -.045em !important;
+              }
+
+              main > section#top [class*="heroSubhead"],
+              #ai-video-hero-v125 [class*="subtitle"] {
+                max-width: 720px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                font-size: 16px !important;
+                line-height: 1.62 !important;
+              }
+
+              main > section#top [class*="heroFacts"] {
+                grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+                gap: 10px !important;
+                width: min(780px,100%) !important;
+                margin-top: 28px !important;
+                margin-bottom: 24px !important;
+              }
+
+              main > section#top [class*="heroFacts"] > div {
+                min-height: 78px !important;
+                padding: 13px 14px !important;
+                gap: 10px !important;
+              }
+
+              main > section#top [class*="heroActions"],
+              #ai-video-hero-v125 .v125-actions,
+              #ai-video-hero-v125 .v125-cta-row {
+                width: min(700px,100%) !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                gap: 10px !important;
+                flex-wrap: nowrap !important;
+              }
+
+              main > section#top [class*="heroActions"] > a,
+              #ai-video-hero-v125 .v125-actions > a,
+              #ai-video-hero-v125 .v125-cta-row > a {
+                flex: 1 1 0 !important;
+                min-width: 0 !important;
+              }
+
+              #ai-video-hero-v125 .v125-corner-left {
+                transform: scale(.88) !important;
+                transform-origin: top left !important;
+              }
+
+              #ai-video-hero-v125 .v125-corner-right {
+                transform: scale(.88) !important;
+                transform-origin: top right !important;
+              }
+
+              #outcomes,
+              #learn,
+              #tools,
+              #faq,
+              main section[class*="audienceSection"] {
+                padding-top: 72px !important;
+                padding-bottom: 72px !important;
+              }
+
+              #outcomes [class*="outcomeGrid"],
+              #outcomes > div > div:nth-child(2) {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 16px !important;
+                width: min(860px,100%) !important;
+                max-width: 860px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              #outcomes [class*="outcomeGrid"] > article:nth-child(3),
+              #outcomes > div > div:nth-child(2) > article:nth-child(3) {
+                grid-column: 1 / -1 !important;
+                width: calc(50% - 8px) !important;
+                justify-self: center !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] {
+                padding: 14px !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] > div {
+                display: grid !important;
+                grid-template-columns: repeat(6,minmax(0,1fr)) !important;
+                gap: 10px !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] > div > span[aria-hidden="true"] {
+                display: none !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] > div > div {
+                grid-column: span 2 !important;
+                min-width: 0 !important;
+                min-height: 112px !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] > div > div:nth-of-type(4) {
+                grid-column: 2 / span 2 !important;
+              }
+
+              #outcomes [aria-label="AI video creation workflow"] > div > div:nth-of-type(5) {
+                grid-column: 4 / span 2 !important;
+              }
+
+              .aiv13-shell {
+                width: min(100% - 40px,920px) !important;
+                padding-top: 70px !important;
+                padding-bottom: 72px !important;
+              }
+
+              .aiv13-grid {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 12px !important;
+                width: min(760px,100%) !important;
+              }
+
+              .ai-v80-inner,
+              .ai-v85-inner,
+              .ai-v85-shell,
+              .ai-v85-wrap {
+                width: min(100% - 40px,920px) !important;
+                padding-top: 70px !important;
+                padding-bottom: 74px !important;
+              }
+
+              .ai-v80-grid,
+              .ai-v85-grid,
+              .ai-v85-cards {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 14px !important;
+                width: min(820px,100%) !important;
+                max-width: 820px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              .ai-v80-grid > :nth-child(3):last-child,
+              .ai-v85-grid > :nth-child(3):last-child,
+              .ai-v85-cards > :nth-child(3):last-child {
+                grid-column: 1 / -1 !important;
+                width: calc(50% - 7px) !important;
+                justify-self: center !important;
+              }
+
+              #learn [class*="moduleGrid"] {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 12px !important;
+              }
+
+              #learn [class*="moduleGrid"] > article {
+                min-height: 0 !important;
+                padding: 20px !important;
+              }
+
+              #tools [class*="toolTabs"] {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 8px !important;
+              }
+
+              #tools [class*="toolGrid"] {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 10px !important;
+              }
+
+              #tools [class*="toolCard"] {
+                min-height: 86px !important;
+                padding: 14px !important;
+              }
+
+              main section[class*="audienceSection"] [class*="audienceGrid"] {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 12px !important;
+              }
+
+              main section[class*="audienceSection"] [class*="audienceGrid"] > article {
+                min-height: 0 !important;
+                padding: 20px !important;
+              }
+
+              .ai-v54-inner,
+              .ai-v87-inner {
+                width: min(100% - 40px,920px) !important;
+                padding-top: 70px !important;
+                padding-bottom: 74px !important;
+              }
+
+              .ai-v54-grid,
+              .ai-v87-grid {
+                grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+                gap: 14px !important;
+                width: min(860px,100%) !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              .ai-v54-grid > :last-child:nth-child(odd),
+              .ai-v87-grid > :last-child:nth-child(odd) {
+                grid-column: 1 / -1 !important;
+                width: calc(50% - 7px) !important;
+                justify-self: center !important;
+              }
+
+              #faq [class*="faqGrid"] {
+                width: min(760px,100%) !important;
+                max-width: 760px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              main section[class*="finalSection"] {
+                padding-top: 58px !important;
+                padding-bottom: 82px !important;
+              }
+
+              main section[class*="finalSection"] [class*="finalCard"] {
+                width: min(100% - 40px,920px) !important;
+                min-height: 0 !important;
+                padding: 40px 38px !important;
+                grid-template-columns: 1fr !important;
+                gap: 28px !important;
+                text-align: center !important;
+              }
+
+              main section[class*="finalSection"] h2,
+              main section[class*="finalSection"] p {
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              main section[class*="finalSection"] [class*="finalAction"] {
+                width: min(340px,100%) !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+
+              #ai-video-sticky-offer-v61 {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+              }
+
+              main > section#top [class*="kicker"],
+              main [class*="sectionHead"] > span:first-child,
+              main .aiv13-badge,
+              main .ai-v80-eyebrow,
+              main .ai-v85-eyebrow,
+              main .ai-v85-kicker,
+              main .ai-v85-badge,
+              main .ai-v54-eyebrow,
+              main .ai-v54-kicker,
+              main .ai-v54-badge,
+              main .ai-v87-eyebrow,
+              main .ai-v87-kicker,
+              main .ai-v87-badge,
+              main section[class*="finalSection"] [class*="finalKicker"],
+              main [class*="checkout"] [class*="eyebrow"],
+              main [class*="checkout"] [class*="kicker"] {
+                max-width: calc(100% - 40px) !important;
+                min-height: 36px !important;
+                padding: 8px 14px 8px 10px !important;
+                line-height: 1.2 !important;
+                text-align: center !important;
+                white-space: normal !important;
+              }
+            }
+
             @media (max-width: 680px) {
               main > section#top [class*="kicker"],
               main [class*="sectionHead"] > span:first-child,
