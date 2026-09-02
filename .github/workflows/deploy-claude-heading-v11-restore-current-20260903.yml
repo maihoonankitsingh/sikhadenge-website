@@ -1,0 +1,171 @@
+name: Deploy Claude Heading V11 Restore Current 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-heading-v11-restore-current-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy Claude-only old V11 heading restore
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          ASSET=/var/www/sikhadenge.in/claude-heading-v11-restore-current.js
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/8e14765509f8bd0ecb6b07979cd9e3093c21bb28/public/claude-heading-v11-restore-current.js'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-heading-v11-restore-current-$TS"
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-heading-v11-restore-current.js.before"
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-heading-v11-restore-current.js.before" ]]; then
+              cp "$BACKUP/claude-heading-v11-restore-current.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_HEADING_V11_RESTORE_CURRENT__' "$TMP"
+          grep -Fq 'font-size: clamp(30px, 2.25vw, 38px)' "$TMP"
+          grep -Fq 'font-size: clamp(24px, 6.2vw, 28px)' "$TMP"
+          grep -Fq 'right AI tool' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+          route='location = /masterclass/claude/free {'
+          start=s.find(route)
+          if start < 0: raise SystemExit('Claude route not found')
+          end=s.find('\n    }',start)
+          if end < 0: raise SystemExit('Claude route end not found')
+          end += len('\n    }')
+          seg=s[start:end]
+
+          script='<script src="/claude-heading-v11-restore-current.js?v=old-v11-current-20260903"></script>'
+          theme='<script src="/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902"></script>'
+          if script not in seg:
+              if theme in seg:
+                  seg=seg.replace(theme, theme+script, 1)
+              else:
+                  anchor="</body>';"
+                  pos=seg.find(anchor)
+                  if pos < 0: raise SystemExit('body injection anchor not found')
+                  seg=seg[:pos]+script+seg[pos:]
+          s=s[:start]+seg+s[end:]
+
+          marker='# CLAUDE_HEADING_V11_RESTORE_CURRENT_ASSET'
+          if marker not in s:
+              block='''    # CLAUDE_HEADING_V11_RESTORE_CURRENT_ASSET
+              location = /claude-heading-v11-restore-current.js {
+                  alias /var/www/sikhadenge.in/claude-heading-v11-restore-current.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_HEADING_V11_RESTORE_CURRENT_ASSET_END
+
+          '''
+              idx=s.find(route)
+              if idx < 0: raise SystemExit('could not place restore asset location')
+              s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-heading-v11-restore-current.js | grep -Fq '__CLAUDE_HEADING_V11_RESTORE_CURRENT__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-server' -o "$HTML"
+          test "$(grep -o '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/api/social-proof/live?widget=1' "$HTML"
+
+          AI="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=claude-heading-isolation' -o "$AI"
+          if grep -Fq '/claude-heading-v11-restore-current.js' "$AI"; then
+            echo 'Claude heading restore leaked into AI Video source page'
+            exit 1
+          fi
+          echo "BACKUP=$BACKUP"
+          echo 'CLAUDE_HEADING_V11_RESTORE_SERVER_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify old heading visuals and proof content in Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-heading-restored.html"
+          PNG="$RUNNER_TEMP/claude-heading-restored.png"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-final-20260903'
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
+
+          echo "restored=$(grep -o 'data-claude-heading-v11-restored=\"18\"' "$DOM" | wc -l || true)"
+          echo "v11_h2=$(grep -o 'sd-heading-v11' "$DOM" | wc -l || true)"
+          echo "v11_highlight=$(grep -o 'sd-heading-v11-highlight' "$DOM" | wc -l || true)"
+
+          grep -Fq 'data-claude-heading-v11-restored="18"' "$DOM"
+          test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
+          grep -Fq '<span class="sd-heading-v11-highlight">this course?</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">AI Tools</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">AI workflow.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">AI mastery.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">hundreds of millions of jobs.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">right AI tool</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">reviewable work.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">Clear workflows.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">asked questions.</span>' "$DOM"
+          if grep -Fq 'Why AI-skilled professionals are moving ahead faster.' "$DOM"; then exit 1; fi
+          test -s "$PNG"
+          echo 'CLAUDE_OLD_V11_HEADING_VISUALS_OK'
