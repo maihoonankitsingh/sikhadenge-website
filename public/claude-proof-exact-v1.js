@@ -96,6 +96,17 @@
     });
   }
 
+  function makeVisibleRoot(el) {
+    if (!(el instanceof Element)) return;
+    el.style.setProperty("display", "block", "important");
+    el.style.setProperty("visibility", "visible", "important");
+    el.style.setProperty("opacity", "1", "important");
+    el.style.removeProperty("height");
+    el.style.removeProperty("min-height");
+    el.style.removeProperty("max-height");
+    el.style.removeProperty("overflow");
+  }
+
   function firstFollowingCta(sourceDoc, skills) {
     const candidates = [
       ...sourceDoc.querySelectorAll(
@@ -193,6 +204,8 @@
       const existingSkills = document.getElementById(SKILLS_ID);
 
       if (existingJobs && existingSkills) {
+        makeVisibleRoot(existingJobs);
+        makeVisibleRoot(existingSkills);
         if (old) old.remove();
         document.documentElement.setAttribute(READY_ATTR, "ready");
         return true;
@@ -200,9 +213,14 @@
 
       if (!old || !old.parentNode) return false;
 
+      const jobs = templates.jobs.cloneNode(true);
+      const skills = templates.skills.cloneNode(true);
+      makeVisibleRoot(jobs);
+      makeVisibleRoot(skills);
+
       const fragment = document.createDocumentFragment();
-      fragment.appendChild(templates.jobs.cloneNode(true));
-      fragment.appendChild(templates.skills.cloneNode(true));
+      fragment.appendChild(jobs);
+      fragment.appendChild(skills);
       if (templates.cta) fragment.appendChild(templates.cta.cloneNode(true));
 
       old.replaceWith(fragment);
@@ -232,9 +250,16 @@
 
     cloneRelevantStyles(sourceDoc);
 
+    const jobsClone = jobs.cloneNode(true);
+    const skillsClone = skills.cloneNode(true);
+    copyComputedTree(jobs, jobsClone, sourceWindow);
+    copyComputedTree(skills, skillsClone, sourceWindow);
+    makeVisibleRoot(jobsClone);
+    makeVisibleRoot(skillsClone);
+
     templates = {
-      jobs: jobs.cloneNode(true),
-      skills: skills.cloneNode(true),
+      jobs: jobsClone,
+      skills: skillsClone,
       cta: makeCtaTemplate(sourceDoc, sourceWindow, skills),
     };
 
@@ -261,6 +286,8 @@
 
   function boot() {
     if (document.getElementById(JOBS_ID) && document.getElementById(SKILLS_ID)) {
+      makeVisibleRoot(document.getElementById(JOBS_ID));
+      makeVisibleRoot(document.getElementById(SKILLS_ID));
       document.documentElement.setAttribute(READY_ATTR, "ready");
       return;
     }
@@ -280,7 +307,7 @@
       "left:-20000px",
       "top:0",
       `width:${Math.max(document.documentElement.clientWidth || 0, 360)}px`,
-      "height:1400px",
+      "height:2600px",
       "opacity:0",
       "pointer-events:none",
       "border:0",
@@ -299,11 +326,15 @@
         const skills = sourceDoc && sourceDoc.getElementById(SKILLS_ID);
 
         if (jobs && skills) {
+          try {
+            jobs.scrollIntoView({ block: "center" });
+            skills.scrollIntoView({ block: "center" });
+          } catch (_) {}
           setTimeout(() => {
             if (!captureFromIframe(frame) && attempts < 80) {
               setTimeout(probe, 200);
             }
-          }, 1100);
+          }, 1400);
           return;
         }
       } catch (_) {}
@@ -325,7 +356,7 @@
     boot();
   }
 
-  [500, 1200, 2500, 5000].forEach((ms) => {
+  [500, 1200, 2500, 5000, 8000].forEach((ms) => {
     setTimeout(() => {
       if (templates) applyTemplates();
     }, ms);
