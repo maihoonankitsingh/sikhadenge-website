@@ -11,7 +11,7 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 6
     environment: whatsapp-agent-production
     env:
       SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
@@ -37,50 +37,32 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
 
-      - name: Inspect social proof and injection points
+      - name: Inspect exact HTML routes and immutable SHAs
         shell: bash
         run: |
           set -Eeuo pipefail
           KEY="$HOME/.ssh/prod"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          export TZ=Asia/Kolkata
-
-          echo '===== SOCIAL PROOF SERVER ====='
-          SP=/var/www/sikhadenge.in/social-proof-live/server.js
-          test -f "$SP"
-          stat -c 'file=%n mtime=%y size=%s' "$SP"
-          sha256sum "$SP"
-          sed -n '1,360p' "$SP"
-
-          echo '===== SOCIAL PROOF DIRECTORY ====='
-          find /var/www/sikhadenge.in/social-proof-live -maxdepth 2 -type f -printf '%p\n' | sort | head -n 100
-
-          echo '===== API RESPONSE SANITIZED ====='
-          curl -L --compressed -fsS 'https://sikhadenge.in/api/social-proof/live?inspect=3' | node -e '
-            let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const sanitize=(v)=>{if(Array.isArray(v))return v.map(x=>x&&typeof x==="object"?Object.keys(x):typeof x);if(v&&typeof v==="object")return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,x&&typeof x==="object"?Object.keys(x):typeof x]));return typeof v};console.log(JSON.stringify({keys:Object.keys(o),shape:sanitize(o)}))}catch(e){console.log("NON_JSON")}})'
-
-          echo '===== ALL SUB_FILTER DIRECTIVES ====='
-          grep -RniE 'sub_filter(_once|_types)?[[:space:]]|Accept-Encoding' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null | head -n 500 || true
-
-          echo '===== AI VIDEO SNIPPET ====='
-          AV=/etc/nginx/snippets/sikhadenge-ai-video-3940.conf
-          [ -f "$AV" ] && sed -n '1,320p' "$AV" || true
-
-          echo '===== MAIN DEFAULT LOCATION ====='
           SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
-          grep -nE '^[[:space:]]*location[[:space:]]+/|proxy_pass http://127\.0\.0\.1:3955' "$SITE" | tail -n 40 || true
-          LINE="$(grep -nE '^[[:space:]]*location[[:space:]]+/[[:space:]]*\{' "$SITE" | tail -1 | cut -d: -f1 || true)"
-          if [ -n "$LINE" ]; then
-            START=$((LINE-10)); [ "$START" -lt 1 ] && START=1
-            END=$((LINE+140))
-            sed -n "${START},${END}p" "$SITE"
-          fi
+          REG=/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf
+          AV=/etc/nginx/snippets/sikhadenge-ai-video-3940.conf
+          SP=/var/www/sikhadenge.in/social-proof-live/server.js
+          PAGE1="$(awk '/location = \/registration-v2-page1\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$REG")"
+          HOT="$(awk '/location = \/registration-v2-hot\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$REG")"
 
-          echo '===== LEAD API SOURCE CANDIDATES ====='
-          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
-          find "$ROOT" -maxdepth 6 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -print0 2>/dev/null | xargs -0 grep -Il '/api/masterclass/lead\|masterclass/lead' 2>/dev/null | head -n 40 | while read -r f; do
-            echo "--- $f ---"
-            grep -nEi -C 18 'masterclass/lead|MasterclassLead|registration' "$f" | head -n 260 || true
-          done
+          echo '===== SHA GUARDS ====='
+          sha256sum "$SITE" "$REG" "$AV" "$SP" "$PAGE1" "$HOT"
+
+          echo '===== SITE 1-90 ====='
+          sed -n '1,90p' "$SITE"
+          echo '===== SITE 230-395 ====='
+          sed -n '230,395p' "$SITE"
+          echo '===== ALL PROXY HTML LOCATIONS ====='
+          awk '
+            /^[[:space:]]*location[[:space:]]/ {loc=$0}
+            /proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:(3930|3940|3955)/ {print loc " => " $0}
+          ' "$SITE"
+          echo '===== AI VIDEO ROUTE HEAD ====='
+          sed -n '1,70p' "$AV"
           REMOTE
