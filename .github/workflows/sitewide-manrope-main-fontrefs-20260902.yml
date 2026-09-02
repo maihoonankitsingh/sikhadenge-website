@@ -31,7 +31,7 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Audit exact font refs
+      - name: Active source font declarations
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -39,18 +39,13 @@ jobs:
           set -Eeuo pipefail
           ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
           REG=/var/www/sikhadenge.in/registration-v2-hot-20260831-145106
-          echo 'MAIN_FONTREFS_BEGIN'
-          echo "MANROPE_ASSET_MAIN=$(test -f "$ROOT/public/fonts/Manrope-Variable.ttf" && echo yes || echo no)"
-          echo 'LAYOUT_SNIPPET:'; sed -n '1,22p;108,124p' "$ROOT/app/layout.tsx" | grep -nEi 'font|Inter|Manrope|body' || true
-          echo 'GLOBAL_SNIPPET:'; sed -n '325,365p' "$ROOT/app/globals.css" || true
-          echo 'SOURCE_FILES_WITH_NON_MANROPE_FONT_DECLARATIONS:'
-          find "$ROOT" -type f \( -name '*.css' -o -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' -print0 \
-            | xargs -0 grep -IlEi 'font-family[^;]*(Inter|Bricolage|Poppins|Roboto|Arial|Helvetica)' 2>/dev/null \
-            | sed "s#^$ROOT/##" | sort | head -100 || true
-          echo 'SOURCE_FILES_WITH_NEXT_GOOGLE_FONT:'
-          find "$ROOT" -type f \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' -print0 \
-            | xargs -0 grep -Il 'next/font/google' 2>/dev/null | sed "s#^$ROOT/##" | sort | head -100 || true
-          echo 'REGISTRATION_FONT_FILES:'
-          if [ -d "$REG" ]; then grep -RIlEi 'font-family[^;]*(Inter|Bricolage|Poppins|Roboto|Arial|Helvetica)' "$REG" --include='*.css' --include='*.js' 2>/dev/null | sed "s#^$REG/##" | sort | head -100 || true; fi
-          echo 'MAIN_FONTREFS_END READ_ONLY=1'
+          echo 'ACTIVE_FONT_DECLARATIONS_BEGIN'
+          cd "$ROOT"
+          for d in app pages components styles src public; do
+            [ -e "$d" ] || continue
+            find "$d" -type f \( -name '*.css' -o -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -print0 2>/dev/null
+          done | xargs -0 grep -nEi 'next/font/(google|local)|font-family[[:space:]]*:|fontFamily[[:space:]]*:|\b(Inter|Manrope|Bricolage|Poppins|Roboto)\(' 2>/dev/null | head -240 || true
+          echo 'REGISTRATION_ACTIVE:'
+          if [ -d "$REG" ]; then grep -RniEi 'font-family[[:space:]]*:|fontFamily[[:space:]]*:|Manrope|Inter|Bricolage|Poppins|Roboto' "$REG" --include='*.css' --include='*.js' 2>/dev/null | head -160 || true; fi
+          echo 'ACTIVE_FONT_DECLARATIONS_END READ_ONLY=1'
           REMOTE
