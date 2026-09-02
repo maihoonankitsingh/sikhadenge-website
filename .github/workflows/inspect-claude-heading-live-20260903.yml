@@ -18,7 +18,7 @@ env:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -37,16 +37,16 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect heading selection logic only
+      - name: Inspect exact old heading responsive CSS and selector
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           F=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/sikhadenge-heading-claude-v308r-20260830-174053.js
           test -f "$F"
-          echo '===== MATCH LOCATIONS ====='
-          grep -nE 'querySelectorAll|phrases\[|forEach|sd-heading-v11|addStyle|DOMContentLoaded' "$F" | tail -100
-          echo '===== BOTTOM LOGIC ====='
-          tail -220 "$F"
+          echo '===== OLD V11 LINES 220-520 ====='
+          sed -n '220,520p' "$F"
+          echo '===== SELECTOR REFERENCES ====='
+          grep -nE 'querySelectorAll|const headings|const h2|phrases\[|forEach\(' "$F" | tail -80 || true
           REMOTE
