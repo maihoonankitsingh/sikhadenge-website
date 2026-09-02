@@ -1,0 +1,185 @@
+name: Deploy Claude Proof Anchor V3 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-proof-anchor-v3-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy Claude-only stable proof anchor
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          NG="/etc/nginx/sites-enabled/sikhadenge.in-ssl"
+          ASSET="/var/www/sikhadenge.in/claude-proof-anchor-v3.js"
+          SOURCE="https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/32d0af8fa50f35dbe89a16435b984a991c024a44/public/claude-proof-anchor-v3.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-proof-anchor-v3-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-proof-anchor-v3.js.before"
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-proof-anchor-v3.js.before" ]]; then
+              cp "$BACKUP/claude-proof-anchor-v3.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_PROOF_ANCHOR_V3__' "$TMP"
+          grep -Fq 'move from quick answers to structured, reviewable work' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          route = 'location = /masterclass/claude/free {'
+          start = s.find(route)
+          if start < 0:
+              raise SystemExit('Claude exact route not found')
+          end = s.find('\n    }', start)
+          if end < 0:
+              raise SystemExit('Claude exact route end not found')
+          end += len('\n    }')
+          seg = s[start:end]
+
+          proof = '<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
+          anchor = '<script src="/claude-proof-anchor-v3.js?v=claude-proof-anchor-v3-20260902"></script>'
+
+          if anchor not in seg:
+              if proof in seg:
+                  seg = seg.replace(proof, anchor + proof, 1)
+              else:
+                  body_anchor = "</body>';"
+                  pos = seg.find(body_anchor)
+                  if pos < 0:
+                      raise SystemExit('Claude body injection anchor not found')
+                  seg = seg[:pos] + anchor + seg[pos:]
+
+          s = s[:start] + seg + s[end:]
+
+          asset_marker = '# CLAUDE_PROOF_ANCHOR_V3_ASSET'
+          if asset_marker not in s:
+              block = '''    # CLAUDE_PROOF_ANCHOR_V3_ASSET
+              location = /claude-proof-anchor-v3.js {
+                  alias /var/www/sikhadenge.in/claude-proof-anchor-v3.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_PROOF_ANCHOR_V3_ASSET_END
+
+          '''
+              idx = s.find(route)
+              if idx < 0:
+                  raise SystemExit('Could not place Claude anchor asset location')
+              s = s[:idx] + block + s[idx:]
+
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-proof-anchor-v3.js | grep -Fq '__CLAUDE_PROOF_ANCHOR_V3__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=anchor-v3-server' -o "$HTML"
+          test "$(grep -o '/claude-proof-anchor-v3.js?v=claude-proof-anchor-v3-20260902' "$HTML" | wc -l)" -eq 1
+          test "$(grep -o '/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902' "$HTML" | wc -l)" -eq 1
+          test "$(grep -o '/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/api/social-proof/live?widget=1' "$HTML"
+
+          AI_VIDEO="$(mktemp)"
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/ai-video?v=anchor-isolation-check' -o "$AI_VIDEO"
+          if grep -Fq '/claude-proof-anchor-v3.js' "$AI_VIDEO" || grep -Fq '/claude-proof-theme-v2.js' "$AI_VIDEO"; then
+            echo 'Claude-only assets leaked into AI Video source page'
+            exit 1
+          fi
+
+          echo "BACKUP=$BACKUP"
+          echo 'CLAUDE_ANCHOR_SERVER_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify exact proof and orange theme in Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-anchor-v3.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=26000 --dump-dom \
+            'https://sikhadenge.in/masterclass/claude/free?v=anchor-v3-final' > "$DOM"
+
+          grep -Fq 'data-claude-exact-ai-video-proof="ready"' "$DOM"
+          grep -Fq 'data-claude-proof-theme="v2"' "$DOM"
+          test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
+          grep -Fqi 'hundreds of millions of jobs' "$DOM"
+          grep -Fqi 'increasing the value of AI skills' "$DOM"
+          grep -Fq '30 Crore' "$DOM"
+          grep -Fq '40 Crore' "$DOM"
+          grep -Fq '9.2 Crore' "$DOM"
+          grep -Fq '+69%' "$DOM"
+          grep -Fq '+78M' "$DOM"
+          grep -Fq '10.35M' "$DOM"
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$DOM"
+          if grep -Fqi 'Move from quick answers to structured, reviewable work' "$DOM"; then
+            echo 'Fallback Claude why section still rendered'
+            exit 1
+          fi
+          echo 'CLAUDE_EXACT_PROOF_AND_THEME_MOUNTED_OK'
