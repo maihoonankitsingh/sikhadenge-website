@@ -1,0 +1,59 @@
+name: Inspect Claude Heading Live 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-claude-heading-live-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read live Claude heading assets only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          echo '===== CLAUDE ROUTE SCRIPTS ====='
+          awk '/location = \/masterclass\/claude\/free \{/{f=1} f{print} f && /^    }$/{exit}' "$NG" | grep -oE '/[^" ]+\.(js|css)[^" ]*' || true
+          echo '===== LIVE HEADING SCRIPT ====='
+          H=/var/www/sikhadenge.in/sikhadenge-heading-claude-v308r-20260830-174053.js
+          if [ -f "$H" ]; then
+            sed -n '1,260p' "$H"
+          else
+            echo "MISSING:$H"
+            find /var/www/sikhadenge.in -maxdepth 2 -type f -name 'sikhadenge-heading-claude*.js' -print | sort
+          fi
+          echo '===== RECENT HEADING BACKUPS ====='
+          find /var/backups/sikhadenge -maxdepth 3 -type f \( -name '*heading*' -o -name 'sikhadenge.in-ssl.before' \) -mtime -10 -print | sort | tail -80 || true
+          REMOTE
