@@ -37,7 +37,7 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
 
-      - name: Inspect production architecture
+      - name: Inspect social proof and injection points
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -46,40 +46,41 @@ jobs:
           set -Eeuo pipefail
           export TZ=Asia/Kolkata
 
-          echo '===== NGINX SITE FILES ====='
-          ls -l /etc/nginx/sites-enabled/sikhadenge* 2>/dev/null || true
-          for f in /etc/nginx/sites-enabled/sikhadenge.in /etc/nginx/sites-enabled/sikhadenge.in-ssl; do
-            [ -f "$f" ] || continue
+          echo '===== SOCIAL PROOF SERVER ====='
+          SP=/var/www/sikhadenge.in/social-proof-live/server.js
+          test -f "$SP"
+          stat -c 'file=%n mtime=%y size=%s' "$SP"
+          sha256sum "$SP"
+          sed -n '1,360p' "$SP"
+
+          echo '===== SOCIAL PROOF DIRECTORY ====='
+          find /var/www/sikhadenge.in/social-proof-live -maxdepth 2 -type f -printf '%p\n' | sort | head -n 100
+
+          echo '===== API RESPONSE SANITIZED ====='
+          curl -L --compressed -fsS 'https://sikhadenge.in/api/social-proof/live?inspect=3' | node -e '
+            let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const sanitize=(v)=>{if(Array.isArray(v))return v.map(x=>x&&typeof x==="object"?Object.keys(x):typeof x);if(v&&typeof v==="object")return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,x&&typeof x==="object"?Object.keys(x):typeof x]));return typeof v};console.log(JSON.stringify({keys:Object.keys(o),shape:sanitize(o)}))}catch(e){console.log("NON_JSON")}})'
+
+          echo '===== ALL SUB_FILTER DIRECTIVES ====='
+          grep -RniE 'sub_filter(_once|_types)?[[:space:]]|Accept-Encoding' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null | head -n 500 || true
+
+          echo '===== AI VIDEO SNIPPET ====='
+          AV=/etc/nginx/snippets/sikhadenge-ai-video-3940.conf
+          [ -f "$AV" ] && sed -n '1,320p' "$AV" || true
+
+          echo '===== MAIN DEFAULT LOCATION ====='
+          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          grep -nE '^[[:space:]]*location[[:space:]]+/|proxy_pass http://127\.0\.0\.1:3955' "$SITE" | tail -n 40 || true
+          LINE="$(grep -nE '^[[:space:]]*location[[:space:]]+/[[:space:]]*\{' "$SITE" | tail -1 | cut -d: -f1 || true)"
+          if [ -n "$LINE" ]; then
+            START=$((LINE-10)); [ "$START" -lt 1 ] && START=1
+            END=$((LINE+140))
+            sed -n "${START},${END}p" "$SITE"
+          fi
+
+          echo '===== LEAD API SOURCE CANDIDATES ====='
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          find "$ROOT" -maxdepth 6 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -print0 2>/dev/null | xargs -0 grep -Il '/api/masterclass/lead\|masterclass/lead' 2>/dev/null | head -n 40 | while read -r f; do
             echo "--- $f ---"
-            sed -n '1,340p' "$f"
+            grep -nEi -C 18 'masterclass/lead|MasterclassLead|registration' "$f" | head -n 260 || true
           done
-
-          echo '===== REGISTRATION HOT SNIPPET ====='
-          SNIP=/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf
-          [ -f "$SNIP" ] && sed -n '1,320p' "$SNIP" || true
-
-          echo '===== PM2 SUMMARY ====='
-          pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{for(const x of JSON.parse(s)){console.log(JSON.stringify({name:x.name,pid:x.pid,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,script:x.pm2_env?.pm_exec_path,args:x.pm2_env?.args}))}}catch(e){}})' || true
-
-          echo '===== KNOWN REGISTRATION ASSET ====='
-          PAGE1="$(awk '/location = \/registration-v2-page1\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIP" 2>/dev/null || true)"
-          HOT="$(awk '/location = \/registration-v2-hot\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIP" 2>/dev/null || true)"
-          echo "PAGE1=$PAGE1"
-          echo "HOT=$HOT"
-          [ -f "$PAGE1" ] && grep -nEi -C 14 '/api/social-proof/live|LIVE ACTIVITY|SD_REAL_ACTIVITY' "$PAGE1" | head -n 280 || true
-          [ -f "$HOT" ] && grep -nEi -C 12 'registration|lead|api/' "$HOT" | head -n 260 || true
-
-          echo '===== PM2 SOURCE TARGETS ====='
-          pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{for(const x of JSON.parse(s)){const c=x.pm2_env?.pm_cwd;if(c&&(/sikhadenge/i.test(x.name)||/sikhadenge/i.test(c))) console.log(c)}catch(e){}})' | sort -u | while read -r d; do
-            [ -d "$d" ] || continue
-            echo "--- CWD $d ---"
-            timeout 8s grep -RIl --include='*.js' --include='*.ts' --include='*.tsx' --include='*.mjs' --exclude-dir=node_modules --exclude-dir=.next '/api/social-proof/live' "$d" 2>/dev/null | head -n 20 || true
-            timeout 8s grep -RIl --include='*.js' --include='*.ts' --include='*.tsx' --include='*.mjs' --exclude-dir=node_modules --exclude-dir=.next 'register-one-step' "$d" 2>/dev/null | head -n 20 || true
-          done
-
-          echo '===== SOCIAL API RESPONSE KEYS ====='
-          curl -L --compressed -fsS 'https://sikhadenge.in/api/social-proof/live?inspect=2' | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);console.log(JSON.stringify({keys:Object.keys(o),nested:Object.fromEntries(Object.entries(o).filter(([,v])=>v&&typeof v==="object").map(([k,v])=>[k,Object.keys(v)]))}))}catch(e){console.log("NON_JSON")}})' || true
-
-          echo '===== NGINX ROUTING REFERENCES ====='
-          grep -RniE 'social-proof|register-one-step|registration-v2-page1|sub_filter' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null | head -n 360 || true
           REMOTE
