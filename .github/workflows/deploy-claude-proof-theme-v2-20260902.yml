@@ -82,55 +82,55 @@ jobs:
           install -m 0644 "$TMP" "$ASSET"
 
           python3 - "$NG" <<'PY'
-from pathlib import Path
-import sys
+          from pathlib import Path
+          import sys
 
-p = Path(sys.argv[1])
-s = p.read_text()
-route = 'location = /masterclass/claude/free {'
-start = s.find(route)
-if start < 0:
-    raise SystemExit('Claude exact route not found')
-end = s.find('\n    }', start)
-if end < 0:
-    raise SystemExit('Claude exact route end not found')
-end += len('\n    }')
-seg = s[start:end]
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          route = 'location = /masterclass/claude/free {'
+          start = s.find(route)
+          if start < 0:
+              raise SystemExit('Claude exact route not found')
+          end = s.find('\n    }', start)
+          if end < 0:
+              raise SystemExit('Claude exact route end not found')
+          end += len('\n    }')
+          seg = s[start:end]
 
-proof = '<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
-theme = '<script src="/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902"></script>'
+          proof = '<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
+          theme = '<script src="/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902"></script>'
 
-if theme not in seg:
-    if proof in seg:
-        seg = seg.replace(proof, proof + theme, 1)
-    else:
-        anchor = "</body>';"
-        pos = seg.find(anchor)
-        if pos < 0:
-            raise SystemExit('Claude body injection anchor not found')
-        seg = seg[:pos] + theme + seg[pos:]
+          if theme not in seg:
+              if proof in seg:
+                  seg = seg.replace(proof, proof + theme, 1)
+              else:
+                  anchor = "</body>';"
+                  pos = seg.find(anchor)
+                  if pos < 0:
+                      raise SystemExit('Claude body injection anchor not found')
+                  seg = seg[:pos] + theme + seg[pos:]
 
-s = s[:start] + seg + s[end:]
+          s = s[:start] + seg + s[end:]
 
-asset_marker = '# CLAUDE_PROOF_THEME_V2_ASSET'
-if asset_marker not in s:
-    block = '''    # CLAUDE_PROOF_THEME_V2_ASSET
-    location = /claude-proof-theme-v2.js {
-        alias /var/www/sikhadenge.in/claude-proof-theme-v2.js;
-        default_type application/javascript;
-        add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-        access_log off;
-    }
-    # CLAUDE_PROOF_THEME_V2_ASSET_END
+          asset_marker = '# CLAUDE_PROOF_THEME_V2_ASSET'
+          if asset_marker not in s:
+              block = '''    # CLAUDE_PROOF_THEME_V2_ASSET
+              location = /claude-proof-theme-v2.js {
+                  alias /var/www/sikhadenge.in/claude-proof-theme-v2.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_PROOF_THEME_V2_ASSET_END
 
-'''
-    idx = s.find(route)
-    if idx < 0:
-        raise SystemExit('Could not place Claude theme asset location')
-    s = s[:idx] + block + s[idx:]
+          '''
+              idx = s.find(route)
+              if idx < 0:
+                  raise SystemExit('Could not place Claude theme asset location')
+              s = s[:idx] + block + s[idx:]
 
-p.write_text(s)
-PY
+          p.write_text(s)
+          PY
 
           nginx -t
           systemctl reload nginx
