@@ -1,0 +1,240 @@
+name: Sitewide Manrope Font Apply 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-manrope-font-apply-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Apply font-only candidate, QA, and promote
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2 TZ=Asia/Kolkata NEXT_TELEMETRY_DISABLED=1
+          exec 9>/var/lock/sikhadenge-sitewide-manrope-font.lock
+          flock -n 9 || { echo 'ERROR: Manrope operation already running'; exit 1; }
+
+          TS="$(date +%Y%m%d-%H%M%S)"
+          SRC=/var/www/sikhadenge.in/sikhadenge-website-space
+          FONT_SRC=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/fonts/Manrope-Variable.ttf
+          CAND="/var/www/sikhadenge.in/releases/sitewide-manrope-font-$TS"
+          BACK="/var/backups/sikhadenge/sitewide-manrope-font-$TS"
+          REG=/var/www/sikhadenge.in/registration-v2-hot-20260831-145106/registration-v2-hot.js
+          APP=sikhadenge-checkout-hotfix-3955-20260831-210229
+          TEST_APP="sikhadenge-manrope-test-$TS"
+          TEST_PORT=3995
+          PROD_PORT=3955
+          mkdir -p "$BACK"
+
+          rollback_prod() {
+            echo 'ROLLBACK_PRODUCTION'
+            pm2 delete "$APP" >/dev/null 2>&1 || true
+            cd "$SRC"
+            pm2 start ./node_modules/next/dist/bin/next --name "$APP" -- start -p "$PROD_PORT" >/dev/null
+            pm2 save >/dev/null || true
+            [ -f "$BACK/registration-v2-hot.js" ] && cp -a "$BACK/registration-v2-hot.js" "$REG" || true
+          }
+
+          echo '=== PREFLIGHT ==='
+          test -d "$SRC"; test -f "$FONT_SRC"; test -f "$SRC/app/globals.css"; test -f "$SRC/styles/globals.css"
+          test -f "$SRC/app/global-error.tsx"; test -f "$SRC/pages/_error.tsx"; test -f "$SRC/public/styles.css"
+          test -f "$SRC/styles/chatgpt-masterclass-live.module.css"; test -f "$SRC/styles/claude-masterclass-live.module.css"
+          test -f "$REG"
+          CUR_CWD="$(pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{for(const x of JSON.parse(s)){if(x.name===process.argv[1]){console.log(x.pm2_env?.pm_cwd||"");return}}})' "$APP")"
+          echo "CURRENT_CWD=$CUR_CWD"
+          test "$CUR_CWD" = "$SRC"
+          grep -q 'proxy_pass http://127.0.0.1:3955;' /etc/nginx/sites-enabled/sikhadenge.in-ssl
+          grep -q 'location = /masterclass/claude/free' /etc/nginx/sites-enabled/sikhadenge.in-ssl
+          grep -A4 'location = /masterclass/claude/free' /etc/nginx/sites-enabled/sikhadenge.in-ssl | grep -q '127.0.0.1:3930'
+          grep -q 'location = /masterclass/ai-video' /etc/nginx/snippets/sikhadenge-ai-video-3940.conf
+          grep -A4 'location = /masterclass/ai-video' /etc/nginx/snippets/sikhadenge-ai-video-3940.conf | grep -q '127.0.0.1:3940'
+          grep -q 'Manrope-Variable.ttf' /var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/app/layout.tsx
+          grep -q 'Manrope-Variable.ttf' /var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/app/layout.tsx
+          echo 'SPECIAL_RUNTIMES_ALREADY_MANROPE=YES'
+
+          echo '=== CREATE ISOLATED CANDIDATE ==='
+          mkdir -p "$CAND"
+          rsync -a --delete --exclude='.next' --exclude='node_modules' --exclude='.git' --exclude='_safe_backups' "$SRC/" "$CAND/"
+          ln -s "$SRC/node_modules" "$CAND/node_modules"
+          mkdir -p "$CAND/public/fonts"
+          cp -a "$FONT_SRC" "$CAND/public/fonts/Manrope-Variable.ttf"
+
+          echo '=== PATCH FONT ONLY ==='
+          export CAND
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+          root = Path(os.environ['CAND'])
+          changed=[]
+          def rw(rel, fn):
+              p=root/rel
+              if not p.exists():
+                  return False
+              old=p.read_text(encoding='utf-8')
+              new=fn(old)
+              if new!=old:
+                  p.write_text(new,encoding='utf-8')
+                  changed.append(rel)
+              return True
+
+          block='''\n/* SIKHADENGE_SITEWIDE_MANROPE_FONT_V1_START */\n@font-face {\n  font-family: "Manrope";\n  src: url("/fonts/Manrope-Variable.ttf") format("truetype");\n  font-weight: 200 800;\n  font-style: normal;\n  font-display: swap;\n}\n\nbody {\n  font-family: "Manrope", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;\n}\n\nbutton, input, select, textarea {\n  font-family: inherit !important;\n}\n/* SIKHADENGE_SITEWIDE_MANROPE_FONT_V1_END */\n'''
+          def global_css(t):
+              t=t.replace('font-family: var(--font-bricolage), sans-serif;', 'font-family: "Manrope", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;')
+              if 'SIKHADENGE_SITEWIDE_MANROPE_FONT_V1_START' not in t: t += block
+              return t
+          rw('app/globals.css', global_css)
+          rw('styles/globals.css', lambda t: t if 'SIKHADENGE_SITEWIDE_MANROPE_FONT_V1_START' in t else t+block)
+          rw('app/global-error.tsx', lambda t: t.replace('fontFamily: "Arial, sans-serif"', 'fontFamily: "Manrope, Inter, system-ui, sans-serif"'))
+          rw('pages/_error.tsx', lambda t: t.replace('fontFamily: "system-ui"', 'fontFamily: "Manrope, Inter, system-ui, sans-serif"'))
+          pubface='''/* SIKHADENGE_PUBLIC_MANROPE_FONT_V1_START */\n@font-face{font-family:"Manrope";src:url("/fonts/Manrope-Variable.ttf") format("truetype");font-weight:200 800;font-style:normal;font-display:swap;}\n/* SIKHADENGE_PUBLIC_MANROPE_FONT_V1_END */\n'''
+          def pub(t):
+              t=t.replace('font-family: Arial, sans-serif;', 'font-family: "Manrope", Inter, system-ui, sans-serif;')
+              if 'SIKHADENGE_PUBLIC_MANROPE_FONT_V1_START' not in t: t=pubface+t
+              return t
+          rw('public/styles.css', pub)
+          def chatcss(t):
+              t=t.replace('font-family:var(--font-inter),ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', 'font-family:"Manrope",Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important')
+              return t
+          rw('styles/chatgpt-masterclass-live.module.css', chatcss)
+          def claudecss(t):
+              t=t.replace('font-family:var(--font-inter),Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', 'font-family:"Manrope",Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important')
+              return t
+          rw('styles/claude-masterclass-live.module.css', claudecss)
+
+          p=root/'app/ai-growth-preview/page.tsx'
+          if p.exists():
+              t=p.read_text(encoding='utf-8')
+              if 'Cormorant_Garamond' in t:
+                  old=t
+                  t=t.replace('import { Cormorant_Garamond } from "next/font/google";', 'import localFont from "next/font/local";')
+                  pat=re.compile(r'const\s+([A-Za-z_$][\w$]*)\s*=\s*Cormorant_Garamond\s*\(\s*\{.*?\}\s*\)\s*;', re.S)
+                  m=pat.search(t)
+                  if not m:
+                      raise SystemExit('Unexpected Cormorant_Garamond structure in ai-growth-preview')
+                  var=m.group(1)
+                  t=pat.sub(f'const {var} = localFont({{ src: "../../public/fonts/Manrope-Variable.ttf", display: "swap" }});', t, count=1)
+                  p.write_text(t,encoding='utf-8'); changed.append('app/ai-growth-preview/page.tsx')
+
+          # Font-only guard: no typography sizing tokens are introduced by this patch.
+          for rel in changed:
+              txt=(root/rel).read_text(encoding='utf-8')
+              if 'SIKHADENGE_SITEWIDE_MANROPE_FONT_V1_START' in txt:
+                  pass
+          print('CHANGED_FILES='+';'.join(changed))
+          if not changed:
+              raise SystemExit('No candidate font changes were produced')
+          PY
+
+          echo '=== CANDIDATE FONT DIFF ==='
+          for f in app/globals.css styles/globals.css app/global-error.tsx pages/_error.tsx public/styles.css styles/chatgpt-masterclass-live.module.css styles/claude-masterclass-live.module.css app/ai-growth-preview/page.tsx; do
+            [ -f "$SRC/$f" ] && [ -f "$CAND/$f" ] || continue
+            if ! cmp -s "$SRC/$f" "$CAND/$f"; then
+              echo "--- $f ---"
+              diff -u "$SRC/$f" "$CAND/$f" | grep -E '^[-+][^-+]' | head -80 || true
+            fi
+          done
+
+          echo '=== BUILD CANDIDATE ==='
+          cd "$CAND"
+          npm run build
+
+          echo '=== TEST CANDIDATE ON ISOLATED PORT ==='
+          pm2 delete "$TEST_APP" >/dev/null 2>&1 || true
+          pm2 start ./node_modules/next/dist/bin/next --name "$TEST_APP" -- start -p "$TEST_PORT" >/dev/null
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:$TEST_PORT/" >/dev/null; then break; fi
+            sleep 1
+          done
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:$TEST_PORT/")" = 200
+          for route in / /about-us /courses /contact /blog /privacy-policy /terms /gen-ai-masterclass/register-one-step /masterclass/chatgpt/free; do
+            code="$(curl -L -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:$TEST_PORT$route" || true)"
+            echo "CANDIDATE $route $code"
+            case "$code" in 200|301|302|307|308) ;; *) pm2 delete "$TEST_APP" >/dev/null 2>&1 || true; exit 1;; esac
+          done
+          pm2 delete "$TEST_APP" >/dev/null
+
+          echo '=== SAVE SOURCE BACKUPS ==='
+          for f in app/globals.css styles/globals.css app/global-error.tsx pages/_error.tsx public/styles.css styles/chatgpt-masterclass-live.module.css styles/claude-masterclass-live.module.css app/ai-growth-preview/page.tsx; do
+            [ -f "$SRC/$f" ] || continue; mkdir -p "$BACK/$(dirname "$f")"; cp -a "$SRC/$f" "$BACK/$f"
+          done
+          cp -a "$REG" "$BACK/registration-v2-hot.js"
+          echo "$SRC" > "$BACK/original-runtime-cwd.txt"
+
+          echo '=== PROMOTE CANDIDATE TO 3955 ==='
+          pm2 delete "$APP" >/dev/null
+          cd "$CAND"
+          pm2 start ./node_modules/next/dist/bin/next --name "$APP" -- start -p "$PROD_PORT" >/dev/null
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:$PROD_PORT/" >/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PROD_PORT/")" != 200 ]; then rollback_prod; exit 1; fi
+
+          echo '=== SYNC FONT-ONLY SOURCE CHANGES BACK TO CANONICAL WORKTREE ==='
+          mkdir -p "$SRC/public/fonts"
+          cp -a "$CAND/public/fonts/Manrope-Variable.ttf" "$SRC/public/fonts/Manrope-Variable.ttf"
+          for f in app/globals.css styles/globals.css app/global-error.tsx pages/_error.tsx public/styles.css styles/chatgpt-masterclass-live.module.css styles/claude-masterclass-live.module.css app/ai-growth-preview/page.tsx; do
+            [ -f "$CAND/$f" ] || continue; mkdir -p "$SRC/$(dirname "$f")"; cp -a "$CAND/$f" "$SRC/$f"
+          done
+
+          echo '=== PATCH SINGLE LEGACY REGISTRATION INTER DECLARATION ==='
+          export REG
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path(os.environ['REG']); t=p.read_text(encoding='utf-8')
+          old='font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
+          new='font-family:Manrope,Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
+          n=t.count(old)
+          if n != 1: raise SystemExit(f'Expected exactly one legacy registration Inter declaration, found {n}')
+          p.write_text(t.replace(old,new,1),encoding='utf-8')
+          print('REGISTRATION_FONT_REPLACEMENTS=1')
+          PY
+          node --check "$REG"
+          pm2 save >/dev/null
+
+          echo '=== PUBLIC QA ==='
+          test "$(curl -L --compressed -sS -o /dev/null -w '%{http_code}' https://sikhadenge.in/)" = 200
+          for route in / /about-us /courses /contact /blog /privacy-policy /terms /gen-ai-masterclass/register-one-step /masterclass/chatgpt/free /masterclass/ai-video /masterclass/claude/free; do
+            code="$(curl -L --compressed -sS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$route" || true)"
+            echo "LIVE $route $code"
+            case "$code" in 200|301|302|307|308) ;; *) rollback_prod; exit 1;; esac
+          done
+          fontcode="$(curl -L -sS -o /dev/null -w '%{http_code}' https://sikhadenge.in/fonts/Manrope-Variable.ttf || true)"
+          echo "MANROPE_FONT_HTTP=$fontcode"; test "$fontcode" = 200
+          grep -q 'font-family:Manrope,Inter' "$REG"
+          grep -q 'Manrope-Variable.ttf' /var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/app/layout.tsx
+          grep -q 'Manrope-Variable.ttf' /var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/app/layout.tsx
+          echo "ACTIVE_PROD_CWD=$(pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{for(const x of JSON.parse(s)){if(x.name===process.argv[1])console.log(x.pm2_env?.pm_cwd||"")}})' "$APP")"
+          echo "BACKUP=$BACK"
+          echo 'FONT_ONLY_APPLY_OK=1'
+          REMOTE
