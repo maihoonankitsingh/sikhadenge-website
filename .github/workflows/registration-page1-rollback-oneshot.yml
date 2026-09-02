@@ -16,7 +16,7 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  forensic:
+  verify-candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: whatsapp-agent-production
@@ -25,19 +25,12 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          test -n "$SSH_HOST"
-          test -n "$SSH_USER"
-          test -n "$SSH_PRIVATE_KEY"
-          test -n "$SSH_HOST_KEY"
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
           if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
           KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
-            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
-          else
-            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
-          fi
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           test "$key_type" = "ssh-ed25519"
@@ -45,7 +38,7 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
 
-      - name: Read-only Page1 forensic
+      - name: Verify exact candidate
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -54,38 +47,44 @@ jobs:
           set -Eeuo pipefail
           export TZ=Asia/Kolkata
           SNIPPET="/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf"
-          CAND="/var/backups/sikhadenge/page1-canonical-v18-20260902-105305/page1.before"
+          CAND="/var/backups/sikhadenge/mobile-step3-fit-v18-20260902-102442/page1.before"
           PAGE1="$(awk '/location = \/registration-v2-page1\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIPPET")"
-          echo "===== LIVE ====="
-          echo "PAGE1=$PAGE1"
-          stat -c 'mtime=%y size=%s' "$PAGE1"
-          sha256sum "$PAGE1"
-          node --check "$PAGE1" >/dev/null && echo 'LIVE_JS_SYNTAX=OK'
-          echo "===== NGINX INJECTION ====="
-          grep -nE 'registration-v2-(hot|page1)\.js|registration-mobile-prepaint' "$SNIPPET" || true
-          echo "===== REQUESTED WINDOW FILES ====="
-          find /var/backups/sikhadenge -type f \
-            -newermt '2026-09-01 22:00:00' ! -newermt '2026-09-02 10:00:00' \
-            \( -name 'page1.before' -o -name 'registration-v2-page1.js.before' -o -name 'registration-v2-page1.js' \) \
-            -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' | sort || true
-          echo "===== PRE-V18 SNAPSHOT ====="
-          test -f "$CAND"
-          echo "CAND=$CAND"
-          stat -c 'mtime=%y size=%s' "$CAND"
-          sha256sum "$CAND"
-          node --check "$CAND" >/dev/null && echo 'CAND_JS_SYNTAX=OK'
-          echo -n 'CANONICAL_V18_MARKER='; grep -c 'SD_CANONICAL_V18_START' "$CAND" || true
-          echo -n 'V67_TEXT='; grep -c 'V67\|v67' "$CAND" || true
-          echo -n 'STEPPER_LABELS='; grep -c 'Your Details\|About You\|Your Goal\|Bonuses\|Confirmation' "$CAND" || true
-          echo -n 'REAL_ACTIVITY='; grep -c 'SD_REAL_ACTIVITY_V10_START\|LIVE ACTIVITY' "$CAND" || true
-          echo -n 'COMMUNITY='; grep -c '5,00,000+ SikhaDenge Community' "$CAND" || true
-          echo -n 'REMOVE_SUBTITLE='; grep -c 'SD_REMOVE_PAGE1_SUBTITLE_START' "$CAND" || true
-          echo "===== PUBLIC HEALTH ====="
-          for u in \
-            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&forensic=1' \
-            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&forensic=1' \
-            'https://sikhadenge.in/api/social-proof/live?forensic=1'; do
-            printf '%s  ' "$u"
-            curl -L --compressed -sS -o /dev/null -w '%{http_code}\n' "$u"
+          HOT="$(awk '/location = \/registration-v2-hot\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIPPET")"
+          test -f "$PAGE1"; test -f "$HOT"; test -f "$CAND"
+          echo '===== EXACT CANDIDATE ====='
+          stat -c 'candidate_mtime=%y candidate_size=%s' "$CAND"
+          CAND_SHA="$(sha256sum "$CAND" | awk '{print $1}')"; echo "candidate_sha=$CAND_SHA"
+          cp -a "$CAND" /tmp/sd-page1-candidate.js
+          node --check /tmp/sd-page1-candidate.js >/dev/null; echo 'candidate_js_syntax=OK'
+          echo '===== MARKERS ====='
+          for p in \
+            'SD_CLAUDE_V5_START' \
+            'SD_REMOVE_PAGE1_SUBTITLE_START' \
+            'SD_SYNC_BOTH_THEMES_START' \
+            'SD_BOTH_EQUAL_SIZE_V6_START' \
+            'SD_REAL_ACTIVITY_V10_START' \
+            'SD_CANONICAL_V18_START' \
+            'SIKHADENGE_MOBILE_6POINTS_FULLWIDTH_V63_START' \
+            'V67' \
+            'Your Details' \
+            'About You' \
+            'Your Goal' \
+            'Bonuses' \
+            'Confirmation' \
+            '5,00,000+ SikhaDenge Community'; do
+              printf '%s=' "$p"; grep -cF "$p" "$CAND" || true
           done
+          echo '===== LIVE VS CANDIDATE ====='
+          stat -c 'live_mtime=%y live_size=%s' "$PAGE1"
+          LIVE_SHA="$(sha256sum "$PAGE1" | awk '{print $1}')"; echo "live_sha=$LIVE_SHA"
+          wc -l "$CAND" "$PAGE1"
+          diff --brief "$CAND" "$PAGE1" || true
+          echo '===== HOT ====='
+          stat -c 'hot_mtime=%y hot_size=%s' "$HOT"
+          sha256sum "$HOT"
+          grep -nE 'registration-v2-(hot|page1)\.js|registration-mobile-prepaint' "$SNIPPET" || true
+          echo '===== WINDOW PROOF ====='
+          MT="$(date -r "$CAND" '+%Y-%m-%d %H:%M:%S')"
+          [[ "$MT" > '2026-09-01 22:00:00' && "$MT" < '2026-09-02 10:00:00' ]]
+          echo "candidate_window_guard=PASS ($MT IST)"
           REMOTE
