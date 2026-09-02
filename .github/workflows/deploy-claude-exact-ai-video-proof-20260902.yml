@@ -1,0 +1,187 @@
+name: Deploy Claude Exact AI Video Proof 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-exact-ai-video-proof-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only the Claude proof replacement
+        shell: bash
+        env:
+          CLAUDE_PROOF_JS_B64: "KCgpID0+IHsKICAidXNlIHN0cmljdCI7CgogIGlmIChsb2NhdGlvbi5wYXRobmFtZSAhPT0gIi9tYXN0ZXJjbGFzcy9jbGF1ZGUvZnJlZSIpIHJldHVybjsKICBpZiAod2luZG93Ll9fQ0xBVURFX0VYQUNUX0FJX1ZJREVPX1BST09GX1YxX18pIHJldHVybjsKICB3aW5kb3cuX19DTEFVREVfRVhBQ1RfQUlfVklERU9fUFJPT0ZfVjFfXyA9IHRydWU7CgogIGNvbnN0IFNPVVJDRSA9ICIvbWFzdGVyY2xhc3MvYWktdmlkZW8/Y2xhdWRlLXByb29mLWNsb25lPTIwMjYwOTAyIjsKICBjb25zdCBKT0JTX0lEID0gImFpLXZpZGVvLWpvYi1pbXBhY3QtdjgwIjsKICBjb25zdCBTS0lMTFNfSUQgPSAiYWktdmlkZW8tYWktb3Bwb3J0dW5pdHktdjg1IjsKICBjb25zdCBSRUFEWV9BVFRSID0gImRhdGEtY2xhdWRlLWV4YWN0LWFpLXZpZGVvLXByb29mIjsKICBjb25zdCBTVFlMRV9BVFRSID0gImRhdGEtY2xhdWRlLWFpLXZpZGVvLXByb29mLXN0eWxlIjsKCiAgbGV0IHRlbXBsYXRlcyA9IG51bGw7CiAgbGV0IG9ic2VydmVyID0gbnVsbDsKICBsZXQgYXBwbHlpbmcgPSBmYWxzZTsKCiAgY29uc3Qgbm9ybSA9ICh2YWx1ZSkgPT4KICAgIFN0cmluZyh2YWx1ZSB8fCAiIikKICAgICAgLnJlcGxhY2UoL1vigJ3igJhdL2csICInIikKICAgICAgLnJlcGxhY2UoL1xzKy9nLCAiICIpCiAgICAgIC50cmltKCkKICAgICAgLnRvTG93ZXJDYXNlKCk7CgogIGZ1bmN0aW9uIGZpbmRPbGRTZWN0aW9uKCkgewogICAgY29uc3QgaGVhZGluZyA9IFsuLi5kb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJoMSxoMixoMyIpXQogICAgICAuZmluZCgoZWwpID0+CiAgICAgICAgbm9ybShlbC50ZXh0Q29udGVudCkuaW5jbHVkZXMoCiAgICAgICAgICAid2h5IGFpLXNraWxsZWQgcHJvZmVzc2lvbmFscyBhcmUgbW92aW5nIGFoZWFkIGZhc3RlciIKICAgICAgICApCiAgICAgICk7CgogICAgcmV0dXJuIGhlYWRpbmcgPyBoZWFkaW5nLmNsb3Nlc3QoInNlY3Rpb24iKSA6IG51bGw7CiAgfQoKICBmdW5jdGlvbiBjbG9uZVJlbGV2YW50U3R5bGVzKHNvdXJjZURvYykgewogICAgc291cmNlRG9jLnF1ZXJ5U2VsZWN0b3JBbGwoInN0eWxlIikuZm9yRWFjaCgoc3R5bGUsIGluZGV4KSA9PiB7CiAgICAgIGNvbnN0IGNzcyA9IHN0eWxlLnRleHRDb250ZW50IHx8ICIiOwogICAgICBpZiAoCiAgICAgICAgIS8oYWktdjgwfGFpLXY4NXxhaS12aWRlby1qb2ItaW1wYWN0LXY4MHxhaS12aWRlby1haS1vcHBvcnR1bml0eS12ODUpL2kudGVzdChjc3MpCiAgICAgICkgewogICAgICAgIHJldHVybjsKICAgICAgfQoKICAgICAgY29uc3Qgc2lnbmF0dXJlID0gYCR7aW5kZXh9OiR7Y3NzLmxlbmd0aH06JHtjc3Muc2xpY2UoMCwgODApfWA7CiAgICAgIGlmICgKICAgICAgICBbLi4uZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbChgc3R5bGVbJHtTVFlMRV9BVFRSfV1gKV0KICAgICAgICAgIC5zb21lKChzKSA9PiBzLmdldEF0dHJpYnV0ZShTVFlMRV9BVFRSKSA9PT0gc2lnbmF0dXJlKQogICAgICApIHsKICAgICAgICByZXR1cm47CiAgICAgIH0KCiAgICAgIGNvbnN0IGNvcHkgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJzdHlsZSIpOwogICAgICBjb3B5LnNldEF0dHJpYnV0ZShTVFlMRV9BVFRSLCBzaWduYXR1cmUpOwogICAgICBjb3B5LnRleHRDb250ZW50ID0gY3NzOwogICAgICBkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGNvcHkpOwogICAgfSk7CgogICAgc291cmNlRG9jCiAgICAgIC5xdWVyeVNlbGVjdG9yQWxsKCdlbGVtZW50JykKICAgICAgLmZvckVhY2goKGxpbmspID0+IHsKICAgICAgICBjb25zdCBocmVmID0gbGluay5ocmVmOwogICAgICAgIGlmICghaHJlZikgcmV0dXJuOwogICAgICAgIGlmIChkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW3JlbD0ic3R5bGVzaGVldCJdW2hyZWY9IiR7Q1NTLmVzY2FwZShocmVmKX0iXWApKSB7CiAgICAgICAgICByZXR1cm47CiAgICAgICAgfQogICAgICAgIGNvbnN0IGNvcHkgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJsaW5rIik7CiAgICAgICAgY29weS5yZWwgPSAic3R5bGVzaGVldCI7CiAgICAgICAgY29weS5ocmVmID0gaHJlZjsKICAgICAgICBkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGNvcHkpOwogICAgICB9KTsKICB9CgogIGZ1bmN0aW9uIGNvcHlDb21wdXRlZFRyZWUoc291cmNlLCB0YXJnZXQsIHNvdXJjZVdpbmRvdykgewogICAgaWYgKCEoc291cmNlIGluc3RhbmNlb2Ygc291cmNlV2luZG93LkVsZW1lbnQpIHx8ICEodGFyZ2V0IGluc3RhbmNlb2YgRWxlbWVudCkpIHsKICAgICAgcmV0dXJuOwogICAgfQoKICAgIGNvbnN0IGNvbXB1dGVkID0gc291cmNlV2luZG93LmdldENvbXB1dGVkU3R5bGUoc291cmNlKTsKICAgIGZvciAobGV0IGkgPSAwOyBpIDwgY29tcHV0ZWQubGVuZ3RoOyBpICs9IDEpIHsKICAgICAgY29uc3QgcHJvcCA9IGNvbXB1dGVkW2ldOwogICAgICBjb25zdCB2YWx1ZSA9IGNvbXB1dGVkLmdldFByb3BlcnR5VmFsdWUocHJvcCk7CiAgICAgIGNvbnN0IHByaW9yaXR5ID0gY29tcHV0ZWQuZ2V0UHJvcGVydHlQcmlvcml0eShwcm9wKTsKICAgICAgdHJ5IHsKICAgICAgICB0YXJnZXQuc3R5bGUuc2V0UHJvcGVydHkocHJvcCwgdmFsdWUsIHByaW9yaXR5KTsKICAgICAgfSBjYXRjaCAoXykge30KICAgIH0KCiAgICBjb25zdCBzb3VyY2VDaGlsZHJlbiA9IFsuLi5zb3VyY2UuY2hpbGRyZW5dOwogICAgY29uc3QgdGFyZ2V0Q2hpbGRyZW4gPSBbLi4udGFyZ2V0LmNoaWxkcmVuXTsKCiAgICBzb3VyY2VDaGlsZHJlbi5mb3JFYWNoKChjaGlsZCwgaW5kZXgpID0+IHsKICAgICAgaWYgKHRhcmdldENoaWxkcmVuW2luZGV4XSkgewogICAgICAgIGNvcHlDb21wdXRlZFRyZWUoY2hpbGQsIHRhcmdldENoaWxkcmVuW2luZGV4XSwgc291cmNlV2luZG93KTsKICAgICAgfQogICAgfSk7CiAgfQoKICBmdW5jdGlvbiBmaXJzdEZvbGxvd2luZ0N0YShzb3VyY2VEb2MsIHNraWxscykgewogICAgY29uc3QgY2FuZGlkYXRlcyA9IFsKICAgICAgLi4uc291cmNlRG9jLnF1ZXJ5U2VsZWN0b3JBbGwoCiAgICAgICAgJ2FbaHJlZio9Ii9nZW4tYWktbWFzdGVyY2xhc3MvcmVnaXN0ZXItb25lLXN0ZXAiXSwgYnV0dG9uLCBbcm9sZT0iYnV0dG9uIl0nCiAgICAgICksCiAgICBdLmZpbHRlcigoZWwpID0+IHsKICAgICAgY29uc3QgdGV4dCA9IG5vcm0oZWwudGV4dENvbnRlbnQpOwogICAgICByZXR1cm4gKAogICAgICAgIHRleHQuaW5jbHVkZXMoImdldCBteSBmcmVlIHNlYXQiKSB8fAogICAgICAgIHRleHQuaW5jbHVkZXMoInJlc2VydmUgbXkgc2VhdCIpIHx8CiAgICAgICAgdGV4dC5pbmNsdWRlcygicmVzZXJ2ZSBteSBmcmVlIHNlYXQiKQogICAgICApOwogICAgfSk7CgogICAgcmV0dXJuICgKICAgICAgY2FuZGlkYXRlcy5maW5kKChlbCkgPT4gewogICAgICAgIGNvbnN0IHBvcyA9IHNraWxscy5jb21wYXJlRG9jdW1lbnRQb3NpdGlvbihlbCk7CiAgICAgICAgcmV0dXJuIEJvb2xlYW4ocG9zICYgTm9kZS5ET0NVTUVOVF9QT1NJVElPTl9GT0xMT1dJTkcpOwogICAgICB9KSB8fCBudWxsCiAgICApOwogIH0KCiAgZnVuY3Rpb24gc21hbGxlc3RDdGFCbG9jayhjdGEsIHNvdXJjZURvYykgewogICAgbGV0IGJsb2NrID0gY3RhOwogICAgY29uc3QgY3RhVGV4dCA9IG5vcm0oY3RhLnRleHRDb250ZW50KTsKCiAgICBmb3IgKGxldCBpID0gMDsgaSA8IDQ7IGkgKz0gMSkgewogICAgICBjb25zdCBwYXJlbnQgPSBibG9jay5wYXJlbnRFbGVtZW50OwogICAgICBpZiAoIXBhcmVudCB8fCBwYXJlbnQgPT09IHNvdXJjZURvYy5ib2R5IHx8IHBhcmVudC50YWdOYW1lID09PSAiTUFJTiIpIGJyZWFrOwoKICAgICAgY29uc3QgaW50ZXJhY3RpdmVDb3VudCA9IHBhcmVudC5xdWVyeVNlbGVjdG9yQWxsKAogICAgICAgICdhLGJ1dHRvbixbcm9sZT0iYnV0dG9uIl0nCiAgICAgICkubGVuZ3RoOwogICAgICBjb25zdCBwYXJlbnRUZXh0ID0gbm9ybShwYXJlbnQudGV4dENvbnRlbnQpOwoKICAgICAgaWYgKAogICAgICAgIGludGVyYWN0aXZlQ291bnQgPT09IDEgJiYKICAgICAgICBwYXJlbnRUZXh0Lmxlbmd0aCA8PSBjdGFUZXh0Lmxlbmd0aCArIDM2ICYmCiAgICAgICAgcGFyZW50LmNoaWxkcmVuLmxlbmd0aCA8PSAzCiAgICAgICkgewogICAgICAgIGJsb2NrID0gcGFyZW50OwogICAgICAgIGNvbnRpbnVlOwogICAgICB9CiAgICAgIGJyZWFrOwogICAgfQoKICAgIHJldHVybiBibG9jazsKICB9CgogIGZ1bmN0aW9uIG1ha2VDdGFUZW1wbGF0ZShzb3VyY2VEb2MsIHNvdXJjZVdpbmRvdywgc2tpbGxzKSB7CiAgICBjb25zdCBjdGEgPSBmaXJzdEZvbGxvd2luZ0N0YShzb3VyY2VEb2MsIHNraWxscyk7CiAgICBpZiAoIWN0YSkgcmV0dXJuIG51bGw7CgogICAgY29uc3Qgc291cmNlQmxvY2sgPSBzbWFsbGVzdEN0YUJsb2NrKGN0YSwgc291cmNlRG9jKTsKICAgIGNvbnN0IGNsb25lID0gc291cmNlQmxvY2suY2xvbmVOb2RlKHRydWUpOwogICAgY29weUNvbXB1dGVkVHJlZShzb3VyY2VCbG9jaywgY2xvbmUsIHNvdXJjZVdpbmRvdyk7CgogICAgY2xvbmUKICAgICAgLnF1ZXJ5U2VsZWN0b3JBbGwoJ2FbaHJlZio9Ii9nZW4tYWktbWFzdGVyY2xhc3MvcmVnaXN0ZXItb25lLXN0ZXAiXScpCiAgICAgIC5mb3JFYWNoKChhKSA9PiB7CiAgICAgICAgYS5zZXRBdHRyaWJ1dGUoImhyZWYiLCAiL2dlbi1haS1tYXN0ZXJjbGFzcy9yZWdpc3Rlci1vbmUtc3RlcCIpOwogICAgICB9KTsKCiAgICBpZiAoCiAgICAgIGNsb25lLm1hdGNoZXMgJiYKICAgICAgY2xvbmUubWF0Y2hlcygnYVtocmVmKj0iL2dlbi1haS1tYXN0ZXJjbGFzcy9yZWdpc3Rlci1vbmUtc3RlcCJdJykKICAgICApIHsKICAgICAgY2xvbmUuc2V0QXR0cmlidXRlKCJocmVmIiwgIi9nZW4tYWktbWFzdGVyY2xhc3MvcmVnaXN0ZXItb25lLXN0ZXAiKTsKICAgIH0KCiAgICBjb25zdCB3cmFwID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgiZGl2Iik7CiAgICB3cmFwLnNldEF0dHJpYnV0ZSgiZGF0YS1jbGF1ZGUtYWktdmlkZW8tcHJvb2YtY3RhIiwgIjEiKTsKICAgIHdyYXAuc3R5bGUuY3NzVGV4dCA9IFsKICAgICAgImRpc3BsYXk6ZmxleCIsCiAgICAgICJhbGlnbi1pdGVtczpjZW50ZXIiLAogICAgICAianVzdGlmeS1jb250ZW50OmNlbnRlciIsCiAgICAgICJ3aWR0aDoxMDAlIiwKICAgICAgIm1hcmdpbi10b3A6LTFweCIsCiAgICAgICJwYWRkaW5nOjAgMTZweCAzMHB4IiwKICAgICAgYGJhY2tncm91bmQ6JHtzb3VyY2VXaW5kb3cuZ2V0Q29tcHV0ZWRTdHlsZShza2lsbHMpLmJhY2tncm91bmR9YCwKICAgICAgImJveC1zaXppbmc6Ym9yZGVyLWJveCIsCiAgICBdLmpvaW4oIjsiKTsKCiAgICB3cmFwLmFwcGVuZENoaWxkKGNsb25lKTsKICAgIHJldHVybiB3cmFwOwogIH0KCiAgZnVuY3Rpb24gYXBwbHlUZW1wbGF0ZXMoKSB7CiAgICBpZiAoIXRlbXBsYXRlcyB8fCBhcHBseWluZykgcmV0dXJuIGZhbHNlOwogICAgYXBwbHlpbmcgPSB0cnVlOwoKICAgIHRyeSB7CiAgICAgIGNvbnN0IG9sZCA9IGZpbmRPbGRTZWN0aW9uKCk7CiAgICAgIGNvbnN0IGV4aXN0aW5nSm9icyA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKEpPQlNfSUQpOwogICAgICBjb25zdCBleGlzdGluZ1NraWxscyA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKFNLSUxMU19JRCk7CgogICAgICBpZiAoZXhpc3RpbmdKb2JzICYmIGV4aXN0aW5nU2tpbGxzKSB7CiAgICAgICAgaWYgKG9sZCkgb2xkLnJlbW92ZSgpOwogICAgICAgIGRvY3VtZW50LmRvY3VtZW50RWxlbWVudC5zZXRBdHRyaWJ1dGUoUkVBRFlfQVRUUiwgInJlYWR5Iik7CiAgICAgICAgcmV0dXJuIHRydWU7CiAgICAgIH0KCiAgICAgIGlmICghb2xkIHx8ICFvbGQucGFyZW50Tm9kZSkgcmV0dXJuIGZhbHNlOwoKICAgICAgY29uc3QgZnJhZ21lbnQgPSBkb2N1bWVudC5jcmVhdGVEb2N1bWVudEZyYWdtZW50KCk7CiAgICAgIGZyYWdtZW50LmFwcGVuZENoaWxkKHRlbXBsYXRlcy5qb2JzLmNsb25lTm9kZSh0cnVlKSk7CiAgICAgIGZyYWdtZW50LmFwcGVuZENoaWxkKHRlbXBsYXRlcy5za2lsbHMuY2xvbmVOb2RlKHRydWUpKTsKICAgICAgaWYgKHRlbXBsYXRlcy5jdGEpIHsKICAgICAgICBmcmFnbWVudC5hcHBlbmRDaGlsZCh0ZW1wbGF0ZXMuY3RhLmNsb25lTm9kZSh0cnVlKSk7CiAgICAgIH0KCiAgICAgIG9sZC5yZXBsYWNlV2l0aChmcmFnbWVudCk7CiAgICAgIGRvY3VtZW50LmRvY3VtZW50RWxlbWVudC5zZXRBdHRyaWJ1dGUoUkVBRFlfQVRUUiwgInJlYWR5Iik7CiAgICAgIHJldHVybiB0cnVlOwogICAgfSBmaW5hbGx5IHsKICAgICAgYXBwbHlpbmcgPSBmYWxzZTsKICAgIH0KICB9CgogIGZ1bmN0aW9uIGNhcHR1cmVGcm9tSWZyYW1lKGZyYW1lKSB7CiAgICBsZXQgc291cmNlRG9jOwogICAgbGV0IHNvdXJjZVdpbmRvdzsKCiAgICB0cnkgewogICAgICBzb3VyY2VEb2MgPSBmcmFtZS5jb250ZW50RG9jdW1lbnQ7CiAgICAgIHNvdXJjZVdpbmRvdyA9IGZyYW1lLmNvbnRlbnRXaW5kb3c7CiAgICB9IGNhdGNoIChfKSB7CiAgICAgIHJldHVybiBmYWxzZTsKICAgIH0KCiAgICBpZiAoIXNvdXJjZURvYyB8fCAhc291cmNlV2luZG93KSByZXR1cm4gZmFsc2U7CgogICAgY29uc3Qgam9icyA9IHNvdXJjZURvYy5nZXRFbGVtZW50QnlJZChKT0JTX0lEKTsKICAgIGNvbnN0IHNraWxscyA9IHNvdXJjZURvYy5nZXRFbGVtZW50QnlJZChTS0lMTFNfSUQpOwoKICAgIGlmICgham9icyB8fCAhc2tpbGxzKSByZXR1cm4gZmFsc2U7CgogICAgY2xvbmVSZWxldmFudFN0eWxlcyhzb3VyY2VEb2MpOwoKICAgIHRlbXBsYXRlcyA9IHsKICAgICAgam9iczogam9icy5jbG9uZU5vZGUodHJ1ZSksCiAgICAgIHNraWxsczogc2tpbGxzLmNsb25lTm9kZSh0cnVlKSwKICAgICAgY3RhOiBtYWtlQ3RhVGVtcGxhdGUoc291cmNlRG9jLCBzb3VyY2VXaW5kb3csIHNraWxscyksCiAgICB9OwoKICAgIHRlbXBsYXRlcy5qb2JzLnNldEF0dHJpYnV0ZSgiZGF0YS1jbGF1ZGUtcHJvb2YtY2xvbmUiLCAiam9icyIpOwogICAgdGVtcGxhdGVzLnNraWxscy5zZXRBdHRyaWJ1dGUoImRhdGEtY2xhdWRlLXByb29mLWNsb25lIiwgInNraWxscyIpOwoKICAgIGFwcGx5VGVtcGxhdGVzKCk7CgogICAgaWYgKCFvYnNlcnZlcikgewogICAgICBsZXQgcmFmID0gMDsKICAgICAgb2JzZXJ2ZXIgPSBuZXcgTXV0YXRpb25PYnNlcnZlcigoKSA9PiB7CiAgICAgICAgY2FuY2VsQW5pbWF0aW9uRnJhbWUocmFmKTsKICAgICAgICByYWYgPSByZXF1ZXN0QW5pbWF0aW9uRnJhbWUoYXBwbHlUZW1wbGF0ZXMpOwogICAgICB9KTsKICAgICAgb2JzZXJ2ZXIub2JzZXJ2ZShkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQsIHsKICAgICAgICBjaGlsZExpc3Q6IHRydWUsCiAgICAgICAgc3VidHJlZTogdHJ1ZSwKICAgICAgfSk7CiAgICB9CgogICAgc2V0VGltZW91dCgoKSA9PiBmcmFtZS5yZW1vdmUoKSwgMjUwKTsKICAgIHJldHVybiB0cnVlOwogIH0KCiAgZnVuY3Rpb24gYm9vdCgpIHsKICAgIGlmIChkb2N1bWVudC5nZXRFbGVtZW50QnlJZChKT0JTX0lEKSAmJiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChTS0lMTFNfSUQpKSB7CiAgICAgIGRvY3VtZW50LmRvY3VtZW50RWxlbWVudC5zZXRBdHRyaWJ1dGUoUkVBRFlfQVRUUiwgInJlYWR5Iik7CiAgICAgIHJldHVybjsKICAgIH0KCiAgICBjb25zdCBvbGQgPSBmaW5kT2xkU2VjdGlvbigpOwogICAgaWYgKCFvbGQpIHsKICAgICAgc2V0VGltZW91dChib290LCAyNTApOwogICAgICByZXR1cm47CiAgICB9CgogICAgY29uc3QgZnJhbWUgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJpZnJhbWUiKTsKICAgIGZyYW1lLnNyYyA9IFNPVVJDRTsKICAgIGZyYW1lLnNldEF0dHJpYnV0ZSgiYXJpYS1oaWRkZW4iLCAidHJ1ZSIpOwogICAgZnJhbWUuc2V0QXR0cmlidXRlKCJ0YWJpbmRleCIsICItMSIpOwogICAgZnJhbWUuc3R5bGUuY3NzVGV4dCA9IFsKICAgICAgInBvc2l0aW9uOmZpeGVkIiwKICAgICAgImxlZnQ6LTIwMDAwcHgiLAogICAgICAidG9wOjAiLAogICAgICBgd2lkdGg6JHtNYXRoLm1heChkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQuY2xpZW50V2lkdGggfHwgMCwgMzYwKX1weGAsCiAgICAgICJoZWlnaHQ6MTQwMHB4IiwKICAgICAgIm9wYWNpdHk6MCIsCiAgICAgICJwb2ludGVyLWV2ZW50czpub25lIiwKICAgICAgImJvcmRlcjowIiwKICAgICAgInotaW5kZXg6LTIxNDc0ODM2NDciLAogICAgXS5qb2luKCI7Iik7CgogICAgZG9jdW1lbnQuYm9keS5hcHBlbmRDaGlsZChmcmFtZSk7CgogICAgbGV0IGF0dGVtcHRzID0gMDsKICAgIGNvbnN0IHByb2JlID0gKCkgPT4gewogICAgICBhdHRlbXB0cyArPSAxOwoKICAgICAgdHJ5IHsKICAgICAgICBjb25zdCBzb3VyY2VEb2MgPSBmcmFtZS5jb250ZW50RG9jdW1lbnQ7CiAgICAgICAgY29uc3Qgam9icyA9IHNvdXJjZURvYyAmJiBzb3VyY2VEb2MuZ2V0RWxlbWVudEJ5SWQoSk9CU19JRCk7CiAgICAgICAgY29uc3Qgc2tpbGxzID0gc291cmNlRG9jICYmIHNvdXJjZURvYy5nZXRFbGVtZW50QnlJZChTS0lMTFNfSUQpOwoKICAgICAgICBpZiAoam9icyAmJiBza2lsbHMpIHsKICAgICAgICAgIHNldFRpbWVvdXQoKCkgPT4gewogICAgICAgICAgICBpZiAoIWNhcHR1cmVGcm9tSWZyYW1lKGZyYW1lKSAmJiBhdHRlbXB0cyA8IDgwKSB7CiAgICAgICAgICAgICAgc2V0VGltZW91dChwcm9iZSwgMjAwKTsKICAgICAgICAgICAgfQogICAgICAgICAgfSwgMTEwMCk7CiAgICAgICAgICByZXR1cm47CiAgICAgICAgfQogICAgICB9IGNhdGNoIChfKSB7fQoKICAgICAgaWYgKGF0dGVtcHRzIDwgODApIHsKICAgICAgICBzZXRUaW1lb3V0KHByb2JlLCAyMDApOwogICAgICB9IGVsc2UgewogICAgICAgIGZyYW1lLnJlbW92ZSgpOwogICAgICB9CiAgICB9OwoKICAgIGZyYW1lLmFkZEV2ZW50TGlzdGVuZXIoImxvYWQiLCBwcm9iZSwgeyBvbmNlOiB0cnVlIH0pOwogICAgc2V0VGltZW91dChwcm9iZSwgNjAwKTsKICB9CgogIGlmIChkb2N1bWVudC5yZWFkeVN0YXRlID09PSAibG9hZGluZyIpIHsKICAgIGRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoIkRPTUNvbnRlbnRMb2FkZWQiLCBib290LCB7IG9uY2U6IHRydWUgfSk7CiAgfSBlbHNlIHsKICAgIGJvb3QoKTsKICB9CgogIFs1MDAsIDEyMDAsIDI1MDAsIDUwMDBdLmZvckVhY2goKG1zKSA9PiB7CiAgICBzZXRUaW1lb3V0KCgpID0+IHsKICAgICAgaWYgKHRlbXBsYXRlcykgYXBwbHlUZW1wbGF0ZXMoKTsKICAgIH0sIG1zKTsKICB9KTsKfSkoKTs="
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" "CLAUDE_PROOF_JS_B64='$CLAUDE_PROOF_JS_B64' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          NG="/etc/nginx/sites-enabled/sikhadenge.in-ssl"
+          ASSET="/var/www/sikhadenge.in/claude-proof-exact-v1.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-proof-exact-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          if [[ -f "$ASSET" ]]; then
+            cp "$ASSET" "$BACKUP/claude-proof-exact-v1.js.before"
+          fi
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-proof-exact-v1.js.before" ]]; then
+              cp "$BACKUP/claude-proof-exact-v1.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          printf '%s' "$CLAUDE_PROOF_JS_B64" | base64 --decode > "$ASSET"
+          chmod 0644 "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          path = Path(sys.argv[1])
+          text = path.read_text()
+
+          route = "location = /masterclass/claude/free {"
+          start = text.find(route)
+          if start < 0:
+              raise SystemExit("Claude exact route not found")
+
+          end = text.find("\n    }", start)
+          if end < 0:
+              raise SystemExit("Claude exact route closing brace not found")
+          end += len("\n    }")
+
+          segment = text[start:end]
+          script = '<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
+
+          pattern = re.compile(
+              r'(<script src="/sitewide-live-proof-assets/sitewide-live-proof-v1\.js\?v=[^"]+"></script>)'
+              r'(?:<script src="/claude-proof-exact-v1\.js\?v=[^"]+"></script>)?'
+          )
+          updated, count = pattern.subn(lambda m: m.group(1) + script, segment, count=1)
+          if count != 1 and script not in segment:
+              raise SystemExit("Claude sitewide sub_filter injection anchor not found")
+
+          text = text[:start] + updated + text[end:]
+
+          marker = "# CLAUDE_EXACT_AI_VIDEO_PROOF_ASSET_V1"
+          if marker not in text:
+              anchor = "# SIKHADENGE_SCANNER_GUARD_V1"
+              if anchor not in text:
+                  raise SystemExit("Nginx asset insertion anchor not found")
+              block = """# CLAUDE_EXACT_AI_VIDEO_PROOF_ASSET_V1
+          location = /claude-proof-exact-v1.js {
+              alias /var/www/sikhadenge.in/claude-proof-exact-v1.js;
+              default_type application/javascript;
+              add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+              access_log off;
+          }
+          # CLAUDE_EXACT_AI_VIDEO_PROOF_ASSET_V1_END
+
+          """
+              text = text.replace(anchor, block + anchor, 1)
+
+          path.write_text(text)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+
+          sleep 1
+
+          echo "===== VERIFY ASSET ====="
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-proof-exact-v1.js | grep -Fq "__CLAUDE_EXACT_AI_VIDEO_PROOF_V1__"
+
+          echo "===== VERIFY CLAUDE INJECTION ====="
+          HTML="$(mktemp)"
+          curl -fsS --max-time 25 https://sikhadenge.in/masterclass/claude/free -o "$HTML"
+          test "$(grep -o '/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902' "$HTML" | wc -l)" -eq 1
+          grep -Fq 'Why AI-skilled professionals' "$HTML"
+          grep -Fq 'sitewide-live-proof-v1.js' "$HTML"
+
+          echo "BACKUP=$BACKUP"
+          echo "NGINX_AND_ASSET_OK"
+          trap - ERR
+          REMOTE
+
+      - name: Verify rendered Claude DOM in headless Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+
+          DOM="$RUNNER_TEMP/claude-rendered.html"
+          "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --virtual-time-budget=18000 \
+            --dump-dom \
+            "https://sikhadenge.in/masterclass/claude/free?proofverify=20260902" > "$DOM"
+
+          grep -Fq 'data-claude-exact-ai-video-proof="ready"' "$DOM"
+          test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
+          grep -Fq 'AI &amp; automation are reshaping' "$DOM"
+          grep -Fq 'hundreds of millions of jobs' "$DOM"
+          grep -Fq '30 Crore' "$DOM"
+          grep -Fq '40 Crore' "$DOM"
+          grep -Fq '9.2 Crore' "$DOM"
+          grep -Fq '+69%' "$DOM"
+          grep -Fq '+78M' "$DOM"
+          grep -Fq '10.35M' "$DOM"
+
+          if grep -Fqi 'Why AI-skilled professionals are moving ahead faster' "$DOM"; then
+            echo "Old AI Shift section still rendered"
+            exit 1
+          fi
+
+          echo "RENDERED_EXACT_PROOF_OK"
