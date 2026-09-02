@@ -1,0 +1,90 @@
+name: Sitewide Live Registration Proof V1 R3
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-live-proof-deploy-v1-r3.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Checkout deploy source
+        uses: actions/checkout@v4
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
+
+      - name: Prepare R3 proven asset-route deployment
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cp .github/scripts/sitewide-live-proof-v1.sh /tmp/sitewide-live-proof-v1-r3.sh
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('/tmp/sitewide-live-proof-v1-r3.sh')
+          s=p.read_text(encoding='utf-8')
+
+          old='ASSET_DIR="/var/www/sikhadenge.in/sitewide-live-proof-v1"'
+          new='ASSET_DIR="/var/www/sikhadenge.in/registration-v2-hot-20260831-145106"'
+          if s.count(old) != 1:
+              raise SystemExit(f'asset dir replacement count={s.count(old)}')
+          s=s.replace(old,new,1)
+
+          pattern=r"asset_block = f'''\\n.*?'''\\ns = s\\.replace\\(anchor, anchor \\+ asset_block, 1\\)"
+          replacement='asset_block = ""\ns = s.replace(anchor, anchor, 1)'
+          s2,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
+          if n != 1:
+              raise SystemExit(f'site asset block removal count={n}')
+          s=s2
+
+          reg_anchor='r = reg.read_text(encoding="utf-8")\n'
+          if s.count(reg_anchor) != 1:
+              raise SystemExit(f'reg anchor count={s.count(reg_anchor)}')
+
+          reg_asset='''asset_location = f\'''\n# SIKHADENGE_SITEWIDE_LIVE_PROOF_V1_ASSET_START\nlocation = /sitewide-live-proof-v1.js {{\n  alias {asset};\n  default_type application/javascript;\n  add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;\n  add_header X-SD-Sitewide-Live-Proof "v1" always;\n  access_log off;\n}}\n# SIKHADENGE_SITEWIDE_LIVE_PROOF_V1_ASSET_END\n\'''\nr = asset_location + "\\n" + r\n'''
+          s=s.replace(reg_anchor,reg_anchor+reg_asset,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          chmod +x /tmp/sitewide-live-proof-v1-r3.sh
+          grep -Fq 'registration-v2-hot-20260831-145106' /tmp/sitewide-live-proof-v1-r3.sh
+          grep -Fq 'asset_location = f' /tmp/sitewide-live-proof-v1-r3.sh
+
+      - name: Deploy sitewide live proof R3
+        shell: bash
+        run: bash /tmp/sitewide-live-proof-v1-r3.sh
