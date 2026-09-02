@@ -18,7 +18,7 @@ env:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -34,32 +34,15 @@ jobs:
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Extract exact AI Video proof runtime source
+      - name: Read current Claude nginx block
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          F=/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/public/ai-video-icons-hotfix.js
-          test -f "$F"
-          echo '===== FILE META ====='
-          wc -lc "$F"
-          sha256sum "$F"
-          echo '===== MARKER LINES ====='
-          grep -nE 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M|30 Crore|40 Crore|9\.2 Crore|AI_VIDEO.*JOB|AI_VIDEO.*SKILL|ai-v80|ai-v85' "$F" | head -180 || true
-          echo '===== SECTION AROUND JOBS MARKER ====='
-          L=$(grep -n -m1 'hundreds of millions of jobs' "$F" | cut -d: -f1 || true)
-          if [[ "$L" =~ ^[0-9]+$ ]]; then A=$((L-220)); ((A<1)) && A=1; B=$((L+360)); sed -n "${A},${B}p" "$F"; fi
-          echo '===== SECTION AROUND SKILLS MARKER ====='
-          L=$(grep -n -m1 'increasing the value of AI skills' "$F" | cut -d: -f1 || true)
-          if [[ "$L" =~ ^[0-9]+$ ]]; then A=$((L-220)); ((A<1)) && A=1; B=$((L+360)); sed -n "${A},${B}p" "$F"; fi
-          echo '===== EXACT CLAUDE CURRENT AI SHIFT SOURCE ON 3930 ====='
-          ps -eo pid,cmd | grep -E '3930|claude' | grep -v grep | head -80 || true
-          for d in /var/www/sikhadenge.in/candidates/* /var/www/sikhadenge.in/preview-builds/* /var/www/sikhadenge.in/releases/*; do
-            [[ -d "$d" ]] || continue
-            if grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'Why AI-skilled professionals are|moving ahead faster' "$d" 2>/dev/null | head -1 | grep -q .; then
-              echo "--- MATCH ROOT $d ---"
-              grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'Why AI-skilled professionals are|moving ahead faster' "$d" 2>/dev/null | head -12
-            fi
-          done | tail -120
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          echo '===== CLAUDE CURRENT BLOCK ====='
+          awk '/location = \/masterclass\/claude\/free \{/{p=1} p{print} p && /^    }$/{exit}' "$NG"
+          echo '===== PROOF ASSET MARKERS ====='
+          grep -nE 'claude-proof-exact|sitewide-live-proof|CLAUDE_AI_SHIFT_IMAGE_ONLY' "$NG" | head -80 || true
           REMOTE
