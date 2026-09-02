@@ -54,7 +54,6 @@ jobs:
           cp .github/scripts/sitewide-live-proof-v1.sh /tmp/sitewide-live-proof-v1-r3.sh
           python3 <<'PY'
           from pathlib import Path
-          import re
 
           p=Path('/tmp/sitewide-live-proof-v1-r3.sh')
           s=p.read_text(encoding='utf-8')
@@ -65,12 +64,16 @@ jobs:
               raise SystemExit(f'asset dir replacement count={s.count(old)}')
           s=s.replace(old,new,1)
 
-          pattern=r"asset_block = f'''\\n.*?'''\\ns = s\\.replace\\(anchor, anchor \\+ asset_block, 1\\)"
-          replacement='asset_block = ""\ns = s.replace(anchor, anchor, 1)'
-          s2,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
-          if n != 1:
-              raise SystemExit(f'site asset block removal count={n}')
-          s=s2
+          start_token="asset_block = f'''"
+          end_token="s = s.replace(anchor, anchor + asset_block, 1)"
+          start=s.find(start_token)
+          if start < 0:
+              raise SystemExit('site asset block start missing')
+          end=s.find(end_token,start)
+          if end < 0:
+              raise SystemExit('site asset block end missing')
+          end += len(end_token)
+          s=s[:start] + 'asset_block = ""\ns = s.replace(anchor, anchor, 1)' + s[end:]
 
           reg_anchor='r = reg.read_text(encoding="utf-8")\n'
           if s.count(reg_anchor) != 1:
@@ -84,6 +87,10 @@ jobs:
           chmod +x /tmp/sitewide-live-proof-v1-r3.sh
           grep -Fq 'registration-v2-hot-20260831-145106' /tmp/sitewide-live-proof-v1-r3.sh
           grep -Fq 'asset_location = f' /tmp/sitewide-live-proof-v1-r3.sh
+          if grep -Fq 'anchor + asset_block' /tmp/sitewide-live-proof-v1-r3.sh; then
+            echo 'old site asset insertion still present'
+            exit 1
+          fi
 
       - name: Deploy sitewide live proof R3
         shell: bash
