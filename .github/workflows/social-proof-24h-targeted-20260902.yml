@@ -33,16 +33,15 @@ jobs:
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect exact service files
+      - name: Inspect exact blocks
         shell: bash
         run: |
           set -Eeuo pipefail
           KEY="$HOME/.ssh/prod"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          DIR=/var/www/sikhadenge.in/social-proof-live
-          echo '=== DIR ==='
-          find "$DIR" -maxdepth 2 -type f -printf '%p\n' | sort
-          echo '=== MATCHES ==='
-          grep -nE '30|days|latestRegistration|count|createdAt|masterclassLead|Date\(' "$DIR"/*.js 2>/dev/null | head -240 || true
+          echo '=== SERVER 84-132 ==='
+          sed -n '84,132p' /var/www/sikhadenge.in/social-proof-live/server.js
+          echo '=== WIDGET 330-362 ==='
+          sed -n '330,362p' /var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js
           REMOTE
