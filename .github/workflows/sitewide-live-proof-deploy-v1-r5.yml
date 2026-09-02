@@ -1,0 +1,112 @@
+name: Sitewide Live Registration Proof V1 R5
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-live-proof-deploy-v1-r5.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Checkout deploy source
+        uses: actions/checkout@v4
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
+
+      - name: Prepare API-served widget deployment
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cp .github/scripts/sitewide-live-proof-v1.sh /tmp/sitewide-live-proof-v1-r5.sh
+          python3 <<'PY'
+          from pathlib import Path
+
+          p=Path('/tmp/sitewide-live-proof-v1-r5.sh')
+          s=p.read_text(encoding='utf-8')
+
+          def once(old,new,label):
+              global s
+              n=s.count(old)
+              if n != 1:
+                  raise SystemExit(f'{label} count={n}')
+              s=s.replace(old,new,1)
+
+          once(
+            'ASSET_DIR="/var/www/sikhadenge.in/sitewide-live-proof-v1"',
+            'ASSET_DIR="/var/www/sikhadenge.in/social-proof-live"',
+            'asset-dir'
+          )
+
+          once(
+            'script = f\'<script src="/sitewide-live-proof-v1.js?v={tag}"></script>\'',
+            'script = f\'<script src="/api/social-proof/widget.js?v={tag}"></script>\'',
+            'script-url'
+          )
+
+          once(
+            'https://sikhadenge.in/sitewide-live-proof-v1.js?v=${TAG}',
+            'https://sikhadenge.in/api/social-proof/widget.js?v=${TAG}',
+            'public-curl-url'
+          )
+
+          # Remove the failed root/static asset location from the main server patch.
+          start_token="asset_block = f'''"
+          end_token="s = s.replace(anchor, anchor + asset_block, 1)"
+          start=s.find(start_token)
+          end=s.find(end_token,start)
+          if start < 0 or end < 0:
+              raise SystemExit('main asset block tokens missing')
+          end += len(end_token)
+          s=s[:start] + 'asset_block = ""\ns = s.replace(anchor, anchor, 1)' + s[end:]
+
+          # Make the social-proof service serve the widget JS itself.
+          live_anchor='''    if (\n      req.method === "GET" &&\n      url.pathname === "/api/social-proof/live"\n    ) {\n      return json(res, 200, await getStats());\n    }\n'''
+          if s.count(live_anchor) != 1:
+              raise SystemExit(f'live route anchor count={s.count(live_anchor)}')
+          widget_route='''    if (\n      req.method === "GET" &&\n      url.pathname === "/api/social-proof/widget.js"\n    ) {\n      const body = fs.readFileSync(\n        path.join(__dirname, "sitewide-live-proof-v1.js"),\n        "utf8"\n      );\n      res.writeHead(200, {\n        "Content-Type": "application/javascript; charset=utf-8",\n        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",\n        "Pragma": "no-cache",\n        "Expires": "0",\n        "X-Content-Type-Options": "nosniff",\n        "Content-Length": Buffer.byteLength(body)\n      });\n      res.end(body);\n      return;\n    }\n\n'''
+          s=s.replace(live_anchor,widget_route+live_anchor,1)
+
+          # Add a sibling exact Nginx proxy next to the already working social-proof API route.
+          reg_anchor='r = reg.read_text(encoding="utf-8")\n'
+          if s.count(reg_anchor) != 1:
+              raise SystemExit(f'reg anchor count={s.count(reg_anchor)}')
+          proxy_code='''widget_proxy = \'''\n# SIKHADENGE_SITEWIDE_LIVE_PROOF_V1_ASSET_START\nlocation = /api/social-proof/widget.js {\n  proxy_pass http://127.0.0.1:3944/api/social-proof/widget.js;\n  proxy_http_version 1.1;\n  proxy_set_header Host $host;\n  proxy_set_header X-Real-IP $remote_addr;\n  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n  proxy_set_header X-Forwarded-Proto $scheme;\n  proxy_hide_header Cache-Control;\n  proxy_hide_header Expires;\n  proxy_hide_header Pragma;\n  add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;\n  add_header X-SD-Sitewide-Live-Proof "v1" always;\n}\n# SIKHADENGE_SITEWIDE_LIVE_PROOF_V1_ASSET_END\n\'''\nr = widget_proxy + "\\n" + r\n'''
+          s=s.replace(reg_anchor,reg_anchor+proxy_code,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          chmod +x /tmp/sitewide-live-proof-v1-r5.sh
+          grep -Fq '/api/social-proof/widget.js' /tmp/sitewide-live-proof-v1-r5.sh
+          grep -Fq 'widget_proxy =' /tmp/sitewide-live-proof-v1-r5.sh
+          if grep -Fq 'anchor + asset_block' /tmp/sitewide-live-proof-v1-r5.sh; then exit 1; fi
+
+      - name: Deploy sitewide live proof R5
+        shell: bash
+        run: bash /tmp/sitewide-live-proof-v1-r5.sh
