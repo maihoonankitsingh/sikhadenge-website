@@ -1,0 +1,65 @@
+name: Registration Hang Emergency Inspect
+
+on:
+  push:
+    paths:
+      - .github/workflows/registration-hang-emergency-inspect-20260902.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect registration interaction
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          KEY="$HOME/.ssh/prod"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          WIDGET=/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js
+          SNIP=/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf
+          echo '=== WIDGET HEAD/LOOP ==='
+          sed -n '1,120p' "$WIDGET"
+          echo '=== WIDGET RENDER/POLL ==='
+          sed -n '320,460p' "$WIDGET"
+          echo '=== INJECTION REFERENCES ==='
+          grep -RInF 'api/social-proof/live?widget=1' /etc/nginx 2>/dev/null | head -80 || true
+          echo '=== REGISTRATION SNIPPET ==='
+          sed -n '1,220p' "$SNIP" | grep -nE 'sub_filter|social-proof|registration-v2-page1|registration-v2-hot|location = /gen-ai-masterclass/register-one-step' || true
+          echo '=== PAGE1/HOT SHA ==='
+          PAGE1="$(awk '/location = \/registration-v2-page1\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIP")"
+          HOT="$(awk '/location = \/registration-v2-hot\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIP")"
+          sha256sum "$PAGE1" "$HOT"
+          echo '=== PUBLIC HTML SCRIPT PRESENCE ==='
+          for u in \
+            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&hangcheck=1' \
+            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&hangcheck=1'; do
+            echo "URL=$u"
+            curl -L --compressed -fsS "$u" | grep -oE '<script[^>]+social-proof[^>]*>|<script[^>]+api/social-proof/live[^>]*>' | head -5 || true
+          done
+          REMOTE
