@@ -1,0 +1,110 @@
+name: Sitewide Manrope Font Matrix 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-manrope-font-matrix-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Print concise live font matrix read only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          echo '=== RUNTIME_FONT_SOURCE ==='
+          roots=(
+            'MAIN|/var/www/sikhadenge.in/sikhadenge-website-space'
+            'CLAUDE3930|/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+            'AIVIDEO3940|/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420'
+            'CLAUDE3971|/var/www/sikhadenge.in/candidates/claude-ai-shift-research-v2-20260901-213954'
+          )
+          for item in "${roots[@]}"; do
+            name="${item%%|*}"; root="${item#*|}"
+            echo "RUNTIME=$name ROOT=$root"
+            [ -d "$root" ] || { echo 'MISSING'; continue; }
+            find "$root" -maxdepth 7 -type f \
+              \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' -o -name '*.css' \) \
+              -not -path '*/node_modules/*' -not -path '*/.next/*' -print0 2>/dev/null \
+              | xargs -0 grep -IlEi 'next/font/google|font-family[^;]*(Manrope|Inter|Poppins|Roboto)|fontFamily[^,]*(Manrope|Inter|Poppins|Roboto)|\b(Manrope|Inter|Poppins|Roboto)\(' 2>/dev/null \
+              | head -40 | while IFS= read -r f; do
+                  rel="${f#$root/}"
+                  echo "FILE=$rel"
+                  grep -nEi 'next/font/google|font-family[^;]*(Manrope|Inter|Poppins|Roboto)|fontFamily[^,]*(Manrope|Inter|Poppins|Roboto)|\b(Manrope|Inter|Poppins|Roboto)\(' "$f" 2>/dev/null \
+                    | head -12 | sed 's/[[:space:]]\+/ /g' | sed 's/^/  /'
+                done || true
+          done
+
+          echo '=== LIVE_ROUTE_MATRIX ==='
+          routes=(
+            '/'
+            '/about-us'
+            '/courses'
+            '/contact'
+            '/blog'
+            '/reviews'
+            '/privacy-policy'
+            '/terms'
+            '/gen-ai-masterclass/register-one-step'
+            '/masterclass/ai-video'
+            '/masterclass/claude/free'
+          )
+          tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+          for route in "${routes[@]}"; do
+            key="$(printf '%s' "$route" | sha256sum | cut -c1-10)"
+            html="$tmp/$key.html"
+            code="$(curl -L --compressed -ksS -o "$html" -w '%{http_code}' "https://sikhadenge.in$route" || true)"
+            all="$tmp/$key.css"; : > "$all"
+            grep -oE 'href="[^"]+\.css[^\"]*"' "$html" 2>/dev/null | sed -E 's/^href="|"$//g' | sort -u | while IFS= read -r href; do
+              [ -n "$href" ] || continue
+              case "$href" in http*) url="$href";; *) url="https://sikhadenge.in$href";; esac
+              curl -L --compressed -ksS "$url" >> "$all" || true
+              printf '\n' >> "$all"
+            done
+            m=0; i=0; p=0; r=0
+            grep -Eqi 'Manrope' "$all" && m=1 || true
+            grep -Eqi 'Inter' "$all" && i=1 || true
+            grep -Eqi 'Poppins' "$all" && p=1 || true
+            grep -Eqi 'Roboto' "$all" && r=1 || true
+            inline=0
+            grep -Eqi 'font-family[^;]*(Manrope|Inter|Poppins|Roboto)' "$html" && inline=1 || true
+            fam="$(grep -oEi 'font-family:[^;}]{1,140}' "$all" 2>/dev/null | sed 's/[[:space:]]\+/ /g' | sort -u | grep -Ei 'Manrope|Inter|Poppins|Roboto' | head -5 | tr '\n' '|' || true)"
+            echo "ROUTE=$route HTTP=$code MANROPE=$m INTER=$i POPPINS=$p ROBOTO=$r INLINE_FONT=$inline FAMILIES=${fam:-none}"
+          done
+
+          echo '=== NGINX_LIVE_SPECIALS ==='
+          grep -nE 'location = /masterclass/(ai-video|claude/free)|proxy_pass http://127\.0\.0\.1:(3930|3940|3971|3955)' /etc/nginx/sites-enabled/sikhadenge.in-ssl | head -60 || true
+          echo '=== END_READ_ONLY ==='
+          REMOTE
