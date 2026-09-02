@@ -88,7 +88,8 @@ jobs:
 
           echo '===== 2. FRESH ROLLBACK BACKUP ====='
           TS="$(date +%Y%m%d-%H%M%S)"
-          BK="/var/backups/sikhadenge/page1-restore-v67-${TS}"
+          TAG="v67-restore-${TS}"
+          BK="/var/backups/sikhadenge/page1-restore-v67-final-${TS}"
           mkdir -p "$BK"
           cp -a "$PAGE1" "$BK/registration-v2-page1.js.before"
           cp -a "$SNIPPET" "$BK/sikhadenge-registration-v2-hot.conf.before"
@@ -116,32 +117,33 @@ jobs:
           test "$RESTORED_SHA" = "$EXPECT_CAND_SHA"
 
           echo '===== 4. CACHE-BUST ONLY ====='
-          export SNIPPET TS
+          export SNIPPET TAG
           python3 <<'PY'
           from pathlib import Path
           import os,re
           p=Path(os.environ['SNIPPET'])
           s=p.read_text(encoding='utf-8')
-          replacement=f'/registration-v2-page1.js?v=v67-restore-{os.environ["TS"]}'
+          replacement=f'/registration-v2-page1.js?v={os.environ["TAG"]}'
           s2,n=re.subn(r'/registration-v2-page1\.js(?:\?v=[^"\x27< ]+)?', replacement, s, count=1)
           if n != 1:
               raise SystemExit(f'cache-bust replacement count={n}')
           p.write_text(s2,encoding='utf-8')
           print('cache_bust=',replacement)
           PY
+          grep -Fq "/registration-v2-page1.js?v=${TAG}" "$SNIPPET"
           nginx -t
           systemctl reload nginx
           echo 'nginx_reload=PASS'
 
           echo '===== 5. PUBLIC ASSET SHA ====='
           PUB="/tmp/registration-v2-page1-public-${TS}.js"
-          curl -L --compressed -fsS "https://sikhadenge.in/registration-v2-page1.js?v=v67-restore-${TS}" -o "$PUB"
+          curl -L --compressed -fsS "https://sikhadenge.in/registration-v2-page1.js?v=${TAG}" -o "$PUB"
           node --check "$PUB" >/dev/null
           PUB_SHA="$(sha256sum "$PUB" | awk '{print $1}')"
           echo "public_sha=$PUB_SHA"
           test "$PUB_SHA" = "$EXPECT_CAND_SHA"
 
-          echo '===== 6. BOTH FUNNELS + API ====='
+          echo '===== 6. BOTH FUNNELS ====='
           for u in \
             "https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&restore=${TS}" \
             "https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&restore=${TS}" \
@@ -149,17 +151,20 @@ jobs:
               code="$(curl -L --compressed -sS -o /tmp/sd-page.html -w '%{http_code}' "$u")"
               echo "$code $u"
               test "$code" = '200'
-              grep -Fq "v67-restore-${TS}" /tmp/sd-page.html
             done
+
+          echo '===== 7. SOCIAL PROOF API ====='
           API="$(curl -L --compressed -fsS "https://sikhadenge.in/api/social-proof/live?restore=${TS}")"
           echo "social_proof=$API"
           printf '%s' "$API" | grep -Fq '"ok":true'
 
-          echo '===== 7. HOT/BACKEND PRESERVATION ====='
+          echo '===== 8. PRESERVATION ====='
           HOT_AFTER="$(sha256sum "$HOT" | awk '{print $1}')"
           echo "hot_after_sha=$HOT_AFTER"
           test "$HOT_AFTER" = "$EXPECT_HOT_SHA"
+          echo -n 'snippet_tag='; grep -o "registration-v2-page1.js?v=${TAG}" "$SNIPPET" | head -1
           echo 'RESULT=PAGE1_V67_20260901_233020_RESTORED'
           echo "BACKUP=$BK"
+          echo "TAG=$TAG"
           trap - EXIT
           REMOTE
