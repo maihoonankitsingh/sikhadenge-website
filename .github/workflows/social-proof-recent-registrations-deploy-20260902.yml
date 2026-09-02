@@ -1,0 +1,92 @@
+name: Social Proof Recent Registrations Deploy
+
+on:
+  push:
+    paths:
+      - .github/workflows/social-proof-recent-registrations-deploy-20260902.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Patch widget only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          KEY="$HOME/.ssh/prod"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          FILE="/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js"
+          test -f "$FILE"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="${FILE}.recent-registrations-backup-${TS}"
+          cp -a "$FILE" "$BACKUP"
+
+          rollback() {
+            set +e
+            cp -a "$BACKUP" "$FILE"
+          }
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then rollback; fi; exit "$rc"' EXIT
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js')
+          s=p.read_text(encoding='utf-8')
+
+          changes=[
+            ('joined in last 24 hours','recent registrations','label'),
+            ('fmt(data.recent24h)','fmt(data.recent30d)','metric'),
+          ]
+
+          for old,new,label in changes:
+              n=s.count(old)
+              if n != 1:
+                  raise SystemExit(f'{label} count={n}')
+              s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+
+          node --check "$FILE"
+          grep -Fq 'recent registrations' "$FILE"
+          grep -Fq 'fmt(data.recent30d)' "$FILE"
+          echo "BACKUP=$BACKUP"
+          echo 'RESULT=RECENT_REGISTRATIONS_30D_LIVE'
+          trap - EXIT
+          REMOTE
+
+      - name: Verify public widget and API
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          TMP="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&label=recent-registrations' -o "$TMP"
+          grep -Fq 'recent registrations' "$TMP"
+          grep -Fq 'fmt(data.recent30d)' "$TMP"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?label=recent-registrations' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent30d"),int); print("recent30d=",d["recent30d"])'
+          echo 'PUBLIC_RECENT_REGISTRATIONS=PASS'
