@@ -1,0 +1,121 @@
+name: Sitewide Manrope Font Audit 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-manrope-font-audit-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Audit production font architecture read only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+
+          echo '===== MAIN RUNTIME ====='
+          pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{for(const x of JSON.parse(s)){if(/sikhadenge/i.test(x.name||"")){console.log(JSON.stringify({name:x.name,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,script:x.pm2_env?.pm_exec_path,args:x.pm2_env?.args}))}}})' | head -80 || true
+
+          echo '===== NGINX ROUTE UPSTREAMS ====='
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          grep -nE 'location .*masterclass|location / \{|proxy_pass http://127\.0\.0\.1:' "$NG" | head -220 || true
+
+          echo '===== SOURCE FONT REFERENCES ====='
+          roots=(
+            /var/www/sikhadenge.in/sikhadenge-website-space
+            /var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916
+            /var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420
+            /var/www/sikhadenge.in/candidates/claude-ai-shift-research-v2-20260901-213954
+          )
+          for root in "${roots[@]}"; do
+            [ -d "$root" ] || continue
+            echo "--- ROOT $root ---"
+            if [ -d "$root/.git" ]; then
+              git -C "$root" status --short --branch 2>/dev/null | head -30 || true
+              git -C "$root" rev-parse HEAD 2>/dev/null || true
+            fi
+            find "$root" -maxdepth 7 -type f \
+              \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' -o -name '*.css' \) \
+              -not -path '*/node_modules/*' -not -path '*/.next/*' -print0 2>/dev/null \
+              | xargs -0 grep -nEi 'next/font/google|font-family|fontFamily|Manrope|Inter|Poppins|Roboto' 2>/dev/null \
+              | head -260 || true
+            echo '--- BUILT CSS FONT TOKENS ---'
+            if [ -d "$root/.next/static/css" ]; then
+              grep -RhoEi 'font-family:[^;}]{0,180}|font-family:[^;]{0,180}' "$root/.next/static/css" 2>/dev/null \
+                | sed 's/[[:space:]]\+/ /g' | sort -u | head -100 || true
+            fi
+          done
+
+          echo '===== LIVE ROUTE FONT TOKENS ====='
+          routes=(
+            '/'
+            '/about-us'
+            '/courses'
+            '/contact'
+            '/blog'
+            '/reviews'
+            '/masterclass/ai-video'
+            '/masterclass/claude/free'
+            '/gen-ai-masterclass/register-one-step'
+            '/privacy-policy'
+            '/terms'
+          )
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          n=0
+          for route in "${routes[@]}"; do
+            n=$((n+1))
+            html="$tmp/$n.html"
+            echo "--- ROUTE $route ---"
+            code="$(curl -L --compressed -ksS -o "$html" -w '%{http_code}' "https://sikhadenge.in$route" || true)"
+            echo "HTTP=$code bytes=$(wc -c < "$html" 2>/dev/null || echo 0)"
+            grep -oE 'href="[^"]+\.css[^\"]*"' "$html" 2>/dev/null | sed -E 's/^href="|"$//g' | sort -u | head -30 > "$tmp/csslist" || true
+            if [ ! -s "$tmp/csslist" ]; then echo 'CSS_LINKS=none'; fi
+            while IFS= read -r href; do
+              [ -n "$href" ] || continue
+              case "$href" in
+                http*) url="$href" ;;
+                *) url="https://sikhadenge.in$href" ;;
+              esac
+              css="$tmp/css-$n-$(printf '%s' "$href" | sha256sum | cut -c1-8).txt"
+              curl -L --compressed -ksS "$url" -o "$css" || continue
+              echo "CSS=$href"
+              grep -oEi 'font-family:[^;}]{0,180}|font-family:[^;]{0,180}|font-weight:[0-9]{3}|Manrope|Inter|Poppins|Roboto' "$css" 2>/dev/null \
+                | sed 's/[[:space:]]\+/ /g' | sort -u | head -80 || true
+            done < "$tmp/csslist"
+          done
+
+          echo '===== AUDIT COMPLETE: NO PRODUCTION FILES MODIFIED ====='
+          REMOTE
