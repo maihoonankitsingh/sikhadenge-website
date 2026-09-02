@@ -37,33 +37,16 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Read live Claude heading assets and prior backups only
+      - name: Inspect heading selection logic only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
-          echo '===== CLAUDE ROUTE SCRIPT REFERENCES ====='
-          curl -ksS 'https://sikhadenge.in/masterclass/claude/free?v=heading-inspect-20260903' | grep -oE '<script[^>]+src="[^"]+"' | sed -E 's/.*src="([^"]+)"/\1/' | tail -30 || true
-
-          echo '===== FIND CURRENT HEADING ASSET ====='
-          find /var/www /opt /root -type f -name 'sikhadenge-heading-claude-v308r-20260830-174053.js' -print 2>/dev/null | head -20 | while read -r f; do
-            echo "--- FILE $f ---"
-            sed -n '1,320p' "$f"
-          done
-
-          echo '===== PRIOR HEADING BACKUP V307 ====='
-          for f in \
-            /var/backups/sikhadenge/heading-v307-20260830-163351/heading-js.before \
-            /var/backups/sikhadenge/heading-v307b-20260830-164049/heading.before \
-            /var/backups/sikhadenge/restore-new-headings-20260829-190439/heading.js; do
-            if [ -f "$f" ]; then
-              echo "--- BACKUP $f ---"
-              sed -n '1,260p' "$f"
-            fi
-          done
-
-          echo '===== NGINX ALIASES CONTAINING HEADING ====='
-          grep -nEi 'heading|v308r|174053' "$NG" | head -100 || true
+          F=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/sikhadenge-heading-claude-v308r-20260830-174053.js
+          test -f "$F"
+          echo '===== MATCH LOCATIONS ====='
+          grep -nE 'querySelectorAll|phrases\[|forEach|sd-heading-v11|addStyle|DOMContentLoaded' "$F" | tail -100
+          echo '===== BOTTOM LOGIC ====='
+          tail -220 "$F"
           REMOTE
