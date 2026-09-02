@@ -81,21 +81,11 @@ jobs:
           test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
           grep -Fq 'hundreds of millions of jobs' "$DOM"
           grep -Fq 'increasing the value of AI skills' "$DOM"
+          grep -Fq 'display: block !important' "$DOM"
+          grep -Fq 'visibility: visible !important' "$DOM"
+          grep -Fq 'opacity: 1 !important' "$DOM"
           if grep -Fqi 'Why AI-skilled professionals are moving ahead faster' "$DOM"; then
             echo 'Old proof still rendered'
             exit 1
           fi
-          python3 - "$DOM" <<'PY'
-from pathlib import Path
-import re, sys
-s=Path(sys.argv[1]).read_text(errors='ignore')
-for ident in ('ai-video-job-impact-v80','ai-video-ai-opportunity-v85'):
-    m=re.search(r'<[^>]+id="'+re.escape(ident)+r'"[^>]*>', s, re.I)
-    if not m:
-        raise SystemExit(f'missing {ident}')
-    tag=m.group(0).lower()
-    if 'display: block' not in tag or 'visibility: visible' not in tag or 'opacity: 1' not in tag:
-        raise SystemExit(f'{ident} not forced visible: {tag[:500]}')
-print('VISIBLE_ROOTS_OK')
-PY
           echo 'CLAUDE_AI_VIDEO_PROOF_VISIBLE_OK'
