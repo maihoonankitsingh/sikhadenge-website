@@ -57,27 +57,16 @@ jobs:
           echo '===== FILES CONTAINING EXACT AI VIDEO PROOF MARKERS ====='
           for root in /etc/nginx /var/www/sikhadenge.in /opt; do
             [[ -d "$root" ]] || continue
-            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
-              -E 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M|30 Crore|40 Crore|9\.2 Crore' "$root" 2>/dev/null | head -180 || true
+            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M|30 Crore|40 Crore|9\.2 Crore' "$root" 2>/dev/null | head -180 || true
           done
           echo '===== FILE CONTEXT FOR AI VIDEO PROOF MARKERS ====='
-          mapfile -t files < <(for root in /etc/nginx /var/www/sikhadenge.in /opt; do [[ -d "$root" ]] || continue; grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M' "$root" 2>/dev/null; done | awk '!seen[$0]++' | head -12)
-          for f in "${files[@]:-}"; do
+          for f in $(for root in /etc/nginx /var/www/sikhadenge.in /opt; do [[ -d "$root" ]] || continue; grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M' "$root" 2>/dev/null; done | awk '!seen[$0]++' | head -12); do
             [[ -f "$f" ]] || continue
             echo "--- $f ---"
             grep -nE -C 8 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M|30 Crore|40 Crore|9\.2 Crore' "$f" 2>/dev/null | head -220 || true
           done
           echo '===== AI VIDEO SECTION HTML EXTRACT ====='
-          python3 - <<'PY'
-from pathlib import Path
-s=Path('/tmp/ai-video-proof-source.html').read_text(errors='ignore')
-markers=['AI &amp; automation are reshaping','AI & automation are reshaping','hundreds of millions of jobs']
-pos=next((s.find(m) for m in markers if s.find(m)>=0), -1)
-print('marker_pos=',pos,'html_bytes=',len(s))
-if pos>=0:
-    a=max(0,pos-5000); b=min(len(s),pos+30000)
-    print(s[a:b])
-PY
+          python3 -c "from pathlib import Path; s=Path('/tmp/ai-video-proof-source.html').read_text(errors='ignore'); p=max(s.find('AI &amp; automation are reshaping'),s.find('AI & automation are reshaping'),s.find('hundreds of millions of jobs')); print('marker_pos=',p,'html_bytes=',len(s)); print(s[max(0,p-5000):min(len(s),p+30000)] if p>=0 else '')"
           echo '===== PROCESS / LISTENER SNAPSHOT ====='
           ps -eo user,pid,ppid,cmd --sort=pid | grep -E 'next|node|pm2|sikhadenge' | grep -v grep | tail -100 || true
           ss -ltnp | grep -E ':(3000|3001|3100|3400|3942|3971|4000|8080)\b' || true
