@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { ReactNode } from "react";
+import ClaudeAiVideoProofSection from "../../../components/ClaudeAiVideoProofSection";
 import ClaudeBonusSection from "../../../components/ClaudeBonusSection";
 import styles from "../../../styles/claude-masterclass-live.module.css";
 
@@ -123,25 +124,7 @@ function ClaudeFreeMasterclassPage() {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.soft}`} id="why">
-          <div className={styles.container}>
-            <div className={styles.head}><span className={styles.eyebrow}>WHY CLAUDE FOR PROFESSIONAL WORK?</span><h2>Move from quick answers to structured, reviewable work.</h2><p>Claude becomes more useful when you give it context, define the output and use it inside a repeatable workflow.</p></div>
-            <div className={styles.storyStack}>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>01</span><h3>Work through long information without losing the thread</h3><p>Organize PDFs, notes and source material into summaries, questions, evidence and action points you can actually review.</p></div>
-                <div className={styles.mock}><div className={styles.mockTop}><span>Research brief</span><span>3 sources</span></div><div className={styles.docs}><div><small>PDF</small><strong>Market research</strong><span>42 pages</span></div><div><small>DOC</small><strong>Customer notes</strong><span>18 pages</span></div><div><small>WEB</small><strong>Industry signals</strong><span>12 sources</span></div></div></div>
-              </article>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>02</span><h3>Turn analysis into clearer decisions</h3><p>Compare options, identify patterns, surface risks and transform unstructured information into a decision-ready working brief.</p></div>
-                <div className={styles.mock}><div className={styles.mockTop}><span>Decision analysis</span><span>Ready</span></div><div className={styles.bars}><i /><i /><i /><i /><i /><i /></div></div>
-              </article>
-              <article className={styles.story}>
-                <div><span className={styles.storyNum}>03</span><h3>Build reusable systems instead of restarting every chat</h3><p>Create repeatable project context and working structures so recurring tasks become faster and more consistent over time.</p></div>
-                <div className={`${styles.mock} ${styles.flow}`}><div><span>01</span><strong>Upload context</strong></div><i>→</i><div><span>02</span><strong>Synthesize</strong></div><i>→</i><div><span>03</span><strong>Ship output</strong></div></div>
-              </article>
-            </div>
-          </div>
-        </section>
+        <ClaudeAiVideoProofSection registerHref={registerHref} />
 
         <section className={styles.section} id="agenda">
           <div className={styles.container}>
