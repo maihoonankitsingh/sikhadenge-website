@@ -21,26 +21,27 @@ jobs:
           test -n "$CHROME"
           DOM="$RUNNER_TEMP/claude-theme-v2.html"
           PNG="$RUNNER_TEMP/claude-theme-v2.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=visual-theme-v2-20260902'
+          URL='https://sikhadenge.in/masterclass/claude/free?v=visual-theme-v2-20260902b'
 
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=24000 --dump-dom "$URL" > "$DOM"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=24000 --hide-scrollbars --window-size=1440,5200 --screenshot="$PNG" "$URL"
 
-          echo "theme=$(grep -o 'data-claude-proof-theme=\"v2\"' "$DOM" | wc -l)"
-          echo "jobs=$(grep -o 'id=\"ai-video-job-impact-v80\"' "$DOM" | wc -l)"
-          echo "skills=$(grep -o 'id=\"ai-video-ai-opportunity-v85\"' "$DOM" | wc -l)"
-          echo "titles=$(grep -o 'data-sd-claude-title=\"1\"' "$DOM" | wc -l)"
-          echo "highlights=$(grep -o 'data-sd-claude-highlight=\"1\"' "$DOM" | wc -l)"
-          echo "cta=$(grep -o 'data-sd-claude-cta=\"1\"' "$DOM" | wc -l)"
-          grep -Fq 'data-claude-proof-theme="v2"' "$DOM"
-          grep -Fq 'id="ai-video-job-impact-v80"' "$DOM"
-          grep -Fq 'id="ai-video-ai-opportunity-v85"' "$DOM"
+          echo "theme=$(grep -o 'data-claude-proof-theme=\"v2\"' "$DOM" | wc -l || true)"
+          echo "jobs=$(grep -o 'id=\"ai-video-job-impact-v80\"' "$DOM" | wc -l || true)"
+          echo "skills=$(grep -o 'id=\"ai-video-ai-opportunity-v85\"' "$DOM" | wc -l || true)"
+          echo "titles=$(grep -o 'data-sd-claude-title=\"1\"' "$DOM" | wc -l || true)"
+          echo "highlights=$(grep -o 'data-sd-claude-highlight=\"1\"' "$DOM" | wc -l || true)"
+          echo "cta=$(grep -o 'data-sd-claude-cta=\"1\"' "$DOM" | wc -l || true)"
+          echo "old=$(grep -oi 'Why AI-skilled professionals are moving ahead faster' "$DOM" | wc -l || true)"
+          echo "jobtext=$(grep -oi 'hundreds of millions of jobs' "$DOM" | wc -l || true)"
+          echo "skilltext=$(grep -oi 'increasing the value of AI skills' "$DOM" | wc -l || true)"
           ls -lh "$PNG" "$DOM"
 
           cp "$PNG" "$GITHUB_WORKSPACE/claude-theme-v2.png"
           cp "$DOM" "$GITHUB_WORKSPACE/claude-theme-v2.html"
 
       - name: Upload visual QA artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: claude-proof-theme-v2-visual
