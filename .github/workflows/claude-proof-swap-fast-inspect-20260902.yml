@@ -34,22 +34,32 @@ jobs:
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Fast source inspection
+      - name: Extract exact AI Video proof runtime source
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '===== ACTIVE NGINX CLAUDE BLOCK ====='
-          sed -n '30,90p' /etc/nginx/sites-enabled/sikhadenge.in-ssl
-          echo '===== INCLUDED ACTIVE ASSET FILES ====='
-          grep -nE 'include .*claude|include .*ai-video' /etc/nginx/sites-enabled/sikhadenge.in-ssl || true
-          for f in /etc/nginx/snippets/*claude* /etc/nginx/snippets/*ai-video* /etc/nginx/conf.d/*claude* /etc/nginx/conf.d/*ai-video*; do [[ -f "$f" ]] || continue; echo "--- $f ---"; sed -n '1,280p' "$f"; done
-          echo '===== AI VIDEO LIVE SECTION TEXT ====='
-          curl -fsS --max-time 20 https://sikhadenge.in/masterclass/ai-video -o /tmp/aiv.html
-          python3 -c "from pathlib import Path; s=Path('/tmp/aiv.html').read_text(errors='ignore'); ms=['AI &amp; automation are reshaping','AI & automation are reshaping','hundreds of millions of jobs']; ps=[s.find(m) for m in ms if s.find(m)>=0]; p=min(ps) if ps else -1; print('POS',p,'LEN',len(s)); print(s[max(0,p-3000):min(len(s),p+26000)] if p>=0 else s[:3000])"
-          echo '===== LIKELY AI VIDEO SOURCE FILES ====='
-          find /var/www/sikhadenge.in -maxdepth 5 -type f \( -name '*.tsx' -o -name '*.js' -o -name '*.html' \) -newermt '2026-08-30' -print0 2>/dev/null | xargs -0 -r grep -Il -E 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M' 2>/dev/null | head -40 || true
-          echo '===== LIKELY CLAUDE CURRENT SOURCE FILES ====='
-          find /var/www/sikhadenge.in -maxdepth 5 -type f \( -name 'free.tsx' -o -name '*.js' \) -newermt '2026-08-30' -print0 2>/dev/null | xargs -0 -r grep -Il -E 'THE AI SHIFT|moving ahead faster' 2>/dev/null | head -40 || true
+          F=/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/public/ai-video-icons-hotfix.js
+          test -f "$F"
+          echo '===== FILE META ====='
+          wc -lc "$F"
+          sha256sum "$F"
+          echo '===== MARKER LINES ====='
+          grep -nE 'hundreds of millions of jobs|increasing the value of AI skills|10\.35M|30 Crore|40 Crore|9\.2 Crore|AI_VIDEO.*JOB|AI_VIDEO.*SKILL|ai-v80|ai-v85' "$F" | head -180 || true
+          echo '===== SECTION AROUND JOBS MARKER ====='
+          L=$(grep -n -m1 'hundreds of millions of jobs' "$F" | cut -d: -f1 || true)
+          if [[ "$L" =~ ^[0-9]+$ ]]; then A=$((L-220)); ((A<1)) && A=1; B=$((L+360)); sed -n "${A},${B}p" "$F"; fi
+          echo '===== SECTION AROUND SKILLS MARKER ====='
+          L=$(grep -n -m1 'increasing the value of AI skills' "$F" | cut -d: -f1 || true)
+          if [[ "$L" =~ ^[0-9]+$ ]]; then A=$((L-220)); ((A<1)) && A=1; B=$((L+360)); sed -n "${A},${B}p" "$F"; fi
+          echo '===== EXACT CLAUDE CURRENT AI SHIFT SOURCE ON 3930 ====='
+          ps -eo pid,cmd | grep -E '3930|claude' | grep -v grep | head -80 || true
+          for d in /var/www/sikhadenge.in/candidates/* /var/www/sikhadenge.in/preview-builds/* /var/www/sikhadenge.in/releases/*; do
+            [[ -d "$d" ]] || continue
+            if grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'Why AI-skilled professionals are|moving ahead faster' "$d" 2>/dev/null | head -1 | grep -q .; then
+              echo "--- MATCH ROOT $d ---"
+              grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'Why AI-skilled professionals are|moving ahead faster' "$d" 2>/dev/null | head -12
+            fi
+          done | tail -120
           REMOTE
