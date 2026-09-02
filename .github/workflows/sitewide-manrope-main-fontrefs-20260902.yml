@@ -1,0 +1,59 @@
+name: Sitewide Manrope Main Fontrefs 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-manrope-main-fontrefs-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Audit exact font refs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          echo 'MAIN_FONTREFS_BEGIN'
+          echo "MANROPE_ASSET_MAIN=$(test -f "$ROOT/public/fonts/Manrope-Variable.ttf" && echo yes || echo no)"
+          echo "MANROPE_ASSET_3930=$(test -f /var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/fonts/Manrope-Variable.ttf && echo yes || echo no)"
+          echo 'LAYOUT:'
+          grep -nEi 'next/font|localFont|Manrope|Inter|font-' "$ROOT/app/layout.tsx" 2>/dev/null | head -30 || true
+          echo 'GLOBAL_CSS_FONT_LINES:'
+          grep -nEi 'font-family|--font-|Manrope|Inter|Bricolage|Poppins|Roboto' "$ROOT/app/globals.css" 2>/dev/null | head -100 || true
+          echo 'ALL_EXPLICIT_NON_MANROPE_SOURCE_REFS:'
+          find "$ROOT" -type f \( -name '*.css' -o -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' -print0 \
+            | xargs -0 grep -IlEi 'font-family[^;]*(Inter|Bricolage|Poppins|Roboto|Arial|Helvetica)|\b(Inter|Bricolage|Poppins|Roboto)\([^)]*\)|from ["'"']next/font/google["'"']' 2>/dev/null \
+            | sed "s#^$ROOT/##" | sort | head -120 || true
+          echo 'REGISTRATION_FONT_REFS:'
+          REG=/var/www/sikhadenge.in/registration-v2-hot-20260831-145106
+          if [ -d "$REG" ]; then
+            grep -RniEi 'font-family[^;]*(Inter|Bricolage|Poppins|Roboto|Arial|Helvetica)|Manrope' "$REG" --include='*.css' --include='*.js' 2>/dev/null | head -80 || true
+          fi
+          echo 'MAIN_FONTREFS_END READ_ONLY=1'
+          REMOTE
