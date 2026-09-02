@@ -82,6 +82,12 @@ jobs:
             'qa-local-init'
           )
 
+          once(
+            '  grep -Fq "/sitewide-live-proof-v1.js?v=${TAG}" "$out"',
+            '  grep -Fq "/api/social-proof/live?widget=1&amp;v=${TAG}" "$out"',
+            'qa-widget-path'
+          )
+
           # Remove the new static asset location entirely; existing /api/social-proof/live remains the only transport.
           start_token="asset_block = f'''"
           end_token="s = s.replace(anchor, anchor + asset_block, 1)"
@@ -106,6 +112,7 @@ jobs:
           grep -Fq '/api/social-proof/live?widget=1' /tmp/sitewide-live-proof-v1-r6.sh
           grep -Fq 'url.searchParams.get("widget") === "1"' /tmp/sitewide-live-proof-v1-r6.sh
           grep -Fq 'local out="/tmp/sd-proof-${label}-${TS}.html"' /tmp/sitewide-live-proof-v1-r6.sh
+          grep -Fq 'grep -Fq "/api/social-proof/live?widget=1&amp;v=${TAG}" "$out"' /tmp/sitewide-live-proof-v1-r6.sh
           if grep -Fq 'anchor + asset_block' /tmp/sitewide-live-proof-v1-r6.sh; then exit 1; fi
           if grep -Fq 'location = /sitewide-live-proof-v1.js' /tmp/sitewide-live-proof-v1-r6.sh; then exit 1; fi
 
