@@ -1,0 +1,120 @@
+name: Fix Claude Old Heading V11 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-claude-old-heading-v11-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Restore old V11 heading engine for current Claude structure
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          F=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/sikhadenge-heading-claude-v308r-20260830-174053.js
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-old-heading-v11-restore-$TS"
+          test -f "$F"
+          mkdir -p "$BACKUP"
+          cp "$F" "$BACKUP/sikhadenge-heading-claude-v308r.before.js"
+
+          python3 - "$F" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+
+          old_heading='      "Why AI-skilled professionals are moving ahead faster.",\n'
+          if s.count(old_heading) != 1:
+              raise SystemExit(f'expected old heading occurrence=1, got {s.count(old_heading)}')
+
+          phrase_re=re.compile(r'''\n\s*\[\n\s*"professionals work\.",\n\s*"professionals work",\n\s*"moving ahead faster\.",\n\s*"moving ahead faster"\n\s*\],''')
+          matches=list(phrase_re.finditer(s))
+          if len(matches) != 1:
+              raise SystemExit(f'expected old phrase block occurrence=1, got {len(matches)}')
+
+          s=s.replace(old_heading,'',1)
+          s=phrase_re.sub('',s,count=1)
+          marker='SIKHADENGE_CLAUDE_V11_CURRENT_PROOF_COMPAT_20260903'
+          if marker not in s:
+              s=s.replace('SIKHADENGE_HEADING_V11', 'SIKHADENGE_HEADING_V11\n  '+marker, 1)
+          p.write_text(s)
+          PY
+
+          grep -Fq 'SIKHADENGE_CLAUDE_V11_CURRENT_PROOF_COMPAT_20260903' "$F"
+          if grep -Fq 'Why AI-skilled professionals are moving ahead faster.' "$F"; then
+            echo 'Old removed proof heading still present in V11 expected list'
+            cp "$BACKUP/sikhadenge-heading-claude-v308r.before.js" "$F"
+            exit 1
+          fi
+          grep -Fq 'Your first step into practical AI mastery.' "$F"
+          grep -Fq 'A complete practical starting kit for modern AI work.' "$F"
+          grep -Fq 'Trusted checkout experience' "$F"
+
+          echo "BACKUP=$BACKUP"
+          echo 'OLD_V11_ENGINE_PATCHED_FOR_CURRENT_STRUCTURE'
+          REMOTE
+
+      - name: Verify old heading style restored in rendered Claude page
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-old-heading-v11.html"
+          PNG="$RUNNER_TEMP/claude-old-heading-v11.png"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=old-heading-v11-restored-20260903'
+
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
+
+          echo "v11_h2=$(grep -o 'class=\"[^\"]*sd-heading-v11[^\"]*\"' "$DOM" | wc -l || true)"
+          echo "v11_highlight=$(grep -o 'sd-heading-v11-highlight' "$DOM" | wc -l || true)"
+          echo "proof_jobs=$(grep -o 'id=\"ai-video-job-impact-v80\"' "$DOM" | wc -l || true)"
+          echo "proof_skills=$(grep -o 'id=\"ai-video-ai-opportunity-v85\"' "$DOM" | wc -l || true)"
+
+          test "$(grep -o 'class=\"[^\"]*sd-heading-v11[^\"]*\"' "$DOM" | wc -l)" -ge 14
+          test "$(grep -o 'sd-heading-v11-highlight' "$DOM" | wc -l)" -ge 14
+          test "$(grep -o 'id=\"ai-video-job-impact-v80\"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id=\"ai-video-ai-opportunity-v85\"' "$DOM" | wc -l)" -eq 1
+          grep -Fq 'Your first step into <span class="sd-heading-v11-highlight">AI mastery.</span>' "$DOM"
+          grep -Fq 'A complete practical starting kit for <span class="sd-heading-v11-highlight">modern AI work.</span>' "$DOM"
+          grep -Fq 'Connect the <span class="sd-heading-v11-highlight">right AI tool</span> to the work you already do.' "$DOM"
+          grep -Fq 'Frequently <span class="sd-heading-v11-highlight">asked questions.</span>' "$DOM"
+          grep -Fq 'Trusted <span class="sd-heading-v11-highlight">checkout experience</span>' "$DOM"
+          if grep -Fq 'Why AI-skilled professionals are moving ahead faster.' "$DOM"; then exit 1; fi
+          test -s "$PNG"
+          echo 'CLAUDE_OLD_HEADING_V11_RESTORED_OK'
