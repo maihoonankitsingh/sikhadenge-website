@@ -1,0 +1,99 @@
+name: Sitewide Live Proof Compact V3
+
+on:
+  push:
+    paths:
+      - .github/workflows/sitewide-live-proof-compact-v3-20260902.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Compact widget only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          KEY="$HOME/.ssh/prod"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          FILE="/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js"
+          test -f "$FILE"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="${FILE}.compact-v3-backup-${TS}"
+          cp -a "$FILE" "$BACKUP"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js')
+          s=p.read_text(encoding='utf-8')
+
+          reps=[
+            ('          width:352px;','          width:320px;','width'),
+            ('          min-height:94px;','          min-height:84px;','height'),
+            ('          column-gap:11px;','          column-gap:9px;','gap'),
+            ('          padding:14px 15px;','          padding:11px 13px;','padding'),
+            ('          border-radius:22px;','          border-radius:19px;','radius'),
+            ('          font-size:10.5px;\n          line-height:14px;\n          font-weight:800;\n          letter-spacing:.12em;','          font-size:10px;\n          line-height:13px;\n          font-weight:800;\n          letter-spacing:.11em;','title-size'),
+            ('          padding:6px 10px;','          padding:5px 9px;','live-pad'),
+            ('          font-size:28px;\n          line-height:30px;','          font-size:25px;\n          line-height:27px;','number-size'),
+            ('          font-size:11px;\n          line-height:14px;\n          font-weight:600;','          font-size:10.5px;\n          line-height:13px;\n          font-weight:600;','desc-size'),
+            ('          top:108px;','          top:96px;','toast-top'),
+            ('          .card{border-radius:18px;padding:12px 13px;min-height:88px}','          .card{border-radius:17px;padding:10px 11px;min-height:80px}','mobile-card'),
+            ('          .number{font-size:24px;line-height:27px}','          .number{font-size:22px;line-height:25px}','mobile-number'),
+            ('          .desc{font-size:10.5px}','          .desc{font-size:10px}','mobile-desc'),
+            ('          .toast{top:101px}','          .toast{top:92px}','mobile-toast'),
+          ]
+
+          for old,new,label in reps:
+              n=s.count(old)
+              if n != 1:
+                  raise SystemExit(f'{label} count={n}')
+              s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+
+          node --check "$FILE"
+          grep -Fq 'width:320px;' "$FILE"
+          grep -Fq 'min-height:84px;' "$FILE"
+          grep -Fq 'font-size:25px;' "$FILE"
+          grep -Fq 'top:96px;' "$FILE"
+          echo "BACKUP=$BACKUP"
+          echo 'RESULT=COMPACT_V3_UPDATED'
+          REMOTE
+
+      - name: Verify public widget
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          TMP="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&compact=v3' -o "$TMP"
+          grep -Fq 'width:320px;' "$TMP"
+          grep -Fq 'font-size:25px;' "$TMP"
+          grep -Fq 'top:96px;' "$TMP"
+          echo 'PUBLIC_COMPACT_V3=PASS'
