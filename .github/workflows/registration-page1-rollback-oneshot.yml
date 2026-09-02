@@ -1,0 +1,91 @@
+name: Registration Page1 Rollback One-Shot
+
+on:
+  push:
+    paths:
+      - .github/workflows/registration-page1-rollback-oneshot.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  forensic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
+
+      - name: Read-only Page1 forensic
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          KEY="$HOME/.ssh/prod"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          SNIPPET="/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf"
+          CAND="/var/backups/sikhadenge/page1-canonical-v18-20260902-105305/page1.before"
+          PAGE1="$(awk '/location = \/registration-v2-page1\.js/ {f=1} f && /alias / {gsub(";", "", $2); print $2; exit}' "$SNIPPET")"
+          echo "===== LIVE ====="
+          echo "PAGE1=$PAGE1"
+          stat -c 'mtime=%y size=%s' "$PAGE1"
+          sha256sum "$PAGE1"
+          node --check "$PAGE1" >/dev/null && echo 'LIVE_JS_SYNTAX=OK'
+          echo "===== NGINX INJECTION ====="
+          grep -nE 'registration-v2-(hot|page1)\.js|registration-mobile-prepaint' "$SNIPPET" || true
+          echo "===== REQUESTED WINDOW FILES ====="
+          find /var/backups/sikhadenge -type f \
+            -newermt '2026-09-01 22:00:00' ! -newermt '2026-09-02 10:00:00' \
+            \( -name 'page1.before' -o -name 'registration-v2-page1.js.before' -o -name 'registration-v2-page1.js' \) \
+            -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' | sort || true
+          echo "===== PRE-V18 SNAPSHOT ====="
+          test -f "$CAND"
+          echo "CAND=$CAND"
+          stat -c 'mtime=%y size=%s' "$CAND"
+          sha256sum "$CAND"
+          node --check "$CAND" >/dev/null && echo 'CAND_JS_SYNTAX=OK'
+          echo -n 'CANONICAL_V18_MARKER='; grep -c 'SD_CANONICAL_V18_START' "$CAND" || true
+          echo -n 'V67_TEXT='; grep -c 'V67\|v67' "$CAND" || true
+          echo -n 'STEPPER_LABELS='; grep -c 'Your Details\|About You\|Your Goal\|Bonuses\|Confirmation' "$CAND" || true
+          echo -n 'REAL_ACTIVITY='; grep -c 'SD_REAL_ACTIVITY_V10_START\|LIVE ACTIVITY' "$CAND" || true
+          echo -n 'COMMUNITY='; grep -c '5,00,000+ SikhaDenge Community' "$CAND" || true
+          echo -n 'REMOVE_SUBTITLE='; grep -c 'SD_REMOVE_PAGE1_SUBTITLE_START' "$CAND" || true
+          echo "===== PUBLIC HEALTH ====="
+          for u in \
+            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&forensic=1' \
+            'https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&forensic=1' \
+            'https://sikhadenge.in/api/social-proof/live?forensic=1'; do
+            printf '%s  ' "$u"
+            curl -L --compressed -sS -o /dev/null -w '%{http_code}\n' "$u"
+          done
+          REMOTE
