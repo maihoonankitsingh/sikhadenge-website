@@ -80,59 +80,53 @@ jobs:
           install -m 0644 "$TMP" "$ASSET"
 
           python3 - "$NG" <<'PY'
-from pathlib import Path
-import sys
-p=Path(sys.argv[1])
-s=p.read_text()
-route='location = /masterclass/claude/free {'
-start=s.find(route)
-if start < 0:
-    raise SystemExit('Claude exact route not found')
-end=s.find('\n    }', start)
-if end < 0:
-    raise SystemExit('Claude route end not found')
-end += len('\n    }')
-seg=s[start:end]
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+          route='location = /masterclass/claude/free {'
+          start=s.find(route)
+          if start < 0:
+              raise SystemExit('Claude exact route not found')
+          end=s.find('\n    }', start)
+          if end < 0:
+              raise SystemExit('Claude route end not found')
+          end += len('\n    }')
+          seg=s[start:end]
+          hide='<script src="/claude-proof-hide-old-v2.js?v=20260902-2300"></script>'
+          proof='<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
+          if hide not in seg:
+              if proof in seg:
+                  seg=seg.replace(proof, hide+proof, 1)
+              else:
+                  marker='</body>'
+                  pos=seg.find(marker)
+                  if pos < 0:
+                      raise SystemExit('No body injection anchor in Claude route')
+                  seg=seg[:pos]+hide+seg[pos:]
+          s=s[:start]+seg+s[end:]
+          asset_marker='# CLAUDE_HIDE_OLD_PROOF_V2_ASSET'
+          if asset_marker not in s:
+              insertion='''# CLAUDE_HIDE_OLD_PROOF_V2_ASSET
+          location = /claude-proof-hide-old-v2.js {
+              alias /var/www/sikhadenge.in/claude-proof-hide-old-v2.js;
+              default_type application/javascript;
+              add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+              access_log off;
+          }
+          # CLAUDE_HIDE_OLD_PROOF_V2_ASSET_END
 
-hide='<script src="/claude-proof-hide-old-v2.js?v=20260902-2300"></script>'
-proof='<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
-
-if hide not in seg:
-    if proof in seg:
-        seg=seg.replace(proof, hide+proof, 1)
-    else:
-        marker='</body>'
-        pos=seg.find(marker)
-        if pos < 0:
-            raise SystemExit('No body injection anchor in Claude route')
-        seg=seg[:pos]+hide+seg[pos:]
-
-s=s[:start]+seg+s[end:]
-
-asset_marker='# CLAUDE_HIDE_OLD_PROOF_V2_ASSET'
-if asset_marker not in s:
-    insertion='''# CLAUDE_HIDE_OLD_PROOF_V2_ASSET
-location = /claude-proof-hide-old-v2.js {
-    alias /var/www/sikhadenge.in/claude-proof-hide-old-v2.js;
-    default_type application/javascript;
-    add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-    access_log off;
-}
-# CLAUDE_HIDE_OLD_PROOF_V2_ASSET_END
-
-'''
-    anchor='# SIKHADENGE_SCANNER_GUARD_V1'
-    if anchor in s:
-        s=s.replace(anchor, insertion+anchor, 1)
-    else:
-        # place directly before the Claude exact route if the legacy anchor is absent
-        idx=s.find(route)
-        if idx < 0:
-            raise SystemExit('Could not place hide asset location')
-        s=s[:idx]+insertion+s[idx:]
-
-p.write_text(s)
-PY
+          '''
+              anchor='# SIKHADENGE_SCANNER_GUARD_V1'
+              if anchor in s:
+                  s=s.replace(anchor, insertion+anchor, 1)
+              else:
+                  idx=s.find(route)
+                  if idx < 0:
+                      raise SystemExit('Could not place hide asset location')
+                  s=s[:idx]+insertion+s[idx:]
+          p.write_text(s)
+          PY
 
           nginx -t
           systemctl reload nginx
