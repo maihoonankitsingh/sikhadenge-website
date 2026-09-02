@@ -44,104 +44,30 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Deploy immediate old-section hide guard
+      - name: Prepend immediate hide guard to live Claude proof runtime
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-
-          NG="/etc/nginx/sites-enabled/sikhadenge.in-ssl"
-          ASSET="/var/www/sikhadenge.in/claude-proof-hide-old-v2.js"
-          SOURCE="https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/864d445b52af02cad90b3b510caf5b6310a510d2/public/claude-proof-hide-old-v2.js"
+          ASSET='/var/www/sikhadenge.in/claude-proof-exact-v1.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/864d445b52af02cad90b3b510caf5b6310a510d2/public/claude-proof-hide-old-v2.js'
           TS="$(date +%Y%m%d-%H%M%S)"
-          BACKUP="/var/backups/sikhadenge/claude-hide-old-proof-v2-$TS"
-
-          test -f "$NG"
+          BACKUP="/var/backups/sikhadenge/claude-proof-fast-hide-$TS"
+          test -f "$ASSET"
           mkdir -p "$BACKUP"
-          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
-          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-proof-hide-old-v2.js.before"
-
-          rollback() {
-            set +e
-            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
-            if [[ -f "$BACKUP/claude-proof-hide-old-v2.js.before" ]]; then
-              cp "$BACKUP/claude-proof-hide-old-v2.js.before" "$ASSET"
-            else
-              rm -f "$ASSET"
-            fi
-            nginx -t && systemctl reload nginx
-          }
-          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
-
-          TMP="$(mktemp)"
-          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
-          grep -Fq "__CLAUDE_HIDE_OLD_PROOF_V2__" "$TMP"
-          install -m 0644 "$TMP" "$ASSET"
-
-          python3 - "$NG" <<'PY'
-          from pathlib import Path
-          import sys
-          p=Path(sys.argv[1])
-          s=p.read_text()
-          route='location = /masterclass/claude/free {'
-          start=s.find(route)
-          if start < 0:
-              raise SystemExit('Claude exact route not found')
-          end=s.find('\n    }', start)
-          if end < 0:
-              raise SystemExit('Claude route end not found')
-          end += len('\n    }')
-          seg=s[start:end]
-          hide='<script src="/claude-proof-hide-old-v2.js?v=20260902-2300"></script>'
-          proof='<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
-          if hide not in seg:
-              if proof in seg:
-                  seg=seg.replace(proof, hide+proof, 1)
-              else:
-                  marker='</body>'
-                  pos=seg.find(marker)
-                  if pos < 0:
-                      raise SystemExit('No body injection anchor in Claude route')
-                  seg=seg[:pos]+hide+seg[pos:]
-          s=s[:start]+seg+s[end:]
-          asset_marker='# CLAUDE_HIDE_OLD_PROOF_V2_ASSET'
-          if asset_marker not in s:
-              insertion='''# CLAUDE_HIDE_OLD_PROOF_V2_ASSET
-          location = /claude-proof-hide-old-v2.js {
-              alias /var/www/sikhadenge.in/claude-proof-hide-old-v2.js;
-              default_type application/javascript;
-              add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-              access_log off;
-          }
-          # CLAUDE_HIDE_OLD_PROOF_V2_ASSET_END
-
-          '''
-              anchor='# SIKHADENGE_SCANNER_GUARD_V1'
-              if anchor in s:
-                  s=s.replace(anchor, insertion+anchor, 1)
-              else:
-                  idx=s.find(route)
-                  if idx < 0:
-                      raise SystemExit('Could not place hide asset location')
-                  s=s[:idx]+insertion+s[idx:]
-          p.write_text(s)
-          PY
-
-          nginx -t
-          systemctl reload nginx
-          sleep 1
-
-          echo '===== VERIFY SERVER HTML ====='
-          curl -fsS --max-time 20 https://sikhadenge.in/claude-proof-hide-old-v2.js | grep -Fq '__CLAUDE_HIDE_OLD_PROOF_V2__'
-          HTML="$(mktemp)"
-          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=hide-old-proof-v2' -o "$HTML"
-          test "$(grep -o '/claude-proof-hide-old-v2.js?v=20260902-2300' "$HTML" | wc -l)" -eq 1
-          grep -Fq '/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902' "$HTML"
-          grep -Fq '/api/social-proof/live?widget=1' "$HTML"
+          cp "$ASSET" "$BACKUP/claude-proof-exact-v1.js.before"
+          if ! grep -Fq '__CLAUDE_HIDE_OLD_PROOF_V2__' "$ASSET"; then
+            HIDE="$(mktemp)"
+            NEW="$(mktemp)"
+            curl -fsSL --max-time 30 "$SOURCE" -o "$HIDE"
+            grep -Fq '__CLAUDE_HIDE_OLD_PROOF_V2__' "$HIDE"
+            cat "$HIDE" "$ASSET" > "$NEW"
+            install -m 0644 "$NEW" "$ASSET"
+          fi
+          curl -fsS --max-time 20 'https://sikhadenge.in/claude-proof-exact-v1.js?v=fast-hide-v2' | grep -Fq '__CLAUDE_HIDE_OLD_PROOF_V2__'
           echo "BACKUP=$BACKUP"
-          echo 'SERVER_INJECTION_OK'
-          trap - ERR
+          echo 'RUNTIME_FAST_HIDE_INSTALLED'
           REMOTE
 
       - name: Verify fast hide and final exact replacement in Chrome
@@ -150,20 +76,14 @@ jobs:
           set -Eeuo pipefail
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
-
           FAST="$RUNNER_TEMP/claude-fast.html"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=1500 --dump-dom \
-            'https://sikhadenge.in/masterclass/claude/free?v=hide-old-proof-v2-fast' > "$FAST"
-
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=1500 --dump-dom 'https://sikhadenge.in/masterclass/claude/free?v=fast-hide-v2' > "$FAST"
           if grep -Fqi 'Why AI-skilled professionals are moving ahead faster' "$FAST"; then
             grep -Fq 'data-claude-old-proof-hidden="1"' "$FAST"
           fi
           echo 'FAST_OLD_SECTION_NOT_VISIBLE_OK'
-
           FINAL="$RUNNER_TEMP/claude-final.html"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=20000 --dump-dom \
-            'https://sikhadenge.in/masterclass/claude/free?v=hide-old-proof-v2-final' > "$FINAL"
-
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=20000 --dump-dom 'https://sikhadenge.in/masterclass/claude/free?v=fast-hide-v2-final' > "$FINAL"
           grep -Fq 'data-claude-exact-ai-video-proof="ready"' "$FINAL"
           test "$(grep -o 'id="ai-video-job-impact-v80"' "$FINAL" | wc -l)" -eq 1
           test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$FINAL" | wc -l)" -eq 1
