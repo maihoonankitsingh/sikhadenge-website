@@ -37,7 +37,7 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
 
-      - name: Patch widget placement only
+      - name: Ensure widget placement
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -46,11 +46,14 @@ jobs:
           set -Eeuo pipefail
           FILE="/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js"
           test -f "$FILE"
-          TS="$(date +%Y%m%d-%H%M%S)"
-          BACKUP="${FILE}.placement-backup-${TS}"
-          cp -a "$FILE" "$BACKUP"
 
-          python3 - <<'PY'
+          if grep -Fq 'right:24px;' "$FILE" && grep -Fq 'bottom:24px;' "$FILE" && grep -Fq 'left:auto;' "$FILE"; then
+            echo 'PLACEMENT_ALREADY_UPDATED=PASS'
+          else
+            TS="$(date +%Y%m%d-%H%M%S)"
+            BACKUP="${FILE}.placement-backup-${TS}"
+            cp -a "$FILE" "$BACKUP"
+            python3 - <<'PY'
           from pathlib import Path
           p=Path('/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js')
           s=p.read_text(encoding='utf-8')
@@ -59,22 +62,23 @@ jobs:
           n=s.count(old)
           if n != 1:
               raise SystemExit(f'placement anchor count={n}')
-          s=s.replace(old,new,1)
-          p.write_text(s,encoding='utf-8')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
+            echo "PLACEMENT_UPDATED=PASS BACKUP=$BACKUP"
+          fi
 
           node --check "$FILE"
           grep -Fq 'right:24px;' "$FILE"
           grep -Fq 'bottom:24px;' "$FILE"
           grep -Fq 'left:auto;' "$FILE"
-
-          echo "RESULT=PLACEMENT_UPDATED"
-          echo "BACKUP=$BACKUP"
           REMOTE
 
       - name: Verify public widget endpoint
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&placement=20260902' | grep -Fq 'right:24px;'
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&placement=20260902b' -o /tmp/sitewide-widget.js
+          grep -Fq 'right:24px;' /tmp/sitewide-widget.js
+          grep -Fq 'bottom:24px;' /tmp/sitewide-widget.js
+          grep -Fq 'left:auto;' /tmp/sitewide-widget.js
           echo 'PUBLIC_WIDGET_PLACEMENT=PASS'
