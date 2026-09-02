@@ -1,0 +1,53 @@
+name: Inspect Claude Current Heading Render 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-claude-current-heading-render-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Inspect rendered heading system
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=current-heading-inspect-20260903'
+          DOM="$RUNNER_TEMP/claude-current.html"
+          PNG="$RUNNER_TEMP/claude-current.png"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=16000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=16000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
+          echo '===== HEADING SCRIPT REF ====='
+          grep -oE '/sikhadenge-heading-claude[^"< ]+' "$DOM" | head -10 || true
+          echo '===== H2 CLASSES ====='
+          python3 - "$DOM" <<'PY'
+          from pathlib import Path
+          import re,sys
+          s=Path(sys.argv[1]).read_text(errors='ignore')
+          for i,m in enumerate(re.finditer(r'<h2([^>]*)>(.*?)</h2>',s,re.S)):
+              attrs=m.group(1)
+              text=re.sub(r'<[^>]+>',' ',m.group(2))
+              text=re.sub(r'\s+',' ',text).strip()
+              print(i, text[:140], 'ATTRS=', attrs[:240])
+          PY
+          echo '===== COUNTS ====='
+          echo "v11_class=$(grep -o 'sd-heading-v11' "$DOM" | wc -l || true)"
+          echo "old_highlight=$(grep -o 'sd-heading-highlight' "$DOM" | wc -l || true)"
+          echo "proof=$(grep -o 'data-claude-proof-static=\"v4\"' "$DOM" | wc -l || true)"
+          cp "$DOM" "$GITHUB_WORKSPACE/claude-current.html"
+          cp "$PNG" "$GITHUB_WORKSPACE/claude-current.png"
+      - name: Upload current render
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-current-heading-render
+          path: |
+            claude-current.html
+            claude-current.png
+          retention-days: 1
