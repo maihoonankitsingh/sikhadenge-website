@@ -128,6 +128,10 @@
       "margin-left",
       "margin-right",
     ].forEach((prop) => node.style.removeProperty(prop));
+
+    if (node.closest("#claude-ai-video-proof-v4") || node.classList.contains("sd-proof-v4-title")) {
+      node.removeAttribute("data-sd-claude-title");
+    }
   }
 
   function buildHeading(node, text, phrase) {
@@ -181,8 +185,8 @@
   const boot = () => {
     apply();
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    [250, 700, 1400, 2600, 5000, 9000].forEach((ms) => setTimeout(apply, ms));
-    setTimeout(() => observer.disconnect(), 12000);
+    [250, 700, 1400, 2600, 5000, 9000, 15000, 22000].forEach((ms) => setTimeout(apply, ms));
+    setTimeout(() => observer.disconnect(), 26000);
   };
 
   if (document.readyState === "loading") {
