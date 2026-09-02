@@ -1,4 +1,4 @@
-name: Sitewide Manrope Main Fontrefs 20260902
+name: Sitewide Manrope Final Live QA 20260902
 
 on:
   push:
@@ -16,7 +16,7 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  audit:
+  qa:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: whatsapp-agent-production
@@ -27,25 +27,66 @@ jobs:
           set -Eeuo pipefail
           if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Active source font declarations
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Verify live Manrope CSS
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
-          REG=/var/www/sikhadenge.in/registration-v2-hot-20260831-145106
-          echo 'ACTIVE_FONT_DECLARATIONS_BEGIN'
-          cd "$ROOT"
-          for d in app pages components styles src public; do
-            [ -e "$d" ] || continue
-            find "$d" -type f \( -name '*.css' -o -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -print0 2>/dev/null
-          done | xargs -0 grep -nEi 'next/font/(google|local)|font-family[[:space:]]*:|fontFamily[[:space:]]*:|\b(Inter|Manrope|Bricolage|Poppins|Roboto)\(' 2>/dev/null | head -240 || true
-          echo 'REGISTRATION_ACTIVE:'
-          if [ -d "$REG" ]; then grep -RniEi 'font-family[[:space:]]*:|fontFamily[[:space:]]*:|Manrope|Inter|Bricolage|Poppins|Roboto' "$REG" --include='*.css' --include='*.js' 2>/dev/null | head -160 || true; fi
-          echo 'ACTIVE_FONT_DECLARATIONS_END READ_ONLY=1'
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          echo 'FINAL_MANROPE_LIVE_QA_BEGIN'
+          failures=0
+          for route in \
+            / \
+            /about-us \
+            /courses \
+            /contact \
+            /blog \
+            /privacy-policy \
+            /terms \
+            /gen-ai-masterclass/register-one-step \
+            /masterclass/chatgpt/free \
+            /masterclass/ai-video \
+            /masterclass/claude/free; do
+            key="$(printf '%s' "$route" | sha256sum | cut -c1-10)"
+            html="$tmp/$key.html"
+            css="$tmp/$key.css"
+            : > "$css"
+            code="$(curl -L --compressed -ksS -o "$html" -w '%{http_code}' "https://sikhadenge.in$route" || true)"
+            grep -oE 'href="[^"]+\.css[^\"]*"' "$html" 2>/dev/null \
+              | sed -E 's/^href="|"$//g' \
+              | sort -u \
+              | while read -r href; do
+                  [ -n "$href" ] || continue
+                  case "$href" in
+                    http*) url="$href" ;;
+                    *) url="https://sikhadenge.in$href" ;;
+                  esac
+                  curl -L --compressed -ksS "$url" >> "$css" || true
+                  printf '\n' >> "$css"
+                done
+            manrope=0
+            grep -Eqi 'Manrope|Manrope-Variable\.ttf|__Manrope' "$css" && manrope=1 || true
+            echo "ROUTE=$route HTTP=$code MANROPE=$manrope"
+            case "$code" in 200|301|302|307|308) ;; *) failures=$((failures+1));; esac
+            [ "$manrope" -eq 1 ] || failures=$((failures+1))
+          done
+          font_code="$(curl -L -ksS -o /dev/null -w '%{http_code}' https://sikhadenge.in/fonts/Manrope-Variable.ttf || true)"
+          echo "FONT_HTTP=$font_code"
+          [ "$font_code" = 200 ] || failures=$((failures+1))
+          echo "FAILURES=$failures"
+          [ "$failures" -eq 0 ]
+          echo 'FINAL_MANROPE_LIVE_QA_OK=1 READ_ONLY=1'
           REMOTE
