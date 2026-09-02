@@ -1,0 +1,101 @@
+name: Deploy Claude Proof Visible Fix 20260902
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-proof-visible-fix-20260902.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Replace only Claude proof runtime asset
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ASSET="/var/www/sikhadenge.in/claude-proof-exact-v1.js"
+          SOURCE="https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/fe8bb2856126cbf975bc92415ae5c156cbc0bb50/public/claude-proof-exact-v1.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-proof-visible-fix-$TS"
+          mkdir -p "$BACKUP"
+          test -f "$ASSET"
+          cp "$ASSET" "$BACKUP/claude-proof-exact-v1.js.before"
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_EXACT_AI_VIDEO_PROOF_V1__' "$TMP"
+          grep -Fq 'copyComputedTree(jobs, jobsClone' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-proof-exact-v1.js | grep -Fq 'copyComputedTree(jobs, jobsClone'
+          echo "BACKUP=$BACKUP"
+          echo 'ASSET_VISIBLE_FIX_OK'
+          REMOTE
+
+      - name: Verify visible exact replacement in Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-visible-proof.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=22000 --dump-dom \
+            'https://sikhadenge.in/masterclass/claude/free?v=proof-visible-fix-20260902' > "$DOM"
+          grep -Fq 'data-claude-exact-ai-video-proof="ready"' "$DOM"
+          test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
+          grep -Fq 'hundreds of millions of jobs' "$DOM"
+          grep -Fq 'increasing the value of AI skills' "$DOM"
+          if grep -Fqi 'Why AI-skilled professionals are moving ahead faster' "$DOM"; then
+            echo 'Old proof still rendered'
+            exit 1
+          fi
+          python3 - "$DOM" <<'PY'
+from pathlib import Path
+import re, sys
+s=Path(sys.argv[1]).read_text(errors='ignore')
+for ident in ('ai-video-job-impact-v80','ai-video-ai-opportunity-v85'):
+    m=re.search(r'<[^>]+id="'+re.escape(ident)+r'"[^>]*>', s, re.I)
+    if not m:
+        raise SystemExit(f'missing {ident}')
+    tag=m.group(0).lower()
+    if 'display: block' not in tag or 'visibility: visible' not in tag or 'opacity: 1' not in tag:
+        raise SystemExit(f'{ident} not forced visible: {tag[:500]}')
+print('VISIBLE_ROOTS_OK')
+PY
+          echo 'CLAUDE_AI_VIDEO_PROOF_VISIBLE_OK'
