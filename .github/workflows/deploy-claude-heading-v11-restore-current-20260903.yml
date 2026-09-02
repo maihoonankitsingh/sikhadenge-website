@@ -46,7 +46,7 @@ jobs:
           export TZ=Asia/Kolkata
           NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
           ASSET=/var/www/sikhadenge.in/claude-heading-v11-restore-current.js
-          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/8e14765509f8bd0ecb6b07979cd9e3093c21bb28/public/claude-heading-v11-restore-current.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/76c6ffd0e7ac5d642309ff6c57e1b9a5c91dd6ae/public/claude-heading-v11-restore-current.js'
           TS="$(date +%Y%m%d-%H%M%S)"
           BACKUP="/var/backups/sikhadenge/claude-heading-v11-restore-current-$TS"
           test -f "$NG"
@@ -71,6 +71,7 @@ jobs:
           grep -Fq '__CLAUDE_HEADING_V11_RESTORE_CURRENT__' "$TMP"
           grep -Fq 'font-size: clamp(30px, 2.25vw, 38px)' "$TMP"
           grep -Fq 'font-size: clamp(24px, 6.2vw, 28px)' "$TMP"
+          grep -Fq '15000, 22000' "$TMP"
           grep -Fq 'right AI tool' "$TMP"
           install -m 0644 "$TMP" "$ASSET"
 
@@ -87,9 +88,12 @@ jobs:
           end += len('\n    }')
           seg=s[start:end]
 
-          script='<script src="/claude-heading-v11-restore-current.js?v=old-v11-current-20260903"></script>'
+          old_script='<script src="/claude-heading-v11-restore-current.js?v=old-v11-current-20260903"></script>'
+          script='<script src="/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b"></script>'
           theme='<script src="/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902"></script>'
-          if script not in seg:
+          if old_script in seg:
+              seg=seg.replace(old_script,script,1)
+          elif script not in seg:
               if theme in seg:
                   seg=seg.replace(theme, theme+script, 1)
               else:
@@ -121,14 +125,15 @@ jobs:
           systemctl reload nginx
           sleep 1
 
-          curl -fsS --max-time 20 https://sikhadenge.in/claude-heading-v11-restore-current.js | grep -Fq '__CLAUDE_HEADING_V11_RESTORE_CURRENT__'
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-heading-v11-restore-current.js | grep -Fq '15000, 22000'
           HTML="$(mktemp)"
-          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-server' -o "$HTML"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-server-b' -o "$HTML"
+          test "$(grep -o '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b' "$HTML" | wc -l)" -eq 1
           test "$(grep -o '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903' "$HTML" | wc -l)" -eq 1
           grep -Fq '/api/social-proof/live?widget=1' "$HTML"
 
           AI="$(mktemp)"
-          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=claude-heading-isolation' -o "$AI"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=claude-heading-isolation-b' -o "$AI"
           if grep -Fq '/claude-heading-v11-restore-current.js' "$AI"; then
             echo 'Claude heading restore leaked into AI Video source page'
             exit 1
@@ -146,13 +151,13 @@ jobs:
           test -n "$CHROME"
           DOM="$RUNNER_TEMP/claude-heading-restored.html"
           PNG="$RUNNER_TEMP/claude-heading-restored.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-final-20260903'
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --dump-dom "$URL" > "$DOM"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=18000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=old-v11-current-final-20260903b'
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
 
           echo "restored=$(grep -o 'data-claude-heading-v11-restored=\"18\"' "$DOM" | wc -l || true)"
-          echo "v11_h2=$(grep -o 'sd-heading-v11' "$DOM" | wc -l || true)"
           echo "v11_highlight=$(grep -o 'sd-heading-v11-highlight' "$DOM" | wc -l || true)"
+          echo "proof_old_highlight=$(grep -o 'data-sd-claude-highlight=\"1\"' "$DOM" | wc -l || true)"
 
           grep -Fq 'data-claude-heading-v11-restored="18"' "$DOM"
           test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
@@ -162,10 +167,15 @@ jobs:
           grep -Fq '<span class="sd-heading-v11-highlight">AI workflow.</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">AI mastery.</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">hundreds of millions of jobs.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">It'"'"'s increasing the value of AI skills.</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">right AI tool</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">reviewable work.</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">Clear workflows.</span>' "$DOM"
           grep -Fq '<span class="sd-heading-v11-highlight">asked questions.</span>' "$DOM"
           if grep -Fq 'Why AI-skilled professionals are moving ahead faster.' "$DOM"; then exit 1; fi
+          if grep -Fq 'data-sd-claude-highlight="1"' "$DOM"; then
+            echo 'New proof heading style still owns a proof highlight after final V11 reapply'
+            exit 1
+          fi
           test -s "$PNG"
           echo 'CLAUDE_OLD_V11_HEADING_VISUALS_OK'
