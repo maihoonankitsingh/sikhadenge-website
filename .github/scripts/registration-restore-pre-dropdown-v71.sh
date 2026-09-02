@@ -40,7 +40,9 @@ test "$HOT_SHA" = "$EXPECT_HOT_SHA"
 grep -Fq 'SIKHADENGE_MOBILE_INLINE_NAV_V68_START' "$SOURCE"
 ! grep -Fq 'SIKHADENGE_MOBILE_LAPTOP_DROPDOWN_V69_START' "$SOURCE"
 ! grep -Fq 'SIKHADENGE_MOBILE_LAPTOP_HIDE_CARDS_V70_START' "$SOURCE"
-node --check "$SOURCE" >/dev/null
+SOURCE_CHECK="/tmp/registration-v2-page1-source-v71-${TS}.js"
+cp "$SOURCE" "$SOURCE_CHECK"
+node --check "$SOURCE_CHECK" >/dev/null
 echo 'guards=PASS'
 
 echo '===== 2. FRESH BACKUP ====='
