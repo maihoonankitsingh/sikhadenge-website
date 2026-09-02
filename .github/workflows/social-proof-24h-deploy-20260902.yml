@@ -1,0 +1,151 @@
+name: Social Proof 24h Deploy
+
+on:
+  push:
+    paths:
+      - .github/workflows/social-proof-24h-deploy-20260902.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Patch API and widget
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          KEY="$HOME/.ssh/prod"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          DIR="/var/www/sikhadenge.in/social-proof-live"
+          SERVER="$DIR/server.js"
+          WIDGET="$DIR/sitewide-live-proof-v1.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="$DIR/backup-24h-${TS}"
+          mkdir -p "$BK"
+          cp -a "$SERVER" "$BK/server.js.before"
+          cp -a "$WIDGET" "$BK/sitewide-live-proof-v1.js.before"
+
+          APP="$(pm2 jlist | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const a=JSON.parse(s);
+              const p=a.find(x=>String(x.pm2_env&&x.pm2_env.pm_cwd||"").includes("/var/www/sikhadenge.in/social-proof-live") || String(x.pm2_env&&x.pm2_env.pm_exec_path||"").endsWith("/social-proof-live/server.js"));
+              if(p) process.stdout.write(p.name||"");
+            });
+          ')"
+          test -n "$APP"
+          echo "PM2_APP=$APP"
+          echo "BACKUP=$BK"
+
+          rollback() {
+            set +e
+            echo 'AUTO_ROLLBACK_START'
+            cp -a "$BK/server.js.before" "$SERVER"
+            cp -a "$BK/sitewide-live-proof-v1.js.before" "$WIDGET"
+            pm2 restart "$APP" --update-env >/dev/null 2>&1 || true
+            echo 'AUTO_ROLLBACK_DONE'
+          }
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then rollback; fi; exit "$rc"' EXIT
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          server=Path('/var/www/sikhadenge.in/social-proof-live/server.js')
+          s=server.read_text(encoding='utf-8')
+
+          reps=[
+            (
+              '  const start30 = midnightIST(29);\n',
+              '  const start30 = midnightIST(29);\n  const now = new Date();\n  const start24 = new Date(now.getTime() - 86400000);\n',
+              '24h-window'
+            ),
+            (
+              '  const [recent30d, todayActual, currentDbTotal, latest] =\n',
+              '  const [recent24h, recent30d, todayActual, currentDbTotal, latest] =\n',
+              'destructure'
+            ),
+            (
+              '    await Promise.all([\n      prisma.masterclassLead.count({\n        where: {\n          createdAt: { gte: start30, lt: tomorrow }\n        }\n      }),\n',
+              '    await Promise.all([\n      prisma.masterclassLead.count({\n        where: {\n          createdAt: { gte: start24, lte: now }\n        }\n      }),\n      prisma.masterclassLead.count({\n        where: {\n          createdAt: { gte: start30, lt: tomorrow }\n        }\n      }),\n',
+              'query'
+            ),
+            (
+              '    ok: true,\n    recent30d,\n',
+              '    ok: true,\n    recent24h,\n    recent30d,\n',
+              'response'
+            ),
+          ]
+
+          for old,new,label in reps:
+              n=s.count(old)
+              if n != 1:
+                  raise SystemExit(f'server {label} count={n}')
+              s=s.replace(old,new,1)
+
+          server.write_text(s,encoding='utf-8')
+
+          widget=Path('/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js')
+          w=widget.read_text(encoding='utf-8')
+          changes=[
+            ('joined in last 30 days','joined in last 24 hours','label'),
+            ('fmt(data.recent30d)','fmt(data.recent24h)','metric'),
+          ]
+          for old,new,label in changes:
+              n=w.count(old)
+              if n != 1:
+                  raise SystemExit(f'widget {label} count={n}')
+              w=w.replace(old,new,1)
+          widget.write_text(w,encoding='utf-8')
+          PY
+
+          node --check "$SERVER"
+          node --check "$WIDGET"
+          grep -Fq 'recent24h' "$SERVER"
+          grep -Fq 'joined in last 24 hours' "$WIDGET"
+          grep -Fq 'fmt(data.recent24h)' "$WIDGET"
+
+          pm2 restart "$APP" --update-env >/dev/null
+          sleep 2
+          pm2 pid "$APP" | grep -Eq '^[1-9][0-9]*$'
+
+          API="$(curl -fsS 'http://127.0.0.1:3944/api/social-proof/live?check=24h')"
+          printf '%s' "$API" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True; assert isinstance(d.get("recent24h"), int); assert isinstance(d.get("recent30d"), int); print("recent24h=",d["recent24h"],"recent30d=",d["recent30d"])'
+
+          trap - EXIT
+          echo 'RESULT=ACTUAL_24H_METRIC_LIVE'
+          REMOTE
+
+      - name: Verify public API and widget
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?check=24h-public' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent24h"),int)'
+          TMP="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&check=24h-public' -o "$TMP"
+          grep -Fq 'joined in last 24 hours' "$TMP"
+          grep -Fq 'fmt(data.recent24h)' "$TMP"
+          echo 'PUBLIC_24H_METRIC=PASS'
