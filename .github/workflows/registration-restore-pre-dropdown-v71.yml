@@ -51,3 +51,5 @@ jobs:
       - name: Restore exact pre-dropdown state
         shell: bash
         run: bash .github/scripts/registration-restore-pre-dropdown-v71.sh
+
+      # one-shot rerun after source syntax-check fix
