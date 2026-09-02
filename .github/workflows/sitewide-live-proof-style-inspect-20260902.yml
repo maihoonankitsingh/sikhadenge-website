@@ -32,15 +32,12 @@ jobs:
           chmod 600 "$KEY"
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
-      - name: Inspect selectors
+      - name: Inspect widget source
         shell: bash
         run: |
           KEY="$HOME/.ssh/prod"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           FILE=/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js
-          echo '=== ROOT/CSS SELECTORS ==='
-          grep -nE 'sd-[a-z0-9-]+|LIVE ACTIVITY|Latest:|registered|className|id=' "$FILE" | head -220
-          echo '=== POSITION/CARD CSS ==='
-          grep -nE 'position:fixed|right:24px|bottom:24px|width:318px|border-radius|backdrop-filter|font-family|box-shadow' "$FILE" | head -160
+          sed -n '97,285p' "$FILE"
           REMOTE
