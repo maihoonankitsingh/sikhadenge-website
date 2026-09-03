@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
+const aiVideoAssetPrefix = process.env.AI_VIDEO_ASSET_PREFIX || "";
+
 const nextConfig = {
   reactStrictMode: true,
+
+  // Optional deployment-only asset namespace. This stays empty in normal builds.
+  // The AI Video VPS blue/green deploy sets this to the already-isolated
+  // /ai-video-real-output-v77/<version> path so its Next chunks never collide
+  // with the rest of the live site's /_next assets.
+  assetPrefix: aiVideoAssetPrefix,
 
   eslint: { ignoreDuringBuilds: true },
 
