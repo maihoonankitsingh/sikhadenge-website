@@ -1,0 +1,135 @@
+name: Audit Claude Responsive Puppeteer 20260903
+
+on:
+  push:
+    branches:
+      - audit/claude-responsive-20260903
+    paths:
+      - .github/workflows/audit-claude-responsive-puppeteer-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install audit runtime
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p audit-pup/screens audit-pup/lighthouse
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+
+      - name: Puppeteer responsive audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          export CHROME
+          cat > "$RUNNER_TEMP/audit.js" <<'JS'
+          const puppeteer = require('puppeteer-core');
+          const fs = require('fs');
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-gpu','--disable-dev-shm-usage']});
+            const views=[
+              {name:'desktop-1440',w:1440,h:1000,mobile:false},
+              {name:'laptop-1024',w:1024,h:900,mobile:false},
+              {name:'tablet-768',w:768,h:1024,mobile:true},
+              {name:'mobile-430',w:430,h:932,mobile:true},
+              {name:'mobile-390',w:390,h:844,mobile:true},
+            ];
+            const out={};
+            for(const v of views){
+              const page=await browser.newPage();
+              await page.setViewport({width:v.w,height:v.h,isMobile:v.mobile,deviceScaleFactor:1,hasTouch:v.mobile});
+              const errs=[];
+              page.on('console',m=>{if(m.type()==='error') errs.push('console:'+m.text().slice(0,180));});
+              page.on('pageerror',e=>errs.push('page:'+String(e).slice(0,180)));
+              await page.goto(`https://sikhadenge.in/masterclass/claude/free?v=pup-audit-${v.name}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});
+              await new Promise(r=>setTimeout(r,7000));
+              await page.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').trim()==='Reject non-essential');if(b)b.click();});
+              await new Promise(r=>setTimeout(r,800));
+              const val=await page.evaluate(()=>{
+                const visible=(el)=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0};
+                const text=(el)=>(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();
+                const all=[...document.querySelectorAll('body *')];
+                const sections=[...document.querySelectorAll('section')].filter(visible).map((el,i)=>{const r=el.getBoundingClientRect();return{i,cls:typeof el.className==='string'?el.className:'',y:Math.round(r.top+scrollY),h:Math.round(r.height),textLen:text(el).length,text:text(el).slice(0,110)}});
+                const overflowEls=all.filter(visible).map(el=>({el,r:el.getBoundingClientRect()})).filter(x=>x.r.left<-2||x.r.right>innerWidth+2).slice(0,25).map(x=>({tag:x.el.tagName,cls:typeof x.el.className==='string'?x.el.className:'',left:Math.round(x.r.left),right:Math.round(x.r.right),w:Math.round(x.r.width),text:text(x.el).slice(0,70)}));
+                const clickables=[...document.querySelectorAll('a[href],button,input,select,textarea,[role="button"]')].filter(visible);
+                const smallTargets=clickables.filter(el=>{const r=el.getBoundingClientRect();return r.width<40||r.height<40}).slice(0,40).map(el=>{const r=el.getBoundingClientRect();return{tag:el.tagName,w:Math.round(r.width),h:Math.round(r.height),text:text(el).slice(0,55),href:el.getAttribute('href')}});
+                const brokenImages=[...document.images].filter(img=>img.complete&&img.naturalWidth===0).map(img=>({src:img.currentSrc||img.src,alt:img.alt}));
+                const headings=[...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(visible).map(h=>({level:Number(h.tagName.slice(1)),text:text(h).slice(0,90)}));
+                const headingSkips=[]; for(let i=1;i<headings.length;i++){if(headings[i].level-headings[i-1].level>1)headingSkips.push({from:headings[i-1],to:headings[i]});}
+                const ids=[...document.querySelectorAll('[id]')].map(x=>x.id);const dupIds=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))];
+                const ctas=clickables.filter(el=>/(register|reserve|seat|join|book|start)/i.test(text(el))).map(el=>{const r=el.getBoundingClientRect();return{text:text(el).slice(0,70),w:Math.round(r.width),h:Math.round(r.height),href:el.getAttribute('href')}}).slice(0,30);
+                const smallText=all.filter(el=>visible(el)&&text(el).length>0&&el.children.length===0&&parseFloat(getComputedStyle(el).fontSize)<12).slice(0,40).map(el=>({tag:el.tagName,size:getComputedStyle(el).fontSize,text:text(el).slice(0,60)}));
+                const clipped=all.filter(el=>visible(el)&&text(el).length>0).filter(el=>{const s=getComputedStyle(el);return ((el.scrollWidth>el.clientWidth+2)&&(s.overflowX==='hidden'||s.overflow==='hidden'))||((el.scrollHeight>el.clientHeight+2)&&(s.overflowY==='hidden'||s.overflow==='hidden'));}).slice(0,30).map(el=>({tag:el.tagName,cls:typeof el.className==='string'?el.className:'',text:text(el).slice(0,70),cw:el.clientWidth,sw:el.scrollWidth,ch:el.clientHeight,sh:el.scrollHeight}));
+                const fixed=all.filter(el=>visible(el)&&['fixed','sticky'].includes(getComputedStyle(el).position)).slice(0,25).map(el=>{const r=el.getBoundingClientRect();return{tag:el.tagName,cls:typeof el.className==='string'?el.className:'',pos:getComputedStyle(el).position,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),text:text(el).slice(0,60)}});
+                const nav=performance.getEntriesByType('navigation')[0];
+                return{
+                  viewport:{w:innerWidth,h:innerHeight,dpr:devicePixelRatio},page:{scrollW:document.documentElement.scrollWidth,clientW:document.documentElement.clientWidth,scrollH:document.documentElement.scrollHeight},
+                  horizontalOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,overflowEls,sections,blankSections:sections.filter(s=>s.h>=80&&s.textLen<8),smallTargets,brokenImages,h1Count:headings.filter(h=>h.level===1).length,headings,headingSkips,duplicateIds:dupIds,ctas,smallText,clipped,fixed,
+                  imageCount:document.images.length,linkCount:document.links.length,title:document.title,lang:document.documentElement.lang,fontStatus:document.fonts?document.fonts.status:null,
+                  perf:nav?{domContentLoaded:Math.round(nav.domContentLoadedEventEnd),load:Math.round(nav.loadEventEnd),transfer:Math.round(nav.transferSize||0)}:null
+                };
+              });
+              val.consoleErrors=errs.slice(0,20);
+              out[v.name]=val;
+              const H=val.page.scrollH;
+              for(const [label,y] of [['top',0],['mid',Math.max(0,Math.floor(H*.45))],['bottom',Math.max(0,H-v.h-10)]]){
+                await page.evaluate(y=>window.scrollTo(0,y),y);
+                await new Promise(r=>setTimeout(r,300));
+                await page.screenshot({path:`audit-pup/screens/${v.name}-${label}.png`,fullPage:false});
+              }
+              await page.close();
+            }
+            fs.writeFileSync('audit-pup/responsive-audit.json',JSON.stringify(out,null,2));
+            const mini={};for(const [k,v] of Object.entries(out))mini[k]={viewport:v.viewport,page:v.page,horizontalOverflow:v.horizontalOverflow,overflowEls:v.overflowEls.length,blankSections:v.blankSections.length,smallTargets:v.smallTargets.length,brokenImages:v.brokenImages.length,h1Count:v.h1Count,headingSkips:v.headingSkips.length,duplicateIds:v.duplicateIds.length,smallText:v.smallText.length,clipped:v.clipped.length,ctaCount:v.ctas.length,consoleErrors:v.consoleErrors.length};
+            fs.writeFileSync('audit-pup/responsive-mini.json',JSON.stringify(mini,null,2));console.log(JSON.stringify(mini,null,2));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node "$RUNNER_TEMP/audit.js"
+
+      - name: Lighthouse desktop
+        continue-on-error: true
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-desktop-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/desktop.json --form-factor=desktop
+
+      - name: Lighthouse mobile
+        continue-on-error: true
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-mobile-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/mobile.json --form-factor=mobile
+
+      - name: Summarize Lighthouse
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          out={}
+          for n in ['desktop','mobile']:
+            p=pathlib.Path(f'audit-pup/lighthouse/{n}.json')
+            if not p.exists(): out[n]={'error':'missing'}; continue
+            d=json.loads(p.read_text());c=d['categories'];a=d['audits']
+            sc=lambda k: None if c.get(k,{}).get('score') is None else round(c[k]['score']*100)
+            num=lambda k: None if a.get(k,{}).get('numericValue') is None else round(a[k]['numericValue'],2)
+            out[n]={'performance':sc('performance'),'accessibility':sc('accessibility'),'bestPractices':sc('best-practices'),'seo':sc('seo'),'FCP_ms':num('first-contentful-paint'),'LCP_ms':num('largest-contentful-paint'),'CLS':num('cumulative-layout-shift'),'TBT_ms':num('total-blocking-time'),'SpeedIndex_ms':num('speed-index'),'transferBytes':num('total-byte-weight')}
+          pathlib.Path('audit-pup/lighthouse-summary.json').write_text(json.dumps(out,indent=2));print(json.dumps(out,indent=2))
+          PY
+
+      - name: Upload audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-responsive-puppeteer-audit-20260903
+          path: audit-pup/
+          retention-days: 1
