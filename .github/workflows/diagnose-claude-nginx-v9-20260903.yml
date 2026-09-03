@@ -1,0 +1,137 @@
+name: Diagnose Claude Nginx V9 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-nginx-v9-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Parse active server blocks and prove matching vhost
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"
+          B="/var/backups/sikhadenge/claude-nginx-v9-diag-$TS"
+          mkdir -p "$B"; cp "$NG" "$B/sikhadenge.in-ssl.before"
+
+          echo '===== FILE SERVER BLOCK MAP ====='
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]);s=p.read_text()
+          blocks=[]
+          pos=0
+          while True:
+              m=re.search(r'(?m)^\s*server\s*\{',s[pos:])
+              if not m: break
+              a=pos+m.start(); brace=s.find('{',a); d=0;b=None
+              for i in range(brace,len(s)):
+                  if s[i]=='{': d+=1
+                  elif s[i]=='}':
+                      d-=1
+                      if d==0: b=i+1; break
+              if b is None: break
+              blocks.append((a,b,s[a:b])); pos=b
+          print('SERVER_BLOCK_COUNT',len(blocks))
+          for idx,(a,b,blk) in enumerate(blocks,1):
+              listens=re.findall(r'(?m)^\s*listen\s+([^;]+);',blk)
+              names=re.findall(r'(?m)^\s*server_name\s+([^;]+);',blk)
+              print(f'--- BLOCK {idx} chars={a}:{b} lines={s[:a].count(chr(10))+1}-{s[:b].count(chr(10))+1}')
+              print('listen=',listens)
+              print('server_name=',names)
+              print('claude_route=', 'location = /masterclass/claude/free {' in blk)
+              print('stable_framework_exact=', 'location = /_next/static/chunks/framework-a49609877c928af5.js {' in blk)
+              print('stable_css_exact=', 'location = /_next/static/css/02b3bcaea76cb543.css {' in blk)
+              if 'location = /masterclass/claude/free {' in blk:
+                  print('CLAUDE_BLOCK_INDEX',idx)
+          PY
+
+          echo '===== EFFECTIVE NGINX SOURCE FILES AROUND SIKHADENGE ====='
+          nginx -T 2>&1 | awk '
+            /^# configuration file / {src=$0}
+            /server_name[[:space:]]+(www\.)?sikhadenge\.in/ {print src; print NR ":" $0}
+            /location = \/masterclass\/claude\/free/ {print src; print NR ":" $0}
+            /location = \/_next\/static\/chunks\/framework-a49609877c928af5\.js/ {print src; print NR ":" $0}
+          '
+
+          echo '===== LISTEN SOCKETS ====='
+          ss -ltnp | grep -E '(:443|:80)[[:space:]]' || true
+
+          echo '===== CURRENT LOCAL HTTPS IDENTITY ====='
+          curl -ksS --resolve sikhadenge.in:443:127.0.0.1 -D /tmp/v9-head -o /tmp/v9-page 'https://sikhadenge.in/masterclass/claude/free?v=v9-identity'
+          head -n 30 /tmp/v9-head
+          echo "BODY_BYTES=$(wc -c </tmp/v9-page) HAS_CLAUDE_H1=$(grep -c 'Master 25+ AI Tools' /tmp/v9-page || true)"
+
+          echo '===== TEMP EXACT LOCATION TEST IN SAME SERVER BLOCK ====='
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]);s=p.read_text();needle='location = /masterclass/claude/free {';a=s.find(needle)
+          if a<0: raise SystemExit('Claude route missing')
+          # Walk backward to the enclosing top-level server block.
+          server_positions=[];pos=0
+          import re
+          for m in re.finditer(r'(?m)^\s*server\s*\{',s): server_positions.append(m.start())
+          candidates=[x for x in server_positions if x<a]
+          if not candidates: raise SystemExit('No server block before Claude route')
+          chosen=None
+          for start in reversed(candidates):
+              brace=s.find('{',start);d=0;end=None
+              for i in range(brace,len(s)):
+                  if s[i]=='{': d+=1
+                  elif s[i]=='}':
+                      d-=1
+                      if d==0: end=i+1;break
+              if end and start<=a<end:
+                  chosen=(start,end);break
+          if not chosen: raise SystemExit('Could not find enclosing server')
+          start,end=chosen;blk=s[start:end]
+          marker='location = /__claude_diag_v9_ping {'
+          if marker in blk: raise SystemExit('diag location already exists')
+          ins='\n    location = /__claude_diag_v9_ping { add_header X-SD-Claude-Diag "v9-active" always; add_header Cache-Control "no-store" always; return 204; }\n'
+          blk=blk.replace('    location = /masterclass/claude/free {',ins+'\n    location = /masterclass/claude/free {',1)
+          p.write_text(s[:start]+blk+s[end:])
+          print('INSERTED_IN_SERVER_LINES',s[:start].count('\n')+1,'-',s[:end].count('\n')+1)
+          PY
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+          echo '--- IPv4 SNI exact diag ---'
+          curl -ksS --resolve sikhadenge.in:443:127.0.0.1 -D - -o /dev/null 'https://sikhadenge.in/__claude_diag_v9_ping' | head -n 30
+          echo '--- Host header against 127.0.0.1 ---'
+          curl -ksS -H 'Host: sikhadenge.in' -D - -o /dev/null 'https://127.0.0.1/__claude_diag_v9_ping' | head -n 30
+
+          echo '===== RESTORE IMMEDIATELY ====='
+          cp "$B/sikhadenge.in-ssl.before" "$NG"
+          nginx -t
+          systemctl reload nginx
+          echo "RESTORED=$B"
+          REMOTE
