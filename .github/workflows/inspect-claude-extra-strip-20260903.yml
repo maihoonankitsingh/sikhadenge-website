@@ -22,7 +22,7 @@ jobs:
           PORT=9222
           PROFILE="$RUNNER_TEMP/chrome-extra-strip-profile"
           mkdir -p "$PROFILE"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$PROFILE" --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" about:blank >/tmp/chrome-extra-strip.log 2>&1 &
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$PROFILE" --remote-allow-origins='*' --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" about:blank >/tmp/chrome-extra-strip.log 2>&1 &
           CHPID=$!
           trap 'kill "$CHPID" 2>/dev/null || true' EXIT
           ready=0
@@ -48,7 +48,7 @@ jobs:
           call('Page.enable')
           call('Runtime.enable')
           call('Emulation.setDeviceMetricsOverride',{'width':1900,'height':1200,'deviceScaleFactor':1,'mobile':False})
-          call('Page.navigate',{'url':'https://sikhadenge.in/masterclass/claude/free?v=inspect-extra-strip-20260903b'})
+          call('Page.navigate',{'url':'https://sikhadenge.in/masterclass/claude/free?v=inspect-extra-strip-20260903c'})
           time.sleep(18)
           js=r'''(() => {
             const all=[...document.querySelectorAll('body *')];
