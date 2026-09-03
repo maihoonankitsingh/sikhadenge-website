@@ -46,7 +46,7 @@ jobs:
           export TZ=Asia/Kolkata
           NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
           ASSET=/var/www/sikhadenge.in/claude-badge-spacing-v1.js
-          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/9c8160e747e73b61d81d0ad981a566dfd0888edf/public/claude-badge-spacing-v1.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/19d1d6839c471b3365639dacf5d85cd4cbdc693d/public/claude-badge-spacing-v1.js'
           TS="$(date +%Y%m%d-%H%M%S)"
           BACKUP="/var/backups/sikhadenge/claude-badge-spacing-v1-$TS"
           test -f "$NG"
@@ -69,8 +69,7 @@ jobs:
           TMP="$(mktemp)"
           curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
           grep -Fq '__CLAUDE_BADGE_SPACING_V1__' "$TMP"
-          grep -Fq 'margin-bottom: 10px' "$TMP"
-          grep -Fq 'margin-bottom: 8px' "$TMP"
+          test "$(grep -o '12px' "$TMP" | wc -l)" -ge 3
           install -m 0644 "$TMP" "$ASSET"
 
           python3 - "$NG" <<'PY'
@@ -86,11 +85,14 @@ jobs:
           end += len('\n    }')
           seg=s[start:end]
 
-          script='<script src="/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903"></script>'
+          old_script='<script src="/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903"></script>'
+          script='<script src="/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903"></script>'
           real_logo='<script src="/claude-proof-real-logos-v1.js?v=real-logos-note-remove-20260903"></script>'
           heading_b='<script src="/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b"></script>'
           theme='<script src="/claude-proof-theme-v2.js?v=claude-orange-theme-v2-20260902"></script>'
-          if script not in seg:
+          if old_script in seg:
+              seg=seg.replace(old_script,script,1)
+          elif script not in seg:
               if real_logo in seg:
                   seg=seg.replace(real_logo,real_logo+script,1)
               elif heading_b in seg:
@@ -126,10 +128,11 @@ jobs:
           systemctl reload nginx
           sleep 1
 
-          curl -fsS --max-time 20 https://sikhadenge.in/claude-badge-spacing-v1.js | grep -Fq '__CLAUDE_BADGE_SPACING_V1__'
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-badge-spacing-v1.js | grep -Fq 'v1-standard-12'
           HTML="$(mktemp)"
-          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-server' -o "$HTML"
-          test "$(grep -o '/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903' "$HTML" | wc -l)" -eq 1
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-standard12-server' -o "$HTML"
+          test "$(grep -o '/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903' "$HTML" | wc -l)" -eq 1
+          test "$(grep -o '/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903' "$HTML" | wc -l)" -eq 0
           grep -Fq '/api/social-proof/live?widget=1' "$HTML"
 
           AI="$(mktemp)"
@@ -139,7 +142,7 @@ jobs:
             exit 1
           fi
           echo "BACKUP=$BACKUP"
-          echo 'CLAUDE_BADGE_SPACING_SERVER_OK'
+          echo 'CLAUDE_BADGE_SPACING_STANDARD12_SERVER_OK'
           trap - ERR
           REMOTE
 
@@ -152,26 +155,28 @@ jobs:
           DOM="$RUNNER_TEMP/claude-badge-spacing.html"
           DESK="$RUNNER_TEMP/claude-badge-spacing-desktop.png"
           MOB="$RUNNER_TEMP/claude-badge-spacing-mobile.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-final-20260903'
+          URL='https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-standard12-final-20260903'
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$DESK" "$URL"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=390,9000 --screenshot="$MOB" "$URL"
 
-          grep -Fq 'data-claude-badge-spacing="v1"' "$DOM"
+          grep -Fq 'data-claude-badge-spacing="v1-standard-12"' "$DOM"
           test "$(grep -o 'data-sd-badge-gap-normalized="1"' "$DOM" | wc -l)" -eq 14
           grep -Fq 'id="sd-claude-badge-spacing-v1-style"' "$DOM"
+          grep -Fq 'margin-bottom: 12px' "$DOM"
+          grep -Fq 'margin-top: 12px' "$DOM"
           test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
           test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
           grep -Fq 'data-claude-proof-note-removed="1"' "$DOM"
           test -s "$DESK"; test -s "$MOB"
           cp "$DESK" "$GITHUB_WORKSPACE/claude-badge-spacing-desktop.png"
           cp "$MOB" "$GITHUB_WORKSPACE/claude-badge-spacing-mobile.png"
-          echo 'CLAUDE_BADGE_SPACING_CHROME_OK'
+          echo 'CLAUDE_BADGE_SPACING_STANDARD12_CHROME_OK'
 
       - name: Upload visual QA
         uses: actions/upload-artifact@v4
         with:
-          name: claude-badge-spacing-v1-qa
+          name: claude-badge-spacing-standard12-qa
           path: |
             claude-badge-spacing-desktop.png
             claude-badge-spacing-mobile.png
