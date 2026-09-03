@@ -1,0 +1,45 @@
+name: Diagnose Claude Missing Sections 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-missing-sections-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Extract rendered missing sections read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -f -N -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13930:127.0.0.1:3930 "$SSH_USER@$SSH_HOST"
+          npm init -y >/dev/null 2>&1; npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > extract.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.goto('http://127.0.0.1:13930/masterclass/claude/free?extract=missing-sections',{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,9000));const out=await p.evaluate(()=>{const wanted=['AI is changing the way professionals work.','Real learners. Real experiences.'];const result={};for(const text of wanted){const h=[...document.querySelectorAll('h2')].find(e=>(e.innerText||'').trim()===text);if(!h){result[text]=null;continue;}let s=h.closest('section');result[text]={heading:h.outerHTML,section:s?.outerHTML||null,sectionClass:s?.className||null,prevHeading:s?.previousElementSibling?.querySelector?.('h2')?.innerText||null,nextHeading:s?.nextElementSibling?.querySelector?.('h2')?.innerText||null,parentClass:s?.parentElement?.className||null};}return result;});fs.writeFileSync('missing-sections.json',JSON.stringify(out,null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(out).map(([k,v])=>[k,v?{sectionClass:v.sectionClass,prevHeading:v.prevHeading,nextHeading:v.nextHeading,parentClass:v.parentClass,sectionBytes:v.section?.length}:null])),null,2));await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node extract.js
+      - name: Upload exact rendered HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-missing-sections-20260903
+          path: missing-sections.json
+          retention-days: 1
