@@ -1,0 +1,141 @@
+name: AI Video Funnel Tracking Readonly Audit 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/audit-ai-video-funnel-tracking-readonly-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Audit live funnel tracking without changes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '===== AI_VIDEO_TRACKING_AUDIT_BEGIN ====='
+          echo 'READ_ONLY=1'
+          echo 'UTC='"$(date -u +%FT%TZ)"
+
+          echo '===== ROUTE STATUS ====='
+          for u in \
+            'https://sikhadenge.in/masterclass/ai-video' \
+            'https://sikhadenge.in/gen-ai-masterclass/register-one-step' \
+            'https://dashboard.sikhadenge.in/api/analytics/events' \
+            'https://dashboard.sikhadenge.in/api/masterclass/lead'; do
+            code="$(curl -LksS --max-time 15 -o /dev/null -w '%{http_code}' "$u" || true)"
+            echo "$u HTTP=$code"
+          done
+
+          echo '===== ACTIVE NGINX ROUTING FILTERED ====='
+          nginx -T 2>/dev/null | grep -nE 'masterclass/ai-video|gen-ai-masterclass/register-one-step|dashboard\.sikhadenge\.in|registration-v2|proxy_pass|masterclass/lead|analytics/events' | head -320 || true
+
+          echo '===== ACTIVE APP / RELEASE CANDIDATES ====='
+          readlink -f /var/www/sikhadenge.in/current 2>/dev/null || true
+          find /var/www/sikhadenge.in -maxdepth 3 -type f \( -name 'page.tsx' -o -name 'page.jsx' -o -name 'route.ts' -o -name '*.js' -o -name '*.conf' \) 2>/dev/null \
+            | grep -E 'ai-video|masterclass|register|registration|tracking|analytics' | head -260 || true
+
+          echo '===== SOURCE FILES WITH AI VIDEO ROUTE MARKERS ====='
+          for root in /var/www/sikhadenge.in /etc/nginx /opt/sikhadenge-dashboard; do
+            [[ -d "$root" ]] || continue
+            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
+              -E 'masterclass/ai-video|AI Video Masterclass|AI Video' "$root" 2>/dev/null | head -160 || true
+          done
+
+          echo '===== TRACKING SOURCE HITS ====='
+          for root in /var/www/sikhadenge.in /etc/nginx /opt/sikhadenge-dashboard; do
+            [[ -d "$root" ]] || continue
+            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
+              -E 'fbq\(|googletagmanager|gtag\(|GTM-|GA4|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead' "$root" 2>/dev/null \
+              | grep -E 'masterclass|ai-video|register|registration|tracking|analytics|nginx|dashboard|lead' | head -260 || true
+          done
+
+          echo '===== TRACKING CONTEXT FROM HIGH-SIGNAL FILES ====='
+          mapfile -t files < <(
+            for root in /var/www/sikhadenge.in /etc/nginx; do
+              [[ -d "$root" ]] || continue
+              grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
+                -E 'fbq\(|gtag\(|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|analytics/events|masterclass/lead' "$root" 2>/dev/null || true
+            done | grep -E 'masterclass|ai-video|register|registration|tracking|analytics|nginx|lead' | awk '!seen[$0]++' | head -35
+          )
+          for f in "${files[@]:-}"; do
+            [[ -f "$f" ]] || continue
+            echo "--- FILE=$f ---"
+            grep -nE -C 3 'fbq\(|googletagmanager|gtag\(|GTM-|utm_source|utm_medium|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead' "$f" 2>/dev/null | head -180 || true
+          done
+
+          echo '===== LIVE AI VIDEO HTML TRACKING MARKERS ====='
+          A=/tmp/aiv-track.html
+          curl -LksS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?utm_source=audit&utm_medium=qa&utm_campaign=tracking_audit&utm_campaign_id=cmp_audit&utm_adset_id=as_audit&utm_ad_id=ad_audit&fbclid=fb_audit&gclid=g_audit' -o "$A"
+          echo "HTML_BYTES=$(wc -c < "$A")"
+          grep -Eo 'https?://[^"< ]+|/_next/static/[^"< ]+|fbq\([^<]{0,180}|gtag\([^<]{0,180}|googletagmanager[^"< ]*|utm_(source|medium|campaign|campaign_id|adset_id|ad_id)|fbclid|gclid|_fbp|_fbc|analytics/events|masterclass/lead|gen-ai-masterclass/register-one-step' "$A" \
+            | sed -E 's/[?&](token|access_token|api_key|secret)=[^& ]+/\1=REDACTED/gI' | head -260 || true
+
+          echo '===== LIVE JS BUNDLE TRACKING MARKERS ====='
+          BDIR="$(mktemp -d)"
+          trap 'rm -rf "$BDIR" "$A"' EXIT
+          grep -oE 'src="[^"]+\.js[^"]*"' "$A" | sed -E 's/^src="|"$//g' | sort -u | head -80 > "$BDIR/js.list" || true
+          n=0
+          while read -r src; do
+            [[ -n "$src" ]] || continue
+            n=$((n+1)); out="$BDIR/$n.js"
+            case "$src" in http*) url="$src";; *) url="https://sikhadenge.in$src";; esac
+            curl -LksS --max-time 15 "$url" -o "$out" || continue
+            if grep -Eq 'fbq\(|gtag\(|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead|register-one-step' "$out"; then
+              echo "--- BUNDLE=$src ---"
+              grep -Eo '.{0,180}(fbq\(|gtag\(|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead|register-one-step).{0,260}' "$out" | head -40 || true
+            fi
+          done < "$BDIR/js.list"
+
+          echo '===== REGISTRATION LIVE HTML / JS MARKERS ====='
+          R=/tmp/reg-track.html
+          curl -LksS --max-time 20 'https://sikhadenge.in/gen-ai-masterclass/register-one-step?utm_source=audit&utm_campaign_id=cmp_audit&utm_adset_id=as_audit&utm_ad_id=ad_audit&fbclid=fb_audit' -o "$R"
+          echo "REG_HTML_BYTES=$(wc -c < "$R")"
+          grep -Eo 'src="[^"]+\.js[^"]*"|fbq\([^<]{0,180}|gtag\([^<]{0,180}|utm_(source|medium|campaign|campaign_id|adset_id|ad_id)|fbclid|gclid|_fbp|_fbc|analytics/events|masterclass/lead' "$R" | head -180 || true
+          rm -f "$R"
+
+          echo '===== DASHBOARD PROCESS / ENV KEY PRESENCE ONLY ====='
+          if [[ -d /opt/sikhadenge-dashboard ]]; then
+            cd /opt/sikhadenge-dashboard
+            for k in GA4_MEASUREMENT_ID GA4_API_SECRET META_CONVERSIONS_API_URL META_CONVERSIONS_ACCESS_TOKEN GOOGLE_ADS_OFFLINE_CONVERSION_URL GOOGLE_ADS_ACCESS_TOKEN IDENTITY_HASH_SECRET INTERNAL_CRON_SECRET; do
+              present=0
+              for e in .env .env.local .env.production; do
+                [[ -f "$e" ]] && grep -Eq "^${k}=" "$e" && present=1 || true
+              done
+              echo "$k=$present"
+            done
+          fi
+          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); print("\n".join(f"PM2 name={x.get(chr(110)+chr(97)+chr(109)+chr(101))} status={x.get(chr(112)+chr(109)+chr(50)+chr(95)+chr(101)+chr(110)+chr(118),{}).get(chr(115)+chr(116)+chr(97)+chr(116)+chr(117)+chr(115))}" for x in a if "sikhadenge" in str(x.get("name","")).lower()))' || true
+
+          echo '===== AI_VIDEO_TRACKING_AUDIT_END ====='
+          REMOTE
