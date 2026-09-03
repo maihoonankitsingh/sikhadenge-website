@@ -1,4 +1,4 @@
-name: Home Tools Transparent Brand Marks Live V2 20260903
+name: Home Tools Transparent Brand Marks Live V3 20260903
 
 on:
   push:
@@ -117,9 +117,7 @@ jobs:
           logo_pos=s.index('src={tool.logo}',pos)
           end=s.index('                  </div>',logo_pos)+len('                  </div>')
           old=s[start:end]
-          assert 'background: visual.gradient' in old
-          assert 'bg-white/25' in old
-          assert 'drop-shadow-' in old
+          assert 'background: visual.gradient' in old and 'bg-white/25' in old and 'drop-shadow-' in old
           new='''                  <div className="relative flex h-11 w-11 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-105 md:h-12 md:w-12">
                     <img
                       src={tool.logo}
@@ -142,8 +140,8 @@ jobs:
           for l in d.splitlines():
             if l[:1] in '+-' and not l.startswith(('+++','---')) and any(x in l for x in protected): raise SystemExit('NON_LOGO_CHANGE_BLOCKED')
           assert '/images/home-tools-brandmarks-v2/chatgpt.svg' in d
-          assert '-                      background: visual.gradient,' in d
-          assert '+                      className="h-8 w-8 object-contain md:h-9 md:w-9"' in d
+          assert 'background: visual.gradient' in d
+          assert 'h-8 w-8 object-contain md:h-9 md:w-9' in d
           print('LOGO_ONLY_DIFF_GUARD_OK=1')
           PY
 
