@@ -156,14 +156,16 @@ jobs:
             'https://commons.wikimedia.org/wiki/Special:FilePath/World_Economic_Forum_logo.svg' \
             'https://commons.wikimedia.org/wiki/Special:FilePath/PwC_Company_Logo.svg' \
             'https://commons.wikimedia.org/wiki/Special:FilePath/ServiceNow_logo.svg'; do
-            curl -fsSL --max-time 30 "$u" | grep -qi '<svg'
+            LOGO_TMP="$(mktemp)"
+            curl -fsSL --max-time 30 "$u" -o "$LOGO_TMP"
+            grep -qi '<svg' "$LOGO_TMP"
           done
 
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
           DOM="$RUNNER_TEMP/claude-real-logos.html"
           PNG="$RUNNER_TEMP/claude-real-logos-desktop.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=real-logos-note-final-20260903'
+          URL='https://sikhadenge.in/masterclass/claude/free?v=real-logos-note-final-20260903b'
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
 
