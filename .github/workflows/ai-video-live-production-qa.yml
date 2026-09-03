@@ -1,0 +1,106 @@
+name: AI Video Live Production QA
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-production-20260903"
+    paths:
+      - "ops/ai-video-live-qa-trigger.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-video-live-production-qa
+  cancel-in-progress: true
+
+jobs:
+  live-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout QA source
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Production source-first preflight
+        run: |
+          URL="https://sikhadenge.in/masterclass/ai-video?ghaLiveQa=${GITHUB_SHA}"
+          curl -fsSL -H 'Cache-Control: no-cache' "$URL" -o /tmp/ai-video-live.html
+          grep -Fq 'ai-video-hero-title' /tmp/ai-video-live.html
+          grep -Fq '2-Hour' /tmp/ai-video-live.html
+          grep -Fq '/gen-ai-masterclass/register-one-step?source=ai-video-masterclass' /tmp/ai-video-live.html
+          ! grep -Fq 'tabletV7' /tmp/ai-video-live.html
+          ! grep -Fq 'document.write' /tmp/ai-video-live.html
+
+      - name: Desktop tablet mobile live browser QA — 90+
+        env:
+          AI_VIDEO_QA_BASE_URL: https://sikhadenge.in
+          AI_VIDEO_QA_OUTPUT: artifacts/ai-video-live-qa
+        run: node scripts/qa-ai-video-masterclass.mjs
+
+      - name: Live section-by-section viewport QA — 90+
+        env:
+          AI_VIDEO_QA_BASE_URL: https://sikhadenge.in
+          AI_VIDEO_SECTION_QA_OUTPUT: artifacts/ai-video-live-qa/sections
+        run: node scripts/qa-ai-video-sections.mjs
+
+      - name: CTA analytics + registration E2E — no lead submission
+        env:
+          AI_VIDEO_LIVE_BASE_URL: https://sikhadenge.in
+          AI_VIDEO_LIVE_E2E_OUTPUT: artifacts/ai-video-live-e2e
+        run: node scripts/qa-ai-video-live-e2e.mjs
+
+      - name: Lighthouse live desktop
+        run: |
+          mkdir -p artifacts/ai-video-live-lighthouse
+          CHROME_PATH="$(node -e "const {chromium}=require('playwright'); process.stdout.write(chromium.executablePath())")"
+          export CHROME_PATH
+          npx --yes lighthouse@12.8.2 "https://sikhadenge.in/masterclass/ai-video?lhDesktop=${GITHUB_SHA}" \
+            --quiet \
+            --preset=desktop \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=artifacts/ai-video-live-lighthouse/desktop.json \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+
+      - name: Lighthouse live mobile
+        run: |
+          CHROME_PATH="$(node -e "const {chromium}=require('playwright'); process.stdout.write(chromium.executablePath())")"
+          export CHROME_PATH
+          npx --yes lighthouse@12.8.2 "https://sikhadenge.in/masterclass/ai-video?lhMobile=${GITHUB_SHA}" \
+            --quiet \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=artifacts/ai-video-live-lighthouse/mobile.json \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+
+      - name: Enforce live Lighthouse 90+ budgets
+        env:
+          AI_VIDEO_LIGHTHOUSE_DIR: artifacts/ai-video-live-lighthouse
+        run: node scripts/check-ai-video-lighthouse.mjs
+
+      - name: Upload live production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-video-live-production-evidence
+          path: |
+            artifacts/ai-video-live-qa
+            artifacts/ai-video-live-e2e
+            artifacts/ai-video-live-lighthouse
+            /tmp/ai-video-live.html
+          if-no-files-found: warn
+          retention-days: 14
