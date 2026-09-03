@@ -1,0 +1,81 @@
+name: Audit Home Tools Artifact 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/audit-home-tools-artifact-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Capture exact active homepage tools source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' > home-tools-audit.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          echo 'AUDIT=HOME_TOOLS_READ_ONLY'
+          echo "ROOT=$ROOT"
+          echo '=== PM2 ==='
+          pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const p of JSON.parse(s)){const e=p.pm2_env||{}; if((e.pm_cwd||"").includes("sikhadenge-website-space")) console.log([p.name,p.pid,e.status,e.pm_cwd,e.args].join("\t"))}})' || true
+          echo '=== EXACT MATCHES ==='
+          for d in app src pages components; do
+            if [ -d "$ROOT/$d" ]; then
+              grep -RInF --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'AI Tools You Will Master' "$ROOT/$d" 2>/dev/null || true
+              grep -RInF --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'Modern creators combine these tools' "$ROOT/$d" 2>/dev/null || true
+              grep -RInF --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'Gamma AI' "$ROOT/$d" 2>/dev/null || true
+            fi
+          done
+          echo '=== MATCH FILE SNIPPETS ==='
+          FILES=$(for d in app src pages components; do [ -d "$ROOT/$d" ] && grep -RIlF --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'AI Tools You Will Master' "$ROOT/$d" 2>/dev/null || true; done | sort -u)
+          printf '%s\n' "$FILES"
+          for f in $FILES; do
+            echo "--- FILE=$f ---"
+            n=$(grep -nF 'AI Tools You Will Master' "$f" | head -1 | cut -d: -f1 || true)
+            if [ -n "$n" ]; then
+              a=$(( n>180 ? n-180 : 1 )); b=$((n+220)); sed -n "${a},${b}p" "$f"
+            fi
+          done
+          echo '=== PUBLIC TOOL/LOGO ASSETS ==='
+          find "$ROOT/public" -type f 2>/dev/null | grep -Ei '/(tool|tools|logo|logos|brand|brands|icon|icons)/|chatgpt|claude|gemini|deepseek|perplexity|midjourney|ideogram|runway|pika|veo|luma|eleven|heygen|descript|notion|zapier|make|n8n|webflow|gamma' | head -250 || true
+          echo '=== LIVE HOME ==='
+          code=$(curl -L --compressed -ksS -o /dev/null -w '%{http_code}' https://sikhadenge.in/ || true)
+          echo "HTTP=$code"
+          test "$code" = 200
+          REMOTE
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-tools-audit-20260903
+          path: home-tools-audit.txt
+          if-no-files-found: error
+          retention-days: 1
