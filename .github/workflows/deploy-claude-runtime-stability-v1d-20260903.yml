@@ -1,0 +1,198 @@
+name: Deploy Claude Runtime Stability V1D 20260903
+
+on:
+  push:
+    paths: [.github/workflows/deploy-claude-runtime-stability-v1d-20260903.yml]
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy exact Claude-only stability patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CSS='/var/www/sikhadenge.in/claude-runtime-stability-v1.css'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/ec0cc3b71b9edd42939dc34d3c43c31e3dad1364/public/claude-runtime-stability-v1.css'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-runtime-stability-v1d-$TS"
+          MARKER='/var/backups/sikhadenge/.claude-runtime-stability-v1d-last'
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$CSS" ]] || cp "$CSS" "$BACKUP/claude-runtime-stability-v1.css.before"
+          printf '%s\n' "$BACKUP" > "$MARKER"
+          rollback(){ set +e; cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"; if [[ -f "$BACKUP/claude-runtime-stability-v1.css.before" ]]; then cp "$BACKUP/claude-runtime-stability-v1.css.before" "$CSS"; else rm -f "$CSS"; fi; nginx -t && systemctl reload nginx; }
+          trap 'rc=$?; echo "REMOTE_ROLLBACK rc=$rc"; rollback; exit $rc' ERR
+
+          T="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$T"
+          grep -Fq '.claude-masterclass-live_aiShiftSection__mR7ne' "$T"
+          grep -Fq '#sd-sitewide-live-proof-host-v1' "$T"
+          install -m 0644 "$T" "$CSS"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); s=p.read_text()
+          route='location = /masterclass/claude/free {'
+          a=s.find(route); b=s.find('\n    }',a)
+          if a<0 or b<0: raise SystemExit('Claude exact route missing')
+          b += len('\n    }')
+          seg=s[a:b]
+          if 'sub_filter_once on;' not in seg: raise SystemExit('expected sub_filter_once on missing')
+          seg=seg.replace('sub_filter_once on;','sub_filter_once off;',1)
+          old='/_next/static/css/8522be7a7183fcc0.css'
+          new='/claude-runtime-stability-v1.css?v=claude-runtime-stability-v1d-20260903'
+          directive=f"sub_filter '{old}' '{new}';"
+          if directive not in seg:
+              seg=seg.replace('sub_filter_once off;','sub_filter_once off;\n        '+directive,1)
+          pat=re.compile(r'<script(?![^>]*\bdefer\b) src="((?:/api/social-proof/live\?widget=1[^\"]*|/claude-[^\"]+))"></script>')
+          seg,n=pat.subn(r'<script defer src="\1"></script>',seg)
+          if n!=10: raise SystemExit(f'expected exactly 10 injected scripts; deferred={n}')
+          s=s[:a]+seg+s[b:]
+
+          marker='# CLAUDE_RUNTIME_STABILITY_V1_ASSET'
+          if marker not in s:
+              block='''    # CLAUDE_RUNTIME_STABILITY_V1_ASSET
+    location = /claude-runtime-stability-v1.css {
+        alias /var/www/sikhadenge.in/claude-runtime-stability-v1.css;
+        default_type text/css;
+        add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+        access_log off;
+    }
+    # CLAUDE_RUNTIME_STABILITY_V1_ASSET_END
+
+'''
+              idx=s.find(route)
+              if idx<0: raise SystemExit('could not place CSS asset route')
+              s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          print(f'DEFERRED={n}')
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+
+          curl -fsS --max-time 20 'https://sikhadenge.in/claude-runtime-stability-v1.css?v=v1d-asset-check' | grep -Fq 'aiShiftSection__mR7ne'
+          H="$(mktemp)"
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=runtime-v1d-server' -o "$H"
+          python3 - "$H" <<'PY'
+          from pathlib import Path
+          import sys
+          s=Path(sys.argv[1]).read_text()
+          assert '/claude-runtime-stability-v1.css?v=claude-runtime-stability-v1d-20260903' in s
+          assert '/_next/static/css/8522be7a7183fcc0.css' not in s
+          assert s.count('<script defer src="/claude-') == 9, s.count('<script defer src="/claude-')
+          assert '<script defer src="/api/social-proof/live?widget=1' in s
+          print('SERVER_HTML_REWRITE_OK')
+          PY
+          echo "BACKUP=$BACKUP"
+          echo 'SERVER_RUNTIME_V1D_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify desktop tablet mobile and hydration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p qa-v1d/screens qa-v1d/lighthouse
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"; export CHROME
+          cat > qa-v1d/verify.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[{n:'desktop',w:1440,h:1000,m:false},{n:'tablet',w:768,h:1024,m:true},{n:'mobile',w:390,h:844,m:true}]; const O={};
+            for(const v of views){
+              const p=await b.newPage(); await p.setViewport({width:v.w,height:v.h,isMobile:v.m,hasTouch:v.m,deviceScaleFactor:1});
+              const pe=[],ce=[],bad=[]; p.on('pageerror',e=>pe.push(String(e))); p.on('console',m=>{if(m.type()==='error')ce.push(m.text())}); p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=runtime-v1d-${v.n}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});
+              await new Promise(r=>setTimeout(r,10000));
+              const x=await p.evaluate(()=>{const cs=e=>e?getComputedStyle(e):null,o=document.querySelector('.claude-masterclass-live_aiShiftSection__mR7ne'),h=document.querySelector('#sd-sitewide-live-proof-host-v1'),st=document.querySelector('[class*="heroOfferBar"]');return{old:o?{display:cs(o).display,visibility:cs(o).visibility,height:o.getBoundingClientRect().height}:null,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,root:document.querySelectorAll('#claude-ai-video-proof-v4').length,logos:document.querySelectorAll('#claude-ai-video-proof-v4 img').length,host:h?{display:cs(h).display,visibility:cs(h).visibility}:null,sticky:st?{display:cs(st).display,position:cs(st).position}:null,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,blanks:[...document.querySelectorAll('section')].filter(e=>{const s=cs(e),r=e.getBoundingClientRect();return s.display!=='none'&&r.height>=80&&(e.innerText||'').trim().length<8}).length,cta:[...document.querySelectorAll('a[href]')].filter(a=>/reserve my free seat/i.test(a.textContent||'')).map(a=>a.getAttribute('href')),headingRestore:document.querySelector('[data-claude-heading-v11-restored]')?.getAttribute('data-claude-heading-v11-restored')||null};});
+              const hyd=[...pe,...ce].filter(z=>/#418|#425|invariant=418|invariant=425/i.test(z)); O[v.n]={...x,hydration:hyd,bad,pageErrors:pe,consoleErrors:ce};
+              if(hyd.length) throw Error(v.n+' hydration '+hyd.slice(0,3).join(' | '));
+              if(!x.old||x.old.display!=='none'||x.old.height!==0) throw Error(v.n+' old AI Shift not prehidden '+JSON.stringify(x.old));
+              if(x.jobs!==1||x.skills!==1||x.root!==1) throw Error(v.n+' proof regression '+JSON.stringify(x));
+              if(x.overflow||x.blanks!==0) throw Error(v.n+' layout regression overflow='+x.overflow+' blanks='+x.blanks);
+              if(!x.sticky||x.sticky.display==='none'||x.sticky.position!=='fixed') throw Error(v.n+' sticky CTA regression '+JSON.stringify(x.sticky));
+              if(!x.cta.includes('/gen-ai-masterclass/register-one-step')) throw Error(v.n+' registration CTA target regression');
+              if(v.n==='mobile'&&x.host&&x.host.display!=='none') throw Error('mobile live-proof overlay still visible');
+              if(v.n==='desktop'&&x.host&&x.host.display==='none') throw Error('desktop live-proof unexpectedly hidden');
+              await p.screenshot({path:`qa-v1d/screens/${v.n}.png`,fullPage:true}); await p.close();
+            }
+            fs.writeFileSync('qa-v1d/verification.json',JSON.stringify(O,null,2)); console.log(JSON.stringify(Object.fromEntries(Object.entries(O).map(([k,v])=>[k,{hydration:v.hydration.length,old:v.old,jobs:v.jobs,skills:v.skills,logos:v.logos,host:v.host,sticky:v.sticky,overflow:v.overflow,blanks:v.blanks,bad:v.bad}])),null,2)); await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-v1d/verify.js
+
+      - name: Lighthouse after patch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -u
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          BASE='https://sikhadenge.in/masterclass/claude/free'
+          COMMON="--quiet --chrome-path=$CHROME --chrome-flags=--headless=new\ --no-sandbox\ --disable-dev-shm-usage --output=json"
+          npx --yes lighthouse "$BASE?v=runtime-v1d-lh-desktop" $COMMON --output-path=qa-v1d/lighthouse/desktop.json --form-factor=desktop --screenEmulation.mobile=false --screenEmulation.width=1440 --screenEmulation.height=900 --screenEmulation.deviceScaleFactor=1 || true
+          npx --yes lighthouse "$BASE?v=runtime-v1d-lh-tablet" $COMMON --output-path=qa-v1d/lighthouse/tablet.json --form-factor=mobile --screenEmulation.mobile=true --screenEmulation.width=768 --screenEmulation.height=1024 --screenEmulation.deviceScaleFactor=1 || true
+          npx --yes lighthouse "$BASE?v=runtime-v1d-lh-mobile" $COMMON --output-path=qa-v1d/lighthouse/mobile.json --form-factor=mobile --screenEmulation.mobile=true --screenEmulation.width=390 --screenEmulation.height=844 --screenEmulation.deviceScaleFactor=1 || true
+          python3 - <<'PY'
+          import json,pathlib
+          out={}
+          for n in ('desktop','tablet','mobile'):
+              p=pathlib.Path(f'qa-v1d/lighthouse/{n}.json')
+              if not p.exists(): out[n]={'error':'missing'}; continue
+              d=json.loads(p.read_text()); c=d['categories']; a=d['audits']; sc=lambda k: None if c.get(k,{}).get('score') is None else round(c[k]['score']*100); num=lambda k: None if a.get(k,{}).get('numericValue') is None else round(a[k]['numericValue'],2)
+              out[n]={'performance':sc('performance'),'accessibility':sc('accessibility'),'bestPractices':sc('best-practices'),'seo':sc('seo'),'FCP_ms':num('first-contentful-paint'),'LCP_ms':num('largest-contentful-paint'),'CLS':num('cumulative-layout-shift'),'TBT_ms':num('total-blocking-time'),'transferBytes':num('total-byte-weight')}
+          pathlib.Path('qa-v1d/lighthouse-summary.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          PY
+
+      - name: Roll back if verification failed
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail; NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; CSS='/var/www/sikhadenge.in/claude-runtime-stability-v1.css'; M='/var/backups/sikhadenge/.claude-runtime-stability-v1d-last'; test -f "$M"; B="$(cat "$M")"; test -f "$B/sikhadenge.in-ssl.before"; cp "$B/sikhadenge.in-ssl.before" "$NG"; if [[ -f "$B/claude-runtime-stability-v1.css.before" ]]; then cp "$B/claude-runtime-stability-v1.css.before" "$CSS"; else rm -f "$CSS"; fi; nginx -t; systemctl reload nginx; echo "ROLLED_BACK=$B"
+          REMOTE
+
+      - name: Upload QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-runtime-stability-v1d-qa
+          path: qa-v1d/
+          retention-days: 1
