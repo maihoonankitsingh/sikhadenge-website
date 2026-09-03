@@ -1,4 +1,4 @@
-name: Home Tools Logo Wrapper Readonly 20260903
+name: Home Tools Transparent Logo Source Audit 20260903
 
 on:
   push:
@@ -34,23 +34,19 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect exact live tool logo wrapper
+      - name: Verify transparent logo sources read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          export HOME=/root PM2_HOME=/root/.pm2
-          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
-          PID="$(pm2 pid "$APP" | tail -1)"
-          CWD="$(readlink -f /proc/$PID/cwd)"
-          SRC="$CWD/app/landing/page.tsx"
-          echo "PROC_CWD=$CWD"
-          echo 'AI_TOOLS_DATA:'
-          sed -n '84,108p' "$SRC"
-          echo 'CURRENT_RENDERER:'
-          grep -n -B24 -A34 'src={tool.logo}' "$SRC" | head -140
-          echo 'TOOL_VISUAL_DECLARATION:'
-          grep -n -B4 -A100 'toolVisual' "$SRC" | head -220 || true
+          BASE='https://cdn.jsdelivr.net/npm/simple-icons@latest/icons'
+          for slug in openai claude googlegemini deepseek perplexity midjourney ideogram runway pika lumalabs elevenlabs heygen descript notion zapier make n8n webflow gamma; do
+            code="$(curl -L -sS -o /tmp/si.svg -w '%{http_code}' "$BASE/$slug.svg" || true)"
+            size="$(wc -c </tmp/si.svg 2>/dev/null || echo 0)"
+            printf 'SIMPLEICON %-16s HTTP=%s SIZE=%s\n' "$slug" "$code" "$size"
+          done
+          echo 'LOCAL_SVG_VARIANTS:'
+          find /var/www/sikhadenge.in/sikhadenge-website-space/public -type f \( -iname '*.svg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | grep -Ei '/(chatgpt|openai|claude|gemini|deepseek|perplexity|midjourney|ideogram|runway|pika|veo|luma|eleven|heygen|descript|notion|zapier|make|n8n|webflow|gamma)' | head -240 || true
           echo 'READ_ONLY=1'
           REMOTE
