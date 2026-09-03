@@ -131,8 +131,11 @@ jobs:
           curl -fsS --max-time 20 https://sikhadenge.in/claude-badge-spacing-v1.js | grep -Fq 'v1-standard-12'
           HTML="$(mktemp)"
           curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-standard12-server' -o "$HTML"
-          test "$(grep -o '/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903' "$HTML" | wc -l)" -eq 1
-          test "$(grep -o '/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903' "$HTML" | wc -l)" -eq 0
+          grep -Fq '/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903' "$HTML"
+          if grep -Fq '/claude-badge-spacing-v1.js?v=badge-gap-v1-20260903' "$HTML"; then
+            echo 'Old badge spacing script tag is still present'
+            exit 1
+          fi
           grep -Fq '/api/social-proof/live?widget=1' "$HTML"
 
           AI="$(mktemp)"
@@ -155,7 +158,7 @@ jobs:
           DOM="$RUNNER_TEMP/claude-badge-spacing.html"
           DESK="$RUNNER_TEMP/claude-badge-spacing-desktop.png"
           MOB="$RUNNER_TEMP/claude-badge-spacing-mobile.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-standard12-final-20260903'
+          URL='https://sikhadenge.in/masterclass/claude/free?v=badge-spacing-standard12-final-20260903b'
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$DESK" "$URL"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=390,9000 --screenshot="$MOB" "$URL"
