@@ -1,0 +1,44 @@
+name: Tracking Fast Lock 20260903
+on:
+  push:
+    paths:
+      - .github/workflows/tracking-fast-lock-20260903.yml
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 4
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+      - name: Fast lock
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -eu
+          pid(){ ss -ltnp 2>/dev/null | awk -v p=":$1" '$4~p"$"&&match($0,/pid=[0-9]+/){print substr($0,RSTART+4,RLENGTH-4);exit}'; }
+          for port in 3940 3971 3955 3965; do
+            P="$(pid "$port" || true)"; C="$(readlink -f /proc/$P/cwd 2>/dev/null || true)"; echo "=== $port $C ==="; [[ -d "$C" ]] || continue
+            for f in components/consent/GoogleConsentBridge.tsx components/consent/ClarityConsentBridge.tsx components/consent/SegmentConsentBridge.tsx components/consent/MetaConsentBridge.tsx lib/metaConversions.ts; do [[ -f "$C/$f" ]] && { echo "--$f"; sed -n '1,38p' "$C/$f"; }; done
+            echo '--ENV-PRESENCE--'; tr '\0' '\n' < /proc/$P/environ 2>/dev/null | grep -E '^(NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|NEXT_PUBLIC_SEGMENT_WRITE_KEY|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|META_CAPI_ACCESS_TOKEN|META_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' | sed -E 's/=.*/=PRESENT/' || true
+            echo '--CTA/CONVERSIONS--'; grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|CompleteRegistration|generate_lead|Purchase|sendMeta|trackMeta|AW-|GOOGLE_ADS_CONVERSION|eventID|event_id' "$C/pages" "$C/app" "$C/components" "$C/lib" 2>/dev/null | head -180 || true
+          done
+          echo '=== STATIC IDS ==='
+          for port in 3940 3971 3955; do P="$(pid "$port"||true)"; C="$(readlink -f /proc/$P/cwd 2>/dev/null||true)"; [[ -d "$C/.next/static" ]] || continue; grep -RhoE 'G-[A-Z0-9]{6,}|AW-[0-9]+|https://www\.clarity\.ms/tag/[A-Za-z0-9_-]+' "$C/.next/static" 2>/dev/null | sort -u | head -40 || true; done
+          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js
+          echo FAST_LOCK_DONE
+          REMOTE
