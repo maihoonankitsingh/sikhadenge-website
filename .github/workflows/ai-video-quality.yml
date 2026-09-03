@@ -9,8 +9,10 @@ on:
       - "styles/ai-video-warm-reference.css"
       - "pages/_app.tsx"
       - "pages/_document.tsx"
+      - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/ai-video-quality.yml"
   push:
     branches:
@@ -22,8 +24,10 @@ on:
       - "styles/ai-video-warm-reference.css"
       - "pages/_app.tsx"
       - "pages/_document.tsx"
+      - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/ai-video-quality.yml"
 
 permissions:
@@ -50,3 +54,32 @@ jobs:
 
       - name: Run AI Video source audit
         run: node scripts/audit-ai-video-masterclass.mjs
+
+  candidate-build:
+    name: Candidate lint and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Re-run source audit after install
+        run: npm run ai-video:audit
+
+      - name: Lint AI Video route and shared shell
+        run: npx next lint --file pages/masterclass/ai-video/index.tsx --file pages/_app.tsx --file pages/_document.tsx
+
+      - name: Production build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
