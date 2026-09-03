@@ -1,0 +1,154 @@
+name: Funnel Attribution Contract Audit V2 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/funnel-attribution-contract-audit-v2-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only production contract audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          V72=/var/www/sikhadenge.in/registration-stable-v72-20260903-131023
+          echo '===== CONTRACT_AUDIT_V2_BEGIN ====='
+          date -Is
+          echo '===== V72_LOCK ====='
+          sha256sum "$V72/registration-stable-page1-v72.js" "$V72/registration-stable-hot-v72.js"
+
+          echo '===== LISTENERS ====='
+          for port in 3400 3940 3955; do
+            pid="$(ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p"$" {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+            if [[ -n "$pid" ]]; then
+              cwd="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+              echo "PORT=$port PID=$pid CWD=$cwd"
+            else
+              echo "PORT=$port PID=NONE"
+            fi
+          done
+
+          PMJSON="$(mktemp)"; pm2 jlist > "$PMJSON"
+          python3 - "$PMJSON" <<'PY'
+          import json,sys
+          data=json.load(open(sys.argv[1]))
+          for p in data:
+              env=p.get('pm2_env') or {}
+              port=str(env.get('PORT') or '')
+              if port in {'3400','3940','3955'} or p.get('name') in {'sikhadenge-dashboard-revenue','sikhadenge-ai-workflow-premium-3940','sikhadenge-checkout-hotfix-3955-20260831-210229'}:
+                  print('PM2',p.get('name'),'PID',p.get('pid'),'PORT',port,'STATUS',env.get('status'),'CWD',env.get('pm_cwd'))
+          PY
+
+          echo '===== ENV_PRESENCE_AND_SECRET_MATCH ====='
+          python3 <<'PY'
+          import os,re,subprocess
+          def pid_for(port):
+              s=subprocess.check_output(['ss','-ltnp'],text=True,stderr=subprocess.DEVNULL)
+              for line in s.splitlines():
+                  if re.search(rf':{port}\s',line):
+                      m=re.search(r'pid=(\d+)',line)
+                      if m:return m.group(1)
+          def env(pid):
+              if not pid:return {}
+              raw=open(f'/proc/{pid}/environ','rb').read().split(b'\0')
+              out={}
+              for item in raw:
+                  if b'=' in item:
+                      k,v=item.split(b'=',1); out[k.decode(errors='ignore')]=v.decode(errors='ignore')
+              return out
+          envs={p:env(pid_for(p)) for p in (3400,3940,3955)}
+          keys=['DATABASE_URL','IDENTITY_HASH_SECRET','LEAD_INGEST_WEBHOOK_SECRET','INTERNAL_CRON_SECRET','META_PIXEL_ID','NEXT_PUBLIC_META_PIXEL_ID','META_CAPI_ACCESS_TOKEN','META_CONVERSIONS_API_URL','META_CONVERSIONS_ACCESS_TOKEN','GOOGLE_ADS_OFFLINE_CONVERSION_URL','GOOGLE_ADS_ACCESS_TOKEN','GOOGLE_ADS_DEVELOPER_TOKEN','GOOGLE_ADS_CONVERSION_ACTION','GOOGLE_ADS_CONVERSION_ACTIONS_JSON','RAZORPAY_WEBHOOK_SECRET']
+          for p,e in envs.items():
+              print('PORT',p)
+              for k in keys: print(f'{k}_PRESENT={1 if e.get(k) else 0}')
+          a=envs[3400].get('LEAD_INGEST_WEBHOOK_SECRET'); b=envs[3955].get('LEAD_INGEST_WEBHOOK_SECRET')
+          print('LEAD_SECRET_MATCH=' + ('SAME' if a and b and a==b else 'DIFFERENT' if a and b else 'ABSENT'))
+          PY
+
+          echo '===== AI_VIDEO_CTA ====='
+          P3940="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3940$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+          C3940="$(readlink -f "/proc/$P3940/cwd")"
+          echo "C3940=$C3940"
+          grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|source=ai-video-masterclass' "$C3940/app" "$C3940/src" "$C3940/components" 2>/dev/null | head -120 || true
+          echo '===== AI_VIDEO_ATTRIBUTION_KEYS ====='
+          if [[ -f "$C3940/lib/sikhadenge-analytics/browser-attribution.ts" ]]; then
+            grep -nE -C 2 'CAMPAIGN_KEYS|utm_id|utm_campaign_id|campaign_id|utm_adset_id|adset_id|utm_ad_id|ad_id|fbclid|gclid' "$C3940/lib/sikhadenge-analytics/browser-attribution.ts" | head -120 || true
+          fi
+
+          echo '===== REGISTRATION_META_AND_BRIDGE ====='
+          P3955="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3955$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+          C3955="$(readlink -f "/proc/$P3955/cwd")"
+          echo "C3955=$C3955"
+          grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'function trackMetaEvent|const trackMetaEvent|export.*trackMetaEvent|trackMetaEvent\(|fbq\(|eventID|event_id' "$C3955/lib" "$C3955/app" 2>/dev/null | head -180 || true
+          LF="$C3955/app/api/masterclass/lead/route.ts"
+          if [[ -f "$LF" ]]; then
+            grep -nE -C 3 'sendMetaLeadEvent|event_name|event_id|NextResponse.json|LEAD_INGEST|x-sikhadenge-signature|idempotency' "$LF" | head -220 || true
+          fi
+
+          echo '===== DASHBOARD_WEBHOOK_DEPLOY_STATE ====='
+          D=/opt/sikhadenge-dashboard
+          grep -nE -C 2 'resolveIdentity|recordTouch|attributeConversion|masterclass_lead|externalLeadId|leadSource|LEAD_CREATION' "$D/app/api/webhooks/leads/route.ts" 2>/dev/null | head -220 || true
+
+          echo '===== DB_COUNTS ====='
+          P3400="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3400$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+          export P3400 D
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          for(const ent of fs.readFileSync(`/proc/${process.env.P3400}/environ`,'utf8').split('\0')){const i=ent.indexOf('=');if(i>0)process.env[ent.slice(0,i)]=ent.slice(i+1)}
+          process.chdir(process.env.D); const {PrismaClient}=require(path.join(process.env.D,'node_modules/@prisma/client')); const p=new PrismaClient();
+          (async()=>{
+            const names=['MasterclassLead','Lead','Admission','Payment','FinancialOrder','IdentityProfile','IdentityAlias','IdentityLink','AttributionTouch','ConversionAttribution','LearningCourse','Enrollment','OfflineConversionJob','AdSpend'];
+            for(const n of names){try{const r=await p.$queryRawUnsafe(`SELECT COUNT(*)::int count FROM "${n}"`);console.log(n,r[0].count)}catch(e){console.log(n,'ERR')}}
+            const q=async s=>(await p.$queryRawUnsafe(s))[0];
+            console.log('NULL_LINKS',JSON.stringify(await q(`SELECT (SELECT COUNT(*)::int FROM "Admission" WHERE "leadId" IS NULL) admission_lead_null,(SELECT COUNT(*)::int FROM "Payment" WHERE "leadId" IS NULL) payment_lead_null,(SELECT COUNT(*)::int FROM "Payment" WHERE "admissionId" IS NULL) payment_admission_null`)));
+            console.log('PAID_WITHOUT_LEAD',JSON.stringify(await q(`SELECT COUNT(*)::int count FROM "Payment" WHERE lower(COALESCE(status,'')) IN ('paid','captured','success','successful') AND "leadId" IS NULL`)));
+            console.log('MASTERCLASS_MATCH',JSON.stringify(await q(`SELECT (SELECT COUNT(*)::int FROM "Admission" a JOIN "MasterclassLead" m ON right(regexp_replace(COALESCE(a.phone,''),'\\D','','g'),10)=right(regexp_replace(COALESCE(m.phone,''),'\\D','','g'),10) AND right(regexp_replace(COALESCE(a.phone,''),'\\D','','g'),10)<>'' ) admission_masterclass_matches`)));
+            console.log('OFFLINE_STATUS',JSON.stringify(await p.$queryRawUnsafe(`SELECT platform,"conversionType",status,COUNT(*)::int count FROM "OfflineConversionJob" GROUP BY 1,2,3 ORDER BY 1,2,3`)));
+          })().catch(e=>{console.error('DBERR',e.message);process.exitCode=1}).finally(()=>p.$disconnect());
+NODE
+
+          echo '===== LIVE_PARAM_PROPAGATION ====='
+          TMP="$(mktemp)"
+          curl -LksS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=audit_campaign&utm_content=audit_creative&utm_id=999&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=TESTFBCLICK' -o "$TMP"
+          grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' "$TMP" | sed 's/&amp;/\&/g' | sort -u | head -40 || true
+          rm -f "$TMP" "$PMJSON"
+
+          echo '===== V72_LOCK_RECHECK ====='
+          sha256sum "$V72/registration-stable-page1-v72.js" "$V72/registration-stable-hot-v72.js"
+          echo 'RESULT=CONTRACT_AUDIT_V2_COMPLETE'
+          REMOTE
