@@ -94,9 +94,9 @@ const nextConfig = {
         ],
       },
       {
-        // Keep the existing site-wide no-store behavior, but do not override
-        // the dedicated AI Video landing-page cache policy above.
-        source: "/((?!_next/static|_next/image|favicon.ico|masterclass/ai-video(?:/|$)).*)",
+        // Preserve the existing site-wide no-store policy while excluding the
+        // AI Video landing-page prefix so its dedicated policy can take effect.
+        source: "/((?!_next/static|_next/image|favicon.ico|masterclass/ai-video).*)",
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
     ];
