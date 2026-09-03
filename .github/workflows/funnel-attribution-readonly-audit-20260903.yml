@@ -47,4 +47,4 @@ jobs:
           SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
         run: bash ops/funnel-attribution-readonly-audit-20260903.sh
 
-# audit-v2 listener runtime mapping
+# focused implementation audit
