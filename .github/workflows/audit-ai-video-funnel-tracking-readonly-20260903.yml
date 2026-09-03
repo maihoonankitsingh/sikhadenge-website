@@ -18,7 +18,7 @@ env:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 12
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -37,105 +37,107 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Audit live funnel tracking without changes
+      - name: Inspect active funnel runtimes only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '===== AI_VIDEO_TRACKING_AUDIT_BEGIN ====='
+          echo '===== TARGETED_TRACKING_AUDIT_BEGIN ====='
           echo 'READ_ONLY=1'
           echo 'UTC='"$(date -u +%FT%TZ)"
 
-          echo '===== ROUTE STATUS ====='
-          for u in \
-            'https://sikhadenge.in/masterclass/ai-video' \
-            'https://sikhadenge.in/gen-ai-masterclass/register-one-step' \
-            'https://dashboard.sikhadenge.in/api/analytics/events' \
-            'https://dashboard.sikhadenge.in/api/masterclass/lead'; do
-            code="$(curl -LksS --max-time 15 -o /dev/null -w '%{http_code}' "$u" || true)"
-            echo "$u HTTP=$code"
-          done
-
-          echo '===== ACTIVE NGINX ROUTING FILTERED ====='
-          nginx -T 2>/dev/null | grep -nE 'masterclass/ai-video|gen-ai-masterclass/register-one-step|dashboard\.sikhadenge\.in|registration-v2|proxy_pass|masterclass/lead|analytics/events' | head -320 || true
-
-          echo '===== ACTIVE APP / RELEASE CANDIDATES ====='
-          readlink -f /var/www/sikhadenge.in/current 2>/dev/null || true
-          find /var/www/sikhadenge.in -maxdepth 3 -type f \( -name 'page.tsx' -o -name 'page.jsx' -o -name 'route.ts' -o -name '*.js' -o -name '*.conf' \) 2>/dev/null \
-            | grep -E 'ai-video|masterclass|register|registration|tracking|analytics' | head -260 || true
-
-          echo '===== SOURCE FILES WITH AI VIDEO ROUTE MARKERS ====='
-          for root in /var/www/sikhadenge.in /etc/nginx /opt/sikhadenge-dashboard; do
-            [[ -d "$root" ]] || continue
-            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
-              -E 'masterclass/ai-video|AI Video Masterclass|AI Video' "$root" 2>/dev/null | head -160 || true
-          done
-
-          echo '===== TRACKING SOURCE HITS ====='
-          for root in /var/www/sikhadenge.in /etc/nginx /opt/sikhadenge-dashboard; do
-            [[ -d "$root" ]] || continue
-            grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
-              -E 'fbq\(|googletagmanager|gtag\(|GTM-|GA4|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead' "$root" 2>/dev/null \
-              | grep -E 'masterclass|ai-video|register|registration|tracking|analytics|nginx|dashboard|lead' | head -260 || true
-          done
-
-          echo '===== TRACKING CONTEXT FROM HIGH-SIGNAL FILES ====='
-          mapfile -t files < <(
-            for root in /var/www/sikhadenge.in /etc/nginx; do
-              [[ -d "$root" ]] || continue
-              grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
-                -E 'fbq\(|gtag\(|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|analytics/events|masterclass/lead' "$root" 2>/dev/null || true
-            done | grep -E 'masterclass|ai-video|register|registration|tracking|analytics|nginx|lead' | awk '!seen[$0]++' | head -35
-          )
-          for f in "${files[@]:-}"; do
+          echo '===== ACTIVE NGINX EXACT BLOCKS ====='
+          for f in /etc/nginx/snippets/sikhadenge-ai-video-3940.conf /etc/nginx/snippets/sikhadenge-registration-v2-hot.conf /etc/nginx/sites-enabled/sikhadenge.in-ssl /etc/nginx/sites-enabled/dashboard.sikhadenge.in; do
             [[ -f "$f" ]] || continue
-            echo "--- FILE=$f ---"
-            grep -nE -C 3 'fbq\(|googletagmanager|gtag\(|GTM-|utm_source|utm_medium|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead' "$f" 2>/dev/null | head -180 || true
+            echo "--- $f ---"
+            grep -nE -C 5 'masterclass/ai-video|register-one-step|api/masterclass/lead|registration-stable|registration-v2|3940|3955|3400|sub_filter|script src' "$f" 2>/dev/null | head -360 || true
           done
 
-          echo '===== LIVE AI VIDEO HTML TRACKING MARKERS ====='
-          A=/tmp/aiv-track.html
-          curl -LksS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?utm_source=audit&utm_medium=qa&utm_campaign=tracking_audit&utm_campaign_id=cmp_audit&utm_adset_id=as_audit&utm_ad_id=ad_audit&fbclid=fb_audit&gclid=g_audit' -o "$A"
-          echo "HTML_BYTES=$(wc -c < "$A")"
-          grep -Eo 'https?://[^"< ]+|/_next/static/[^"< ]+|fbq\([^<]{0,180}|gtag\([^<]{0,180}|googletagmanager[^"< ]*|utm_(source|medium|campaign|campaign_id|adset_id|ad_id)|fbclid|gclid|_fbp|_fbc|analytics/events|masterclass/lead|gen-ai-masterclass/register-one-step' "$A" \
-            | sed -E 's/[?&](token|access_token|api_key|secret)=[^& ]+/\1=REDACTED/gI' | head -260 || true
+          echo '===== SELECTED PM2 RUNTIME MAP ====='
+          pm2 jlist 2>/dev/null | python3 - <<'PY'
+          import json,sys
+          names={
+            'sikhadenge-ai-workflow-premium-3940',
+            'sikhadenge-checkout-hotfix-3955-20260831-210229',
+            'sikhadenge-dashboard-revenue',
+            'sikhadenge-dashboard-brand',
+            'sikhadenge-ai-video-icons-hotfix-3930',
+          }
+          keys=[
+            'GA4_MEASUREMENT_ID','GA4_API_SECRET','NEXT_PUBLIC_GA_MEASUREMENT_ID','NEXT_PUBLIC_GA4_MEASUREMENT_ID',
+            'META_PIXEL_ID','NEXT_PUBLIC_META_PIXEL_ID','META_CONVERSIONS_API_URL','META_CONVERSIONS_ACCESS_TOKEN','META_ACCESS_TOKEN',
+            'GOOGLE_ADS_OFFLINE_CONVERSION_URL','GOOGLE_ADS_ACCESS_TOKEN','IDENTITY_HASH_SECRET','INTERNAL_CRON_SECRET',
+            'DATABASE_URL','NEXT_PUBLIC_DASHBOARD_URL','DASHBOARD_URL'
+          ]
+          data=json.load(sys.stdin)
+          for p in data:
+            if p.get('name') not in names: continue
+            env=p.get('pm2_env') or {}
+            print('--- PM2',p.get('name'),'---')
+            print('status=',env.get('status'))
+            print('cwd=',env.get('pm_cwd'))
+            print('exec=',env.get('pm_exec_path'))
+            print('args=',env.get('args'))
+            for k in keys:
+              v=env.get(k)
+              print(f'{k}_PRESENT={1 if v not in (None,"") else 0}')
+          PY
 
-          echo '===== LIVE JS BUNDLE TRACKING MARKERS ====='
-          BDIR="$(mktemp -d)"
-          trap 'rm -rf "$BDIR" "$A"' EXIT
-          grep -oE 'src="[^"]+\.js[^"]*"' "$A" | sed -E 's/^src="|"$//g' | sort -u | head -80 > "$BDIR/js.list" || true
-          n=0
-          while read -r src; do
-            [[ -n "$src" ]] || continue
-            n=$((n+1)); out="$BDIR/$n.js"
-            case "$src" in http*) url="$src";; *) url="https://sikhadenge.in$src";; esac
-            curl -LksS --max-time 15 "$url" -o "$out" || continue
-            if grep -Eq 'fbq\(|gtag\(|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead|register-one-step' "$out"; then
-              echo "--- BUNDLE=$src ---"
-              grep -Eo '.{0,180}(fbq\(|gtag\(|utm_source|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|_fbp|_fbc|anonymousId|sessionId|analytics/events|masterclass/lead|register-one-step).{0,260}' "$out" | head -40 || true
-            fi
-          done < "$BDIR/js.list"
-
-          echo '===== REGISTRATION LIVE HTML / JS MARKERS ====='
-          R=/tmp/reg-track.html
-          curl -LksS --max-time 20 'https://sikhadenge.in/gen-ai-masterclass/register-one-step?utm_source=audit&utm_campaign_id=cmp_audit&utm_adset_id=as_audit&utm_ad_id=ad_audit&fbclid=fb_audit' -o "$R"
-          echo "REG_HTML_BYTES=$(wc -c < "$R")"
-          grep -Eo 'src="[^"]+\.js[^"]*"|fbq\([^<]{0,180}|gtag\([^<]{0,180}|utm_(source|medium|campaign|campaign_id|adset_id|ad_id)|fbclid|gclid|_fbp|_fbc|analytics/events|masterclass/lead' "$R" | head -180 || true
-          rm -f "$R"
-
-          echo '===== DASHBOARD PROCESS / ENV KEY PRESENCE ONLY ====='
-          if [[ -d /opt/sikhadenge-dashboard ]]; then
-            cd /opt/sikhadenge-dashboard
-            for k in GA4_MEASUREMENT_ID GA4_API_SECRET META_CONVERSIONS_API_URL META_CONVERSIONS_ACCESS_TOKEN GOOGLE_ADS_OFFLINE_CONVERSION_URL GOOGLE_ADS_ACCESS_TOKEN IDENTITY_HASH_SECRET INTERNAL_CRON_SECRET; do
-              present=0
-              for e in .env .env.local .env.production; do
-                [[ -f "$e" ]] && grep -Eq "^${k}=" "$e" && present=1 || true
-              done
-              echo "$k=$present"
+          echo '===== ACTIVE 3940 SOURCE TRACKING ====='
+          P3940="$(pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); p=next((x for x in a if x.get("name")=="sikhadenge-ai-workflow-premium-3940"),{}); print((p.get("pm2_env") or {}).get("pm_cwd") or "")')"
+          echo "P3940=$P3940"
+          if [[ -d "$P3940" ]]; then
+            find "$P3940" -maxdepth 5 -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) 2>/dev/null \
+              | grep -E 'ai-video|masterclass|analytics|track|page' | head -120 || true
+            mapfile -t F3940 < <(grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|utm_source|fbq\(|gtag\(|analytics/events|browser-attribution|URLSearchParams' "$P3940" 2>/dev/null | head -24)
+            for f in "${F3940[@]:-}"; do
+              [[ -f "$f" ]] || continue
+              echo "--- 3940_FILE=$f ---"
+              grep -nE -C 5 'register-one-step|source=ai-video|placement=|utm_source|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|URLSearchParams|localStorage|sessionStorage|fbq\(|gtag\(|analytics/events' "$f" 2>/dev/null | head -220 || true
             done
           fi
-          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); print("\n".join(f"PM2 name={x.get(chr(110)+chr(97)+chr(109)+chr(101))} status={x.get(chr(112)+chr(109)+chr(50)+chr(95)+chr(101)+chr(110)+chr(118),{}).get(chr(115)+chr(116)+chr(97)+chr(116)+chr(117)+chr(115))}" for x in a if "sikhadenge" in str(x.get("name","")).lower()))' || true
 
-          echo '===== AI_VIDEO_TRACKING_AUDIT_END ====='
+          echo '===== AI VIDEO INJECTED HOTFIX TRACKING ====='
+          H='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/ai-video-icons-hotfix.js'
+          if [[ ! -f "$H" ]]; then H="$(find /var/www/sikhadenge.in -type f -name 'ai-video-icons-hotfix.js' 2>/dev/null | head -1)"; fi
+          echo "HOTFIX=$H"
+          if [[ -f "$H" ]]; then
+            grep -nE -C 6 'register-one-step|source=ai-video|placement=|utm_|campaign_id|adset_id|ad_id|fbclid|gclid|URLSearchParams|localStorage|sessionStorage' "$H" | head -300 || true
+          fi
+
+          echo '===== ACTIVE 3955 SOURCE TRACKING ====='
+          P3955="$(pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); p=next((x for x in a if x.get("name")=="sikhadenge-checkout-hotfix-3955-20260831-210229"),{}); print((p.get("pm2_env") or {}).get("pm_cwd") or "")')"
+          echo "P3955=$P3955"
+          if [[ -d "$P3955" ]]; then
+            mapfile -t F3955 < <(grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'api/masterclass/lead|RegisterOneStepPage|utm_campaign_id|sendMeta|graph.facebook|fbq\(|META_PIXEL|META_ACCESS|anonymousId|sessionId|fbp|fbc' "$P3955" 2>/dev/null | head -28)
+            for f in "${F3955[@]:-}"; do
+              [[ -f "$f" ]] || continue
+              echo "--- 3955_FILE=$f ---"
+              grep -nE -C 6 'api/masterclass/lead|RegisterOneStepPage|utm_source|utm_medium|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|msclkid|gbraid|wbraid|anonymousId|sessionId|landingUrl|referrer|fbp|fbc|fbq\(|sendMeta|graph.facebook|META_PIXEL|META_ACCESS|event_id|eventID' "$f" 2>/dev/null | head -300 || true
+            done
+          fi
+
+          echo '===== V72 OVERLAY TRACKING LOGIC ====='
+          V='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023'
+          for f in "$V"/*.js; do
+            [[ -f "$f" ]] || continue
+            echo "--- V72_FILE=$f SHA256=$(sha256sum "$f" | awk '{print $1}') ---"
+            grep -nE -C 5 'fetch\(|submit|form|URLSearchParams|location\.search|location\.href|utm_|campaign_id|adset_id|ad_id|fbclid|gclid|msclkid|anonymousId|sessionId|localStorage|sessionStorage|cookie|fbq\(|gtag\(|eventID|event_id|masterclass/lead' "$f" 2>/dev/null | head -300 || true
+          done
+
+          echo '===== WEBSITE ANALYTICS LIBS ====='
+          REL='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          for f in "$REL"/lib/sikhadenge-analytics/browser-attribution.ts "$REL"/lib/sikhadenge-analytics/browser-identity.ts "$REL"/lib/sikhadenge-analytics/browser-transport.ts "$REL"/lib/sikhadenge-analytics/event-contract.ts; do
+            [[ -f "$f" ]] || continue
+            echo "--- ANALYTICS_FILE=$f ---"
+            sed -n '1,300p' "$f" | sed -E 's/(token|secret|password)(["'"' ]*[:=]["'"' ]*)[^,"'"' ]+/\1\2REDACTED/gI'
+          done
+
+          echo '===== LIVE LINK PARAMETER PROPAGATION CHECK ====='
+          curl -LksS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=audit_campaign&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=TESTFBCLICK' \
+            | grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' \
+            | sed 's/&amp;/\&/g' | sort -u | head -80 || true
+
+          echo '===== TARGETED_TRACKING_AUDIT_END ====='
           REMOTE
