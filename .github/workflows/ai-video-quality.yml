@@ -1,0 +1,50 @@
+name: AI Video Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - "pages/masterclass/ai-video/**"
+      - "styles/ai-video-masterclass.module.css"
+      - "styles/ai-video-process-premium.module.css"
+      - "styles/ai-video-warm-reference.css"
+      - "pages/_app.tsx"
+      - "scripts/audit-ai-video-masterclass.mjs"
+      - "package.json"
+      - ".github/workflows/ai-video-quality.yml"
+  push:
+    branches:
+      - "redesign/ai-video-90-plus-20260903"
+    paths:
+      - "pages/masterclass/ai-video/**"
+      - "styles/ai-video-masterclass.module.css"
+      - "styles/ai-video-process-premium.module.css"
+      - "styles/ai-video-warm-reference.css"
+      - "pages/_app.tsx"
+      - "scripts/audit-ai-video-masterclass.mjs"
+      - "package.json"
+      - ".github/workflows/ai-video-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-video-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-quality:
+    name: Source architecture guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run AI Video source audit
+        run: node scripts/audit-ai-video-masterclass.mjs
