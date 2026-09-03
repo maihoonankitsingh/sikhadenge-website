@@ -4,138 +4,126 @@ set -Eeuo pipefail
 : "${SSH_USER:?missing SSH_USER}"
 SSH_PORT="${SSH_PORT:-22}"
 KEY="$HOME/.ssh/prod"
-
 ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
 set -Eeuo pipefail
 export TZ=Asia/Kolkata
+AI=/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420
+REG=/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335
+DASH=/opt/sikhadenge-dashboard
+V72=/var/www/sikhadenge.in/registration-stable-v72-20260903-131023
 
-echo '===== FUNNEL ATTRIBUTION READONLY AUDIT V2 ====='
+echo '===== FOCUSED FUNNEL ATTRIBUTION AUDIT ====='
 date -Is
 
-listener_pid(){
-  local port="$1"
-  ss -ltnp 2>/dev/null | awk -v p=":${port}" '$4 ~ p"$" {if(match($0,/pid=[0-9]+/)){x=substr($0,RSTART+4,RLENGTH-4);print x;exit}}'
-}
+echo '===== V72 LOCK ====='
+sha256sum "$V72/registration-stable-page1-v72.js" "$V72/registration-stable-hot-v72.js"
 
-: > /tmp/sd-listeners.tsv
-for port in 3400 3940 3955; do
-  pid="$(listener_pid "$port")"
-  if [ -n "$pid" ] && [ -d "/proc/$pid" ]; then
-    cwd="$(readlink -f "/proc/$pid/cwd" || true)"
-    cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" | sed -E 's/[[:space:]]+/ /g' | cut -c1-260)"
-    printf '%s\t%s\t%s\t%s\n' "$port" "$pid" "$cwd" "$cmd" | tee -a /tmp/sd-listeners.tsv
-  else
-    echo "PORT_${port}_LISTENER_NOT_FOUND"
-  fi
+echo '===== ACTIVE AI VIDEO CTA SOURCE ====='
+mapfile -t CTA_FILES < <(grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude='*.bak*' --exclude='*bk*' --exclude='*.map' 'source=ai-video-masterclass' "$AI/app" "$AI/src" 2>/dev/null | head -10)
+printf '%s\n' "${CTA_FILES[@]}"
+for f in "${CTA_FILES[@]}"; do
+  echo "--- FILE=$f ---"
+  grep -n -C 12 'source=ai-video-masterclass' "$f" | head -160 || true
 done
 
-echo '===== DIRECT ROUTE OWNERSHIP ====='
-for port in 3400 3940 3955; do
-  for path in /api/analytics/events /api/masterclass/lead; do
-    code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${port}${path}" || true)"
-    echo "PORT_${port} ${path} GET=${code}"
-  done
+echo '===== AI VIDEO ANALYTICS COMPONENT ====='
+sed -n '1,340p' "$AI/app/ClarityEvents.tsx" 2>/dev/null | sed -n '1,340p'
+
+echo '===== BROWSER ATTRIBUTION ====='
+for f in "$AI/lib/sikhadenge-analytics/browser-attribution.ts" "$AI/lib/sikhadenge-analytics/browser-identity.ts" "$AI/lib/sikhadenge-analytics/browser-transport.ts"; do
+  echo "--- $f ---"
+  sed -n '1,320p' "$f" 2>/dev/null || true
 done
 
-echo '===== LISTENER ENV KEY PRESENCE ONLY ====='
-export LISTENER_FILE=/tmp/sd-listeners.tsv
+echo '===== ACTIVE REGISTRATION COMPONENT TRACKING ====='
+RF="$REG/app/gen-ai-masterclass/register-one-step/_components/RegisterOneStepPage.tsx"
+grep -n -E 'utm_|fbclid|gclid|msclkid|fetch\(|api/masterclass/lead|tracking|source|session|anonymous' "$RF" | head -240 || true
+sed -n '45,230p' "$RF" 2>/dev/null || true
+
+echo '===== V72 SUBMIT/TRACKING PATH ====='
+VF="$V72/registration-stable-page1-v72.js"
+grep -n -E 'api/masterclass/lead|utm_|fbclid|gclid|msclkid|fetch\(|FormData|source=ai-video|URLSearchParams|session|anonymous' "$VF" | head -260 || true
+
+echo '===== ACTIVE 3955 MASTERCLASS LEAD ROUTE ====='
+LF="$REG/app/api/masterclass/lead/route.ts"
+sed -n '1,520p' "$LF" 2>/dev/null || true
+
+echo '===== DASHBOARD SIGNED LEAD WEBHOOK ====='
+sed -n '1,420p' "$DASH/app/api/webhooks/leads/route.ts" 2>/dev/null || true
+
+echo '===== DASHBOARD CRM LEAD CREATE ====='
+sed -n '1,360p' "$DASH/app/api/crm/leads/route.ts" 2>/dev/null || true
+
+echo '===== DASHBOARD OFFLINE CONVERSION DELIVERY ====='
+sed -n '1,320p' "$DASH/app/api/internal/offline-conversions/deliver/route.ts" 2>/dev/null || true
+
+echo '===== ACTIVE RAZORPAY WEBHOOK LOCATIONS ====='
+for base in "$REG" "$DASH"; do
+  find "$base/app/api" -type f -path '*razorpay*' -name 'route.ts' -print 2>/dev/null | head -20
+done
+for f in "$REG/app/api/finance/webhooks/razorpay/route.ts" "$REG/app/api/webhooks/razorpay/route.ts" "$DASH/app/api/finance/webhooks/razorpay/route.ts"; do
+  [ -f "$f" ] || continue
+  echo "--- $f ---"
+  sed -n '1,420p' "$f"
+done
+
+echo '===== LMS API/COURSE ROUTES ====='
+find "$DASH/app/api/lms" -maxdepth 4 -type f -name 'route.ts' -print 2>/dev/null | sort
+
+echo '===== DASHBOARD ADS/ANALYTICS UI FILES ====='
+find "$DASH/app/dashboard" -type f \( -name 'page.tsx' -o -name '*.tsx' \) 2>/dev/null | grep -Ei 'analytics|marketing|ads|attribution|crm|lead|revenue|funnel|lms|learning' | head -120 || true
+
+echo '===== DB ATTRIBUTION POPULATION / LINKAGE AGGREGATES ====='
+PID="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3400$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+export PID DASH
 node <<'NODE'
-const fs=require('fs');
-const keys=['DATABASE_URL','LEAD_INGEST_WEBHOOK_SECRET','INTERNAL_CRON_SECRET','META_CONVERSIONS_API_URL','META_CONVERSIONS_ACCESS_TOKEN','META_PIXEL_ID','NEXT_PUBLIC_META_PIXEL_ID','GA4_MEASUREMENT_ID','GA4_API_SECRET','NEXT_PUBLIC_GA_ID','GOOGLE_ADS_OFFLINE_CONVERSION_URL','GOOGLE_ADS_ACCESS_TOKEN','GOOGLE_ADS_DEVELOPER_TOKEN','RAZORPAY_WEBHOOK_SECRET'];
-for(const line of fs.readFileSync(process.env.LISTENER_FILE,'utf8').trim().split('\n').filter(Boolean)){
-  const [port,pid,cwd]=line.split('\t');
-  const env={};
-  for(const ent of fs.readFileSync(`/proc/${pid}/environ`,'utf8').split('\0')){const i=ent.indexOf('=');if(i>0)env[ent.slice(0,i)]=ent.slice(i+1);}
-  const present={};for(const k of keys)present[k]=Boolean(env[k]);
-  console.log(`PORT_${port}`,JSON.stringify({pid:Number(pid),cwd,present}));
-}
-NODE
-
-echo '===== RUNTIME ENV FILE KEY NAMES ONLY ====='
-while IFS=$'\t' read -r port pid cwd cmd; do
-  echo "--- PORT=$port CWD=$cwd ---"
-  if [ -d "$cwd" ]; then
-    find "$cwd" -maxdepth 2 -type f \( -name '.env' -o -name '.env.production' -o -name '.env.local' -o -name '.env.production.local' \) -print 2>/dev/null | while read -r ef; do
-      echo "ENV_FILE=$ef"
-      grep -E '^(DATABASE_URL|LEAD_INGEST_WEBHOOK_SECRET|INTERNAL_CRON_SECRET|META_CONVERSIONS_API_URL|META_CONVERSIONS_ACCESS_TOKEN|META_PIXEL_ID|NEXT_PUBLIC_META_PIXEL_ID|GA4_MEASUREMENT_ID|GA4_API_SECRET|NEXT_PUBLIC_GA_ID|GOOGLE_ADS_OFFLINE_CONVERSION_URL|GOOGLE_ADS_ACCESS_TOKEN|GOOGLE_ADS_DEVELOPER_TOKEN|RAZORPAY_WEBHOOK_SECRET)=' "$ef" 2>/dev/null | sed 's/=.*$/=PRESENT/' || true
-    done
-  fi
-done < /tmp/sd-listeners.tsv
-
-echo '===== TRACKING SOURCE FILES ====='
-while IFS=$'\t' read -r port pid cwd cmd; do
-  echo "--- PORT=$port CWD=$cwd ---"
-  [ -d "$cwd" ] || continue
-  for base in app lib src pages .next/server/app; do
-    [ -d "$cwd/$base" ] || continue
-    grep -RIlE --exclude='*.map' 'utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|anonymousId|sessionId|/api/analytics/events|masterclassLead\.(upsert|create)|AttributionTouch|recordTouch|resolveIdentity' "$cwd/$base" 2>/dev/null | head -50 || true
-  done
- done < /tmp/sd-listeners.tsv
-
-echo '===== 3940 AI VIDEO SOURCE CTA/TRACKING SNIPPETS ====='
-AI_CWD="$(awk -F '\t' '$1=="3940"{print $3;exit}' /tmp/sd-listeners.tsv)"
-if [ -n "$AI_CWD" ] && [ -d "$AI_CWD" ]; then
-  grep -RInE --exclude='*.map' --exclude-dir=node_modules 'gen-ai-masterclass/register-one-step|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|analytics/events|fbq\(|gtag\(' "$AI_CWD/app" "$AI_CWD/lib" "$AI_CWD/src" 2>/dev/null | head -100 || true
-fi
-
-echo '===== 3955 LEAD ROUTE TRACKING SNIPPETS ====='
-REG_CWD="$(awk -F '\t' '$1=="3955"{print $3;exit}' /tmp/sd-listeners.tsv)"
-if [ -n "$REG_CWD" ] && [ -d "$REG_CWD" ]; then
-  grep -RInE --exclude='*.map' --exclude-dir=node_modules 'masterclassLead\.(upsert|create)|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|recordTouch|resolveIdentity|attributeConversion|anonymousId|sessionId' "$REG_CWD/app" "$REG_CWD/lib" "$REG_CWD/src" 2>/dev/null | head -160 || true
-fi
-
-echo '===== DASHBOARD DATABASE LINKAGE: COUNTS ONLY ====='
-DASH_PID="$(awk -F '\t' '$1=="3400"{print $2;exit}' /tmp/sd-listeners.tsv)"
-DASH_CWD="$(awk -F '\t' '$1=="3400"{print $3;exit}' /tmp/sd-listeners.tsv)"
-if [ -n "$DASH_PID" ] && [ -d "$DASH_CWD" ]; then
-  export DASH_PID DASH_CWD
-  node <<'NODE'
 const fs=require('fs'),path=require('path');
-const pid=process.env.DASH_PID,cwd=process.env.DASH_CWD;
+const pid=process.env.PID,cwd=process.env.DASH;
 for(const ent of fs.readFileSync(`/proc/${pid}/environ`,'utf8').split('\0')){const i=ent.indexOf('=');if(i>0)process.env[ent.slice(0,i)]=ent.slice(i+1);}
 process.chdir(cwd);
-let PrismaClient;
-try{({PrismaClient}=require(path.join(cwd,'node_modules/@prisma/client')));}catch(e){console.log('PRISMA_CLIENT_LOAD_ERROR',e.message);process.exit(0);}
-const prisma=new PrismaClient();
+const {PrismaClient}=require(path.join(cwd,'node_modules/@prisma/client'));
+const p=new PrismaClient();
 (async()=>{
-  const models=['masterclassLead','lead','leadSource','admission','payment','enrollment','identityLink','attributionSession','attributionTouch','conversionAttribution','analyticsEvent','offlineConversionJob','financialOrder'];
-  const counts={};for(const m of models){try{counts[m]=await prisma[m].count();}catch(e){counts[m]=`ERR:${e.constructor?.name||'unknown'}`;}}
-  console.log('TOTAL_COUNTS',JSON.stringify(counts));
-  try{
-    const rows=await prisma.$queryRawUnsafe(`SELECT
-      (SELECT COUNT(*)::int FROM "IdentityLink" WHERE "entityType"='masterclass_lead') AS "masterclassIdentityLinks",
-      (SELECT COUNT(*)::int FROM "IdentityLink" WHERE "entityType"='lead') AS "leadIdentityLinks",
-      (SELECT COUNT(DISTINCT ml."entityId")::int FROM "IdentityLink" ml JOIN "IdentityLink" l ON l."identityId"=ml."identityId" AND l."entityType"='lead' WHERE ml."entityType"='masterclass_lead') AS "masterclassLinkedToCanonicalLead",
-      (SELECT COUNT(*)::int FROM "MasterclassLead" m JOIN "Lead" l ON l."phone"=m."phone") AS "masterclassPhoneMatchesCanonicalLead",
-      (SELECT COUNT(*)::int FROM "Admission" WHERE "leadId" IS NOT NULL) AS "admissionsWithLead",
-      (SELECT COUNT(*)::int FROM "Payment" WHERE "leadId" IS NOT NULL) AS "paymentsWithLead",
-      (SELECT COUNT(*)::int FROM "Payment" WHERE "admissionId" IS NOT NULL) AS "paymentsWithAdmission",
-      (SELECT COUNT(*)::int FROM "Enrollment") AS "enrollments",
-      (SELECT COUNT(*)::int FROM "FinancialOrder" WHERE "campaignId" IS NOT NULL) AS "ordersWithCampaignId",
-      (SELECT COUNT(*)::int FROM "FinancialOrder" WHERE "attributionTouchId" IS NOT NULL) AS "ordersWithAttributionTouchId"`);
-    console.log('LINKAGE',JSON.stringify(rows[0]||{}));
-  }catch(e){console.log('LINKAGE_ERROR',e.message.slice(0,500));}
-  try{console.log('TOUCH_KINDS',JSON.stringify(await prisma.attributionTouch.groupBy({by:['touchKind'],_count:{_all:true}})));}catch(e){console.log('TOUCH_KINDS_ERROR',e.message.slice(0,300));}
-  try{console.log('OFFLINE_JOBS',JSON.stringify(await prisma.offlineConversionJob.groupBy({by:['platform','conversionType','status'],_count:{_all:true}})));}catch(e){console.log('OFFLINE_JOBS_ERROR',e.message.slice(0,300));}
-  try{console.log('ANALYTICS_EVENTS',JSON.stringify(await prisma.analyticsEvent.groupBy({by:['eventName'],_count:{_all:true},take:50})));}catch(e){console.log('ANALYTICS_EVENTS_ERROR',e.message.slice(0,300));}
-  try{
-    const q=await prisma.$queryRawUnsafe(`SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('MasterclassLead','Lead','LeadSource','Admission','Payment','Enrollment','FinancialOrder') ORDER BY table_name,ordinal_position`);
-    const g={};for(const r of q)(g[r.table_name]??=[]).push(r.column_name);console.log('KEY_TABLE_COLUMNS',JSON.stringify(g));
-  }catch(e){console.log('COLUMN_AUDIT_ERROR',e.message.slice(0,300));}
-})().catch(e=>console.log('DB_AUDIT_FATAL',e.message.slice(0,500))).finally(()=>prisma.$disconnect());
+  const scalar=async(sql)=>{const r=await p.$queryRawUnsafe(sql);return r[0]||{};};
+  console.log('MASTERCLASS_TRACKING',JSON.stringify(await scalar(`SELECT
+    COUNT(*)::int total,
+    COUNT(*) FILTER (WHERE COALESCE("utm_source",'')<>'')::int utm_source,
+    COUNT(*) FILTER (WHERE COALESCE("utm_campaign",'')<>'')::int utm_campaign,
+    COUNT(*) FILTER (WHERE COALESCE("utm_campaign_id",'')<>'')::int campaign_id,
+    COUNT(*) FILTER (WHERE COALESCE("utm_adset_id",'')<>'')::int adset_id,
+    COUNT(*) FILTER (WHERE COALESCE("utm_ad_id",'')<>'')::int ad_id,
+    COUNT(*) FILTER (WHERE COALESCE("utm_content",'')<>'')::int content,
+    COUNT(*) FILTER (WHERE COALESCE("fbclid",'')<>'')::int fbclid,
+    COUNT(*) FILTER (WHERE COALESCE("gclid",'')<>'')::int gclid,
+    COUNT(*) FILTER (WHERE COALESCE("msclkid",'')<>'')::int msclkid,
+    COUNT(*) FILTER (WHERE COALESCE("landing_url",'')<>'')::int landing_url
+    FROM "MasterclassLead"`)));
+  console.log('MASTERCLASS_SOURCE_TOP',JSON.stringify(await p.$queryRawUnsafe(`SELECT COALESCE(NULLIF("source",''),'(blank)') source, COUNT(*)::int count FROM "MasterclassLead" GROUP BY 1 ORDER BY count DESC LIMIT 20`)));
+  console.log('MASTERCLASS_PAGE_TOP',JSON.stringify(await p.$queryRawUnsafe(`SELECT COALESCE(NULLIF("page",''),'(blank)') page, COUNT(*)::int count FROM "MasterclassLead" GROUP BY 1 ORDER BY count DESC LIMIT 20`)));
+  console.log('ADMISSION_MATCH',JSON.stringify(await scalar(`SELECT
+    (SELECT COUNT(*)::int FROM "Admission") admissions,
+    (SELECT COUNT(*)::int FROM "Admission" a JOIN "MasterclassLead" m ON regexp_replace(COALESCE(a.phone,''),'\\D','','g') = regexp_replace(COALESCE(m.phone,''),'\\D','','g') AND regexp_replace(COALESCE(a.phone,''),'\\D','','g')<>'') matched_masterclass,
+    (SELECT COUNT(*)::int FROM "Admission" a JOIN "Lead" l ON regexp_replace(COALESCE(a.phone,''),'\\D','','g') = regexp_replace(COALESCE(l.phone,''),'\\D','','g') AND regexp_replace(COALESCE(a.phone,''),'\\D','','g')<>'') matched_lead,
+    (SELECT COUNT(*)::int FROM "Admission" WHERE "leadId" IS NULL) admission_lead_null,
+    (SELECT COUNT(*)::int FROM "Payment" WHERE "leadId" IS NULL) payment_lead_null
+  `)));
+  console.log('DUPLICATE_CANONICAL_PHONE',JSON.stringify(await scalar(`SELECT COUNT(*)::int duplicate_groups FROM (SELECT regexp_replace(COALESCE(phone,''),'\\D','','g') p,COUNT(*) FROM "Lead" WHERE COALESCE(phone,'')<>'' GROUP BY 1 HAVING COUNT(*)>1) x`)));
+  console.log('COURSES',JSON.stringify(await p.$queryRawUnsafe(`SELECT id,code,title FROM "LearningCourse" ORDER BY "createdAt" DESC LIMIT 50`)));
+  console.log('ADMISSION_COURSES',JSON.stringify(await p.$queryRawUnsafe(`SELECT COALESCE(NULLIF(course,''),'(blank)') course, COUNT(*)::int count FROM "Admission" GROUP BY 1 ORDER BY count DESC LIMIT 40`)));
+  console.log('PAYMENT_STATUS',JSON.stringify(await p.$queryRawUnsafe(`SELECT COALESCE(NULLIF(status,''),'(blank)') status, COUNT(*)::int count FROM "Payment" GROUP BY 1 ORDER BY count DESC`)));
+  console.log('ANALYTICS_EVENT_TOP',JSON.stringify(await p.$queryRawUnsafe(`SELECT "eventName",COUNT(*)::int count FROM "AnalyticsEvent" GROUP BY "eventName" ORDER BY count DESC LIMIT 40`)));
+  console.log('CONSENT_COUNTS',JSON.stringify(await scalar(`SELECT COUNT(*)::int total, COUNT(*) FILTER (WHERE "analyticsConsent"=true)::int analytics_yes, COUNT(*) FILTER (WHERE "advertisingConsent"=true)::int advertising_yes FROM "ConsentRecord"`)));
+})().catch(e=>{console.error('DB_AUDIT_ERROR',e.message.slice(0,800));process.exitCode=1}).finally(()=>p.$disconnect());
 NODE
-else
-  echo 'DASHBOARD_LISTENER_NOT_FOUND'
-fi
 
-echo '===== LIVE CTA PROPAGATION RECONFIRM ====='
-AI_URL='https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=AUDIT_CAMPAIGN&utm_campaign_id=AUDIT_CMP_123&utm_adset_id=AUDIT_SET_123&utm_ad_id=AUDIT_AD_123&utm_content=AUDIT_CREATIVE&fbclid=AUDIT_FBCLID'
-curl -L --compressed -ksS "$AI_URL" -o /tmp/sd-ai-v2.html
-grep -oE 'href="[^"]*gen-ai-masterclass/register-one-step[^"]*"' /tmp/sd-ai-v2.html | head -10 || true
+echo '===== ENV KEYS RELEVANT TO DELIVERY (NAMES ONLY) ====='
+for f in "$DASH/.env" "$DASH/.env.local" "$DASH/.env.production" "$DASH/.env.production.local" "$REG/.env.local" "$AI/.env.local"; do
+  [ -f "$f" ] || continue
+  echo "--- $f ---"
+  grep -E '^(META_|GOOGLE_ADS_|GA4_|NEXT_PUBLIC_META_|NEXT_PUBLIC_GA_|IDENTITY_HASH_SECRET|LEAD_INGEST_WEBHOOK_SECRET|INTERNAL_CRON_SECRET|RAZORPAY_WEBHOOK_SECRET)=' "$f" 2>/dev/null | sed 's/=.*$/=PRESENT/' || true
+done
 
-echo '===== V72 IMMUTABILITY RECHECK ====='
-sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js
-sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js
-
-echo 'RESULT=READONLY_ATTRIBUTION_AUDIT_V2_COMPLETE'
+echo '===== V72 LOCK RECHECK ====='
+sha256sum "$V72/registration-stable-page1-v72.js" "$V72/registration-stable-hot-v72.js"
+echo 'RESULT=FOCUSED_FUNNEL_ATTRIBUTION_AUDIT_COMPLETE'
 REMOTE
