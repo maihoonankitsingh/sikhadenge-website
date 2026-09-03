@@ -1,0 +1,20 @@
+/* Claude /masterclass/claude/free runtime stability only.
+   No copy, layout redesign, CTA, tracking, or source-page changes. */
+
+.claude-masterclass-live_aiShiftSection__mR7ne {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 640px) {
+  #sd-sitewide-live-proof-host-v1 {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
