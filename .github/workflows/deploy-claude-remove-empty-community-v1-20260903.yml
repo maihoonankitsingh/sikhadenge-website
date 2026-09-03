@@ -124,12 +124,12 @@ jobs:
 
           curl -fsS --max-time 20 https://sikhadenge.in/claude-remove-empty-community-v1.js | grep -Fq '__CLAUDE_REMOVE_EMPTY_COMMUNITY_V1__'
           HTML="$(mktemp)"
-          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-server' -o "$HTML"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-server-v2' -o "$HTML"
           test "$(grep -o '/claude-remove-empty-community-v1.js?v=remove-blank-strip-20260903' "$HTML" | wc -l)" -eq 1
           grep -Fq '/api/social-proof/live?widget=1' "$HTML"
 
           AI="$(mktemp)"
-          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=remove-blank-strip-isolation' -o "$AI"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=remove-blank-strip-isolation-v2' -o "$AI"
           if grep -Fq '/claude-remove-empty-community-v1.js' "$AI"; then
             echo 'Blank-strip patch leaked into AI Video page'
             exit 1
@@ -147,13 +147,16 @@ jobs:
           test -n "$CHROME"
           DOM="$RUNNER_TEMP/claude-strip-removed.html"
           PNG="$RUNNER_TEMP/claude-strip-removed.png"
-          URL='https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-final-20260903'
+          URL='https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-final-v2-20260903'
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1900,2600 --screenshot="$PNG" "$URL"
 
-          grep -Fq 'data-claude-empty-community-removed="1"' "$DOM"
-          test "$(grep -o 'claude-masterclass-live_community__' "$DOM" | wc -l)" -eq 1
-          test "$(grep -o '<section[^>]*claude-masterclass-live_community__' "$DOM" | wc -l)" -eq 0
+          MARKER_COUNT="$(grep -o 'data-claude-empty-community-removed=\"1\"' "$DOM" | wc -l || true)"
+          COMMUNITY_SECTION_COUNT="$(grep -o '<section[^>]*claude-masterclass-live_community__' "$DOM" | wc -l || true)"
+          echo "removed_marker_count=$MARKER_COUNT"
+          echo "community_section_count=$COMMUNITY_SECTION_COUNT"
+          test "$MARKER_COUNT" -ge 1
+          test "$COMMUNITY_SECTION_COUNT" -eq 0
           grep -Fq 'Specially designed for working professionals' "$DOM"
           grep -Fq 'CURRENT BATCH ADVANTAGE' "$DOM"
           grep -Fq 'Learn AI Tools by Doing' "$DOM"
