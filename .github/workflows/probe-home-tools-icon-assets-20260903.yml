@@ -1,0 +1,90 @@
+name: Probe Home Tools Icon Assets 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/probe-home-tools-icon-assets-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Probe candidate assets read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== DIRECT OFFICIAL URL PROBE ==='
+          cat <<'EOF' >/tmp/home-tool-icon-urls.txt
+          ChatGPT|https://chatgpt.com/favicon.ico
+          Claude|https://claude.ai/favicon.ico
+          Gemini|https://www.gstatic.com/lamda/images/gemini_sparkle_aurora_33f86dc0c0257da337c63.svg
+          DeepSeek|https://www.deepseek.com/favicon.ico
+          Perplexity|https://www.perplexity.ai/favicon.ico
+          Midjourney|https://www.midjourney.com/favicon.ico
+          Ideogram|https://ideogram.ai/favicon.ico
+          Runway|https://runway.com/icon.png
+          Pika|https://pika.art/favicon.ico
+          Veo|https://deepmind.google/favicon.ico
+          Luma AI|https://lumalabs.ai/favicons/favicon-black.ico
+          ElevenLabs|https://elevenlabs.io/icon.svg
+          HeyGen|https://www.heygen.com/favicon.ico
+          Descript|https://www.descript.com/favicon.ico
+          Notion AI|https://www.notion.com/front-static/logo-ios.png
+          Zapier|https://zapier.com/favicon.ico
+          Make|https://www.make.com/favicon.ico
+          n8n|https://n8n.io/favicon.ico
+          Webflow AI|https://cdn.prod.website-files.com/686294e263eb7e215bd232f7/686d53ceda66a40cb6b6d546_favicon.png
+          Gamma AI|https://gamma.app/favicon.ico
+          EOF
+          while IFS='|' read -r name url; do
+            out=$(mktemp)
+            meta=$(curl -A 'Mozilla/5.0' -L --compressed -ksS --max-time 15 -o "$out" -w '%{http_code}|%{content_type}|%{size_download}|%{url_effective}' "$url" || true)
+            kind=$(file -b "$out" 2>/dev/null | cut -c1-120 || true)
+            echo "$name|$meta|$kind"
+            rm -f "$out"
+          done </tmp/home-tool-icon-urls.txt
+          rm -f /tmp/home-tool-icon-urls.txt
+          echo '=== EXISTING LOCAL CANDIDATES ==='
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space/public
+          for f in \
+            "$ROOT/images/claude-ai-tools-latest/chatgpt.png" \
+            "$ROOT/images/claude-ai-tools-latest/claude.png" \
+            "$ROOT/images/claude-ai-tools-latest/gemini.png" \
+            "$ROOT/images/claude-ai-tools-latest/perplexity.png" \
+            "$ROOT/images/tools/midjourney.png" \
+            "$ROOT/images/tools/ideogram.png" \
+            "$ROOT/images/claude-ai-tools-latest/runway.png" \
+            "$ROOT/images/tools/elevenlabs.png" \
+            "$ROOT/images/claude-ai-tools-latest/heygen.png" \
+            "$ROOT/images/claude-ai-tools/descript.png" \
+            "$ROOT/images/ai-tools/notion.png"; do
+              [ -f "$f" ] && echo "$(stat -c '%s' "$f")|$(file -b "$f")|$f"
+          done
+          REMOTE
