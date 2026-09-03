@@ -24,19 +24,26 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-      - name: Inspect exact blocks
+      - name: Inspect bridge and registration event flow
         shell: bash
         run: |
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -eu
-          nginx -T 2>/dev/null > /tmp/nginx-all.txt
-          echo '=== AI VIDEO BLOCK ==='
-          line=$(grep -n 'location = /masterclass/ai-video {' /tmp/nginx-all.txt | head -1 | cut -d: -f1 || true)
-          [ -n "$line" ] && sed -n "$((line-5)),$((line+55))p" /tmp/nginx-all.txt || true
-          echo '=== CLAUDE BLOCK ==='
-          line=$(grep -n 'location = /masterclass/claude/free {' /tmp/nginx-all.txt | head -1 | cut -d: -f1 || true)
-          [ -n "$line" ] && sed -n "$((line-5)),$((line+55))p" /tmp/nginx-all.txt || true
-          echo '=== SITE FILES ==='
-          grep -RIn 'location = /masterclass/ai-video\|location = /masterclass/claude/free' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null || true
-          echo INSPECT_DONE
+          echo '=== BRIDGE FILE ==='
+          stat /var/www/sikhadenge.in/tracking-live-v1/funnel-attribution-bridge-v1.js || true
+          sed -n '1,260p' /var/www/sikhadenge.in/tracking-live-v1/funnel-attribution-bridge-v1.js || true
+          echo '=== REG META PIXEL HELPER ==='
+          C=/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335
+          sed -n '1,180p' "$C/lib/metaPixel.ts" || true
+          echo '=== REG SUBMIT SUCCESS FLOW ==='
+          sed -n '120,230p' "$C/app/gen-ai-masterclass/register-one-step/_components/RegisterOneStepPage.tsx" || true
+          echo '=== REG API RESPONSE + META ==='
+          grep -nE -C 5 'sendMetaLeadEvent|NextResponse\.json|created\.id|event_id|return NextResponse' "$C/app/api/masterclass/lead/route.ts" | head -300 || true
+          echo '=== PUBLIC BRIDGE ==='
+          curl -fsS 'https://sikhadenge.in/funnel-attribution-bridge-v1.js?v=qa' | sha256sum
+          curl -fsS 'https://sikhadenge.in/funnel-attribution-bridge-v1.js?v=qa' | head -80
+          echo '=== HTML INJECTION CHECK ==='
+          for u in 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX' 'https://sikhadenge.in/masterclass/claude/free?utm_source=meta&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX'; do echo URL=$u; curl -fsS "$u" | grep -o 'funnel-attribution-bridge-v1.js[^"<]*' | head -2 || true; done
+          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js
+          echo INSPECT_BRIDGE_DONE
           REMOTE
