@@ -1,0 +1,108 @@
+name: Audit Claude Live Runtime Rootcause 20260903
+
+on:
+  push:
+    branches:
+      - audit/claude-responsive-20260903
+    paths:
+      - .github/workflows/audit-claude-live-runtime-rootcause-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read live Claude route and injected assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p audit-root
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' > audit-root/server.txt <<'REMOTE'
+          set -Eeuo pipefail
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          echo '===== ROUTE ====='
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          s=Path(sys.argv[1]).read_text()
+          a=s.find('location = /masterclass/claude/free {')
+          if a<0: raise SystemExit('route not found')
+          b=s.find('\n    }',a)
+          print(s[a:b+6])
+          PY
+          echo '===== CLAUDE ASSETS ====='
+          find /var/www/sikhadenge.in -maxdepth 1 -type f \( -name 'claude*' -o -name '*social*proof*' \) -printf '%f\t%s\t%TY-%Tm-%Td %TH:%TM:%TS\n' | sort
+          echo '===== HTML SCRIPTS ====='
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=rootcause-server-20260903' | grep -oE '<script[^>]+src="[^"]+"[^>]*>' | sed -n '1,120p'
+          echo '===== HTML STYLES ====='
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=rootcause-server-20260903' | grep -oE '<link[^>]+href="[^"]+"[^>]*>' | sed -n '1,120p'
+          REMOTE
+
+      - name: Browser network and runtime inspection
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p audit-root
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"; export CHROME
+          cat > audit-root/audit.js <<'JS'
+          const puppeteer=require('puppeteer-core'); const fs=require('fs');
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-gpu','--disable-dev-shm-usage']});
+            const page=await browser.newPage(); await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true,deviceScaleFactor:1});
+            const bad=[], failed=[], consoleErrors=[], pageErrors=[];
+            page.on('response',r=>{if(r.status()>=400) bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()});});
+            page.on('requestfailed',r=>failed.push({url:r.url(),type:r.resourceType(),error:r.failure()?.errorText||''}));
+            page.on('console',m=>{if(m.type()==='error') consoleErrors.push(m.text())});
+            page.on('pageerror',e=>pageErrors.push(String(e)));
+            await page.goto('https://sikhadenge.in/masterclass/claude/free?v=rootcause-mobile-20260903',{waitUntil:'domcontentloaded',timeout:45000});
+            await new Promise(r=>setTimeout(r,9000));
+            const data=await page.evaluate(()=>{
+              const perf=performance.getEntriesByType('resource').map(x=>({name:x.name,transfer:x.transferSize||0,encoded:x.encodedBodySize||0,duration:Math.round(x.duration),initiator:x.initiatorType})).sort((a,b)=>b.transfer-a.transfer).slice(0,40);
+              const fixed=[...document.querySelectorAll('body *')].filter(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return ['fixed','sticky'].includes(s.position)&&s.display!=='none'&&r.width>0&&r.height>0}).map(e=>{const r=e.getBoundingClientRect();return{tag:e.tagName,cls:typeof e.className==='string'?e.className:'',id:e.id||'',x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,120),html:e.outerHTML.slice(0,400)}});
+              const scripts=[...document.scripts].map(s=>s.src).filter(Boolean);
+              return {perf,fixed,scripts,ready:document.readyState,bodyClass:document.body.className};
+            });
+            fs.writeFileSync('audit-root/browser.json',JSON.stringify({bad,failed,consoleErrors,pageErrors,data},null,2));
+            console.log(JSON.stringify({bad,failed,pageErrors:pageErrors.slice(0,6),fixed:data.fixed,topResources:data.perf.slice(0,15)},null,2));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node audit-root/audit.js
+
+      - name: Upload rootcause audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-live-runtime-rootcause-20260903
+          path: audit-root/
+          retention-days: 1
