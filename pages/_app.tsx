@@ -1,7 +1,6 @@
 // pages/_app.tsx
 import type { AppProps } from "next/app";
 import "../styles/globals.css";
-import "../styles/ai-video-warm-reference.css";
 import Header from "../components/Header";
 import { ConsentBanner } from "@/components/consent/ConsentBanner";
 import { ConsentPreferences } from "@/components/consent/ConsentPreferences";
