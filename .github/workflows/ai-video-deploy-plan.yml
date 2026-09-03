@@ -1,0 +1,52 @@
+name: AI Video Deploy Plan Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-production-20260903"
+    paths:
+      - "ops/deploy-ai-video-v90.sh"
+      - ".github/workflows/ai-video-deploy-plan.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-deploy-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-v90.sh
+      - name: Enforce production safety invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ops/deploy-ai-video-v90.sh')
+          text = p.read_text()
+          required = [
+              '75889cdbef1c0fb7591d0b6f7dff24b25ff6b662',
+              'sikhadenge-ai-workflow-premium-3940',
+              'ai-video-GOLDEN-ADS-LIVE-20260903-125516',
+              '6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51',
+              'AI_VIDEO_ASSET_PREFIX',
+              'rollback',
+              'pm2 save',
+          ]
+          forbidden = [
+              'chattr -i',
+              'nginx -s reload',
+              'systemctl reload nginx',
+              'systemctl restart nginx',
+              'pm2 delete sikhadenge-ai-workflow-premium-3940',
+              'rm -rf /var/www/sikhadenge.in/releases/*',
+          ]
+          missing = [x for x in required if x not in text]
+          bad = [x for x in forbidden if x in text]
+          if missing or bad:
+              print('Missing required invariants:', missing)
+              print('Forbidden operations found:', bad)
+              raise SystemExit(1)
+          print('Deploy plan safety invariants: PASS')
+          PY
