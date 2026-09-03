@@ -1,4 +1,4 @@
-# trigger 2026-09-03T22:50+05:30
+# locate existing tracking configuration
 name: Tracking Fast Lock 20260903
 on:
   push:
@@ -22,24 +22,34 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"; install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-      - name: Fast lock
+      - name: Locate config
         shell: bash
         run: |
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -eu
-          pid(){ ss -ltnp 2>/dev/null | awk -v p=":$1" '$4~p"$"&&match($0,/pid=[0-9]+/){print substr($0,RSTART+4,RLENGTH-4);exit}'; }
-          for port in 3940 3971 3955 3965; do
-            P="$(pid "$port" || true)"; C="$(readlink -f /proc/$P/cwd 2>/dev/null || true)"; echo "=== $port $C ==="; [[ -d "$C" ]] || continue
-            for f in components/consent/GoogleConsentBridge.tsx components/consent/ClarityConsentBridge.tsx components/consent/SegmentConsentBridge.tsx components/consent/MetaConsentBridge.tsx lib/metaConversions.ts; do [[ -f "$C/$f" ]] && { echo "--$f"; sed -n '1,38p' "$C/$f"; }; done
-            echo '--ENV-PRESENCE--'; tr '\0' '\n' < /proc/$P/environ 2>/dev/null | grep -E '^(NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|NEXT_PUBLIC_SEGMENT_WRITE_KEY|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|META_CAPI_ACCESS_TOKEN|META_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' | sed -E 's/=.*/=PRESENT/' || true
-            echo '--CTA/CONVERSIONS--'; grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|CompleteRegistration|generate_lead|Purchase|sendMeta|trackMeta|AW-|GOOGLE_ADS_CONVERSION|eventID|event_id' "$C/pages" "$C/app" "$C/components" "$C/lib" 2>/dev/null | head -180 || true
+          echo '=== ENV FILE CONFIG ==='
+          find /var/www/sikhadenge.in /opt/sikhadenge-dashboard -maxdepth 5 -type f \( -name '.env' -o -name '.env.local' -o -name '.env.production' -o -name '.env.production.local' \) 2>/dev/null | while read -r f; do
+            hit="$(grep -E '^(NEXT_PUBLIC_GA4_MEASUREMENT_ID|NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_ENABLED|NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|META_CAPI_ACCESS_TOKEN|META_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' "$f" 2>/dev/null || true)"
+            [[ -n "$hit" ]] || continue
+            echo "FILE=$f"
+            printf '%s\n' "$hit" | sed -E '/(TOKEN|SECRET|WRITE_KEY)=/s/=.*/=PRESENT/; /(PIXEL_ID|MEASUREMENT_ID|CLARITY|GOOGLE_ADS_ID|CONVERSION_LABEL|SEGMENT_ENABLED)=/!s/=.*/=PRESENT/'
           done
-          echo '=== STATIC IDS ==='
-          for port in 3940 3971 3955; do P="$(pid "$port"||true)"; C="$(readlink -f /proc/$P/cwd 2>/dev/null||true)"; [[ -d "$C/.next/static" ]] || continue; grep -RhoE 'G-[A-Z0-9]{6,}|AW-[0-9]+|https://www\.clarity\.ms/tag/[A-Za-z0-9_-]+' "$C/.next/static" 2>/dev/null | sort -u | head -40 || true; done
-          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js
-          echo FAST_LOCK_DONE
+          echo '=== BUILT PUBLIC VALUES ==='
+          for d in /var/www/sikhadenge.in/releases/production-ai-video-source-first-v90-75889cdbef1c-20260903-220828 /var/www/sikhadenge.in/candidates/claude-ai-shift-research-v2-20260901-213954 /var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335; do
+            echo "DIR=$d"
+            grep -RhoE --binary-files=without-match 'G-[A-Z0-9]{8,}|AW-[0-9]{6,}|w0wffqoi0q|PASTE_REAL_PIXEL_ID_NUMBER|G-XXXXXXXXXX' "$d/.next/static" 2>/dev/null | sort -u | head -30 || true
+            grep -Rl --binary-files=without-match 'PASTE_REAL_PIXEL_ID_NUMBER' "$d/.next/static" 2>/dev/null | head -5 | while read -r f; do echo "META_BUNDLE=$f"; python3 - "$f" <<'PY'
+import sys,re
+s=open(sys.argv[1],errors='ignore').read()
+for m in re.finditer('PASTE_REAL_PIXEL_ID_NUMBER',s):
+ print(s[max(0,m.start()-500):m.end()+250].replace('\n',' ')[:900])
+PY
+done
+          done
+          echo '=== LEGACY LITERAL IDS ==='
+          grep -RhoE --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git 'G-[A-Z0-9]{8,}|AW-[0-9]{6,}|fbq\(["'"']init["'"'],[[:space:]]*["'"'][0-9]{8,}["'"']' /var/www/sikhadenge.in/releases /var/www/sikhadenge.in/candidates 2>/dev/null | sort -u | head -80 || true
+          echo CONFIG_LOCK_DONE
           REMOTE
