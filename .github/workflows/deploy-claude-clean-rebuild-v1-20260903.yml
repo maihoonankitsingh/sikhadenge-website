@@ -1,0 +1,259 @@
+name: Deploy Claude Clean Rebuild V1 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-clean-rebuild-v1-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Build isolated clean candidate on port 3982
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          SRC='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          CAND='/var/www/sikhadenge.in/candidates/claude-clean-rebuild-v1-20260903'
+          APP='sikhadenge-claude-clean-v1-3982'
+          PORT='3982'
+          test -d "$SRC"
+          test -x "$SRC/node_modules/.bin/next"
+          if ss -ltn | grep -qE ":${PORT}[[:space:]]"; then
+            existing="$(pm2 pid "$APP" 2>/dev/null | tail -1 || true)"
+            if [[ ! "$existing" =~ ^[0-9]+$ ]] || [[ "$existing" -le 1 ]]; then
+              echo "Port $PORT already in use by unrelated process"; exit 1
+            fi
+            pm2 delete "$APP" >/dev/null 2>&1 || true
+            sleep 1
+          fi
+          rm -rf "$CAND"
+          mkdir -p "$CAND"
+          rsync -a --delete --exclude='.next' --exclude='node_modules' "$SRC/" "$CAND/"
+          ln -s "$SRC/node_modules" "$CAND/node_modules"
+          python3 - "$CAND/next.config.js" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]); s=p.read_text()
+          anchor='const nextConfig = {'
+          if anchor not in s: raise SystemExit('nextConfig anchor missing')
+          s=s.replace(anchor, anchor+'\n  assetPrefix: "/_claude_runtime_v1",',1)
+          p.write_text(s)
+          PY
+          cd "$CAND"
+          export NODE_ENV=production
+          export NODE_OPTIONS='--max-old-space-size=4096'
+          ./node_modules/.bin/next build
+          test -f .next/BUILD_ID
+          test -f .next/build-manifest.json
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          PORT="$PORT" NODE_ENV=production pm2 start ./node_modules/.bin/next --name "$APP" -- start -p "$PORT"
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 3 "http://127.0.0.1:${PORT}/masterclass/claude/free?candidate=health" >/tmp/claude-candidate-health.html; then break; fi
+            sleep 1
+          done
+          curl -fsS --max-time 10 "http://127.0.0.1:${PORT}/masterclass/claude/free?candidate=final-health" >/tmp/claude-candidate-health.html
+          grep -Fq '/_claude_runtime_v1/_next/static/' /tmp/claude-candidate-health.html
+          echo -n 'CAND_BUILD_ID='; cat .next/BUILD_ID; echo
+          echo "CAND=$CAND APP=$APP PORT=$PORT"
+          REMOTE
+
+      - name: Verify clean candidate hydrates and preserves current native page
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -f -N -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13930:127.0.0.1:3930 "$SSH_USER@$SSH_HOST"
+          ssh -f -N -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13982:127.0.0.1:3982 "$SSH_USER@$SSH_HOST"
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-clean-v1/pre
+          cat > qa-clean-v1/precheck.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            async function run(name,url,candidate){
+              const p=await b.newPage(); await p.setViewport({width:1440,height:1000});
+              if(candidate){
+                await p.setRequestInterception(true);
+                p.on('request',r=>{const u=r.url(); const marker='/_claude_runtime_v1/_next/static/'; if(u.includes(marker)){r.continue({url:u.replace(marker,'/_next/static/')});} else r.continue();});
+              }
+              const errors=[],bad=[]; p.on('pageerror',e=>errors.push(String(e))); p.on('console',m=>{if(m.type()==='error')errors.push(m.text())}); p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});
+              await p.goto(url,{waitUntil:'domcontentloaded',timeout:45000}); await new Promise(r=>setTimeout(r,10000));
+              const hyd=errors.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x));
+              const x=await p.evaluate(()=>({
+                h1:(document.querySelector('h1')?.innerText||'').trim(),
+                h2:[...document.querySelectorAll('main h2')].map(e=>(e.innerText||'').trim()),
+                mainText:(document.querySelector('main')?.innerText||'').replace(/\s+/g,' ').trim(),
+                sections:document.querySelectorAll('main section').length,
+                ctas:[...document.querySelectorAll('main a[href]')].map(a=>({text:(a.innerText||'').trim(),href:a.getAttribute('href')})).filter(x=>/free|seat|register/i.test(x.text)),
+                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2
+              }));
+              await p.screenshot({path:`qa-clean-v1/pre/${name}.png`,fullPage:true}); await p.close(); return {...x,hydration:hyd,bad,errors};
+            }
+            const current=await run('current3930','http://127.0.0.1:13930/masterclass/claude/free?pre=current',false);
+            const candidate=await run('candidate3982','http://127.0.0.1:13982/masterclass/claude/free?pre=candidate',true);
+            const out={current,candidate}; fs.writeFileSync('qa-clean-v1/precheck.json',JSON.stringify(out,null,2));
+            console.log(JSON.stringify({current:{hydration:current.hydration.length,h1:current.h1,h2:current.h2,sections:current.sections},candidate:{hydration:candidate.hydration.length,h1:candidate.h1,h2:candidate.h2,sections:candidate.sections,bad:candidate.bad}},null,2));
+            if(candidate.hydration.length!==0) throw Error('candidate hydration errors='+candidate.hydration.length);
+            if(norm(candidate.h1)!==norm(current.h1)) throw Error('H1 changed: '+candidate.h1+' != '+current.h1);
+            if(JSON.stringify(candidate.h2.map(norm))!==JSON.stringify(current.h2.map(norm))) throw Error('H2 sequence changed');
+            if(candidate.sections!==current.sections) throw Error('native section count changed');
+            if(candidate.overflow) throw Error('candidate horizontal overflow');
+            if(!candidate.ctas.some(x=>x.href==='/gen-ai-masterclass/register-one-step')) throw Error('registration CTA missing');
+            await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-clean-v1/precheck.js
+
+      - name: Capture current public baseline before switch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-clean-v1/before
+          cat > qa-clean-v1/capture.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs'); const phase=process.argv[2];
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']}); const O={};
+          for(const v of [{n:'desktop',w:1440,h:1000,m:false},{n:'tablet',w:768,h:1024,m:true},{n:'mobile',w:390,h:844,m:true}]){const p=await b.newPage();await p.setViewport({width:v.w,height:v.h,isMobile:v.m,hasTouch:v.m,deviceScaleFactor:1});const errs=[],bad=[];p.on('pageerror',e=>errs.push(String(e)));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=clean-v1-${phase}-${v.n}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,10000));const x=await p.evaluate(()=>{const cs=e=>e?getComputedStyle(e):null,h=document.getElementById('sd-sitewide-live-proof-host-v1');return{h1:(document.querySelector('h1')?.innerText||'').trim(),h2:[...document.querySelectorAll('main h2')].map(e=>(e.innerText||'').trim()),jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,root:document.querySelectorAll('#claude-ai-video-proof-v4').length,logos:document.querySelectorAll('#claude-ai-video-proof-v4 img').length,realLogoMarkers:document.querySelectorAll('[data-sd-real-logo]').length,note:document.querySelectorAll('.sd-proof-v4-note').length,host:h?{display:cs(h).display,visibility:cs(h).visibility}:null,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,blanks:[...document.querySelectorAll('main section')].filter(e=>{const s=cs(e),r=e.getBoundingClientRect();return s.display!=='none'&&r.height>=80&&(e.innerText||'').trim().length<8}).length,cta:[...document.querySelectorAll('a[href]')].filter(a=>/reserve my free seat|register now for free|get my free seat/i.test(a.textContent||'')).map(a=>a.getAttribute('href'))};});const hyd=errs.filter(z=>/#418|#425|invariant=418|invariant=425/i.test(z));O[v.n]={...x,hydration:hyd,bad,errors:errs};await p.screenshot({path:`qa-clean-v1/${phase}/${v.n}.png`,fullPage:true});await p.close();}fs.writeFileSync(`qa-clean-v1/${phase}.json`,JSON.stringify(O,null,2));console.log(phase,JSON.stringify(Object.fromEntries(Object.entries(O).map(([k,v])=>[k,{hydration:v.hydration.length,h1:v.h1,jobs:v.jobs,skills:v.skills,root:v.root,logos:v.logos,realLogoMarkers:v.realLogoMarkers,note:v.note,host:v.host,overflow:v.overflow,blanks:v.blanks,bad:v.bad}])),null,2));await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-clean-v1/capture.js before
+
+      - name: Switch only exact Claude route to clean candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CAND='/var/www/sikhadenge.in/candidates/claude-clean-rebuild-v1-20260903'
+          APP='sikhadenge-claude-clean-v1-3982'
+          MARKER='/var/backups/sikhadenge/.claude-clean-rebuild-v1-last'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-clean-rebuild-v1-$TS"
+          mkdir -p "$BACKUP"; cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"; printf '%s\n' "$BACKUP" > "$MARKER"
+          BUILD_ID="$(cat "$CAND/.next/BUILD_ID")"; test -n "$BUILD_ID"
+          python3 - "$NG" "$CAND" "$BUILD_ID" <<'PY'
+          from pathlib import Path
+          import sys,re
+          p=Path(sys.argv[1]); cand=sys.argv[2]; bid=sys.argv[3]; s=p.read_text()
+          route='location = /masterclass/claude/free {'
+          a=s.find(route); b=s.find('\n    }',a)
+          if a<0 or b<0: raise SystemExit('Claude exact route missing')
+          b+=len('\n    }'); seg=s[a:b]
+          old='proxy_pass http://127.0.0.1:3930;'; new='proxy_pass http://127.0.0.1:3982;'
+          if old not in seg: raise SystemExit('expected Claude 3930 proxy missing')
+          seg=seg.replace(old,new,1); s=s[:a]+seg+s[b:]
+          marker='# CLAUDE_CLEAN_REBUILD_V1_ASSETS'
+          if marker not in s:
+              block=(f'''    # CLAUDE_CLEAN_REBUILD_V1_ASSETS\n    location ^~ /_claude_runtime_v1/_next/static/ {{\n        alias {cand}/.next/static/;\n        add_header Cache-Control "public, max-age=31536000, immutable" always;\n        access_log off;\n    }}\n    location ^~ /_next/data/{bid}/ {{\n        proxy_pass http://127.0.0.1:3982;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;\n    }}\n    # CLAUDE_CLEAN_REBUILD_V1_ASSETS_END\n\n''')
+              idx=s.find(route)
+              s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=clean-v1-server-after-switch' >/tmp/claude-clean-live.html
+          grep -Fq '/_claude_runtime_v1/_next/static/' /tmp/claude-clean-live.html
+          grep -Fq '/api/social-proof/live?widget=1' /tmp/claude-clean-live.html
+          pm2 save >/dev/null
+          echo "SWITCHED_TO_3982 BUILD_ID=$BUILD_ID BACKUP=$BACKUP"
+          REMOTE
+
+      - name: Final desktop tablet mobile verification
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-clean-v1/after
+          node qa-clean-v1/capture.js after
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          B=json.loads(Path('qa-clean-v1/before.json').read_text()); A=json.loads(Path('qa-clean-v1/after.json').read_text())
+          norm=lambda x:' '.join((x or '').split())
+          for v in ('desktop','tablet','mobile'):
+              b,a=B[v],A[v]
+              assert len(a['hydration'])==0,(v,'hydration',a['hydration'][:3])
+              assert norm(a['h1'])==norm(b['h1']),(v,'h1',b['h1'],a['h1'])
+              assert [norm(x) for x in a['h2']]==[norm(x) for x in b['h2']],(v,'h2 changed')
+              assert a['jobs']==1 and a['skills']==1 and a['root']==1,(v,'proof counts',a['jobs'],a['skills'],a['root'])
+              assert a['realLogoMarkers']==6,(v,'real logos',a['realLogoMarkers'])
+              assert a['note']==0,(v,'info note returned')
+              assert not a['overflow'],(v,'horizontal overflow')
+              assert a['blanks']==0,(v,'blank sections',a['blanks'])
+              assert '/gen-ai-masterclass/register-one-step' in a['cta'],(v,'CTA target')
+              bad_css=[x for x in a['bad'] if x['status']>=400 and x['type'] in ('stylesheet','script')]
+              assert not bad_css,(v,'bad css/js',bad_css)
+          print('FINAL_CLAUDE_CLEAN_V1_QA_OK')
+          PY
+
+      - name: Lighthouse smoke after clean rebuild
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -u
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=clean-v1-lh-mobile' --quiet --chrome-path="$CHROME" --chrome-flags='--headless=new --no-sandbox --disable-dev-shm-usage' --output=json --output-path=qa-clean-v1/lighthouse-mobile.json --form-factor=mobile || true
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('qa-clean-v1/lighthouse-mobile.json')
+          if p.exists():
+              d=json.loads(p.read_text()); c=d['categories']; a=d['audits'];
+              out={'performance':round(c['performance']['score']*100),'accessibility':round(c['accessibility']['score']*100),'bestPractices':round(c['best-practices']['score']*100),'seo':round(c['seo']['score']*100),'LCP_ms':round(a['largest-contentful-paint']['numericValue'],2),'CLS':round(a['cumulative-layout-shift']['numericValue'],4),'TBT_ms':round(a['total-blocking-time']['numericValue'],2),'transferBytes':round(a['total-byte-weight']['numericValue'],2)}
+              pathlib.Path('qa-clean-v1/lighthouse-summary.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          PY
+
+      - name: Roll back exact route if any post-switch verification failed
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; M='/var/backups/sikhadenge/.claude-clean-rebuild-v1-last'; APP='sikhadenge-claude-clean-v1-3982'
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; if [[ -f "$B/sikhadenge.in-ssl.before" ]]; then cp "$B/sikhadenge.in-ssl.before" "$NG"; nginx -t; systemctl reload nginx; echo "ROLLED_BACK=$B"; fi; fi
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
+          REMOTE
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-clean-rebuild-v1-qa
+          path: qa-clean-v1/
+          retention-days: 2
