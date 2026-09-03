@@ -9,6 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "ai-video:audit": "node scripts/audit-ai-video-masterclass.mjs",
+    "ai-video:qa": "node scripts/qa-ai-video-masterclass.mjs",
     "seo:check": "node scripts/seo-guard.mjs",
     "blog:audit": "node scripts/audit-blog-foundation.mjs",
     "blog:classify": "node scripts/classify-blog-inventory.mjs",

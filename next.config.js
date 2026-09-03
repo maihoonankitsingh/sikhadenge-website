@@ -83,7 +83,20 @@ const nextConfig = {
         headers: ogImageNoindexHeaders,
       },
       {
-        source: "/((?!_next/static|_next/image|favicon.ico).*)",
+        // Ads landing page is public and non-personalized. Let the edge cache a
+        // short-lived HTML response while retaining stale-while-revalidate safety.
+        source: "/masterclass/ai-video",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=300, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        // Preserve the existing site-wide no-store policy while excluding the
+        // AI Video landing-page prefix so its dedicated policy can take effect.
+        source: "/((?!_next/static|_next/image|favicon.ico|masterclass/ai-video).*)",
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
     ];
