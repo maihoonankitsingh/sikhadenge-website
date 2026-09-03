@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - .github/workflows/deploy-registration-stable-v72-first-paint-20260903.yml
+      - ops/deploy-registration-stable-v72-first-paint.sh
 
 permissions:
   contents: read
@@ -21,290 +22,36 @@ jobs:
     timeout-minutes: 14
     environment: whatsapp-agent-production
     steps:
+      - name: Checkout deployment script
+        uses: actions/checkout@v4
+
       - name: Configure pinned SSH
         shell: bash
         run: |
           set -Eeuo pipefail
-          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
           if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
           KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
           chmod 600 "$KEY"
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           test "$key_type" = "ssh-ed25519"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"'
 
-      - name: Clone current working design under stable V72 names and switch injection
+      - name: Deploy guarded stable V72 assets
         shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          export TZ=Asia/Kolkata
-
-          SNIP=/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf
-          ROOT=/var/www/sikhadenge.in/registration-v2-hot-20260831-145106
-          PAGE1="$ROOT/registration-v2-page1.js"
-          HOT="$ROOT/registration-v2-hot.js"
-
-          EXPECT_PAGE1_SHA=13b891266630475342cd63ca28e5336d6b137b13490d6c13c3ddff71088fe592
-          EXPECT_HOT_SHA=bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313
-
-          test -f "$SNIP"; test -f "$PAGE1"; test -f "$HOT"
-          test "$(sha256sum "$PAGE1" | awk '{print $1}')" = "$EXPECT_PAGE1_SHA"
-          test "$(sha256sum "$HOT" | awk '{print $1}')" = "$EXPECT_HOT_SHA"
-
-          TS="$(date +%Y%m%d-%H%M%S)"
-          STABLE="/var/www/sikhadenge.in/registration-stable-v72-${TS}"
-          BK="/var/backups/sikhadenge/registration-stable-v72-${TS}"
-          mkdir -p "$STABLE" "$BK"
-          cp -a "$SNIP" "$BK/sikhadenge-registration-v2-hot.conf.before"
-          cp -a "$PAGE1" "$BK/registration-v2-page1.js.source"
-          cp -a "$HOT" "$BK/registration-v2-hot.js.source"
-
-          cp -a "$PAGE1" "$STABLE/registration-stable-page1-v72.js"
-          cp -a "$HOT" "$STABLE/registration-stable-hot-v72.js"
-
-          cat > "$STABLE/registration-stable-prepaint-v72.css" <<'CSS'
-html.sdreg72-pending body {
-  min-height: 100vh !important;
-  overflow-x: hidden !important;
-}
-html.sdreg72-pending body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 2147483645;
-  pointer-events: all;
-  background:
-    radial-gradient(circle at 50% 14%, rgba(34,105,245,.08), transparent 32rem),
-    #f8fbff;
-}
-html.sdreg72-claude.sdreg72-pending body::before {
-  background:
-    radial-gradient(circle at 50% 14%, rgba(220,90,60,.10), transparent 32rem),
-    #fff9f6;
-}
-html.sdreg72-pending body::after {
-  content: "Preparing your registration…";
-  position: fixed;
-  left: 50%;
-  top: 48%;
-  transform: translate(-50%,-50%);
-  z-index: 2147483646;
-  min-height: 42px;
-  padding: 0 17px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(72,98,145,.14);
-  border-radius: 999px;
-  background: rgba(255,255,255,.97);
-  box-shadow: 0 10px 34px rgba(20,35,70,.09);
-  color: #273044;
-  font-family: Manrope, Arial, sans-serif;
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  white-space: nowrap;
-  pointer-events: none;
-}
-html.sdreg72-ready body::before,
-html.sdreg72-ready body::after {
-  display: none !important;
-}
-CSS
-
-          cat > "$STABLE/registration-stable-prepaint-v72.js" <<'JS'
-(() => {
-  "use strict";
-  if (window.__SD_REG_FIRST_PAINT_V72__) return;
-  window.__SD_REG_FIRST_PAINT_V72__ = true;
-
-  if (location.pathname !== "/gen-ai-masterclass/register-one-step") return;
-
-  const html = document.documentElement;
-  const params = new URLSearchParams(location.search);
-  const isAiVideo = params.get("source") === "ai-video-masterclass";
-
-  html.classList.add("sdreg72-pending");
-  html.classList.add(isAiVideo ? "sdreg72-ai-video" : "sdreg72-claude");
-
-  let done = false;
-  let attempts = 0;
-  const maxAttempts = 160; // 8 seconds at 50ms, then fail open.
-
-  function normalize(v) {
-    return String(v || "").replace(/\s+/g, " ").trim().toLowerCase();
-  }
-
-  function customFlowReady() {
-    if (!document.body) return false;
-    const text = normalize(document.body.innerText || document.body.textContent || "");
-    const labels = ["your details", "about you", "your goal", "bonuses", "confirmation"];
-    const matches = labels.reduce((n, label) => n + (text.includes(label) ? 1 : 0), 0);
-    return matches >= 4;
-  }
-
-  function reveal() {
-    if (done) return;
-    done = true;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        html.classList.add("sdreg72-ready");
-        html.classList.remove("sdreg72-pending");
-      });
-    });
-  }
-
-  const timer = window.setInterval(() => {
-    attempts += 1;
-    if (customFlowReady()) {
-      window.clearInterval(timer);
-      reveal();
-      return;
-    }
-    if (attempts >= maxAttempts) {
-      window.clearInterval(timer);
-      reveal();
-    }
-  }, 50);
-})();
-JS
-
-          node --check "$STABLE/registration-stable-hot-v72.js"
-          node --check "$STABLE/registration-stable-page1-v72.js"
-          node --check "$STABLE/registration-stable-prepaint-v72.js"
-          test "$(sha256sum "$STABLE/registration-stable-page1-v72.js" | awk '{print $1}')" = "$EXPECT_PAGE1_SHA"
-          test "$(sha256sum "$STABLE/registration-stable-hot-v72.js" | awk '{print $1}')" = "$EXPECT_HOT_SHA"
-
-          rollback() {
-            set +e
-            echo 'AUTO_ROLLBACK_START'
-            cp -a "$BK/sikhadenge-registration-v2-hot.conf.before" "$SNIP"
-            nginx -t && systemctl reload nginx
-            echo 'AUTO_ROLLBACK_DONE'
-          }
-          trap 'rc=$?; if [ "$rc" -ne 0 ]; then rollback; fi; exit "$rc"' EXIT
-
-          export SNIP STABLE TS
-          python3 <<'PY'
-from pathlib import Path
-import os,re
-p=Path(os.environ['SNIP'])
-s=p.read_text(encoding='utf-8')
-stable=os.environ['STABLE']
-ts=os.environ['TS']
-
-old_head='<link rel="stylesheet" href="/registration-mobile-prepaint-v64r2.css?v=20260901-223045"><script src="/registration-mobile-prepaint-v64r2.js?v=20260901-223045"></script>'
-new_head=(
-  f'<link rel="preload" as="script" href="/registration-stable-hot-v72.js?v={ts}">'
-  f'<link rel="preload" as="script" href="/registration-stable-page1-v72.js?v={ts}">'
-  f'<link rel="stylesheet" href="/registration-stable-prepaint-v72.css?v={ts}">'
-  f'<script src="/registration-stable-prepaint-v72.js?v={ts}"></script>'
-)
-if s.count(old_head) != 1:
-    raise SystemExit(f'old head injection count={s.count(old_head)}')
-s=s.replace(old_head,new_head,1)
-
-old_body='<script src="/registration-v2-hot.js?v=v57r1-20260901-104509"></script><script src="/registration-v2-page1.js?v=v71-restore-pre-dropdown-20260902-192436"></script>'
-new_body=(
-  f'<script src="/registration-stable-hot-v72.js?v={ts}"></script>'
-  f'<script src="/registration-stable-page1-v72.js?v={ts}"></script>'
-)
-if s.count(old_body) != 1:
-    raise SystemExit(f'old body injection count={s.count(old_body)}')
-s=s.replace(old_body,new_body,1)
-
-marker='# SIKHADENGE_REGISTRATION_STABLE_V72_ASSETS_START'
-if marker in s:
-    raise SystemExit('stable v72 asset block already present')
-block=f'''\n# SIKHADENGE_REGISTRATION_STABLE_V72_ASSETS_START
-location = /registration-stable-hot-v72.js {{
-    alias {stable}/registration-stable-hot-v72.js;
-    default_type application/javascript;
-    add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-    add_header X-SD-Registration-Stable "v72-hot" always;
-    access_log off;
-}}
-location = /registration-stable-page1-v72.js {{
-    alias {stable}/registration-stable-page1-v72.js;
-    default_type application/javascript;
-    add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-    add_header X-SD-Registration-Stable "v72-page1" always;
-    access_log off;
-}}
-location = /registration-stable-prepaint-v72.css {{
-    alias {stable}/registration-stable-prepaint-v72.css;
-    default_type text/css;
-    add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-    add_header X-SD-Registration-Stable "v72-prepaint-css" always;
-    access_log off;
-}}
-location = /registration-stable-prepaint-v72.js {{
-    alias {stable}/registration-stable-prepaint-v72.js;
-    default_type application/javascript;
-    add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-    add_header X-SD-Registration-Stable "v72-prepaint-js" always;
-    access_log off;
-}}
-# SIKHADENGE_REGISTRATION_STABLE_V72_ASSETS_END
-'''
-anchor='# SIKHADENGE_REGISTRATION_PAGE1_REFERENCE_START'
-pos=s.find(anchor)
-if pos < 0:
-    raise SystemExit('asset insertion anchor missing')
-s=s[:pos]+block+'\n'+s[pos:]
-p.write_text(s,encoding='utf-8')
-PY
-
-          nginx -t
-          systemctl reload nginx
-          sleep 1
-
-          echo '===== PUBLIC ASSET CHECK ====='
-          for p in \
-            registration-stable-hot-v72.js \
-            registration-stable-page1-v72.js \
-            registration-stable-prepaint-v72.css \
-            registration-stable-prepaint-v72.js; do
-            code="$(curl -ksS -o /tmp/$p -w '%{http_code}' "https://sikhadenge.in/$p?v=$TS")"
-            echo "$code $p"
-            test "$code" = 200
-          done
-          node --check /tmp/registration-stable-hot-v72.js
-          node --check /tmp/registration-stable-page1-v72.js
-          node --check /tmp/registration-stable-prepaint-v72.js
-          test "$(sha256sum /tmp/registration-stable-page1-v72.js | awk '{print $1}')" = "$EXPECT_PAGE1_SHA"
-          test "$(sha256sum /tmp/registration-stable-hot-v72.js | awk '{print $1}')" = "$EXPECT_HOT_SHA"
-
-          echo '===== ROUTE CHECK ====='
-          for u in \
-            "https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&stablev72=$TS" \
-            "https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&stablev72=$TS"; do
-            f="$(mktemp)"
-            code="$(curl -L --compressed -ksS -o "$f" -w '%{http_code}' "$u")"
-            echo "$code $u"
-            test "$code" = 200
-            grep -Fq "/registration-stable-prepaint-v72.css?v=$TS" "$f"
-            grep -Fq "/registration-stable-prepaint-v72.js?v=$TS" "$f"
-            grep -Fq "/registration-stable-hot-v72.js?v=$TS" "$f"
-            grep -Fq "/registration-stable-page1-v72.js?v=$TS" "$f"
-            if grep -Fq '/registration-mobile-prepaint-v64r2.' "$f"; then echo 'old prepaint still injected'; exit 1; fi
-            if grep -Fq '/registration-v2-page1.js?v=' "$f"; then echo 'old page1 still injected'; exit 1; fi
-            if grep -Fq 'api/social-proof/live?widget=1' "$f"; then echo 'global live widget leaked back into registration'; exit 1; fi
-          done
-
-          echo "STABLE_DIR=$STABLE"
-          echo "BACKUP=$BK"
-          echo "TAG=$TS"
-          echo 'RESULT=REGISTRATION_STABLE_V72_LIVE'
-          trap - EXIT
-          REMOTE
+        run: bash ops/deploy-registration-stable-v72-first-paint.sh
 
       - name: Browser QA both sources desktop and mobile
         shell: bash
@@ -312,25 +59,33 @@ PY
           set -Eeuo pipefail
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
+
           for item in \
             'ai|https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass&qa=stablev72' \
-            'claude|https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&qa=stablev72'; do
+            'claude|https://sikhadenge.in/gen-ai-masterclass/register-one-step?qa=stablev72'; do
             name="${item%%|*}"
             url="${item#*|}"
+
             for size in '1440,1000' '390,900'; do
               key="${size/,/x}"
               dom="$RUNNER_TEMP/${name}-${key}.html"
-              "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size="$size" --dump-dom "$url" > "$dom"
+
+              "$CHROME" \
+                --headless=new \
+                --no-sandbox \
+                --disable-gpu \
+                --disable-dev-shm-usage \
+                --virtual-time-budget=10000 \
+                --window-size="$size" \
+                --dump-dom "$url" > "$dom"
+
               grep -Fq 'sdreg72-ready' "$dom"
               grep -Fq 'Your Details' "$dom"
               grep -Fq 'About You' "$dom"
               grep -Fq 'Your Goal' "$dom"
               grep -Fq 'Bonuses' "$dom"
               grep -Fq 'Confirmation' "$dom"
-              if grep -Fq 'sdreg72-pending' "$dom" && ! grep -Fq 'sdreg72-ready' "$dom"; then
-                echo "prepaint did not reveal for $name $size"
-                exit 1
-              fi
+
               echo "BROWSER_QA_PASS $name $size"
             done
           done
