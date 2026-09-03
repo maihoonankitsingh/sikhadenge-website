@@ -1,0 +1,4 @@
+AI Video V90 live-production QA trigger
+Deployed source: 75889cdbef1c0fb7591d0b6f7dff24b25ff6b662
+Production app: sikhadenge-ai-video-v90-3940-20260903-220828
+Triggered: 2026-09-03
