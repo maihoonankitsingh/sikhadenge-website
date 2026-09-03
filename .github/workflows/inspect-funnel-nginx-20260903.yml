@@ -24,43 +24,29 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-      - name: Inspect tracking config and registration block
+      - name: Locate tracking identifiers
         shell: bash
         run: |
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -eu
-          echo '=== ACTIVE ENV FILES ==='
-          for d in /var/www/sikhadenge.in/releases/production-ai-video-source-first-v90-75889cdbef1c-20260903-220828 /var/www/sikhadenge.in/candidates/claude-ai-shift-research-v2-20260901-213954 /var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335 /opt/sikhadenge-dashboard /var/www/sikhadenge.in/masterclass-bonus-v50; do
-            echo "DIR=$d"
-            for f in "$d/.env" "$d/.env.local" "$d/.env.production" "$d/.env.production.local"; do
-              [ -f "$f" ] || continue
-              echo "FILE=$f"
-              while IFS='=' read -r k v; do
-                case "$k" in
-                  NEXT_PUBLIC_GA4_MEASUREMENT_ID|NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_ENABLED|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL)
-                    [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" || printf '%s=EMPTY\n' "$k";;
-                  NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)
-                    [ -n "$v" ] && printf '%s=PRESENT\n' "$k" || printf '%s=EMPTY\n' "$k";;
-                esac
-              done < "$f"
-            done
-          done
-          echo '=== HISTORICAL PUBLIC IDS ==='
-          find /var/www/sikhadenge.in /opt/sikhadenge-dashboard -maxdepth 6 -type f \( -name '.env' -o -name '.env.local' -o -name '.env.production' -o -name '.env.production.local' \) 2>/dev/null | while read -r f; do
-            h=$(grep -E '^(NEXT_PUBLIC_GA4_MEASUREMENT_ID|NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_ENABLED|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL)=' "$f" 2>/dev/null || true)
+          echo '=== META PIXEL REFERENCES ==='
+          grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.git '966093361669466' /var/www/sikhadenge.in /opt/sikhadenge-dashboard 2>/dev/null | head -80 || true
+          echo '=== ENV SECRET PRESENCE ANYWHERE ==='
+          find /var/www/sikhadenge.in /opt/sikhadenge-dashboard /root/.pm2 -maxdepth 7 -type f \( -name '.env' -o -name '.env.local' -o -name '.env.production' -o -name '.env.production.local' -o -name 'dump.pm2' \) 2>/dev/null | while read -r f; do
+            h=$(grep -E 'META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|SEGMENT_WRITE_KEY|NEXT_PUBLIC_SEGMENT_WRITE_KEY|GOOGLE_ADS_ACCESS_TOKEN|GOOGLE_ADS_CONVERSION_LABEL|LEAD_INGEST_WEBHOOK_SECRET' "$f" 2>/dev/null || true)
             [ -n "$h" ] || continue
-            echo "FILE=$f"; printf '%s\n' "$h"
-            s=$(grep -E '^(NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' "$f" 2>/dev/null || true)
-            [ -z "$s" ] || printf '%s\n' "$s" | sed 's/=.*/=PRESENT/'
+            echo "FILE=$f"
+            printf '%s\n' "$h" | sed -E 's/([A-Z0-9_]+)[" ]*[:=].*/\1=PRESENT/' | sort -u
           done
-          echo '=== REGISTRATION NGINX BLOCK ==='
-          nginx -T 2>/dev/null > /tmp/na.txt
-          ln=$(grep -n 'location = /gen-ai-masterclass/register-one-step {' /tmp/na.txt | head -1 | cut -d: -f1 || true)
-          [ -z "$ln" ] || sed -n "$((ln-8)),$((ln+70))p" /tmp/na.txt
-          echo '=== REG NGINX FILE ==='
-          grep -RIn 'location = /gen-ai-masterclass/register-one-step {' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null || true
-          echo '=== META CAPI CONFIG SOURCE ==='
-          C=/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335
-          sed -n '148,220p' "$C/app/api/masterclass/lead/route.ts" | sed -E 's/(access_token[^:]*)[:=][^,}]*/\1: REDACTED/Ig' || true
-          echo CONFIG_INSPECT_DONE
+          echo '=== GA4 IDS ==='
+          grep -RhoE --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.git --exclude='*.map' 'G-[A-Z0-9]{8,}' /var/www/sikhadenge.in/releases /var/www/sikhadenge.in/candidates /var/www/sikhadenge.in/.bk_admission_payment_2026-02-14-051845 2>/dev/null | sort -u | head -80 || true
+          echo '=== GOOGLE ADS IDS ==='
+          grep -RhoE --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.git --exclude='*.map' 'AW-[0-9]{6,}' /var/www/sikhadenge.in/releases /var/www/sikhadenge.in/candidates /var/www/sikhadenge.in/.bk_admission_payment_2026-02-14-051845 2>/dev/null | sort -u | head -80 || true
+          echo '=== SEGMENT CONFIG REFERENCES ==='
+          grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.git -E 'NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY' /var/www/sikhadenge.in/releases /var/www/sikhadenge.in/candidates /var/www/sikhadenge.in/.bk_admission_payment_2026-02-14-051845 2>/dev/null | head -80 || true
+          echo '=== META API TOKEN KEY REFERENCES ==='
+          grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.git -E 'META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN' /var/www/sikhadenge.in /opt/sikhadenge-dashboard 2>/dev/null | head -100 || true
+          echo '=== ACTIVE ROUTE HEALTH ==='
+          for u in https://sikhadenge.in/masterclass/ai-video https://sikhadenge.in/masterclass/claude/free https://sikhadenge.in/gen-ai-masterclass/register-one-step https://dashboard.sikhadenge.in; do printf '%s ' "$u"; curl -LksS --max-time 15 -o /dev/null -w '%{http_code}\n' "$u" || true; done
+          echo IDENTIFIERS_INSPECT_DONE
           REMOTE
