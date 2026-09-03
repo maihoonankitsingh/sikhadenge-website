@@ -1,0 +1,45 @@
+name: Diagnose Claude Global Hydration 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-global-hydration-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Inspect hydration-sensitive source read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          cd "$ROOT"
+          echo '=== CONSENT TEXT ==='
+          grep -Rni --exclude-dir=node_modules --exclude-dir=.next -E 'Your privacy choices|essential storage|analytics and advertising technologies' pages components src 2>/dev/null | head -80 || true
+          echo '=== HYDRATION RISK EXPRESSIONS ==='
+          grep -Rni --exclude-dir=node_modules --exclude-dir=.next -E 'Date\.now\(|new Date\(|Math\.random\(|localStorage|sessionStorage|typeof window|navigator\.|window\.' pages components src 2>/dev/null | head -220 || true
+          echo '=== APP FILE ==='
+          for f in pages/_app.tsx pages/_app.jsx pages/_app.js; do if [[ -f "$f" ]]; then echo FILE:$f; sed -n '1,280p' "$f"; fi; done
+          echo '=== DOCUMENT FILE ==='
+          for f in pages/_document.tsx pages/_document.jsx pages/_document.js; do if [[ -f "$f" ]]; then echo FILE:$f; sed -n '1,260p' "$f"; fi; done
+          REMOTE
