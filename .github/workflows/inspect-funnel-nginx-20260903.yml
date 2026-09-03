@@ -1,0 +1,42 @@
+name: Inspect Funnel Nginx 20260903
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-funnel-nginx-20260903.yml
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+      - name: Inspect exact blocks
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -eu
+          nginx -T 2>/dev/null > /tmp/nginx-all.txt
+          echo '=== AI VIDEO BLOCK ==='
+          line=$(grep -n 'location = /masterclass/ai-video {' /tmp/nginx-all.txt | head -1 | cut -d: -f1 || true)
+          [ -n "$line" ] && sed -n "$((line-5)),$((line+55))p" /tmp/nginx-all.txt || true
+          echo '=== CLAUDE BLOCK ==='
+          line=$(grep -n 'location = /masterclass/claude/free {' /tmp/nginx-all.txt | head -1 | cut -d: -f1 || true)
+          [ -n "$line" ] && sed -n "$((line-5)),$((line+55))p" /tmp/nginx-all.txt || true
+          echo '=== SITE FILES ==='
+          grep -RIn 'location = /masterclass/ai-video\|location = /masterclass/claude/free' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null || true
+          echo INSPECT_DONE
+          REMOTE
