@@ -1,0 +1,193 @@
+name: Deploy Claude Final Clean V6 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-final-clean-v6-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Start zero-hydration candidate and install source-controlled loader
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail; export PM2_HOME=/root/.pm2
+          C='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'; APP='sikhadenge-claude-final-clean-v2-3984'
+          test "$(cat "$C/.next/BUILD_ID")" = 'LRGBmNz6chaBg6stHgoDb'
+          curl -fsSL --max-time 20 'https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/7839a2bc746f4b59cdd5ca7517da74e3ba6b45c3/public/claude-runtime-loader-v4.js' -o "$C/public/claude-runtime-loader-v4.js"
+          node --check "$C/public/claude-runtime-loader-v4.js"
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          cd "$C"; PORT=3984 NODE_ENV=production pm2 start ./node_modules/.bin/next --name "$APP" -- start -p 3984 >/dev/null
+          for i in $(seq 1 30); do curl -fsS --max-time 3 'http://127.0.0.1:3984/masterclass/claude/free?v=v6-health' >/tmp/v6-health.html && break || true; sleep 1; done
+          curl -fsS --max-time 10 'http://127.0.0.1:3984/masterclass/claude/free?v=v6-health2' >/tmp/v6-health.html
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/v6-health.html
+          test "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 'http://127.0.0.1:3984/claude-runtime-loader-v4.js')" = 200
+          REMOTE
+
+      - name: Guarded exact-route switch and asset preflight
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; BID='LRGBmNz6chaBg6stHgoDb'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"; B="/var/backups/sikhadenge/claude-final-clean-v6-$TS"; M='/var/backups/sikhadenge/.claude-final-clean-v6-last'
+          mkdir -p "$B"; cp "$NG" "$B/sikhadenge.in-ssl.before"; printf '%s\n' "$B" > "$M"
+
+          python3 - "$NG" "$BID" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]);bid=sys.argv[2];s=p.read_text();needle='location = /masterclass/claude/free {';a=s.find(needle)
+          if a<0: raise SystemExit('exact Claude route missing')
+          d=0;b=None
+          for i in range(a,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: b=i+1; break
+          if b is None: raise SystemExit('route parse failed')
+          seg=s[a:b]
+          if 'proxy_pass http://127.0.0.1:3930;' not in seg: raise SystemExit('expected stable 3930 proxy missing')
+          if "sub_filter '</body>'" not in seg: raise SystemExit('body sub_filter missing')
+          seg=seg.replace('proxy_pass http://127.0.0.1:3930;','proxy_pass http://127.0.0.1:3984;',1)
+          out=[]
+          for line in seg.splitlines():
+              if "sub_filter '</body>'" in line:
+                  ind=line[:len(line)-len(line.lstrip())]
+                  line=ind+"sub_filter '</body>' '<script defer src=\"/__claude_final_v2/claude-runtime-loader-v4.js?v=20260903-final-v6\"></script></body>';"
+              out.append(line)
+          seg='\n'.join(out)
+          s=s[:a]+seg+s[b:]
+          marker='# CLAUDE_FINAL_CLEAN_V6_SCOPED_PROXY'
+          if marker in s: raise SystemExit('v6 marker already present unexpectedly')
+          block=f'''\n    {marker}\n    location ^~ /__claude_final_v2/ {{\n        proxy_pass http://127.0.0.1:3984/;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        add_header Cache-Control "public, max-age=31536000, immutable" always;\n        access_log off;\n    }}\n    location ^~ /_next/data/{bid}/ {{\n        proxy_pass http://127.0.0.1:3984;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        add_header Cache-Control "private, no-store, no-cache, must-revalidate" always;\n    }}\n'''
+          s=s.replace('    location = /masterclass/claude/free {',block+'\n    location = /masterclass/claude/free {',1)
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          echo '===== PUBLIC ASSET PREFLIGHT ====='
+          urls=(
+            '/__claude_final_v2/_next/static/css/8522be7a7183fcc0.css'
+            '/__claude_final_v2/_next/static/css/707be1970b7ca9ae.css'
+            '/__claude_final_v2/_next/static/chunks/framework-a49609877c928af5.js'
+            '/__claude_final_v2/_next/static/chunks/main-c47b375edf18a7f5.js'
+            '/__claude_final_v2/_next/static/chunks/webpack-9fa962d6dab17e17.js'
+            '/__claude_final_v2/_next/static/chunks/pages/_app-670aa2ab92ab1966.js'
+            '/__claude_final_v2/_next/static/chunks/pages/masterclass/claude/free-b353b253544d49a2.js'
+            '/__claude_final_v2/_next/static/LRGBmNz6chaBg6stHgoDb/_buildManifest.js'
+            '/__claude_final_v2/_next/static/LRGBmNz6chaBg6stHgoDb/_ssgManifest.js'
+            '/__claude_final_v2/_next/static/media/cf1d1523226d8c03-s.p.ttf'
+            '/__claude_final_v2/claude-runtime-loader-v4.js?v=20260903-final-v6'
+          )
+          for u in "${urls[@]}"; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --retry 4 --retry-delay 1 --retry-connrefused --max-time 20 "https://sikhadenge.in$u")"
+            echo "$code $u"
+            test "$code" = 200
+          done
+
+          code="$(curl -sS -o /tmp/v6-public.html -w '%{http_code}' --retry 4 --retry-delay 1 --retry-connrefused --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=v6-public-smoke')"
+          echo "PAGE=$code BYTES=$(wc -c </tmp/v6-public.html) PREFIX=$(grep -c '/__claude_final_v2/_next/static/' /tmp/v6-public.html || true) LOADER=$(grep -c '/__claude_final_v2/claude-runtime-loader-v4.js' /tmp/v6-public.html || true)"
+          test "$code" = 200
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/v6-public.html
+          grep -Fq '/__claude_final_v2/claude-runtime-loader-v4.js' /tmp/v6-public.html
+          REMOTE
+
+      - name: Final five-viewport parity and stability gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1; npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-v6
+          cat > qa-v6/qa.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const N=s=>(s||'').replace(/\s+/g,' ').trim();
+          const EH1='Master 25+ AI Tools for smarter work, faster execution & better results.';
+          const EH2=['Why join this course?','Learn AI Tools by Doing — Live, Practical & Step-by-Step.','From first prompt to professional AI workflow.','Your first step into practical AI mastery.','AI & automation are reshaping hundreds of millions of jobs.',"AI isn't only changing jobs. It's increasing the value of AI skills.",'A complete practical starting kit for modern AI work.','Connect the right AI tool to the work you already do.','Move from quick answers to structured, reviewable work.','Use the right AI tool where speed, quality and structured output matter.','Practical teaching. Clear workflows. Real digital work.','Is this workshop for you?','Learn 25+ AI Tools','Real learners. Real experiences.','Learn AI. Apply it. Work smarter.','Frequently asked questions.','Your first AI workflow starts with one live session.','Trusted checkout experience'];
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const views=[['desktop',1440,1000,false],['laptop',1024,900,false],['tablet',768,1024,true],['mobile430',430,932,true],['mobile390',390,844,true]],out={},fail=[];
+          for(const [n,w,h,m] of views){const p=await b.newPage();await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m,deviceScaleFactor:1});const errs=[],bad=[];p.on('pageerror',e=>errs.push(String(e)));p.on('console',x=>{if(x.type()==='error')errs.push(x.text())});p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=v6-${n}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,17000));const x=await p.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(e=>e.id).filter(Boolean),host=document.getElementById('sd-sitewide-live-proof-host-v1'),hs=host?getComputedStyle(host):null;return{h1:(document.querySelector('main h1')?.innerText||document.querySelector('h1')?.innerText||'').replace(/\s+/g,' ').trim(),h2:[...document.querySelectorAll('main h2')].map(e=>(e.innerText||'').replace(/\s+/g,' ').trim()),h1c:document.querySelectorAll('main h1').length,sections:document.querySelectorAll('main section').length,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,proof:document.querySelectorAll('#claude-ai-video-proof-v4').length,testimonials:document.querySelectorAll('#sd-claude-testimonials-v305').length,loader:document.documentElement.getAttribute('data-claude-runtime-loader'),scriptErrors:Number(document.documentElement.getAttribute('data-claude-runtime-script-errors')||'-1'),cleanRemoved:document.documentElement.getAttribute('data-claude-clean-only-section-removed'),logos:Number(document.documentElement.getAttribute('data-claude-proof-real-logos')||'0'),noteRemoved:document.documentElement.getAttribute('data-claude-proof-note-removed'),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,blank:[...document.querySelectorAll('main section')].filter(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&r.height>=80&&(e.innerText||'').trim().length<8}).length,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.currentSrc||i.src),dups:[...new Set(ids.filter((v,i)=>ids.indexOf(v)!==i))],cta:[...document.querySelectorAll('a[href]')].some(a=>a.getAttribute('href')==='/gen-ai-masterclass/register-one-step'),oldProof:[...document.querySelectorAll('main h2')].some(h=>N(h.textContent)==='Why AI-skilled professionals are moving ahead faster.'),cleanOnly:[...document.querySelectorAll('main h2')].some(h=>N(h.textContent)==='Use AI tools for work you already do.'),live:host?{display:hs.display,visibility:hs.visibility,opacity:hs.opacity}:null};});const hyd=errs.filter(e=>/#418|#425|invariant=418|invariant=425/i.test(e));out[n]={...x,hydration:hyd,bad,errs};await p.screenshot({path:`qa-v6/${n}.png`,fullPage:true});await p.close();}
+          for(const [n,x] of Object.entries(out)){if(x.hydration.length)fail.push(`${n}: hydration ${x.hydration.length}`);if(N(x.h1)!==EH1)fail.push(`${n}: h1 ${x.h1}`);if(JSON.stringify(x.h2)!==JSON.stringify(EH2))fail.push(`${n}: h2 ${JSON.stringify(x.h2)}`);if(x.h1c!==1||x.sections!==18)fail.push(`${n}: h1c/sections ${x.h1c}/${x.sections}`);if(x.jobs!==1||x.skills!==1||x.proof!==1||x.testimonials!==1)fail.push(`${n}: proof/testimonials ${x.jobs}/${x.skills}/${x.proof}/${x.testimonials}`);if(x.loader!=='v4-ready'||x.scriptErrors!==0||x.cleanRemoved!=='1')fail.push(`${n}: loader/errors/clean ${x.loader}/${x.scriptErrors}/${x.cleanRemoved}`);if(x.logos!==6||x.noteRemoved!=='1')fail.push(`${n}: logos/note ${x.logos}/${x.noteRemoved}`);if(x.oldProof||x.cleanOnly)fail.push(`${n}: old/clean heading old=${x.oldProof} clean=${x.cleanOnly}`);if(x.overflow||x.blank||x.broken.length||x.dups.length||!x.cta)fail.push(`${n}: structural overflow=${x.overflow} blank=${x.blank} broken=${x.broken.length} dups=${x.dups.length} cta=${x.cta}`);const critical=x.bad.filter(r=>['document','script','stylesheet'].includes(r.type));if(critical.length)fail.push(`${n}: critical ${JSON.stringify(critical)}`);if(n.startsWith('mobile')&&x.live&&x.live.display!=='none')fail.push(`${n}: live popup visible`);if(n==='desktop'&&(!x.live||x.live.display==='none'))fail.push('desktop: live popup missing');}
+          fs.writeFileSync('qa-v6/result.json',JSON.stringify(out,null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(out).map(([n,x])=>[n,{hydration:x.hydration.length,h1:x.h1,h2:x.h2,sections:x.sections,jobs:x.jobs,skills:x.skills,testimonials:x.testimonials,loader:x.loader,scriptErrors:x.scriptErrors,cleanRemoved:x.cleanRemoved,logos:x.logos,noteRemoved:x.noteRemoved,overflow:x.overflow,blank:x.blank,broken:x.broken.length,dups:x.dups.length,live:x.live,bad:x.bad}])),null,2));if(fail.length){console.error('FAIL\n'+fail.join('\n'));process.exit(1)}console.log('FINAL_QA_PASS');await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-v6/qa.js
+
+      - name: Lighthouse final measurement
+        if: success()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --silent lighthouse
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=v6-lh-mobile' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --form-factor=mobile --output=json --output-path=qa-v6/lh-mobile.json || true
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=v6-lh-desktop' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --preset=desktop --output=json --output-path=qa-v6/lh-desktop.json || true
+          python3 - <<'PY'
+          import json,os
+          out={}
+          for n in ('mobile','desktop'):
+              p=f'qa-v6/lh-{n}.json'
+              if not os.path.exists(p): continue
+              d=json.load(open(p));c=d['categories'];a=d['audits']
+              out[n]={'performance':round(c['performance']['score']*100),'accessibility':round(c['accessibility']['score']*100),'bestPractices':round(c['best-practices']['score']*100),'seo':round(c['seo']['score']*100),'FCP':a['first-contentful-paint']['displayValue'],'LCP':a['largest-contentful-paint']['displayValue'],'CLS':a['cumulative-layout-shift']['displayValue'],'TBT':a['total-blocking-time']['displayValue'],'transfer':a.get('total-byte-weight',{}).get('displayValue')}
+          print('LIGHTHOUSE='+json.dumps(out,indent=2));json.dump(out,open('qa-v6/lighthouse-summary.json','w'),indent=2)
+          PY
+
+      - name: Rollback automatically on any failure
+        if: failure()
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail; export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl';M='/var/backups/sikhadenge/.claude-final-clean-v6-last'
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; if [[ -f "$B/sikhadenge.in-ssl.before" ]]; then cp "$B/sikhadenge.in-ssl.before" "$NG"; nginx -t; systemctl reload nginx; echo "ROLLED_BACK=$B"; fi; fi
+          pm2 delete sikhadenge-claude-final-clean-v2-3984 >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
+          REMOTE
+
+      - name: Persist successful clean runtime
+        if: success()
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail; export PM2_HOME=/root/.pm2
+          pm2 describe sikhadenge-claude-final-clean-v2-3984 >/dev/null
+          pm2 save >/dev/null
+          echo 'CLAUDE_FINAL_CLEAN_V6_PERSISTED'
+          REMOTE
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-final-clean-v6-qa
+          path: qa-v6/
+          retention-days: 3
+          if-no-files-found: warn
