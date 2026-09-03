@@ -19,21 +19,30 @@ export function ConsentBanner() {
       aria-label="Cookie and privacy preferences"
       role="dialog"
       aria-live="polite"
-      className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl rounded-2xl border border-neutral-200 bg-white p-5 text-neutral-900 shadow-2xl"
+      className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl rounded-2xl border border-neutral-200 bg-white p-4 text-neutral-900 shadow-2xl sm:p-5"
     >
-      <h2 className="text-lg font-semibold">Your privacy choices</h2>
+      <h2 className="text-base font-semibold sm:text-lg">Your privacy choices</h2>
 
-      <p className="mt-2 text-sm leading-6 text-neutral-600">
-        We use essential storage to operate the website. With your permission,
-        we also use analytics and advertising technologies to understand
-        performance and improve relevant communication. Read our{" "}
-        <Link className="underline" href="/privacy-policy">
-          privacy policy
-        </Link>
-        .
+      <p className="mt-2 text-xs leading-5 text-neutral-600 sm:text-sm sm:leading-6">
+        <span className="sm:hidden">
+          Essential storage keeps the site working. Analytics and ads need your permission. Read our{" "}
+          <Link className="underline" href="/privacy-policy" prefetch={false}>
+            privacy policy
+          </Link>
+          .
+        </span>
+        <span className="hidden sm:inline">
+          We use essential storage to operate the website. With your permission,
+          we also use analytics and advertising technologies to understand
+          performance and improve relevant communication. Read our{" "}
+          <Link className="underline" href="/privacy-policy" prefetch={false}>
+            privacy policy
+          </Link>
+          .
+        </span>
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
         <button
           type="button"
           onClick={acceptAll}
