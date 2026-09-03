@@ -5,7 +5,7 @@ set -Eeuo pipefail
 SSH_PORT="${SSH_PORT:-22}"
 KEY="$HOME/.ssh/prod"
 ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-set -Eeuo pipefail
+set -Eeu
 export PM2_HOME=/root/.pm2
 V72=/var/www/sikhadenge.in/registration-stable-v72-20260903-131023
 
