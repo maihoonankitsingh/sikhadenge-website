@@ -1,0 +1,68 @@
+name: Inspect Home Tools Icons 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-home-tools-icons-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Locate live homepage tools section read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '===== PM2 MAIN CANDIDATES ====='
+          pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const p of JSON.parse(s)){const e=p.pm2_env||{}; const cwd=e.pm_cwd||""; const args=String(e.args||""); if(cwd.includes("sikhadenge")||args.includes("3955")) console.log(`${p.name}\t${p.pid}\t${e.status}\t${cwd}\t${args}`)}})' || true
+
+          echo '===== EXACT SOURCE MATCHES: ACTIVE ROOT ====='
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          if [ -d "$ROOT" ]; then
+            grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'AI Tools You Will Master' "$ROOT" 2>/dev/null | head -30 || true
+            echo '===== RELATED STRING MATCHES ====='
+            grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'Modern creators combine these tools' "$ROOT" 2>/dev/null | head -30 || true
+          fi
+
+          echo '===== EXACT SOURCE MATCHES: RELEASES ====='
+          grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' 'AI Tools You Will Master' /var/www/sikhadenge.in/releases 2>/dev/null | tail -40 || true
+
+          echo '===== LIVE HTML MARKERS ====='
+          H=$(mktemp)
+          trap 'rm -f "$H"' EXIT
+          code=$(curl -L --compressed -ksS -o "$H" -w '%{http_code}' https://sikhadenge.in/ || true)
+          echo "HOME_HTTP=$code"
+          grep -o -E '.{0,180}AI Tools You Will Master.{0,350}' "$H" | head -3 || true
+          echo '===== LIVE ICON/SCRIPT ASSET HINTS ====='
+          grep -oE '(src|href)="[^"]+"' "$H" | grep -Ei 'tool|icon|home|main|_next/static' | head -80 || true
+          REMOTE
