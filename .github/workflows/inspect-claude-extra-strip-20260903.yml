@@ -1,0 +1,73 @@
+name: Inspect Claude Extra Strip 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-claude-extra-strip-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Inspect live geometry around extra strip
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          PORT=9222
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" about:blank >/tmp/chrome-extra-strip.log 2>&1 &
+          CHPID=$!
+          trap 'kill "$CHPID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do curl -fsS "http://127.0.0.1:$PORT/json/version" >/dev/null && break; sleep .2; done
+          python3 -m pip -q install websocket-client
+          python3 - <<'PY'
+          import json,time,urllib.request,websocket
+          port=9222
+          tabs=json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/json'))
+          ws=websocket.create_connection(tabs[0]['webSocketDebuggerUrl'],timeout=20)
+          seq=0
+          def call(method,params=None):
+              global seq
+              seq+=1
+              ws.send(json.dumps({'id':seq,'method':method,'params':params or {}}))
+              while True:
+                  msg=json.loads(ws.recv())
+                  if msg.get('id')==seq: return msg
+          call('Page.enable')
+          call('Runtime.enable')
+          call('Emulation.setDeviceMetricsOverride',{'width':1900,'height':1200,'deviceScaleFactor':1,'mobile':False})
+          call('Page.navigate',{'url':'https://sikhadenge.in/masterclass/claude/free?v=inspect-extra-strip-20260903'})
+          time.sleep(18)
+          js=r'''(() => {
+            const all=[...document.querySelectorAll('body *')];
+            const findText=(needle)=>all.find(el => (el.innerText||'').trim().includes(needle) && [...el.children].every(c=>!((c.innerText||'').trim().includes(needle)))) || all.find(el=>(el.innerText||'').includes(needle));
+            const top=findText('Specially designed for working professionals');
+            const bottom=findText('CURRENT BATCH ADVANTAGE');
+            const info=(el)=>{if(!el)return null;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,id:el.id,cls:el.className,txt:(el.innerText||'').trim().replace(/\s+/g,' ').slice(0,120),rect:{x:r.x,y:r.y,w:r.width,h:r.height,b:r.bottom},display:s.display,position:s.position,margin:`${s.marginTop} ${s.marginRight} ${s.marginBottom} ${s.marginLeft}`,padding:`${s.paddingTop} ${s.paddingRight} ${s.paddingBottom} ${s.paddingLeft}`,bg:s.backgroundColor,borderTop:s.borderTop,borderBottom:s.borderBottom,minH:s.minHeight,height:s.height};};
+            const ancestors=(el)=>{const out=[];for(let n=el;n&&n!==document.documentElement;n=n.parentElement)out.push(info(n));return out;};
+            const ta=ancestors(top),ba=ancestors(bottom);
+            const topBox=top?.getBoundingClientRect();
+            const bottomBox=bottom?.getBoundingClientRect();
+            const y1=topBox?topBox.bottom:0, y2=bottomBox?bottomBox.top:999999;
+            const candidates=all.map(info).filter(x=>x&&x.rect.h>=20&&x.rect.b>=y1-20&&x.rect.y<=y2+20&&x.rect.w>1200).sort((a,b)=>a.rect.y-b.rect.y||b.rect.w-a.rect.w);
+            return {top:info(top),bottom:info(bottom),topAncestors:ta.slice(0,8),bottomAncestors:ba.slice(0,8),between:{y1,y2,gap:y2-y1},candidates:candidates.slice(0,80)};
+          })()'''
+          res=call('Runtime.evaluate',{'expression':js,'returnByValue':True})
+          print('===== EXTRA STRIP GEOMETRY =====')
+          print(json.dumps(res['result']['result']['value'],indent=2))
+          shot=call('Page.captureScreenshot',{'format':'png','captureBeyondViewport':True})
+          import base64,pathlib
+          pathlib.Path('claude-extra-strip.png').write_bytes(base64.b64decode(shot['result']['data']))
+          ws.close()
+          PY
+      - name: Upload inspect screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-extra-strip-inspect
+          path: claude-extra-strip.png
+          retention-days: 1
