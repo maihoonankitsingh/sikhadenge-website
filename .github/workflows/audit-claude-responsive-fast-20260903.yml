@@ -1,0 +1,120 @@
+name: Audit Claude Responsive Fast 20260903
+
+on:
+  push:
+    branches:
+      - audit/claude-responsive-20260903
+    paths:
+      - .github/workflows/audit-claude-responsive-fast-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Responsive metrics and visual slices
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p audit-fast/screens
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          PORT=9444
+          PROFILE="$RUNNER_TEMP/claude-fast-profile"
+          mkdir -p "$PROFILE"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$PROFILE" --remote-allow-origins='*' --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" about:blank >/tmp/claude-fast-chrome.log 2>&1 &
+          CHPID=$!
+          trap 'kill "$CHPID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 80); do
+            if curl -fsS "http://127.0.0.1:$PORT/json/version" >/dev/null; then ready=1; break; fi
+            sleep .25
+          done
+          test "$ready" = 1
+          python3 -m pip -q install websocket-client
+          python3 - <<'PY'
+          import base64,json,pathlib,time,urllib.request,websocket
+          port=9444
+          tabs=json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/json'))
+          ws=websocket.create_connection(tabs[0]['webSocketDebuggerUrl'],timeout=45)
+          seq=0
+          def call(method,params=None):
+            global seq
+            seq+=1
+            ws.send(json.dumps({'id':seq,'method':method,'params':params or {}}))
+            while True:
+              m=json.loads(ws.recv())
+              if m.get('id')==seq:
+                if 'error' in m: raise RuntimeError(m['error'])
+                return m.get('result',{})
+          call('Page.enable'); call('Runtime.enable')
+          views=[('desktop',1440,1200,False),('tablet',768,1100,True),('mobile',390,1000,True)]
+          js=r'''(()=>{
+            const vis=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};
+            const tx=e=>(e.innerText||e.textContent||'').replace(/\s+/g,' ').trim();
+            const all=[...document.querySelectorAll('body *')];
+            const sections=[...document.querySelectorAll('section')].filter(vis).map((e,i)=>{const r=e.getBoundingClientRect();return{i,cls:typeof e.className==='string'?e.className:'',y:Math.round(r.top+scrollY),h:Math.round(r.height),textLen:tx(e).length,text:tx(e).slice(0,100)}});
+            const over=all.filter(vis).map(e=>[e,e.getBoundingClientRect()]).filter(([e,r])=>r.left<-2||r.right>innerWidth+2).slice(0,20).map(([e,r])=>({tag:e.tagName,cls:typeof e.className==='string'?e.className:'',l:Math.round(r.left),r:Math.round(r.right),w:Math.round(r.width),text:tx(e).slice(0,60)}));
+            const click=[...document.querySelectorAll('a[href],button,input,select,textarea,[role="button"]')].filter(vis);
+            const small=click.filter(e=>{const r=e.getBoundingClientRect();return r.width<40||r.height<40}).slice(0,30).map(e=>{const r=e.getBoundingClientRect();return{tag:e.tagName,w:Math.round(r.width),h:Math.round(r.height),text:tx(e).slice(0,50),href:e.getAttribute('href')}});
+            const broken=[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>({src:i.currentSrc||i.src,alt:i.alt}));
+            const headings=[...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(vis).map(h=>({l:+h.tagName.slice(1),text:tx(h).slice(0,80)}));
+            const skips=[];for(let i=1;i<headings.length;i++)if(headings[i].l-headings[i-1].l>1)skips.push([headings[i-1],headings[i]]);
+            const ids=[...document.querySelectorAll('[id]')].map(x=>x.id);const dup=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))];
+            const ctas=click.filter(e=>/(register|reserve|seat|join|book|start)/i.test(tx(e))).map(e=>{const r=e.getBoundingClientRect();return{text:tx(e).slice(0,60),w:Math.round(r.width),h:Math.round(r.height),href:e.getAttribute('href')}}).slice(0,20);
+            return{viewport:{w:innerWidth,h:innerHeight},page:{scrollW:document.documentElement.scrollWidth,clientW:document.documentElement.clientWidth,scrollH:document.documentElement.scrollHeight},horizontalOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,overflowEls:over,sections,blankSections:sections.filter(s=>s.h>80&&s.textLen<8),smallTargets:small,brokenImages:broken,h1Count:headings.filter(h=>h.l===1).length,headingSkips:skips,duplicateIds:dup,ctas,title:document.title,lang:document.documentElement.lang,imageCount:document.images.length};
+          })()'''
+          out={}
+          for name,w,h,mob in views:
+            call('Emulation.setDeviceMetricsOverride',{'width':w,'height':h,'deviceScaleFactor':1,'mobile':mob})
+            call('Page.navigate',{'url':f'https://sikhadenge.in/masterclass/claude/free?v=fast-audit-{name}-20260903'})
+            time.sleep(8)
+            call('Runtime.evaluate',{'expression':'''(()=>{const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').trim()==='Reject non-essential');if(b)b.click()})()'''})
+            time.sleep(1)
+            val=call('Runtime.evaluate',{'expression':js,'returnByValue':True})['result']['value']
+            out[name]=val
+            H=val['page']['scrollH']
+            for label,y in [('top',0),('mid',max(0,int(H*.45))),('bottom',max(0,H-h-20))]:
+              call('Runtime.evaluate',{'expression':f'window.scrollTo(0,{y})'})
+              time.sleep(.5)
+              shot=call('Page.captureScreenshot',{'format':'png','captureBeyondViewport':False,'fromSurface':True})
+              pathlib.Path(f'audit-fast/screens/{name}-{label}.png').write_bytes(base64.b64decode(shot['data']))
+          pathlib.Path('audit-fast/responsive-summary.json').write_text(json.dumps(out,indent=2))
+          print(json.dumps({k:{'viewport':v['viewport'],'page':v['page'],'horizontalOverflow':v['horizontalOverflow'],'blankSections':len(v['blankSections']),'overflowEls':len(v['overflowEls']),'smallTargets':len(v['smallTargets']),'brokenImages':len(v['brokenImages']),'h1Count':v['h1Count'],'headingSkips':len(v['headingSkips']),'duplicateIds':len(v['duplicateIds']),'ctaCount':len(v['ctas'])} for k,v in out.items()},indent=2))
+          ws.close()
+          PY
+
+      - name: Lighthouse desktop
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          mkdir -p audit-fast/lighthouse
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-desktop-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-fast/lighthouse/desktop.json --form-factor=desktop
+
+      - name: Lighthouse mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-mobile-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-fast/lighthouse/mobile.json --form-factor=mobile
+          python3 - <<'PY'
+          import json,pathlib
+          out={}
+          for n in ['desktop','mobile']:
+            d=json.loads(pathlib.Path(f'audit-fast/lighthouse/{n}.json').read_text());c=d['categories'];a=d['audits']
+            sc=lambda k: None if c.get(k,{}).get('score') is None else round(c[k]['score']*100)
+            num=lambda k: None if a.get(k,{}).get('numericValue') is None else round(a[k]['numericValue'],2)
+            out[n]={'performance':sc('performance'),'accessibility':sc('accessibility'),'bestPractices':sc('best-practices'),'seo':sc('seo'),'FCP_ms':num('first-contentful-paint'),'LCP_ms':num('largest-contentful-paint'),'CLS':num('cumulative-layout-shift'),'TBT_ms':num('total-blocking-time'),'SpeedIndex_ms':num('speed-index'),'transferBytes':num('total-byte-weight')}
+          pathlib.Path('audit-fast/lighthouse-summary.json').write_text(json.dumps(out,indent=2));print(json.dumps(out,indent=2))
+          PY
+
+      - name: Upload audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-responsive-fast-audit-20260903
+          path: audit-fast/
+          retention-days: 1
