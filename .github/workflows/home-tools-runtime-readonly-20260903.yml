@@ -1,4 +1,4 @@
-name: Home Tools Runtime Readonly Audit 20260903
+name: Home Tools Renderer Readonly Audit 20260903
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect exact 3955 serving runtime read-only
+      - name: Inspect current tool logo renderer only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -42,34 +42,16 @@ jobs:
           set -Eeuo pipefail
           export HOME=/root PM2_HOME=/root/.pm2
           APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
-          echo 'RUNTIME_AUDIT_BEGIN'
-          pm2 describe "$APP" | sed -n '1,120p' || true
           PID="$(pm2 pid "$APP" | tail -1)"
-          echo "PROC_PID=$PID"
-          CWD="$(readlink -f /proc/$PID/cwd 2>/dev/null || true)"
+          CWD="$(readlink -f /proc/$PID/cwd)"
+          SRC="$CWD/app/landing/page.tsx"
           echo "PROC_CWD=$CWD"
-          printf 'PROC_CMDLINE='; tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true; echo
-          echo 'NGINX_3955_REFS:'
-          grep -RniE '127\.0\.0\.1:3955|localhost:3955|proxy_pass.*3955' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -40 || true
-          D="$(mktemp)"; L="$(mktemp)"; trap 'rm -f "$D" "$L"' EXIT
-          dc="$(curl -sS -o "$D" -w '%{http_code}' 'http://127.0.0.1:3955/?runtimeaudit=2' || true)"
-          lc="$(curl -kLsS -o "$L" -w '%{http_code}' 'https://sikhadenge.in/?runtimeaudit=2' || true)"
-          echo "DIRECT_HTTP=$dc LIVE_HTTP=$lc"
-          printf 'DIRECT_HAS_TOOLS='; grep -q 'AI Tools You Will Master' "$D" && echo YES || echo NO
-          printf 'LIVE_HAS_TOOLS='; grep -q 'AI Tools You Will Master' "$L" && echo YES || echo NO
-          printf 'DIRECT_HAS_OFFICIAL_PATH='; grep -q '/images/home-tools-official/' "$D" && echo YES || echo NO
-          printf 'LIVE_HAS_OFFICIAL_PATH='; grep -q '/images/home-tools-official/' "$L" && echo YES || echo NO
-          echo 'DIRECT_HTML_ICON_SAMPLES:'
-          grep -oE '/images/[^" ]+\.(png|svg|ico|webp)' "$D" | grep -Ei 'tool|chatgpt|claude|gemini|deepseek|perplexity' | head -30 || true
-          echo 'SOURCE_MATCH_IN_PROC_CWD:'
-          if [ -n "$CWD" ] && [ -d "$CWD" ]; then
-            grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups '25+ AI Tools You Will Master' "$CWD" 2>/dev/null | head -20 || true
-            if [ -f "$CWD/app/landing/page.tsx" ]; then
-              echo "PROC_SOURCE=$CWD/app/landing/page.tsx"
-              grep -n -B3 -A30 '// AI Tools' "$CWD/app/landing/page.tsx" | head -45 || true
-            fi
-          fi
-          echo 'ROOT_SOURCE_MATCH:'
-          grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups '25+ AI Tools You Will Master' /var/www/sikhadenge.in 2>/dev/null | head -30 || true
-          echo 'RUNTIME_AUDIT_END READ_ONLY=1'
+          echo "SRC=$SRC"
+          echo 'AI_TOOLS_DATA:'
+          sed -n '84,108p' "$SRC"
+          echo 'TOOL_RENDER_MATCHES:'
+          grep -n -B18 -A28 'src={tool.logo}' "$SRC" | head -120
+          echo 'VISUAL_MAP_MATCHES:'
+          grep -n -B5 -A80 'toolVisual' "$SRC" | head -180 || true
+          echo 'READ_ONLY=1'
           REMOTE
