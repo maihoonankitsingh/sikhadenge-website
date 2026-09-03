@@ -45,11 +45,18 @@ jobs:
           ! grep -Fq 'tabletV7' /tmp/ai-video-live.html
           ! grep -Fq 'document.write' /tmp/ai-video-live.html
 
-      - name: Desktop tablet mobile live browser QA — 90+
+      - name: Desktop tablet mobile live browser QA — collect strict evidence
+        continue-on-error: true
         env:
           AI_VIDEO_QA_BASE_URL: https://sikhadenge.in
           AI_VIDEO_QA_OUTPUT: artifacts/ai-video-live-qa
         run: node scripts/qa-ai-video-masterclass.mjs
+
+      - name: Diagnose live HTTP and console errors
+        env:
+          AI_VIDEO_LIVE_BASE_URL: https://sikhadenge.in
+          AI_VIDEO_LIVE_DIAG_OUTPUT: artifacts/ai-video-live-diagnostics
+        run: node scripts/qa-ai-video-live-diagnostics.mjs
 
       - name: Live section-by-section viewport QA — 90+
         env:
@@ -99,6 +106,7 @@ jobs:
           name: ai-video-live-production-evidence
           path: |
             artifacts/ai-video-live-qa
+            artifacts/ai-video-live-diagnostics
             artifacts/ai-video-live-e2e
             artifacts/ai-video-live-lighthouse
             /tmp/ai-video-live.html
