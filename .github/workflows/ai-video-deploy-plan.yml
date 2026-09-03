@@ -17,8 +17,25 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+
       - name: Bash syntax
         run: bash -n ops/deploy-ai-video-v90.sh
+
+      - name: Embedded Python helper syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = Path('ops/deploy-ai-video-v90.sh').read_text()
+          snippets = re.findall(r"<<'PY'\n(.*?)\nPY", text, flags=re.S)
+          if len(snippets) < 2:
+              raise SystemExit(f'Expected at least 2 embedded Python helpers, found {len(snippets)}')
+          for index, snippet in enumerate(snippets, 1):
+              compile(snippet, f'embedded-helper-{index}', 'exec')
+          print(f'Embedded Python helpers: PASS ({len(snippets)})')
+          PY
+
       - name: Enforce production safety invariants
         run: |
           python3 - <<'PY'
