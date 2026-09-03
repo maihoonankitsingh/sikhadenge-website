@@ -241,39 +241,44 @@ function AiVideoMasterclassPage() {
     <>
       <Head>
         <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <meta name="robots" content="index,follow,max-image-preview:large" />
-        <meta name="theme-color" content="#ffffff" />
-        <link rel="canonical" href={canonicalUrl} />
+        <meta key="description" name="description" content={pageDescription} />
+        <meta key="robots" name="robots" content="index,follow,max-image-preview:large" />
+        <meta key="theme-color" name="theme-color" content="#ffffff" />
+        <link key="canonical" rel="canonical" href={canonicalUrl} />
         <link
+          key="hero-logo-preload"
           rel="preload"
           as="image"
           href="/brand/sikhadenge-header-safe-320.png?v=headersafe2-20260728"
         />
 
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="SikhaDenge" />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
+        <meta key="og-type" property="og:type" content="website" />
+        <meta key="og-site-name" property="og:site_name" content="SikhaDenge" />
+        <meta key="og-url" property="og:url" content={canonicalUrl} />
+        <meta key="og-title" property="og:title" content={pageTitle} />
+        <meta key="og-description" property="og:description" content={pageDescription} />
         <meta
+          key="og-image"
           property="og:image"
           content="https://sikhadenge.in/images/about/about-hero-desk.webp"
         />
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
+        <meta key="twitter-card" name="twitter:card" content="summary_large_image" />
+        <meta key="twitter-title" name="twitter:title" content={pageTitle} />
+        <meta key="twitter-description" name="twitter:description" content={pageDescription} />
         <meta
+          key="twitter-image"
           name="twitter:image"
           content="https://sikhadenge.in/images/about/about-hero-desk.webp"
         />
 
         <script
+          key="course-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }}
         />
         <script
+          key="faq-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
@@ -306,7 +311,7 @@ function AiVideoMasterclassPage() {
 
               <div className={styles.heroMetaCard}>
                 <span className={styles.heroMetaIcon}><Users size={24} aria-hidden="true" /></span>
-                <span><strong>12K+ Learners</strong><small>Joined so far</small></span>
+                <span><strong>150,000+ Students</strong><small>Growing community</small></span>
               </div>
             </div>
 
@@ -358,7 +363,7 @@ function AiVideoMasterclassPage() {
                 </div>
 
                 <div className={styles.heroActions}>
-                  <Cta placement="hero-primary">Reserve My Free Seat</Cta>
+                  <Cta placement="hero-primary">Get My Free Seat · ₹999 → FREE</Cta>
                   <a className={styles.secondary} href="#outcomes">
                     <Play size={18} aria-hidden="true" />
                     <span>See What You’ll Create</span>
@@ -577,7 +582,7 @@ function AiVideoMasterclassPage() {
               <p>Learn a practical process for creating stronger AI-generated ads, reels and cinematic clips in one focused {durationCompact.toLowerCase()} live session.</p>
             </div>
             <div className={styles.finalAction}>
-              <Cta placement="final" className={styles.finalButton}>Reserve My Free Seat</Cta>
+              <Cta placement="final" className={styles.finalButton}>Get My Free Seat</Cta>
               <span><Users size={16} aria-hidden="true" /> Live · Easy Hinglish · Beginner Friendly</span>
             </div>
           </div>
@@ -585,7 +590,7 @@ function AiVideoMasterclassPage() {
 
         <div className={styles.mobileSticky} aria-label="Reserve your AI video masterclass seat">
           <div><small>AI VIDEO MASTERCLASS</small><strong>{durationLabel} · Live</strong></div>
-          <Cta placement="mobile-sticky" className={styles.mobileButton}>Reserve Seat</Cta>
+          <Cta placement="mobile-sticky" className={styles.mobileButton}>Get Free Seat</Cta>
         </div>
       </main>
     </>
