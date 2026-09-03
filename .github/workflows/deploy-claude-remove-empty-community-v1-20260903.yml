@@ -1,0 +1,169 @@
+name: Deploy Claude Remove Empty Community V1 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-remove-empty-community-v1-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only blank-strip removal patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          NG=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          ASSET=/var/www/sikhadenge.in/claude-remove-empty-community-v1.js
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/0e80813f06dfaf8a934882cd4a7497bcce5dfd7d/public/claude-remove-empty-community-v1.js'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-remove-empty-community-v1-$TS"
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-remove-empty-community-v1.js.before"
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-remove-empty-community-v1.js.before" ]]; then
+              cp "$BACKUP/claude-remove-empty-community-v1.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_REMOVE_EMPTY_COMMUNITY_V1__' "$TMP"
+          grep -Fq 'Use AI tools for work you already do.' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+          route='location = /masterclass/claude/free {'
+          start=s.find(route)
+          if start < 0: raise SystemExit('Claude route not found')
+          end=s.find('\n    }',start)
+          if end < 0: raise SystemExit('Claude route end not found')
+          end += len('\n    }')
+          seg=s[start:end]
+
+          script='<script src="/claude-remove-empty-community-v1.js?v=remove-blank-strip-20260903"></script>'
+          spacing='<script src="/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903"></script>'
+          logos='<script src="/claude-proof-real-logos-v1.js?v=real-logos-note-remove-20260903"></script>'
+          if script not in seg:
+              if spacing in seg:
+                  seg=seg.replace(spacing,spacing+script,1)
+              elif logos in seg:
+                  seg=seg.replace(logos,logos+script,1)
+              else:
+                  anchor="</body>';"
+                  pos=seg.find(anchor)
+                  if pos < 0: raise SystemExit('body injection anchor not found')
+                  seg=seg[:pos]+script+seg[pos:]
+          s=s[:start]+seg+s[end:]
+
+          marker='# CLAUDE_REMOVE_EMPTY_COMMUNITY_V1_ASSET'
+          if marker not in s:
+              block='''    # CLAUDE_REMOVE_EMPTY_COMMUNITY_V1_ASSET
+              location = /claude-remove-empty-community-v1.js {
+                  alias /var/www/sikhadenge.in/claude-remove-empty-community-v1.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_REMOVE_EMPTY_COMMUNITY_V1_ASSET_END
+
+          '''
+              idx=s.find(route)
+              if idx < 0: raise SystemExit('could not place asset location')
+              s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-remove-empty-community-v1.js | grep -Fq '__CLAUDE_REMOVE_EMPTY_COMMUNITY_V1__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-server' -o "$HTML"
+          test "$(grep -o '/claude-remove-empty-community-v1.js?v=remove-blank-strip-20260903' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/api/social-proof/live?widget=1' "$HTML"
+
+          AI="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=remove-blank-strip-isolation' -o "$AI"
+          if grep -Fq '/claude-remove-empty-community-v1.js' "$AI"; then
+            echo 'Blank-strip patch leaked into AI Video page'
+            exit 1
+          fi
+          echo "BACKUP=$BACKUP"
+          echo 'CLAUDE_REMOVE_EMPTY_COMMUNITY_SERVER_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify strip is gone in Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-strip-removed.html"
+          PNG="$RUNNER_TEMP/claude-strip-removed.png"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=remove-blank-strip-final-20260903'
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1900,2600 --screenshot="$PNG" "$URL"
+
+          grep -Fq 'data-claude-empty-community-removed="1"' "$DOM"
+          test "$(grep -o 'claude-masterclass-live_community__' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o '<section[^>]*claude-masterclass-live_community__' "$DOM" | wc -l)" -eq 0
+          grep -Fq 'Specially designed for working professionals' "$DOM"
+          grep -Fq 'CURRENT BATCH ADVANTAGE' "$DOM"
+          grep -Fq 'Learn AI Tools by Doing' "$DOM"
+          test -s "$PNG"
+          cp "$PNG" "$GITHUB_WORKSPACE/claude-strip-removed.png"
+          echo 'CLAUDE_REMOVE_EMPTY_COMMUNITY_CHROME_OK'
+
+      - name: Upload visual QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-remove-empty-community-v1-qa
+          path: claude-strip-removed.png
+          retention-days: 1
