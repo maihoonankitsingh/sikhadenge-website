@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# audit trigger: 2026-09-03T22:47+05:30
 set -Eeuo pipefail
 : "${SSH_HOST:?missing SSH_HOST}"
 : "${SSH_USER:?missing SSH_USER}"
