@@ -30,7 +30,7 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
           export CHROME
-          cat > "$RUNNER_TEMP/audit.js" <<'JS'
+          cat > audit.js <<'JS'
           const puppeteer = require('puppeteer-core');
           const fs = require('fs');
           (async()=>{
@@ -49,10 +49,10 @@ jobs:
               const errs=[];
               page.on('console',m=>{if(m.type()==='error') errs.push('console:'+m.text().slice(0,180));});
               page.on('pageerror',e=>errs.push('page:'+String(e).slice(0,180)));
-              await page.goto(`https://sikhadenge.in/masterclass/claude/free?v=pup-audit-${v.name}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});
-              await new Promise(r=>setTimeout(r,7000));
+              await page.goto(`https://sikhadenge.in/masterclass/claude/free?v=pup-audit-${v.name}-20260903b`,{waitUntil:'domcontentloaded',timeout:45000});
+              await new Promise(r=>setTimeout(r,6500));
               await page.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').trim()==='Reject non-essential');if(b)b.click();});
-              await new Promise(r=>setTimeout(r,800));
+              await new Promise(r=>setTimeout(r,600));
               const val=await page.evaluate(()=>{
                 const visible=(el)=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0};
                 const text=(el)=>(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();
@@ -82,7 +82,7 @@ jobs:
               const H=val.page.scrollH;
               for(const [label,y] of [['top',0],['mid',Math.max(0,Math.floor(H*.45))],['bottom',Math.max(0,H-v.h-10)]]){
                 await page.evaluate(y=>window.scrollTo(0,y),y);
-                await new Promise(r=>setTimeout(r,300));
+                await new Promise(r=>setTimeout(r,250));
                 await page.screenshot({path:`audit-pup/screens/${v.name}-${label}.png`,fullPage:false});
               }
               await page.close();
@@ -93,21 +93,21 @@ jobs:
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node "$RUNNER_TEMP/audit.js"
+          node audit.js
 
       - name: Lighthouse desktop
         continue-on-error: true
         shell: bash
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
-          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-desktop-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/desktop.json --form-factor=desktop
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-desktop-20260903b' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/desktop.json --form-factor=desktop
 
       - name: Lighthouse mobile
         continue-on-error: true
         shell: bash
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
-          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-mobile-20260903' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/mobile.json --form-factor=mobile
+          npx --yes lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-pup-mobile-20260903b' --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit-pup/lighthouse/mobile.json --form-factor=mobile
 
       - name: Summarize Lighthouse
         if: always()
