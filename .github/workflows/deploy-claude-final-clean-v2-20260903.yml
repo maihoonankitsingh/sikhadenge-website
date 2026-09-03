@@ -1,0 +1,295 @@
+name: Deploy Claude Final Clean V2 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-final-clean-v2-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Capture exact public baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-final-v2/before
+          cat > qa-final-v2/audit.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const phase=process.argv[2]; const base=process.argv[3]||'https://sikhadenge.in/masterclass/claude/free';
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const out={};
+          const views=[{n:'desktop',w:1440,h:1000,m:false},{n:'tablet',w:768,h:1024,m:true},{n:'mobile430',w:430,h:932,m:true},{n:'mobile390',w:390,h:844,m:true}];
+          for(const v of views){const p=await b.newPage();await p.setViewport({width:v.w,height:v.h,isMobile:v.m,hasTouch:v.m,deviceScaleFactor:1});
+            const errors=[],bad=[];p.on('pageerror',e=>errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')errors.push(m.text())});p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});
+            await p.goto(`${base}?v=final-v2-${phase}-${v.n}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,10000));
+            const state=await p.evaluate(()=>{const css=e=>e?getComputedStyle(e):null;const bodyText=document.body.innerText||'';const ids=[...document.querySelectorAll('[id]')].map(x=>x.id).filter(Boolean);const dupIds=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))];const imgs=[...document.images];const h=[...document.querySelectorAll('main h2')].map(x=>(x.innerText||'').trim());const host=document.getElementById('sd-sitewide-live-proof-host-v1');const hostStyle=css(host);const small=[...document.querySelectorAll('main *, footer *')].filter(e=>{const t=(e.textContent||'').trim();if(!t||e.children.length)return false;const s=css(e),r=e.getBoundingClientRect();return s&&s.display!=='none'&&r.width>0&&r.height>0&&parseFloat(s.fontSize)<11;}).length;const shortTargets=[...document.querySelectorAll('a[href],button')].filter(e=>{const r=e.getBoundingClientRect(),s=css(e);return s&&s.display!=='none'&&r.width>0&&r.height>0&&r.height<32;}).length;return{
+              h1:(document.querySelector('main h1')?.innerText||document.querySelector('h1')?.innerText||'').trim(),h2:h,sections:document.querySelectorAll('main section').length,
+              jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,proofRoot:document.querySelectorAll('#claude-ai-video-proof-v4').length,testimonials:document.querySelectorAll('#sd-claude-testimonials-v305').length,
+              toolkit:bodyText.includes('Learn 25+ AI Tools'),bonus:bodyText.includes('A complete practical starting kit')||bodyText.includes('Bonus'),faq:bodyText.includes('Frequently asked questions'),
+              registration:[...document.querySelectorAll('a[href]')].filter(a=>/reserve my free seat|register now for free|get my free seat/i.test(a.textContent||'')).map(a=>a.getAttribute('href')),
+              overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,blankSections:[...document.querySelectorAll('main section')].filter(e=>{const s=css(e),r=e.getBoundingClientRect();return s&&s.display!=='none'&&r.height>=80&&(e.innerText||'').trim().length<8}).length,
+              brokenImages:imgs.filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.currentSrc||i.src),duplicateIds:dupIds,smallText:small,shortTargets,
+              liveProof:host?{display:hostStyle.display,visibility:hostStyle.visibility,opacity:hostStyle.opacity,rect:host.getBoundingClientRect().toJSON()}:null,
+              pageHeight:document.documentElement.scrollHeight
+            };});
+            const hydration=errors.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x));out[v.n]={...state,hydration,bad,errors};await p.screenshot({path:`qa-final-v2/${phase}/${v.n}.png`,fullPage:true});await p.close();}
+          fs.writeFileSync(`qa-final-v2/${phase}.json`,JSON.stringify(out,null,2));console.log(phase,JSON.stringify(Object.fromEntries(Object.entries(out).map(([k,v])=>[k,{hydration:v.hydration.length,h1:norm(v.h1),h2:v.h2,jobs:v.jobs,skills:v.skills,proofRoot:v.proofRoot,testimonials:v.testimonials,sections:v.sections,overflow:v.overflow,blankSections:v.blankSections,brokenImages:v.brokenImages.length,duplicateIds:v.duplicateIds.length,smallText:v.smallText,shortTargets:v.shortTargets,liveProof:v.liveProof,bad:v.bad}])),null,2));await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-final-v2/audit.js before
+
+      - name: Build clean isolated candidate with low-risk performance fixes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          SRC='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          CAND='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'
+          APP='sikhadenge-claude-final-clean-v2-3984'
+          PORT='3984'
+          test -d "$SRC"; test -x "$SRC/node_modules/.bin/next"
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          rm -rf "$CAND"; mkdir -p "$CAND"
+          rsync -a --delete --exclude='.next' --exclude='node_modules' "$SRC/" "$CAND/"
+          ln -s "$SRC/node_modules" "$CAND/node_modules"
+
+          # Stop the consent-link prefetch from requesting another route with this route's build ID.
+          python3 - "$CAND/components/consent/ConsentBanner.tsx" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          if p.exists():
+              s=p.read_text()
+              old='<Link className="underline" href="/privacy-policy">'
+              new='<Link prefetch={false} className="underline" href="/privacy-policy">'
+              if old in s: s=s.replace(old,new,1)
+              p.write_text(s)
+          PY
+
+          # Below-the-fold AI toolkit logos must never be high-priority/eager.
+          python3 - "$CAND" <<'PY'
+          from pathlib import Path
+          import sys
+          root=Path(sys.argv[1])
+          for p in list(root.rglob('*.tsx'))+list(root.rglob('*.jsx')):
+              if any(x in p.parts for x in ('node_modules','.next')): continue
+              try:s=p.read_text()
+              except:continue
+              if 'sd-codex-official-20260830-114215' not in s and 'claude-ai-tools-showcase' not in p.name.lower(): continue
+              s=s.replace('loading="eager"','loading="lazy"').replace('fetchPriority="high"','fetchPriority="low"').replace('fetchpriority="high"','fetchpriority="low"')
+              p.write_text(s)
+              print('LAZY_TOOLKIT_FILE',p)
+          PY
+
+          # Unique static namespace prevents stale CSS/JS chunk collisions with the older 3930 build.
+          python3 - "$CAND/next.config.js" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]);s=p.read_text();anchor='const nextConfig = {'
+          if anchor not in s: raise SystemExit('nextConfig anchor missing')
+          if 'assetPrefix:' not in s: s=s.replace(anchor,anchor+'\n  assetPrefix: "/__claude_final_v2",',1)
+          p.write_text(s)
+          PY
+
+          cd "$CAND"; export NODE_ENV=production; export NODE_OPTIONS='--max-old-space-size=4096'
+          ./node_modules/.bin/next build
+          test -f .next/BUILD_ID; test -f .next/build-manifest.json
+          PORT="$PORT" NODE_ENV=production pm2 start ./node_modules/.bin/next --name "$APP" -- start -p "$PORT"
+          for i in $(seq 1 40); do curl -fsS --max-time 3 "http://127.0.0.1:${PORT}/masterclass/claude/free?candidate=health" >/tmp/claude-v2-health.html && break || true; sleep 1; done
+          curl -fsS --max-time 10 "http://127.0.0.1:${PORT}/masterclass/claude/free?candidate=final" >/tmp/claude-v2-health.html
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/claude-v2-health.html
+          echo -n 'BUILD_ID='; cat .next/BUILD_ID; echo
+          REMOTE
+
+      - name: Verify direct candidate has zero hydration errors
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -f -N -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13984:127.0.0.1:3984 "$SSH_USER@$SSH_HOST"
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > qa-final-v2/precheck.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.setRequestInterception(true);p.on('request',r=>{const u=r.url();const m='/__claude_final_v2/_next/static/';if(u.includes(m))r.continue({url:u.replace(m,'/_next/static/')});else r.continue();});const errs=[],bad=[];p.on('pageerror',e=>errs.push(String(e)));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});p.on('response',r=>{if(r.status()>=400)bad.push([r.status(),r.url(),r.request().resourceType()])});await p.goto('http://127.0.0.1:13984/masterclass/claude/free?precheck=v2',{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,9000));const hyd=errs.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x));const st=await p.evaluate(()=>({h1:(document.querySelector('h1')?.innerText||'').trim(),sections:document.querySelectorAll('main section').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,cta:[...document.querySelectorAll('a[href]')].some(a=>a.getAttribute('href')==='/gen-ai-masterclass/register-one-step')}));console.log(JSON.stringify({hydration:hyd.length,bad,st,errors:errs.slice(0,10)},null,2));if(hyd.length)throw Error('candidate hydration errors '+hyd.length);if(st.overflow)throw Error('candidate overflow');if(!st.cta)throw Error('candidate registration CTA missing');await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa-final-v2/precheck.js
+
+      - name: Install route-scoped technical health assets and switch exact Claude route
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CAND='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'
+          MARK='/var/backups/sikhadenge/.claude-final-clean-v2-last'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"; BACKUP="/var/backups/sikhadenge/claude-final-clean-v2-$TS"
+          mkdir -p "$BACKUP"; cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"; printf '%s\n' "$BACKUP" > "$MARK"
+          BUILD_ID="$(cat "$CAND/.next/BUILD_ID")"; test -n "$BUILD_ID"
+
+          cat > /var/www/sikhadenge.in/claude-tech-health-v2.css <<'CSS'
+          /* Claude route only: technical-health layer. No desktop content/design removal. */
+          [class*="hostImage"]{background-image:none!important;background-color:#f6eee8!important;}
+          @media (max-width:767px){
+            #sd-sitewide-live-proof-host-v1{display:none!important;visibility:hidden!important;pointer-events:none!important;}
+            [class*="payment-trust-footer"] small{font-size:11px!important;line-height:1.35!important;}
+            [class*="payment-trust-footer"] a, footer a{min-height:32px;display:inline-flex;align-items:center;}
+          }
+          CSS
+
+          cat > /var/www/sikhadenge.in/claude-tech-health-v2.js <<'JS'
+          (()=>{'use strict';if(location.pathname!='/masterclass/claude/free'||window.__SD_CLAUDE_TECH_HEALTH_V2__)return;window.__SD_CLAUDE_TECH_HEALTH_V2__=1;
+          const start=()=>{
+            const hostImage=[...document.querySelectorAll('[class*="hostImage"]')][0];
+            if(hostImage){const load=()=>{hostImage.style.setProperty('background-image','url(/images/about/about-mission-class.webp)','important');hostImage.style.setProperty('background-color','transparent','important');};if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();load();}},{rootMargin:'700px 0px'});io.observe(hostImage);}else setTimeout(load,3500);}
+            document.querySelectorAll('video').forEach(v=>{if(!v.closest('section:first-of-type'))v.preload='none';});
+            document.querySelectorAll('img').forEach(img=>{const r=img.getBoundingClientRect();if(r.top>innerHeight*1.25){img.loading='lazy';img.decoding='async';if(img.getAttribute('fetchpriority')==='high')img.setAttribute('fetchpriority','low');}});
+          };
+          if(document.readyState==='complete')setTimeout(start,1200);else addEventListener('load',()=>setTimeout(start,1200),{once:true});
+          })();
+          JS
+
+          python3 - "$NG" "$CAND" "$BUILD_ID" <<'PY'
+          from pathlib import Path
+          import sys,re
+          p=Path(sys.argv[1]);cand=sys.argv[2];bid=sys.argv[3];s=p.read_text()
+          needle='location = /masterclass/claude/free {';a=s.find(needle)
+          if a<0: raise SystemExit('Claude exact route missing')
+          depth=0;b=None
+          for i in range(a,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0: b=i+1;break
+          seg=s[a:b]
+          if 'proxy_pass http://127.0.0.1:3930;' not in seg: raise SystemExit('expected 3930 proxy missing')
+          seg=seg.replace('proxy_pass http://127.0.0.1:3930;','proxy_pass http://127.0.0.1:3984;',1)
+          inject="<link rel='stylesheet' href='/claude-tech-health-v2.css'><script defer src='/claude-tech-health-v2.js'></script>"
+          if 'claude-tech-health-v2.css' not in seg:
+              idx=seg.rfind('}')
+              seg=seg[:idx]+"\n        sub_filter '</head>' \""+inject+"</head>\";\n        sub_filter_once off;\n"+seg[idx:]
+          s=s[:a]+seg+s[b:]
+          marker='# CLAUDE_FINAL_CLEAN_V2_ASSETS'
+          if marker not in s:
+              block=f'''\n    {marker}\n    location = /claude-tech-health-v2.css {{ alias /var/www/sikhadenge.in/claude-tech-health-v2.css; add_header Cache-Control "no-store" always; }}\n    location = /claude-tech-health-v2.js {{ alias /var/www/sikhadenge.in/claude-tech-health-v2.js; add_header Cache-Control "no-store" always; }}\n    location ^~ /__claude_final_v2/_next/static/ {{ alias {cand}/.next/static/; add_header Cache-Control "public, max-age=31536000, immutable" always; access_log off; }}\n    location ^~ /_next/data/{bid}/ {{ proxy_pass http://127.0.0.1:3984; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; add_header Cache-Control "private, no-store, no-cache, must-revalidate" always; }}\n'''
+              anchor='    location = /masterclass/claude/free {'
+              s=s.replace(anchor,block+'\n'+anchor,1)
+          p.write_text(s)
+          PY
+          nginx -t; systemctl reload nginx
+          curl -fsS --max-time 15 'https://sikhadenge.in/masterclass/claude/free?v=final-v2-switch' >/tmp/claude-v2-public.html
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/claude-v2-public.html
+          grep -Fq 'claude-tech-health-v2.css' /tmp/claude-v2-public.html
+          echo "BACKUP=$BACKUP BUILD_ID=$BUILD_ID"
+          REMOTE
+
+      - name: Final public desktop tablet mobile parity and health verification
+        id: finalqa
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node qa-final-v2/audit.js after
+          python3 - <<'PY'
+          import json,re,sys
+          before=json.load(open('qa-final-v2/before.json'));after=json.load(open('qa-final-v2/after.json'))
+          def n(s):return re.sub(r'\s+',' ',s or '').strip()
+          failures=[]
+          for view in before:
+              b,a=before[view],after[view]
+              if len(a['hydration'])!=0: failures.append(f'{view}: hydration={len(a["hydration"])}')
+              if n(a['h1'])!=n(b['h1']): failures.append(f'{view}: H1 changed')
+              if [n(x) for x in a['h2']] != [n(x) for x in b['h2']]: failures.append(f'{view}: H2 sequence changed')
+              if a['sections']!=b['sections']: failures.append(f'{view}: section count {a["sections"]}!={b["sections"]}')
+              if a['jobs']!=1 or a['skills']!=1 or a['proofRoot']!=1: failures.append(f'{view}: proof section invalid jobs={a["jobs"]} skills={a["skills"]} root={a["proofRoot"]}')
+              if b['testimonials'] and a['testimonials']!=b['testimonials']: failures.append(f'{view}: testimonials lost')
+              if a['overflow']: failures.append(f'{view}: horizontal overflow')
+              if a['blankSections']!=0: failures.append(f'{view}: blank sections={a["blankSections"]}')
+              if a['duplicateIds']: failures.append(f'{view}: duplicate ids={a["duplicateIds"]}')
+              if a['brokenImages']: failures.append(f'{view}: broken images={len(a["brokenImages"])}')
+              if not any(x=='/gen-ai-masterclass/register-one-step' for x in a['registration']): failures.append(f'{view}: registration CTA missing')
+              badCritical=[x for x in a['bad'] if x['status']>=400 and x['type'] in ('script','stylesheet','document')]
+              if badCritical: failures.append(f'{view}: critical 4xx/5xx={badCritical[:3]}')
+              if view.startswith('mobile') and a['liveProof'] and a['liveProof']['display']!='none': failures.append(f'{view}: live proof overlay still visible')
+          if failures:
+              print('FAILURES\n'+'\n'.join(failures));sys.exit(1)
+          print('FINAL_QA_PASS')
+          PY
+
+      - name: Lighthouse before and after technical evidence
+        if: success()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --silent lighthouse
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-final-v2-mobile' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --form-factor=mobile --output=json --output-path=qa-final-v2/lighthouse-mobile.json || true
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=lh-final-v2-desktop' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --preset=desktop --output=json --output-path=qa-final-v2/lighthouse-desktop.json || true
+          python3 - <<'PY'
+          import json,os
+          out={}
+          for n in ['mobile','desktop']:
+              p=f'qa-final-v2/lighthouse-{n}.json'
+              if not os.path.exists(p):continue
+              d=json.load(open(p));c=d['categories'];a=d['audits'];out[n]={
+                'performance':round(c['performance']['score']*100),'accessibility':round(c['accessibility']['score']*100),'bestPractices':round(c['best-practices']['score']*100),'seo':round(c['seo']['score']*100),
+                'FCP':a['first-contentful-paint']['displayValue'],'LCP':a['largest-contentful-paint']['displayValue'],'CLS':a['cumulative-layout-shift']['displayValue'],'TBT':a['total-blocking-time']['displayValue'],'transfer':a.get('total-byte-weight',{}).get('displayValue')}
+          print('LIGHTHOUSE='+json.dumps(out,indent=2));json.dump(out,open('qa-final-v2/lighthouse-summary.json','w'),indent=2)
+          PY
+
+      - name: Roll back exact Claude route on any failed post-switch QA
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl';MARK='/var/backups/sikhadenge/.claude-final-clean-v2-last';APP='sikhadenge-claude-final-clean-v2-3984'
+          if [[ -f "$MARK" ]]; then B="$(cat "$MARK")"; if [[ -f "$B/sikhadenge.in-ssl.before" ]]; then cp "$B/sikhadenge.in-ssl.before" "$NG"; nginx -t; systemctl reload nginx; echo "ROLLED_BACK=$B"; fi; fi
+          pm2 delete "$APP" >/dev/null 2>&1 || true; pm2 save >/dev/null 2>&1 || true
+          REMOTE
+
+      - name: Persist successful PM2 state
+        if: success()
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'export PM2_HOME=/root/.pm2; pm2 save >/dev/null; pm2 status sikhadenge-claude-final-clean-v2-3984'
+
+      - name: Upload final QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-final-clean-v2-qa
+          path: qa-final-v2/
+          retention-days: 3
