@@ -1,0 +1,90 @@
+name: AI Video V90.1 Deploy Plan Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-1-production-20260903"
+    paths:
+      - "ops/deploy-ai-video-v90-1.sh"
+      - ".github/workflows/ai-video-v90-1-deploy-plan.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-deploy-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-v90-1.sh
+
+      - name: Compile embedded Python helpers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = Path('ops/deploy-ai-video-v90-1.sh').read_text()
+          blocks = []
+
+          for match in re.finditer(r"python3\s+-c\s+'(.*?)'\s+\"\$app\"", text, re.S):
+              blocks.append(('python3-c', match.group(1)))
+
+          for match in re.finditer(r"<<'PY'\n(.*?)\nPY", text, re.S):
+              blocks.append(('heredoc', match.group(1)))
+
+          if len(blocks) < 3:
+              raise SystemExit(f'Expected at least 3 embedded Python blocks, found {len(blocks)}')
+
+          for index, (kind, source) in enumerate(blocks, start=1):
+              compile(source, f'<embedded-{kind}-{index}>', 'exec')
+
+          print(f'Embedded Python syntax: PASS ({len(blocks)} blocks)')
+          PY
+
+      - name: Enforce rollback and production safety invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          text = Path('ops/deploy-ai-video-v90-1.sh').read_text()
+
+          required = [
+              'c216c8470d761aae1baa644e2cb3dc8d78b936c7',
+              'sikhadenge-ai-video-v90-3940-20260903-220828',
+              'sikhadenge-ai-workflow-premium-3940',
+              '/root/ai-video-GOLDEN-ADS-LIVE-20260903-125516',
+              '6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51',
+              'AI_VIDEO_ASSET_PREFIX',
+              'rollback',
+              'pm2 save',
+              'prefetch={false}',
+              'Essential storage keeps the site working.',
+              'PREV_PREFIX="/ai-video-real-output-v77/v90-75889cdbef1c-20260903-220828"',
+          ]
+
+          forbidden = [
+              'chattr -i',
+              'nginx -s reload',
+              'systemctl reload nginx',
+              'systemctl restart nginx',
+              'pm2 delete sikhadenge-ai-video-v90-3940-20260903-220828',
+              'pm2 delete sikhadenge-ai-workflow-premium-3940',
+              'rm -rf /var/www/sikhadenge.in/releases/*',
+          ]
+
+          missing = [item for item in required if item not in text]
+          bad = [item for item in forbidden if item in text]
+
+          if missing or bad:
+              print('Missing required invariants:', missing)
+              print('Forbidden operations found:', bad)
+              raise SystemExit(1)
+
+          print('V90.1 deploy-plan safety invariants: PASS')
+          PY
