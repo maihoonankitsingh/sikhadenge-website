@@ -1,0 +1,106 @@
+name: Diagnose Claude Final Assets V5 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-final-assets-v5-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect effective Nginx and candidate asset paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          C='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'
+          APP='sikhadenge-claude-final-clean-v2-3984'
+
+          echo '===== BASELINE EXACT ROUTE ====='
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          s=Path(sys.argv[1]).read_text(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('exact route not found')
+          d=0;b=None
+          for i in range(a,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: b=i+1; break
+          print(s[a:b])
+          PY
+
+          echo '===== EFFECTIVE LOCATION INDEX ====='
+          nginx -T 2>&1 | grep -nE 'server_name[[:space:]].*sikhadenge|location .*(__claude|_next/static|\.js|\.css)|claude-runtime|masterclass/claude/free' | head -n 240 || true
+
+          echo '===== CANDIDATE FILE CHECK ====='
+          test -d "$C/.next/static"
+          for rel in \
+            'css/8522be7a7183fcc0.css' \
+            'css/707be1970b7ca9ae.css' \
+            'css/a897144809f0b91d.css' \
+            'chunks/framework-a49609877c928af5.js' \
+            'chunks/main-c47b375edf18a7f5.js' \
+            'chunks/webpack-9fa962d6dab17e17.js' \
+            'chunks/pages/_app-670aa2ab92ab1966.js' \
+            'chunks/pages/masterclass/claude/free-b353b253544d49a2.js' \
+            'LRGBmNz6chaBg6stHgoDb/_buildManifest.js' \
+            'LRGBmNz6chaBg6stHgoDb/_ssgManifest.js' \
+            'media/cf1d1523226d8c03-s.p.ttf'; do
+              if [[ -f "$C/.next/static/$rel" ]]; then echo "FOUND $rel $(wc -c < "$C/.next/static/$rel")"; else echo "MISSING $rel"; fi
+          done
+          echo '===== PERMISSIONS ====='
+          namei -l "$C/.next/static/css/8522be7a7183fcc0.css" || true
+          ls -ld /var /var/www /var/www/sikhadenge.in "$C" "$C/.next" "$C/.next/static" || true
+
+          echo '===== START CANDIDATE ====='
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          cd "$C"; PORT=3984 NODE_ENV=production pm2 start ./node_modules/.bin/next --name "$APP" -- start -p 3984 >/dev/null
+          for i in $(seq 1 30); do curl -fsS --max-time 3 'http://127.0.0.1:3984/masterclass/claude/free?v=v5-diag' >/tmp/v5diag.html && break || true; sleep 1; done
+          echo "BUILD_ID=$(cat "$C/.next/BUILD_ID") HTML_BYTES=$(wc -c </tmp/v5diag.html)"
+
+          echo '===== DIRECT CANDIDATE ASSET HTTP ====='
+          for u in \
+            '/_next/static/css/8522be7a7183fcc0.css' \
+            '/_next/static/chunks/framework-a49609877c928af5.js' \
+            '/_next/static/chunks/pages/masterclass/claude/free-b353b253544d49a2.js' \
+            '/_next/static/LRGBmNz6chaBg6stHgoDb/_buildManifest.js' \
+            '/_next/static/media/cf1d1523226d8c03-s.p.ttf'; do
+              code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:3984$u")"; echo "$code $u"
+          done
+
+          echo '===== PUBLIC CURRENT HEALTH ====='
+          curl -sS -o /dev/null -w 'CLAUDE=%{http_code}\n' --max-time 15 'https://sikhadenge.in/masterclass/claude/free?v=v5-diag-public'
+          curl -sS -o /dev/null -w 'LEGACY_THEME=%{http_code}\n' --max-time 15 'https://sikhadenge.in/claude-proof-theme-v2.js'
+          curl -sS -o /dev/null -w 'LEGACY_STATIC=%{http_code}\n' --max-time 15 'https://sikhadenge.in/claude-proof-static-v4.js'
+
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
+          REMOTE
