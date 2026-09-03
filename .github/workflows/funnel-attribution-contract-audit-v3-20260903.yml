@@ -45,3 +45,5 @@ jobs:
           SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
           SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
         run: bash ops/funnel-attribution-contract-audit-v2-20260903.sh
+
+# rerun after readonly SIGPIPE guard
