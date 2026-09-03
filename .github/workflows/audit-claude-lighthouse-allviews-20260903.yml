@@ -1,0 +1,48 @@
+name: Audit Claude Lighthouse All Views 20260903
+
+on:
+  push:
+    branches:
+      - audit/claude-responsive-20260903
+    paths:
+      - .github/workflows/audit-claude-lighthouse-allviews-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Run desktop tablet mobile Lighthouse
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p lh-all
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          BASE='https://sikhadenge.in/masterclass/claude/free'
+          COMMON="--quiet --chrome-path=$CHROME --chrome-flags=--headless=new\ --no-sandbox\ --disable-dev-shm-usage --output=json"
+          npx --yes lighthouse "$BASE?v=lh-all-desktop-20260903" $COMMON --output-path=lh-all/desktop.json --form-factor=desktop --screenEmulation.mobile=false --screenEmulation.width=1440 --screenEmulation.height=900 --screenEmulation.deviceScaleFactor=1
+          npx --yes lighthouse "$BASE?v=lh-all-tablet-20260903" $COMMON --output-path=lh-all/tablet.json --form-factor=mobile --screenEmulation.mobile=true --screenEmulation.width=768 --screenEmulation.height=1024 --screenEmulation.deviceScaleFactor=1
+          npx --yes lighthouse "$BASE?v=lh-all-mobile-20260903" $COMMON --output-path=lh-all/mobile.json --form-factor=mobile --screenEmulation.mobile=true --screenEmulation.width=390 --screenEmulation.height=844 --screenEmulation.deviceScaleFactor=1
+          python3 - <<'PY'
+          import json,pathlib
+          out={}
+          for n in ['desktop','tablet','mobile']:
+            d=json.loads(pathlib.Path(f'lh-all/{n}.json').read_text()); c=d['categories']; a=d['audits']
+            sc=lambda k: None if c.get(k,{}).get('score') is None else round(c[k]['score']*100)
+            num=lambda k: None if a.get(k,{}).get('numericValue') is None else round(a[k]['numericValue'],2)
+            out[n]={
+              'performance':sc('performance'),'accessibility':sc('accessibility'),'bestPractices':sc('best-practices'),'seo':sc('seo'),
+              'FCP_ms':num('first-contentful-paint'),'LCP_ms':num('largest-contentful-paint'),'CLS':num('cumulative-layout-shift'),'TBT_ms':num('total-blocking-time'),'SpeedIndex_ms':num('speed-index'),'transferBytes':num('total-byte-weight')
+            }
+          pathlib.Path('lh-all/summary.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          PY
+      - name: Upload Lighthouse reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-lighthouse-allviews-20260903
+          path: lh-all/
+          retention-days: 1
