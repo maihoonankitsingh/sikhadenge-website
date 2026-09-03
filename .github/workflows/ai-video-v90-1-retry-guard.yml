@@ -1,0 +1,46 @@
+name: AI Video V90.1 Retry Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-1-production-20260903"
+    paths:
+      - "ops/deploy-ai-video-v90-1-retry-safe.sh"
+      - ".github/workflows/ai-video-v90-1-retry-guard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-retry-wrapper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-v90-1-retry-safe.sh
+      - name: Enforce cwd-safe audit fix
+        run: |
+          set -Eeuo pipefail
+          WRAPPER=ops/deploy-ai-video-v90-1-retry-safe.sh
+          grep -Fq 'old = '\''node "$NEW_RELEASE/scripts/audit-ai-video-masterclass.mjs"'\''' "$WRAPPER"
+          grep -Fq 'new = '\''(cd "$NEW_RELEASE" && node scripts/audit-ai-video-masterclass.mjs)'\''' "$WRAPPER"
+          grep -Fq 'if count != 1:' "$WRAPPER"
+          grep -Fq 'bash -n "$TMP"' "$WRAPPER"
+          grep -Fq 'exec bash "$TMP"' "$WRAPPER"
+      - name: Simulate exact patch away from repository cwd
+        run: |
+          set -Eeuo pipefail
+          TMP="$(mktemp)"
+          printf '%s\n' 'node "$NEW_RELEASE/scripts/audit-ai-video-masterclass.mjs"' > "$TMP"
+          python3 - "$TMP" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          text=p.read_text()
+          old='node "$NEW_RELEASE/scripts/audit-ai-video-masterclass.mjs"'
+          new='(cd "$NEW_RELEASE" && node scripts/audit-ai-video-masterclass.mjs)'
+          assert text.count(old) == 1
+          p.write_text(text.replace(old,new))
+          assert p.read_text().strip() == new
+          PY
