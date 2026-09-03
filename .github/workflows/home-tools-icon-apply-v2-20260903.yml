@@ -1,0 +1,220 @@
+name: Home Tools Official Icons Apply V2 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/home-tools-icon-apply-v2-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Icon-only candidate build deploy and QA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          SRC="$ROOT/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/tmp/sikhadenge-home-tools-v2-$TS"
+          BACKUP="/var/backups/sikhadenge/home-tools-icons-v2-$TS"
+          mkdir -p "$BACKUP" "$CAND"
+          cp -a "$SRC" "$BACKUP/page.tsx.before"
+          test -d "$ROOT/node_modules"
+          trap 'rm -rf "$CAND"' EXIT
+
+          echo '===== ISOLATED CANDIDATE ====='
+          rsync -a --delete --exclude node_modules --exclude .next "$ROOT/" "$CAND/"
+          ln -s "$ROOT/node_modules" "$CAND/node_modules"
+          OUT="$CAND/public/images/home-tools-official"
+          rm -rf "$OUT"; mkdir -p "$OUT"
+
+          echo '===== REUSE VERIFIED LOCAL BRAND ASSETS ====='
+          cp "$ROOT/public/images/claude-ai-tools-latest/chatgpt.png" "$OUT/chatgpt.png"
+          cp "$ROOT/public/images/claude-ai-tools-latest/claude.png" "$OUT/claude.png"
+          cp "$ROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
+          cp "$ROOT/public/images/claude-ai-tools-latest/perplexity.png" "$OUT/perplexity.png"
+          cp "$ROOT/public/images/tools/midjourney.png" "$OUT/midjourney.png"
+          cp "$ROOT/public/images/tools/ideogram.png" "$OUT/ideogram.png"
+          cp "$ROOT/public/images/claude-ai-tools-latest/runway.png" "$OUT/runway.png"
+          cp "$ROOT/public/images/tools/elevenlabs.png" "$OUT/elevenlabs.png"
+          cp "$ROOT/public/images/claude-ai-tools-latest/heygen.png" "$OUT/heygen.png"
+          cp "$ROOT/public/images/claude-ai-tools/descript.png" "$OUT/descript.png"
+          cp "$ROOT/public/images/ai-tools/notion.png" "$OUT/notion-ai.png"
+
+          echo '===== FETCH REMAINING FROM OFFICIAL SITES ====='
+          OUT="$OUT" python3 - <<'PY'
+          from html.parser import HTMLParser
+          from urllib.parse import urljoin,urlparse
+          from pathlib import Path
+          import urllib.request, os, re, json
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36'
+          sites=[
+            ('DeepSeek','deepseek','https://www.deepseek.com/'),
+            ('Pika','pika','https://pika.art/'),
+            ('Veo','veo','https://deepmind.google/models/veo/'),
+            ('Luma AI','luma-ai','https://lumalabs.ai/'),
+            ('Zapier','zapier','https://zapier.com/'),
+            ('Make','make','https://www.make.com/en'),
+            ('n8n','n8n','https://n8n.io/'),
+            ('Webflow AI','webflow-ai','https://webflow.com/ai'),
+            ('Gamma AI','gamma-ai','https://gamma.app/'),
+          ]
+          class Parser(HTMLParser):
+            def __init__(self): super().__init__(); self.x=[]
+            def handle_starttag(self,tag,attrs):
+              if tag.lower()!='link': return
+              d={k.lower():v for k,v in attrs if k and v}
+              if 'icon' in d.get('rel','').lower() and d.get('href'):
+                self.x.append((d.get('rel',''),d['href'],d.get('sizes','')))
+          def req(url,accept='*/*'):
+            q=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':accept})
+            with urllib.request.urlopen(q,timeout=20) as r: return r.read(),r.headers.get_content_type(),r.geturl()
+          out=Path(os.environ['OUT']); result={}
+          for name,slug,page in sites:
+            cand=[]
+            try:
+              data,ct,final=req(page,'text/html,*/*;q=0.8')
+              p=Parser(); p.feed(data.decode('utf-8','ignore'))
+              for rel,href,sizes in p.x:
+                u=urljoin(final,href); score=0
+                if u.lower().endswith('.svg'): score+=5000
+                if 'apple-touch' in rel.lower(): score+=2500
+                m=re.search(r'(\d+)x(\d+)',sizes)
+                if m: score+=min(int(m.group(1))*int(m.group(2)),1000000)//100
+                cand.append((score,u))
+            except Exception as e: print('PAGE_WARN',name,e)
+            base=f'{urlparse(page).scheme}://{urlparse(page).netloc}'
+            cand += [(40,urljoin(base,'/favicon.svg')),(20,urljoin(base,'/favicon.png')),(10,urljoin(base,'/favicon.ico'))]
+            chosen=None
+            for _,u in sorted(cand,key=lambda z:z[0],reverse=True):
+              try:
+                b,ct,final=req(u,'image/svg+xml,image/png,image/x-icon,image/*,*/*;q=0.8')
+                low=b[:300].lower()
+                if len(b)<120 or not (ct.startswith('image/') or b'<svg' in low or b[:4] in (b'\x89PNG',b'\x00\x00\x01\x00')): continue
+                ext='svg' if ('svg' in ct or b'<svg' in low) else ('png' if ('png' in ct or b[:4]==b'\x89PNG') else ('webp' if 'webp' in ct else 'ico'))
+                f=out/f'{slug}.{ext}'; f.write_bytes(b); chosen='/images/home-tools-official/'+f.name
+                print('ICON_OK',name,chosen,'source='+final,'bytes='+str(len(b))); break
+              except Exception: pass
+            if not chosen: raise SystemExit('OFFICIAL_ICON_FETCH_FAILED: '+name)
+            result[name]=chosen
+          (out/'fetched.json').write_text(json.dumps(result,indent=2))
+          PY
+
+          echo '===== BUILD MANIFEST ====='
+          OUT="$OUT" python3 - <<'PY'
+          from pathlib import Path
+          import json,os
+          o=Path(os.environ['OUT'])
+          m={
+            'ChatGPT':'/images/home-tools-official/chatgpt.png','Claude':'/images/home-tools-official/claude.png','Gemini':'/images/home-tools-official/gemini.png',
+            'Perplexity':'/images/home-tools-official/perplexity.png','Midjourney':'/images/home-tools-official/midjourney.png','Ideogram':'/images/home-tools-official/ideogram.png',
+            'Runway':'/images/home-tools-official/runway.png','ElevenLabs':'/images/home-tools-official/elevenlabs.png','HeyGen':'/images/home-tools-official/heygen.png',
+            'Descript':'/images/home-tools-official/descript.png','Notion AI':'/images/home-tools-official/notion-ai.png'}
+          m.update(json.loads((o/'fetched.json').read_text()))
+          if len(m)!=20: raise SystemExit('manifest count '+str(len(m)))
+          for p in m.values():
+            if not (Path(os.environ['OUT']).parent.parent.parent.parent / p.lstrip('/')).exists():
+              pass
+          (o/'manifest.json').write_text(json.dumps(m,indent=2))
+          print('MANIFEST_OK',len(m))
+          PY
+
+          echo '===== PATCH ICONS ONLY ====='
+          CAND="$CAND" python3 - <<'PY'
+          from pathlib import Path
+          import os,json,re
+          r=Path(os.environ['CAND']); p=r/'app/landing/page.tsx'; s=p.read_text()
+          m=json.loads((r/'public/images/home-tools-official/manifest.json').read_text())
+          items=[('ChatGPT','Assistant'),('Claude','Writing'),('Gemini','Research'),('DeepSeek','Logic'),('Perplexity','Search'),('Midjourney','Image'),('Ideogram','Image'),('Runway','Video'),('Pika','Video'),('Veo','Video'),('Luma AI','Video'),('ElevenLabs','Voice'),('HeyGen','Avatar'),('Descript','Audio'),('Notion AI','Productivity'),('Zapier','Automation'),('Make','Automation'),('n8n','Automation'),('Webflow AI','Website'),('Gamma AI','Presentation')]
+          new='// AI Tools\nconst aiTools = [\n'+''.join(f"  {{ name: {n!r}, category: {c!r}, logo: {m[n]!r} }},\n" for n,c in items)+']\n'
+          s,n=re.subn(r'// AI Tools\nconst aiTools = \[\n.*?\n\]\n',new,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit('aiTools replace failed')
+          s,n=re.subn(r'\n\s{14}const Icon = visual\.icon\n','\n',s,count=1)
+          if n!=1: raise SystemExit('Icon const replace failed')
+          old='''                    <Icon\n                      className="relative z-10 h-5 w-5 drop-shadow-[0_3px_3px_rgba(15,23,42,0.28)] md:h-5.5 md:w-5.5"\n                      strokeWidth={2.35}\n                    />'''
+          newimg='''                    <img\n                      src={tool.logo}\n                      alt=""\n                      aria-hidden="true"\n                      className="relative z-10 h-5 w-5 object-contain drop-shadow-[0_3px_3px_rgba(15,23,42,0.28)] md:h-5.5 md:w-5.5"\n                    />'''
+          if s.count(old)!=1: raise SystemExit('renderer replace failed')
+          s=s.replace(old,newimg,1); p.write_text(s)
+          print('PATCH_OK')
+          PY
+
+          diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/diff" || true
+          cat "$CAND/diff"
+          python3 - "$CAND/diff" <<'PY'
+          import sys
+          d=open(sys.argv[1]).read().splitlines()
+          protected=['25+ AI Tools You Will Master','Modern creators combine','Tools Ecosystem','Practical workflows','Guided execution','Portfolio-ready output']
+          for line in d:
+            if line[:1] in '+-' and not line.startswith(('+++','---')):
+              if any(x in line for x in protected): raise SystemExit('protected text changed')
+          print('DIFF_GUARD_OK')
+          PY
+
+          echo '===== CANDIDATE BUILD ====='
+          cd "$CAND"; npm run build
+
+          APP="$(pm2 jlist | ROOT="$ROOT" python3 -c 'import json,os,sys; a=json.load(sys.stdin); r=os.environ["ROOT"]; print(next((p.get("name","") for p in a if p.get("pm2_env",{}).get("pm_cwd","")==r and ("3955" in p.get("name","") or "3955" in " ".join(map(str,p.get("pm2_env",{}).get("args") or [])))),""))')"
+          if [ -z "$APP" ]; then APP="$(pm2 jlist | ROOT="$ROOT" python3 -c 'import json,os,sys; a=json.load(sys.stdin); r=os.environ["ROOT"]; print(next((p.get("name","") for p in a if p.get("pm2_env",{}).get("pm_cwd","")==r),""))')"; fi
+          test -n "$APP"; echo "APP=$APP"
+          cp -a "$ROOT/.next" "$BACKUP/.next.before"
+          [ ! -d "$ROOT/public/images/home-tools-official" ] || cp -a "$ROOT/public/images/home-tools-official" "$BACKUP/home-tools-official.before"
+
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BACKUP/page.tsx.before" "$SRC" || true
+            rm -rf "$ROOT/.next"; cp -a "$BACKUP/.next.before" "$ROOT/.next" || true
+            rm -rf "$ROOT/public/images/home-tools-official"; [ ! -d "$BACKUP/home-tools-official.before" ] || cp -a "$BACKUP/home-tools-official.before" "$ROOT/public/images/home-tools-official"
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+
+          cp -a "$CAND/app/landing/page.tsx" "$SRC"
+          rm -rf "$ROOT/public/images/home-tools-official"; cp -a "$OUT" "$ROOT/public/images/home-tools-official"
+          rm -rf "$ROOT/.next.new-icons"; cp -a "$CAND/.next" "$ROOT/.next.new-icons"; rm -rf "$ROOT/.next"; mv "$ROOT/.next.new-icons" "$ROOT/.next"
+          pm2 restart "$APP" --update-env
+          sleep 3
+          H="$(mktemp)"; CODE="$(curl -L --compressed -ksS -o "$H" -w '%{http_code}' "https://sikhadenge.in/?icons=$TS")"
+          [ "$CODE" = 200 ] || { rollback; exit 1; }
+          grep -q '/images/home-tools-official/' "$H" || { rollback; exit 1; }
+          grep -q 'AI Tools You Will Master' "$H" || { rollback; exit 1; }
+          python3 - "$ROOT/public/images/home-tools-official/manifest.json" <<'PY' | while read -r p; do
+          import json,sys
+          for p in json.load(open(sys.argv[1])).values(): print(p)
+          PY
+            C="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$p")"; echo "ASSET $C $p"; [ "$C" = 200 ] || { rollback; exit 1; }
+          done
+          echo "LIVE_HTTP=$CODE"
+          echo "BACKUP=$BACKUP"
+          echo 'HOME_TOOL_ICONS_V2_OK=1 ICON_ONLY=1'
+          REMOTE
+
+# trigger once created
