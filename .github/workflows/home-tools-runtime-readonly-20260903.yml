@@ -1,0 +1,89 @@
+name: Home Tools Runtime Readonly Audit 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/home-tools-runtime-readonly-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect exact 3955 serving runtime read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          echo 'RUNTIME_AUDIT_BEGIN'
+          pm2 jlist | APP="$APP" python3 - <<'PY'
+          import json,os,sys
+          a=json.load(sys.stdin); name=os.environ['APP']
+          p=next((x for x in a if x.get('name')==name),None)
+          if not p: raise SystemExit('APP_NOT_FOUND')
+          e=p.get('pm2_env',{})
+          print('NAME='+str(p.get('name')))
+          print('PID='+str(p.get('pid')))
+          print('PM_CWD='+str(e.get('pm_cwd')))
+          print('PM_EXEC_PATH='+str(e.get('pm_exec_path')))
+          print('EXEC_INTERPRETER='+str(e.get('exec_interpreter')))
+          print('ARGS='+repr(e.get('args')))
+          print('PORT='+str(e.get('PORT') or e.get('env',{}).get('PORT')))
+          PY
+          PID="$(pm2 pid "$APP" | tail -1)"
+          echo "PROC_PID=$PID"
+          echo "PROC_CWD=$(readlink -f /proc/$PID/cwd 2>/dev/null || true)"
+          printf 'PROC_CMDLINE='; tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true; echo
+          echo 'NGINX_3955_REFS:'
+          grep -RniE '127\.0\.0\.1:3955|localhost:3955|proxy_pass.*3955' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -40 || true
+          echo 'DIRECT_3955:'
+          D="$(mktemp)"; L="$(mktemp)"; trap 'rm -f "$D" "$L"' EXIT
+          dc="$(curl -sS -o "$D" -w '%{http_code}' 'http://127.0.0.1:3955/?runtimeaudit=1' || true)"
+          lc="$(curl -kLsS -o "$L" -w '%{http_code}' 'https://sikhadenge.in/?runtimeaudit=1' || true)"
+          echo "DIRECT_HTTP=$dc LIVE_HTTP=$lc"
+          printf 'DIRECT_HAS_TOOLS='; grep -q 'AI Tools You Will Master' "$D" && echo YES || echo NO
+          printf 'LIVE_HAS_TOOLS='; grep -q 'AI Tools You Will Master' "$L" && echo YES || echo NO
+          printf 'DIRECT_HAS_OFFICIAL_PATH='; grep -q '/images/home-tools-official/' "$D" && echo YES || echo NO
+          printf 'LIVE_HAS_OFFICIAL_PATH='; grep -q '/images/home-tools-official/' "$L" && echo YES || echo NO
+          echo 'DIRECT_HTML_ICON_SAMPLES:'
+          grep -oE '/images/[^" ]+\.(png|svg|ico|webp)' "$D" | grep -Ei 'tool|chatgpt|claude|gemini|deepseek|perplexity' | head -30 || true
+          CWD="$(readlink -f /proc/$PID/cwd 2>/dev/null || true)"
+          echo 'SOURCE_MATCH_IN_PROC_CWD:'
+          if [ -n "$CWD" ] && [ -d "$CWD" ]; then
+            grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups '25+ AI Tools You Will Master' "$CWD" 2>/dev/null | head -20 || true
+            if [ -f "$CWD/app/landing/page.tsx" ]; then
+              echo "PROC_SOURCE=$CWD/app/landing/page.tsx"
+              grep -n -B3 -A30 '// AI Tools' "$CWD/app/landing/page.tsx" | head -45 || true
+            fi
+          fi
+          echo 'ROOT_SOURCE_MATCH:'
+          grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups '25+ AI Tools You Will Master' /var/www/sikhadenge.in 2>/dev/null | head -30 || true
+          echo 'RUNTIME_AUDIT_END READ_ONLY=1'
+          REMOTE
