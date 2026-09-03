@@ -1,0 +1,61 @@
+name: Inspect Home Tools Short 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-home-tools-short-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Print exact source and icon block
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          F="$(for d in app src pages components; do [ -d "$ROOT/$d" ] && grep -RIlF --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git 'AI Tools You Will Master' "$ROOT/$d" 2>/dev/null || true; done | head -1)"
+          echo "SOURCE_FILE=$F"
+          test -n "$F"
+          echo '=== HEADING LINE ==='
+          grep -nF 'AI Tools You Will Master' "$F" | head -1
+          echo '=== TOOL NAMES LINES ==='
+          grep -nE 'ChatGPT|Claude|Gemini|DeepSeek|Perplexity|Midjourney|Ideogram|Runway|Pika|Veo|Luma AI|ElevenLabs|HeyGen|Descript|Notion AI|Zapier|Make|n8n|Webflow AI|Gamma AI' "$F" | head -100
+          echo '=== RELEVANT IMPORTS ==='
+          grep -nE '^import .*Icon|^import .*Image|lucide|react-icons|tool|logo' "$F" | head -80 || true
+          N=$(grep -nF 'AI Tools You Will Master' "$F" | head -1 | cut -d: -f1)
+          A=$((N>150?N-150:1)); B=$((N+110))
+          echo "=== SOURCE ${A}-${B} ==="
+          sed -n "${A},${B}p" "$F"
+          echo '=== EXISTING PUBLIC BRAND ASSETS ==='
+          find "$ROOT/public" -type f 2>/dev/null | grep -Ei 'chatgpt|openai|claude|gemini|deepseek|perplexity|midjourney|ideogram|runway|pika|veo|luma|eleven|heygen|descript|notion|zapier|make|n8n|webflow|gamma' | head -120 || true
+          echo '=== LIVE ==='
+          curl -L --compressed -ksS -o /dev/null -w 'HTTP=%{http_code}\n' https://sikhadenge.in/
+          REMOTE
