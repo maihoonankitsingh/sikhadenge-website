@@ -1,0 +1,43 @@
+name: Export Claude Current Static HTML 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/export-claude-current-static-html-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    environment: whatsapp-agent-production
+    steps:
+      - name: Fetch current patched static HTML read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+          F='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/server/pages/masterclass/claude/free.html'
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "cat '$F'" > claude-current-free.html
+          test -s claude-current-free.html
+          grep -Fq 'sd-v305' claude-current-free.html
+          grep -Fq 'AI is changing the way professionals work.' claude-current-free.html
+          wc -c claude-current-free.html
+      - name: Upload static HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-current-static-html
+          path: claude-current-free.html
+          retention-days: 1
