@@ -1,0 +1,73 @@
+name: Diagnose Claude Direct Upstream Hydration 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-direct-upstream-hydration-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH and tunnels
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -f -N -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13930:127.0.0.1:3930 "$SSH_USER@$SSH_HOST"
+          ssh -f -N -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13955:127.0.0.1:3955 "$SSH_USER@$SSH_HOST"
+          curl -fsS --max-time 15 http://127.0.0.1:13930/masterclass/claude/free?direct=1 -o direct3930.html
+          curl -fsS --max-time 15 http://127.0.0.1:13955/masterclass/claude/free?direct=1 -o direct3955.html || true
+          echo "3930_BYTES=$(wc -c < direct3930.html)"
+          echo "3955_BYTES=$(wc -c < direct3955.html 2>/dev/null || echo 0)"
+
+      - name: Compare browser hydration public vs direct upstream
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > test.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const cases=[['public','https://sikhadenge.in/masterclass/claude/free?v=direct-upstream-public-20260903'],['direct3930','http://127.0.0.1:13930/masterclass/claude/free?direct-browser=1'],['direct3955','http://127.0.0.1:13955/masterclass/claude/free?direct-browser=1']];
+            const out={};
+            for(const [n,u] of cases){
+              const p=await b.newPage(); await p.setViewport({width:1440,height:1000});
+              const errs=[],bad=[]; p.on('pageerror',e=>errs.push(String(e))); p.on('console',m=>{if(m.type()==='error')errs.push(m.text())}); p.on('response',r=>{if(r.status()>=400)bad.push([r.status(),r.url(),r.request().resourceType()])});
+              try{await p.goto(u,{waitUntil:'domcontentloaded',timeout:45000}); await new Promise(r=>setTimeout(r,10000)); const hyd=errs.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x)); const state=await p.evaluate(()=>({h1:(document.querySelector('h1')?.innerText||'').trim(),jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,body:(document.body.innerText||'').slice(0,120)})); out[n]={hydration:hyd.length,samples:hyd.slice(0,3),bad:bad.slice(0,15),state};}catch(e){out[n]={fatal:String(e),errors:errs.slice(0,10),bad:bad.slice(0,15)}}
+              await p.close();
+            }
+            console.log('RESULT='+JSON.stringify(out,null,2)); fs.writeFileSync('direct-upstream-result.json',JSON.stringify(out,null,2)); await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node test.js
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-direct-upstream-hydration-20260903
+          path: |
+            direct-upstream-result.json
+            direct3930.html
+            direct3955.html
+          retention-days: 1
