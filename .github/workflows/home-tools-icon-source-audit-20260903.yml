@@ -34,30 +34,25 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Locate live home tools source read-only
+      - name: Inspect active home tools source read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
-          echo 'AUDIT_BEGIN'
-          echo "ROOT=$ROOT"
-          test -d "$ROOT"
-          echo 'MATCHING_SOURCE_FILES:'
-          grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups --exclude='*.map' '25+ AI Tools You Will Master' "$ROOT" 2>/dev/null | head -20 || true
-          echo 'MATCHING_TOOLS_ECOSYSTEM_FILES:'
-          grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups --exclude='*.map' 'Tools Ecosystem' "$ROOT" 2>/dev/null | head -20 || true
-          F="$(grep -RIl --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=backups --exclude='*.map' '25+ AI Tools You Will Master' "$ROOT" 2>/dev/null | head -1 || true)"
-          if [[ -n "$F" ]]; then
-            echo "SOURCE_FILE=$F"
-            echo 'SOURCE_SNIPPET_BEGIN'
-            grep -n -B25 -A90 '25+ AI Tools You Will Master' "$F" | head -160 || true
-            echo 'SOURCE_SNIPPET_END'
-          fi
-          echo 'PUBLIC_ICON_CANDIDATES:'
-          find "$ROOT/public" -maxdepth 4 -type f \( -iname '*chatgpt*' -o -iname '*claude*' -o -iname '*gemini*' -o -iname '*deepseek*' -o -iname '*perplexity*' -o -iname '*midjourney*' -o -iname '*ideogram*' -o -iname '*runway*' -o -iname '*pika*' -o -iname '*veo*' -o -iname '*luma*' -o -iname '*eleven*' -o -iname '*heygen*' -o -iname '*descript*' -o -iname '*notion*' -o -iname '*zapier*' -o -iname '*make*' -o -iname '*n8n*' -o -iname '*webflow*' -o -iname '*gamma*' \) 2>/dev/null | head -120 || true
-          echo 'AUDIT_END READ_ONLY=1'
+          F=/var/www/sikhadenge.in/sikhadenge-website-space/app/landing/page.tsx
+          echo 'ACTIVE_SOURCE_BEGIN'
+          test -f "$F"
+          echo "FILE=$F"
+          echo 'AITOOLS_DEFINITION:'
+          L="$(grep -nE '(^|[[:space:]])(const|let)[[:space:]]+aiTools' "$F" | head -1 | cut -d: -f1 || true)"
+          if [[ -n "$L" ]]; then S=$((L-8)); (( S < 1 )) && S=1; E=$((L+85)); sed -n "${S},${E}p" "$F" | nl -ba -v "$S"; fi
+          echo 'TOOLS_SECTION:'
+          L2="$(grep -n 'Tools Ecosystem' "$F" | head -1 | cut -d: -f1 || true)"
+          if [[ -n "$L2" ]]; then S2=$((L2-25)); (( S2 < 1 )) && S2=1; E2=$((L2+105)); sed -n "${S2},${E2}p" "$F" | nl -ba -v "$S2"; fi
+          echo 'IMPORTS_TOP:'
+          sed -n '1,120p' "$F" | nl -ba
+          echo 'ACTIVE_SOURCE_END READ_ONLY=1'
           REMOTE
 
-# trigger: source audit only
+# trigger: active source details
