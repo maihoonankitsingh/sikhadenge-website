@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# trigger 2026-09-03T22:48+05:30
 set -Eeuo pipefail
 : "${SSH_HOST:?missing SSH_HOST}"; : "${SSH_USER:?missing SSH_USER}"
 SSH_PORT="${SSH_PORT:-22}"; KEY="$HOME/.ssh/prod"
