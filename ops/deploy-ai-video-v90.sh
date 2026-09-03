@@ -320,12 +320,18 @@ chmod -R a+rX "$ASSET_DIR"
 
 python3 - "$PAGE_HTML" "$PUBLIC_PREFIX" >"/tmp/ai-video-assets-${TS}.txt" <<'PY'
 from pathlib import Path
-import re,sys
-html = Path(sys.argv[1]).read_text(errors='ignore')
-prefix = re.escape(sys.argv[2])
-urls = sorted(set(re.findall(rf'({prefix}/[^"\'<> ]+)', html)))
-for u in urls:
-    print(u.replace('&amp;', '&'))
+import re
+import sys
+
+html = Path(sys.argv[1]).read_text(errors="ignore")
+prefix = sys.argv[2]
+urls = set()
+for value in re.findall(r'(?:src|href)="([^"]+)"', html):
+    value = value.replace('&amp;', '&')
+    if value.startswith(prefix + '/'):
+        urls.add(value)
+for value in sorted(urls):
+    print(value)
 PY
 
 [[ -s "/tmp/ai-video-assets-${TS}.txt" ]] || fail "No prefixed assets discovered in built HTML"
@@ -462,5 +468,4 @@ echo "Golden backup:         $GOLDEN"
 echo "Golden runtime SHA:    $RUNTIME_SHA_AFTER"
 echo "Deployment state:      $STATE_FILE"
 echo
-necho="Next: run external Chromium desktop/tablet/mobile + Lighthouse live-production verification from GitHub Actions."
-echo "$necho"
+echo "Next: run external Chromium desktop/tablet/mobile + Lighthouse live-production verification from GitHub Actions."
