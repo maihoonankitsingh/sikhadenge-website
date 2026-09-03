@@ -20,6 +20,7 @@ on:
   push:
     branches:
       - "redesign/ai-video-90-plus-20260903"
+      - "deploy/ai-video-v90-bluegreen-20260903"
     paths:
       - "pages/masterclass/ai-video/**"
       - "styles/ai-video-masterclass.module.css"
@@ -85,9 +86,10 @@ jobs:
       - name: Lint AI Video route and shared shell
         run: npx next lint --file pages/masterclass/ai-video/index.tsx --file pages/_app.tsx --file pages/_document.tsx
 
-      - name: Production build
+      - name: Production build with isolated asset namespace
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+          AI_VIDEO_ASSET_PREFIX: "/ai-video-ci-v90"
         run: npm run build
 
       - name: Install Chromium for real browser QA
@@ -96,6 +98,7 @@ jobs:
       - name: Start production candidate
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+          AI_VIDEO_ASSET_PREFIX: "/ai-video-ci-v90"
         run: |
           nohup npm start -- -p 3000 > /tmp/ai-video-next.log 2>&1 &
           echo $! > /tmp/ai-video-next.pid
