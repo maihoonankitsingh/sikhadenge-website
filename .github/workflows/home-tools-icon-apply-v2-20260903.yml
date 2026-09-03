@@ -1,4 +1,4 @@
-name: Home Tools Icon-Only Brand Audit 20260903
+name: Home Tools Icon-Only Brand Marks Live V4 20260903
 
 on:
   push:
@@ -16,9 +16,9 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  audit:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     environment: whatsapp-agent-production
     steps:
       - name: SSH setup
@@ -35,29 +35,181 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Audit icon-only LobeHub assets
+      - name: Deploy icon-only brand marks
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          BASE='https://unpkg.com/@lobehub/icons-static-svg@latest/icons'
-          slugs='openai claude gemini deepseek perplexity midjourney ideogram runway pika veo luma elevenlabs heygen descript notion zapier make n8n webflow gamma'
-          for slug in $slugs; do
-            for suffix in '' '-color' '-text'; do
-              url="$BASE/${slug}${suffix}.svg"
-              tmp="/tmp/lobe-${slug}${suffix}.svg"
-              code="$(curl -L -sS -o "$tmp" -w '%{http_code}' "$url" || true)"
-              size="$(wc -c <"$tmp" 2>/dev/null || echo 0)"
-              head="$(head -c 120 "$tmp" 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g')"
-              printf 'LOBE %-24s HTTP=%s SIZE=%s HEAD=%s\n' "${slug}${suffix}.svg" "$code" "$size" "$head"
-            done
-          done
-          echo 'LIVE_CURRENT:'
           export HOME=/root PM2_HOME=/root/.pm2
+
           APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          LIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          WEBROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/tmp/sd-home-icons-v3-$TS"
+          BAK="/var/backups/sikhadenge/home-icons-v3-$TS"
+          NEWREL="$LIVE/public/images/home-tools-icons-v3"
+          NEWSTATIC="$WEBROOT/public/images/home-tools-icons-v3"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+
           PID="$(pm2 pid "$APP" | tail -1)"
-          CWD="$(readlink -f /proc/$PID/cwd)"
-          grep -n -A24 '^const aiTools' "$CWD/app/landing/page.tsx" | head -30
-          echo 'READ_ONLY=1'
+          [ "$(readlink -f /proc/$PID/cwd)" = "$LIVE" ]
+          grep -q '/images/home-tools-brandmarks-v2/chatgpt.svg' "$SRC"
+          grep -q 'className="h-8 w-8 object-contain md:h-9 md:w-9"' "$SRC"
+          grep -q 'AI Tools You Will Master' "$SRC"
+
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          cp -a "$LIVE/.next" "$BAK/.next.before"
+          rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+
+          OUT="$CAND/public/images/home-tools-icons-v3"
+          mkdir -p "$OUT"
+          LOBE='https://unpkg.com/@lobehub/icons-static-svg@latest/icons'
+
+          # Icon-only 24x24 assets. Never use *-text.svg wordmarks here.
+          curl -fsSL "$LOBE/openai.svg"            -o "$OUT/chatgpt.svg"
+          curl -fsSL "$LOBE/claude-color.svg"      -o "$OUT/claude.svg"
+          curl -fsSL "$LOBE/gemini-color.svg"      -o "$OUT/gemini.svg"
+          curl -fsSL "$LOBE/deepseek-color.svg"    -o "$OUT/deepseek.svg"
+          curl -fsSL "$LOBE/perplexity-color.svg"  -o "$OUT/perplexity.svg"
+          curl -fsSL "$LOBE/midjourney.svg"        -o "$OUT/midjourney.svg"
+          curl -fsSL "$LOBE/ideogram.svg"          -o "$OUT/ideogram.svg"
+          curl -fsSL "$LOBE/runway.svg"            -o "$OUT/runway.svg"
+          curl -fsSL "$LOBE/pika.svg"              -o "$OUT/pika.svg"
+          curl -fsSL "$LOBE/luma-color.svg"        -o "$OUT/luma.svg"
+          curl -fsSL "$LOBE/elevenlabs.svg"        -o "$OUT/elevenlabs.svg"
+          curl -fsSL "$LOBE/notion.svg"            -o "$OUT/notion.svg"
+          curl -fsSL "$LOBE/zapier-color.svg"      -o "$OUT/zapier.svg"
+          curl -fsSL "$LOBE/make-color.svg"        -o "$OUT/make.svg"
+          curl -fsSL "$LOBE/n8n-color.svg"         -o "$OUT/n8n.svg"
+
+          # Already icon-only verified local marks.
+          cp "$WEBROOT/public/images/home-tools-brandmarks-v2/veo.svg"       "$OUT/veo.svg"
+          cp "$WEBROOT/public/images/home-tools-brandmarks-v2/heygen.png"    "$OUT/heygen.png"
+          cp "$WEBROOT/public/images/home-tools-brandmarks-v2/descript.png"  "$OUT/descript.png"
+          cp "$WEBROOT/public/images/home-tools-brandmarks-v2/webflow.svg"   "$OUT/webflow.svg"
+
+          # Gamma: use the high-resolution site favicon so the card shows the symbol, not a tiny wordmark.
+          curl -fsSL 'https://www.google.com/s2/favicons?domain=gamma.app&sz=128' -o "$OUT/gamma.png"
+
+          OUT="$OUT" CAND="$CAND" python3 - <<'PY'
+          from pathlib import Path
+          import json, os, re
+          out=Path(os.environ['OUT'])
+
+          files={
+            'ChatGPT':'chatgpt.svg','Claude':'claude.svg','Gemini':'gemini.svg','DeepSeek':'deepseek.svg',
+            'Perplexity':'perplexity.svg','Midjourney':'midjourney.svg','Ideogram':'ideogram.svg','Runway':'runway.svg',
+            'Pika':'pika.svg','Veo':'veo.svg','Luma AI':'luma.svg','ElevenLabs':'elevenlabs.svg',
+            'HeyGen':'heygen.png','Descript':'descript.png','Notion AI':'notion.svg','Zapier':'zapier.svg',
+            'Make':'make.svg','n8n':'n8n.svg','Webflow AI':'webflow.svg','Gamma AI':'gamma.png'
+          }
+          cats={
+            'ChatGPT':'Assistant','Claude':'Writing','Gemini':'Research','DeepSeek':'Logic','Perplexity':'Search',
+            'Midjourney':'Image','Ideogram':'Image','Runway':'Video','Pika':'Video','Veo':'Video','Luma AI':'Video',
+            'ElevenLabs':'Voice','HeyGen':'Avatar','Descript':'Audio','Notion AI':'Productivity','Zapier':'Automation',
+            'Make':'Automation','n8n':'Automation','Webflow AI':'Website','Gamma AI':'Presentation'
+          }
+
+          # Validate every asset and ensure LobeHub SVGs are square icon marks, not wide text lockups.
+          for n,f in files.items():
+            q=out/f
+            assert q.is_file() and q.stat().st_size > 100, (n,f,q.stat().st_size if q.exists() else 0)
+            if q.suffix == '.svg' and n not in {'Veo','Webflow AI'}:
+              s=q.read_text(errors='ignore')
+              assert 'viewBox="0 0 24 24"' in s, (n,'NOT_SQUARE_ICON')
+              assert '-text' not in f
+
+          manifest={k:'/images/home-tools-icons-v3/'+v for k,v in files.items()}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+
+          p=Path(os.environ['CAND'])/'app/landing/page.tsx'
+          s=p.read_text()
+          old_s=s
+
+          # Replace only the AI tool logo data block; names/categories/order remain byte-for-byte equivalent values.
+          block='// AI Tools\nconst aiTools = [\n'+''.join(
+            f"  {{ name: {n!r}, category: {cats[n]!r}, logo: {manifest[n]!r} }},\n" for n in files
+          )+']\n'
+          s,n=re.subn(r'// AI Tools\nconst aiTools = \[\n.*?\n\]\n',block,s,count=1,flags=re.S)
+          assert n==1
+
+          # Increase only icon image size for legibility. Wrapper/card geometry stays unchanged.
+          old_class='className="h-8 w-8 object-contain md:h-9 md:w-9"'
+          new_class='className="h-9 w-9 object-contain md:h-10 md:w-10"'
+          assert s.count(old_class)==1
+          s=s.replace(old_class,new_class,1)
+          p.write_text(s)
+          print('ICON_ONLY_PATCH_READY=20')
+          PY
+
+          diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/diff" || true
+          cat "$CAND/diff"
+
+          python3 - "$CAND/diff" <<'PY'
+          import sys
+          d=open(sys.argv[1]).read()
+          protected=[
+            '25+ AI Tools You Will Master','Modern creators combine','Tools Ecosystem',
+            'Practical workflows','Guided execution','Portfolio-ready output'
+          ]
+          for l in d.splitlines():
+            if l[:1] in '+-' and not l.startswith(('+++','---')) and any(x in l for x in protected):
+              raise SystemExit('NON_ICON_CHANGE_BLOCKED')
+          assert '/images/home-tools-icons-v3/midjourney.svg' in d
+          assert '/images/home-tools-icons-v3/ideogram.svg' in d
+          assert '/images/home-tools-icons-v3/runway.svg' in d
+          assert '/images/home-tools-icons-v3/pika.svg' in d
+          assert 'h-9 w-9 object-contain md:h-10 md:w-10' in d
+          print('ICON_ONLY_DIFF_GUARD_OK=1')
+          PY
+
+          cd "$CAND"
+          npm run build
+
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            rm -rf "$LIVE/.next"; cp -a "$BAK/.next.before" "$LIVE/.next" || true
+            rm -rf "$NEWREL" "$NEWSTATIC"
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+
+          cp -a "$CAND/app/landing/page.tsx" "$SRC"
+          rm -rf "$NEWREL" "$NEWSTATIC"
+          cp -a "$OUT" "$NEWREL"
+          mkdir -p "$(dirname "$NEWSTATIC")"
+          cp -a "$OUT" "$NEWSTATIC"
+          rm -rf "$LIVE/.next.new-icons-v3"
+          cp -a "$CAND/.next" "$LIVE/.next.new-icons-v3"
+          rm -rf "$LIVE/.next"
+          mv "$LIVE/.next.new-icons-v3" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 5
+
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?iconsv3=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?iconsv3=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+          if ! grep -q '/images/home-tools-icons-v3/midjourney.svg' "$P"; then rollback; exit 1; fi
+          if ! grep -q '/images/home-tools-icons-v3/ideogram.svg' "$P"; then rollback; exit 1; fi
+          if ! grep -q 'AI Tools You Will Master' "$P" || ! grep -q 'Modern creators combine' "$P"; then rollback; exit 1; fi
+
+          while read -r path; do
+            c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"
+            echo "ASSET=$c $path"
+            [ "$c" = 200 ] || { rollback; exit 1; }
+          done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$NEWSTATIC/manifest.json"'")).values()))')
+
+          echo "BACKUP=$BAK"
+          echo 'HOME_TOOL_ICON_ONLY_LIVE_OK=1 ICONS=20 WORDMARKS=0 SIZE_MOBILE=36 SIZE_DESKTOP=40'
           REMOTE
