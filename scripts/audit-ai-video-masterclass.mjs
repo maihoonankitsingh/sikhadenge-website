@@ -8,6 +8,7 @@ const processCssPath = path.join(root, "styles/ai-video-process-premium.module.c
 const appPath = path.join(root, "pages/_app.tsx");
 const documentPath = path.join(root, "pages/_document.tsx");
 const nextConfigPath = path.join(root, "next.config.js");
+const consentBannerPath = path.join(root, "components/consent/ConsentBanner.tsx");
 const klingAssetPath = path.join(root, "public/ai-video-kling-mark.svg");
 const higgsfieldAssetPath = path.join(root, "public/ai-video-higgsfield-mark.svg");
 const canonicalUrl = "https://sikhadenge.in/masterclass/ai-video";
@@ -18,6 +19,7 @@ const processCss = fs.readFileSync(processCssPath, "utf8");
 const app = fs.readFileSync(appPath, "utf8");
 const documentSource = fs.readFileSync(documentPath, "utf8");
 const nextConfig = fs.readFileSync(nextConfigPath, "utf8");
+const consentBanner = fs.readFileSync(consentBannerPath, "utf8");
 
 const failures = [];
 const checks = [];
@@ -69,6 +71,16 @@ check("specificity debt bounded to at most one scoped mobile override", hasOnlyS
 check("no important specificity debt in process CSS", !processCss.includes('!important'));
 check("no iframe tablet emulation", !page.includes("iframe") && !page.includes("desktopEmbed") && !page.includes("tabletV7"));
 check("no MutationObserver hotfix architecture", !page.includes("MutationObserver"));
+check(
+  "consent privacy link disables Next data prefetch",
+  /href="\/privacy-policy"\s+prefetch=\{false\}/.test(consentBanner),
+);
+check(
+  "consent banner has compact mobile copy",
+  consentBanner.includes('className="sm:hidden"') &&
+    consentBanner.includes('Essential storage keeps the site working.') &&
+    consentBanner.includes('className="hidden sm:inline"'),
+);
 
 console.log("AI VIDEO MASTERCLASS SOURCE AUDIT");
 console.log("=================================");
