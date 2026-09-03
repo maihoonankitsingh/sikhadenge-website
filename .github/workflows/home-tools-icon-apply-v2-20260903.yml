@@ -1,4 +1,4 @@
-name: Home Tools Transparent Logo Source Audit 20260903
+name: Home Tools Transparent Brand Marks Live 20260903
 
 on:
   push:
@@ -16,9 +16,9 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  audit:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
     environment: whatsapp-agent-production
     steps:
       - name: SSH setup
@@ -34,19 +34,194 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Verify transparent logo sources read-only
+
+      - name: Deploy transparent brand marks only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          LIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          WEBROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/tmp/sd-home-brandmarks-$TS"
+          BAK="/var/backups/sikhadenge/home-brandmarks-$TS"
+          NEWREL="$LIVE/public/images/home-tools-brandmarks-v2"
+          NEWSTATIC="$WEBROOT/public/images/home-tools-brandmarks-v2"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+
+          PID="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID/cwd)" = "$LIVE" ]
+          grep -q "/images/home-tools-official/chatgpt.png" "$SRC"
+          grep -q 'background: visual.gradient' "$SRC"
+          grep -q 'AI Tools You Will Master' "$SRC"
+
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          cp -a "$LIVE/.next" "$BAK/.next.before"
+
+          rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          OUT="$CAND/public/images/home-tools-brandmarks-v2"
+          mkdir -p "$OUT"
+
           BASE='https://cdn.jsdelivr.net/npm/simple-icons@latest/icons'
-          for slug in openai claude googlegemini deepseek perplexity midjourney ideogram runway pika lumalabs elevenlabs heygen descript notion zapier make n8n webflow gamma; do
-            code="$(curl -L -sS -o /tmp/si.svg -w '%{http_code}' "$BASE/$slug.svg" || true)"
-            size="$(wc -c </tmp/si.svg 2>/dev/null || echo 0)"
-            printf 'SIMPLEICON %-16s HTTP=%s SIZE=%s\n' "$slug" "$code" "$size"
-          done
-          echo 'LOCAL_SVG_VARIANTS:'
-          find /var/www/sikhadenge.in/sikhadenge-website-space/public -type f \( -iname '*.svg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | grep -Ei '/(chatgpt|openai|claude|gemini|deepseek|perplexity|midjourney|ideogram|runway|pika|veo|luma|eleven|heygen|descript|notion|zapier|make|n8n|webflow|gamma)' | head -240 || true
-          echo 'READ_ONLY=1'
+          curl -fsSL "$BASE/openai.svg"      -o "$OUT/chatgpt.svg"
+          curl -fsSL "$BASE/claude.svg"      -o "$OUT/claude.svg"
+          curl -fsSL "$BASE/deepseek.svg"    -o "$OUT/deepseek.svg"
+          curl -fsSL "$BASE/perplexity.svg"  -o "$OUT/perplexity.svg"
+          curl -fsSL "$BASE/elevenlabs.svg"  -o "$OUT/elevenlabs.svg"
+          curl -fsSL "$BASE/notion.svg"      -o "$OUT/notion.svg"
+          curl -fsSL "$BASE/zapier.svg"      -o "$OUT/zapier.svg"
+          curl -fsSL "$BASE/make.svg"        -o "$OUT/make.svg"
+          curl -fsSL "$BASE/n8n.svg"         -o "$OUT/n8n.svg"
+          curl -fsSL "$BASE/webflow.svg"     -o "$OUT/webflow.svg"
+
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
+          cp "$WEBROOT/public/images/home-tools-official/midjourney.png" "$OUT/midjourney.png"
+          cp "$WEBROOT/public/images/home-tools-official/ideogram.png" "$OUT/ideogram.png"
+          cp "$WEBROOT/public/images/home-tools-official/runway.png" "$OUT/runway.png"
+          cp "$WEBROOT/public/images/home-tools-official/pika.ico" "$OUT/pika.ico"
+          cp "$WEBROOT/public/images/home-tools-official/veo.svg" "$OUT/veo.svg"
+          cp "$WEBROOT/public/images/home-tools-official/luma-ai.ico" "$OUT/luma-ai.ico"
+          cp "$WEBROOT/public/images/home-tools-official/heygen.png" "$OUT/heygen.png"
+          cp "$WEBROOT/public/images/home-tools-official/descript.png" "$OUT/descript.png"
+          cp "$WEBROOT/public/images/home-tools-official/gamma-ai.png" "$OUT/gamma-ai.png"
+
+          OUT="$OUT" CAND="$CAND" python3 - <<'PY'
+          from pathlib import Path
+          import json, os, re
+          out=Path(os.environ['OUT'])
+          colors={
+            'chatgpt.svg':'000000','claude.svg':'D97757','deepseek.svg':'4D6BFE',
+            'perplexity.svg':'20808D','elevenlabs.svg':'000000','notion.svg':'000000',
+            'zapier.svg':'FF4F00','make.svg':'6D00CC','n8n.svg':'EA4B71','webflow.svg':'146EF5'
+          }
+          for fn,color in colors.items():
+            p=out/fn
+            s=p.read_text()
+            assert '<svg' in s and '<path' in s
+            if ' fill=' not in s.split('>',1)[0]:
+              s=s.replace('<svg ',f'<svg fill="#{color}" ',1)
+            p.write_text(s)
+
+          files={
+            'ChatGPT':'chatgpt.svg','Claude':'claude.svg','Gemini':'gemini.png','DeepSeek':'deepseek.svg',
+            'Perplexity':'perplexity.svg','Midjourney':'midjourney.png','Ideogram':'ideogram.png','Runway':'runway.png',
+            'Pika':'pika.ico','Veo':'veo.svg','Luma AI':'luma-ai.ico','ElevenLabs':'elevenlabs.svg',
+            'HeyGen':'heygen.png','Descript':'descript.png','Notion AI':'notion.svg','Zapier':'zapier.svg',
+            'Make':'make.svg','n8n':'n8n.svg','Webflow AI':'webflow.svg','Gamma AI':'gamma-ai.png'
+          }
+          cats={'ChatGPT':'Assistant','Claude':'Writing','Gemini':'Research','DeepSeek':'Logic','Perplexity':'Search','Midjourney':'Image','Ideogram':'Image','Runway':'Video','Pika':'Video','Veo':'Video','Luma AI':'Video','ElevenLabs':'Voice','HeyGen':'Avatar','Descript':'Audio','Notion AI':'Productivity','Zapier':'Automation','Make':'Automation','n8n':'Automation','Webflow AI':'Website','Gamma AI':'Presentation'}
+          for n,f in files.items():
+            p=out/f
+            assert p.is_file() and p.stat().st_size>100,(n,f)
+          manifest={k:'/images/home-tools-brandmarks-v2/'+v for k,v in files.items()}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+
+          p=Path(os.environ['CAND'])/'app/landing/page.tsx'
+          s=p.read_text()
+          block='// AI Tools\nconst aiTools = [\n'+''.join(f"  {{ name: {n!r}, category: {cats[n]!r}, logo: {manifest[n]!r} }},\n" for n in files)+']\n'
+          s,n=re.subn(r'// AI Tools\nconst aiTools = \[\n.*?\n\]\n',block,s,count=1,flags=re.S)
+          assert n==1,'aiTools block'
+
+          old='''                  <div
+                    className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[15px] border border-white/80 text-white transition-transform duration-300 group-hover:scale-105 md:h-12 md:w-12"
+                    style={{
+                      background: visual.gradient,
+                      boxShadow:
+                        `inset 0 1px 0 rgba(255,255,255,0.45), ` +
+                        `inset 0 -7px 14px rgba(15,23,42,0.16), ` +
+                        `0 8px 20px ${visual.glow}`,
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-1.5 right-1.5 top-1 h-4 rounded-full bg-white/25 blur-[2px]"
+                    />
+
+                    <img
+                      src={tool.logo}
+                      alt=""
+                      aria-hidden="true"
+                      className="relative z-10 h-5 w-5 object-contain drop-shadow-[0_3px_3px_rgba(15,23,42,0.28)] md:h-5.5 md:w-5.5"
+                    />
+                  </div>'''
+          new='''                  <div className="relative flex h-11 w-11 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-105 md:h-12 md:w-12">
+                    <img
+                      src={tool.logo}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-8 w-8 object-contain md:h-9 md:w-9"
+                    />
+                  </div>'''
+          assert s.count(old)==1,'logo wrapper exact match'
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          print('BRANDMARK_PATCH_READY=20')
+          PY
+
+          diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/diff" || true
+          cat "$CAND/diff"
+          python3 - "$CAND/diff" <<'PY'
+          import sys
+          d=open(sys.argv[1]).read()
+          protected=['25+ AI Tools You Will Master','Modern creators combine','Tools Ecosystem','Practical workflows','Guided execution','Portfolio-ready output']
+          for l in d.splitlines():
+            if l[:1] in '+-' and not l.startswith(('+++','---')) and any(x in l for x in protected):
+              raise SystemExit('NON_LOGO_CHANGE_BLOCKED')
+          assert '/images/home-tools-brandmarks-v2/chatgpt.svg' in d
+          assert 'background: visual.gradient' in d
+          assert 'h-8 w-8 object-contain' in d
+          print('LOGO_ONLY_DIFF_GUARD_OK=1')
+          PY
+
+          cd "$CAND"
+          npm run build
+
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+
+          rollback(){
+            echo 'ROLLBACK_START'
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            rm -rf "$LIVE/.next"; cp -a "$BAK/.next.before" "$LIVE/.next" || true
+            rm -rf "$NEWREL" "$NEWSTATIC"
+            pm2 restart "$APP" --update-env || true
+            echo 'ROLLBACK_DONE'
+          }
+
+          cp -a "$CAND/app/landing/page.tsx" "$SRC"
+          rm -rf "$NEWREL" "$NEWSTATIC"
+          cp -a "$OUT" "$NEWREL"
+          mkdir -p "$(dirname "$NEWSTATIC")"
+          cp -a "$OUT" "$NEWSTATIC"
+          rm -rf "$LIVE/.next.new-brandmarks"
+          cp -a "$CAND/.next" "$LIVE/.next.new-brandmarks"
+          rm -rf "$LIVE/.next"
+          mv "$LIVE/.next.new-brandmarks" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 5
+
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?brandmarks=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?brandmarks=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+          if ! grep -q '/images/home-tools-brandmarks-v2/chatgpt.svg' "$P"; then rollback; exit 1; fi
+          if ! grep -q 'AI Tools You Will Master' "$P" || ! grep -q 'Modern creators combine' "$P"; then rollback; exit 1; fi
+          if grep -q 'background: visual.gradient' "$SRC"; then rollback; exit 1; fi
+
+          while read -r path; do
+            c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"
+            echo "ASSET=$c $path"
+            [ "$c" = 200 ] || { rollback; exit 1; }
+          done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$NEWSTATIC/manifest.json"'")).values()))')
+
+          echo "BACKUP=$BAK"
+          echo 'HOME_TOOL_BRANDMARKS_LIVE_OK=1 BACKGROUND_REMOVED=1 ASSETS=20'
           REMOTE
