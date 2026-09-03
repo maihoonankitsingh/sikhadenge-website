@@ -1,0 +1,50 @@
+name: Verify Claude Proof Real Logos V1 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/verify-claude-proof-real-logos-v1-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify live section only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          DOM="$RUNNER_TEMP/claude-real-logos.html"
+          PNG="$RUNNER_TEMP/claude-real-logos-desktop.png"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=real-logos-verify-20260903'
+
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$PNG" "$URL"
+
+          NOTE_COUNT="$(grep -o 'class=\"sd-proof-v4-note\"' "$DOM" | wc -l || true)"
+          LOGO_COUNT="$(grep -o 'data-sd-real-logo=' "$DOM" | wc -l || true)"
+          echo "note_count=$NOTE_COUNT"
+          echo "real_logo_count=$LOGO_COUNT"
+          test "$NOTE_COUNT" -eq 0
+          test "$LOGO_COUNT" -eq 6
+          grep -Fq 'aria-label="Goldman Sachs"' "$DOM"
+          grep -Fq 'aria-label="McKinsey &amp; Company"' "$DOM"
+          test "$(grep -o 'aria-label=\"World Economic Forum\"' "$DOM" | wc -l || true)" -eq 2
+          grep -Fq 'aria-label="PwC"' "$DOM"
+          grep -Fq 'aria-label="ServiceNow"' "$DOM"
+          grep -Fq 'data-claude-proof-note-removed="1"' "$DOM"
+          test -s "$PNG"
+          cp "$PNG" "$GITHUB_WORKSPACE/claude-real-logos-desktop.png"
+          echo 'CLAUDE_REAL_LOGOS_NOTE_REMOVAL_OK'
+
+      - name: Upload visual QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-proof-real-logos-v1-final-qa
+          path: claude-real-logos-desktop.png
+          retention-days: 1
