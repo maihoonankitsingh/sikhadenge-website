@@ -8,6 +8,7 @@ on:
       - "styles/ai-video-process-premium.module.css"
       - "styles/ai-video-warm-reference.css"
       - "pages/_app.tsx"
+      - "pages/_document.tsx"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "package.json"
       - ".github/workflows/ai-video-quality.yml"
@@ -20,6 +21,7 @@ on:
       - "styles/ai-video-process-premium.module.css"
       - "styles/ai-video-warm-reference.css"
       - "pages/_app.tsx"
+      - "pages/_document.tsx"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "package.json"
       - ".github/workflows/ai-video-quality.yml"
@@ -44,7 +46,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Run AI Video source audit
         run: node scripts/audit-ai-video-masterclass.mjs
