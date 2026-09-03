@@ -8,6 +8,7 @@ const processCssPath = path.join(root, "styles/ai-video-process-premium.module.c
 const appPath = path.join(root, "pages/_app.tsx");
 const klingAssetPath = path.join(root, "public/ai-video-kling-mark.svg");
 const higgsfieldAssetPath = path.join(root, "public/ai-video-higgsfield-mark.svg");
+const canonicalUrl = "https://sikhadenge.in/masterclass/ai-video";
 
 const page = fs.readFileSync(pagePath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
