@@ -1,0 +1,57 @@
+name: Diagnose Claude Nginx Runtime 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-claude-nginx-runtime-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Inspect exact Claude route and runtime files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          echo '=== EXACT CLAUDE LOCATION ==='
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import sys
+          s=Path(sys.argv[1]).read_text()
+          needle='location = /masterclass/claude/free {'
+          a=s.find(needle)
+          if a<0: raise SystemExit('route missing')
+          depth=0; b=None
+          for i in range(a,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0:
+                      b=i+1; break
+          print(s[a:b])
+          PY
+          echo '=== CLAUDE RUNTIME FILES ROOT ==='
+          find /var/www/sikhadenge.in -maxdepth 2 -type f \( -iname '*claude*.js' -o -iname '*claude*.css' -o -iname '*proof*.js' -o -iname '*testimonial*.js' -o -iname '*social*proof*.js' \) -printf '%p %s\n' 2>/dev/null | sort | tail -200
+          echo '=== V305 / AI SHIFT REFERENCES ==='
+          grep -RIl --exclude-dir=node_modules --exclude-dir=.next -E 'sd-claude-testimonials-v305|AI is changing the way professionals work|sd-v305|sd-ai346' /var/www/sikhadenge.in /etc/nginx 2>/dev/null | head -120
+          REMOTE
