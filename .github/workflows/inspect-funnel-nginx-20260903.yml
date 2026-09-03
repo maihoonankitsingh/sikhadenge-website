@@ -24,26 +24,43 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-      - name: Inspect bridge and registration event flow
+      - name: Inspect tracking config and registration block
         shell: bash
         run: |
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -eu
-          echo '=== BRIDGE FILE ==='
-          stat /var/www/sikhadenge.in/tracking-live-v1/funnel-attribution-bridge-v1.js || true
-          sed -n '1,260p' /var/www/sikhadenge.in/tracking-live-v1/funnel-attribution-bridge-v1.js || true
-          echo '=== REG META PIXEL HELPER ==='
+          echo '=== ACTIVE ENV FILES ==='
+          for d in /var/www/sikhadenge.in/releases/production-ai-video-source-first-v90-75889cdbef1c-20260903-220828 /var/www/sikhadenge.in/candidates/claude-ai-shift-research-v2-20260901-213954 /var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335 /opt/sikhadenge-dashboard /var/www/sikhadenge.in/masterclass-bonus-v50; do
+            echo "DIR=$d"
+            for f in "$d/.env" "$d/.env.local" "$d/.env.production" "$d/.env.production.local"; do
+              [ -f "$f" ] || continue
+              echo "FILE=$f"
+              while IFS='=' read -r k v; do
+                case "$k" in
+                  NEXT_PUBLIC_GA4_MEASUREMENT_ID|NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_ENABLED|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL)
+                    [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" || printf '%s=EMPTY\n' "$k";;
+                  NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)
+                    [ -n "$v" ] && printf '%s=PRESENT\n' "$k" || printf '%s=EMPTY\n' "$k";;
+                esac
+              done < "$f"
+            done
+          done
+          echo '=== HISTORICAL PUBLIC IDS ==='
+          find /var/www/sikhadenge.in /opt/sikhadenge-dashboard -maxdepth 6 -type f \( -name '.env' -o -name '.env.local' -o -name '.env.production' -o -name '.env.production.local' \) 2>/dev/null | while read -r f; do
+            h=$(grep -E '^(NEXT_PUBLIC_GA4_MEASUREMENT_ID|NEXT_PUBLIC_GA_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_ENABLED|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL)=' "$f" 2>/dev/null || true)
+            [ -n "$h" ] || continue
+            echo "FILE=$f"; printf '%s\n' "$h"
+            s=$(grep -E '^(NEXT_PUBLIC_SEGMENT_WRITE_KEY|SEGMENT_WRITE_KEY|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' "$f" 2>/dev/null || true)
+            [ -z "$s" ] || printf '%s\n' "$s" | sed 's/=.*/=PRESENT/'
+          done
+          echo '=== REGISTRATION NGINX BLOCK ==='
+          nginx -T 2>/dev/null > /tmp/na.txt
+          ln=$(grep -n 'location = /gen-ai-masterclass/register-one-step {' /tmp/na.txt | head -1 | cut -d: -f1 || true)
+          [ -z "$ln" ] || sed -n "$((ln-8)),$((ln+70))p" /tmp/na.txt
+          echo '=== REG NGINX FILE ==='
+          grep -RIn 'location = /gen-ai-masterclass/register-one-step {' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null || true
+          echo '=== META CAPI CONFIG SOURCE ==='
           C=/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335
-          sed -n '1,180p' "$C/lib/metaPixel.ts" || true
-          echo '=== REG SUBMIT SUCCESS FLOW ==='
-          sed -n '120,230p' "$C/app/gen-ai-masterclass/register-one-step/_components/RegisterOneStepPage.tsx" || true
-          echo '=== REG API RESPONSE + META ==='
-          grep -nE -C 5 'sendMetaLeadEvent|NextResponse\.json|created\.id|event_id|return NextResponse' "$C/app/api/masterclass/lead/route.ts" | head -300 || true
-          echo '=== PUBLIC BRIDGE ==='
-          curl -fsS 'https://sikhadenge.in/funnel-attribution-bridge-v1.js?v=qa' | sha256sum
-          curl -fsS 'https://sikhadenge.in/funnel-attribution-bridge-v1.js?v=qa' | head -80
-          echo '=== HTML INJECTION CHECK ==='
-          for u in 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX' 'https://sikhadenge.in/masterclass/claude/free?utm_source=meta&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX'; do echo URL=$u; curl -fsS "$u" | grep -o 'funnel-attribution-bridge-v1.js[^"<]*' | head -2 || true; done
-          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js
-          echo INSPECT_BRIDGE_DONE
+          sed -n '148,220p' "$C/app/api/masterclass/lead/route.ts" | sed -E 's/(access_token[^:]*)[:=][^,}]*/\1: REDACTED/Ig' || true
+          echo CONFIG_INSPECT_DONE
           REMOTE
