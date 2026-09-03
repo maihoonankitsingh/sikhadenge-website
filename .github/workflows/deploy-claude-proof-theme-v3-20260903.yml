@@ -1,0 +1,198 @@
+name: Deploy Claude Proof Theme V3 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-proof-theme-v3-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only Claude proof-section visual theme
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+
+          NG="/etc/nginx/sites-enabled/sikhadenge.in-ssl"
+          ASSET="/var/www/sikhadenge.in/claude-proof-theme-v2.js"
+          SOURCE="https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/4be9a28fb0e37529f0751faaefbd411c3b24aaf2/public/claude-proof-theme-v2.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-proof-theme-v3-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-proof-theme-v2.js.before"
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-proof-theme-v2.js.before" ]]; then
+              cp "$BACKUP/claude-proof-theme-v2.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_PROOF_THEME_V3__' "$TMP"
+          grep -Fq 'v3-premium' "$TMP"
+          grep -Fq '__manrope_a43dd5' "$TMP"
+          grep -Fq 'font-size:clamp(30px,2.25vw,38px)' "$TMP"
+          grep -Fq 'font-weight:640' "$TMP"
+          grep -Fq 'data-sd-claude-cta' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          route = 'location = /masterclass/claude/free {'
+          start = s.find(route)
+          if start < 0:
+              raise SystemExit('Claude exact route not found')
+          end = s.find('\n    }', start)
+          if end < 0:
+              raise SystemExit('Claude exact route end not found')
+          end += len('\n    }')
+          seg = s[start:end]
+
+          theme = '<script src="/claude-proof-theme-v2.js?v=claude-proof-premium-v3-20260903"></script>'
+          pattern = re.compile(r'<script src="/claude-proof-theme-v2\.js\?v=[^"]+"></script>')
+          matches = list(pattern.finditer(seg))
+          if len(matches) > 1:
+              raise SystemExit(f'multiple Claude proof theme scripts found: {len(matches)}')
+          if len(matches) == 1:
+              seg = pattern.sub(theme, seg, count=1)
+          else:
+              proof = '<script src="/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902"></script>'
+              if proof in seg:
+                  seg = seg.replace(proof, proof + theme, 1)
+              else:
+                  anchor = "</body>';"
+                  pos = seg.find(anchor)
+                  if pos < 0:
+                      raise SystemExit('Claude body injection anchor not found')
+                  seg = seg[:pos] + theme + seg[pos:]
+
+          s = s[:start] + seg + s[end:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 1
+
+          echo '===== VERIFY SERVER INJECTION ====='
+          curl -fsS --max-time 20 https://sikhadenge.in/claude-proof-theme-v2.js | grep -Fq '__CLAUDE_PROOF_THEME_V3__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/claude/free?v=claude-proof-premium-v3-server' -o "$HTML"
+          test "$(grep -o '/claude-proof-theme-v2.js?v=claude-proof-premium-v3-20260903' "$HTML" | wc -l)" -eq 1
+          test "$(grep -o '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b' "$HTML" | wc -l)" -eq 1
+          test "$(grep -o '/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/api/social-proof/live?widget=1' "$HTML"
+
+          AI_VIDEO="$(mktemp)"
+          curl -fsS --max-time 25 'https://sikhadenge.in/masterclass/ai-video?v=claude-theme-isolation-check-v3' -o "$AI_VIDEO"
+          if grep -Fq '/claude-proof-theme-v2.js' "$AI_VIDEO"; then
+            echo 'Claude-only proof theme leaked into AI Video source page'
+            exit 1
+          fi
+
+          echo "BACKUP=$BACKUP"
+          echo 'SERVER_PREMIUM_THEME_INJECTION_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify exact section scope in Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+
+          DOM="$RUNNER_TEMP/claude-proof-premium-v3.html"
+          DESKTOP="$RUNNER_TEMP/claude-proof-premium-v3-desktop.png"
+          MOBILE="$RUNNER_TEMP/claude-proof-premium-v3-mobile.png"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=claude-proof-premium-v3-final'
+
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --dump-dom "$URL" > "$DOM"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=1440,7000 --screenshot="$DESKTOP" "$URL"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --hide-scrollbars --window-size=390,6000 --screenshot="$MOBILE" "$URL"
+
+          test "$(grep -o 'id="ai-video-job-impact-v80"' "$DOM" | wc -l)" -eq 1
+          test "$(grep -o 'id="ai-video-ai-opportunity-v85"' "$DOM" | wc -l)" -eq 1
+          grep -Fq 'data-claude-proof-theme="v3-premium"' "$DOM"
+          grep -Fq 'id="sd-claude-proof-theme-v3-css"' "$DOM"
+          grep -Fq '__manrope_a43dd5' "$DOM"
+          grep -Fq 'font-size:clamp(30px,2.25vw,38px)' "$DOM"
+          grep -Fq 'font-weight:640' "$DOM"
+          grep -Fq 'data-sd-claude-cta="premium-v3"' "$DOM"
+          grep -Fq 'data-claude-heading-v11-restored="18"' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">hundreds of millions of jobs.</span>' "$DOM"
+          grep -Fq '<span class="sd-heading-v11-highlight">It'"'"'s increasing the value of AI skills.</span>' "$DOM"
+          if grep -Fq 'Why AI-skilled professionals are moving ahead faster.' "$DOM"; then
+            echo 'Removed old proof section unexpectedly returned'
+            exit 1
+          fi
+          test -s "$DESKTOP"
+          test -s "$MOBILE"
+
+          cp "$DOM" "$GITHUB_WORKSPACE/claude-proof-premium-v3.html"
+          cp "$DESKTOP" "$GITHUB_WORKSPACE/claude-proof-premium-v3-desktop.png"
+          cp "$MOBILE" "$GITHUB_WORKSPACE/claude-proof-premium-v3-mobile.png"
+          echo 'CLAUDE_PROOF_PREMIUM_V3_CHROME_OK'
+
+      - name: Upload visual QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-proof-premium-v3-qa
+          path: |
+            claude-proof-premium-v3.html
+            claude-proof-premium-v3-desktop.png
+            claude-proof-premium-v3-mobile.png
+          retention-days: 1
