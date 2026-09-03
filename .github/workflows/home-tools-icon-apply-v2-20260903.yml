@@ -1,4 +1,4 @@
-name: Home Tools Official Icons Final V2 20260903
+name: Home Tools Official Icons Exact Live 20260903
 
 on:
   push:
@@ -35,37 +35,48 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Build candidate and promote icon-only change
+      - name: Deploy only 20 tool logos
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           export HOME=/root PM2_HOME=/root/.pm2
-          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
-          SRC="$ROOT/app/landing/page.tsx"
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          LIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          ASSETROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          SRC="$LIVE/app/landing/page.tsx"
           TS="$(date +%Y%m%d-%H%M%S)"
-          CAND="/tmp/sd-home-icons-$TS"
-          BAK="/var/backups/sikhadenge/home-tools-icons-$TS"
+          CAND="/tmp/sd-home-icons-live-$TS"
+          BAK="/var/backups/sikhadenge/home-icons-live-$TS"
           mkdir -p "$CAND" "$BAK"
-          cp -a "$SRC" "$BAK/page.tsx.before"
           trap 'rm -rf "$CAND"' EXIT
-          rsync -a --delete --exclude node_modules --exclude .next "$ROOT/" "$CAND/"
-          ln -s "$ROOT/node_modules" "$CAND/node_modules"
+
+          PID="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID/cwd)" = "$LIVE" ]
+          grep -q "{ name: 'ChatGPT', category: 'Assistant', icon: '🤖' }" "$SRC"
+          grep -q 'AI Tools You Will Master' "$SRC"
+
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          cp -a "$LIVE/.next" "$BAK/.next.before"
+          [ ! -d "$LIVE/public/images/home-tools-official" ] || cp -a "$LIVE/public/images/home-tools-official" "$BAK/icons.before"
+
+          rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
           OUT="$CAND/public/images/home-tools-official"
           rm -rf "$OUT"; mkdir -p "$OUT"
 
-          cp "$ROOT/public/images/claude-ai-tools-latest/chatgpt.png" "$OUT/chatgpt.png"
-          cp "$ROOT/public/images/claude-ai-tools-latest/claude.png" "$OUT/claude.png"
-          cp "$ROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
-          cp "$ROOT/public/images/claude-ai-tools-latest/perplexity.png" "$OUT/perplexity.png"
-          cp "$ROOT/public/images/tools/midjourney.png" "$OUT/midjourney.png"
-          cp "$ROOT/public/images/tools/ideogram.png" "$OUT/ideogram.png"
-          cp "$ROOT/public/images/claude-ai-tools-latest/runway.png" "$OUT/runway.png"
-          cp "$ROOT/public/images/tools/elevenlabs.png" "$OUT/elevenlabs.png"
-          cp "$ROOT/public/images/claude-ai-tools-latest/heygen.png" "$OUT/heygen.png"
-          cp "$ROOT/public/images/claude-ai-tools/descript.png" "$OUT/descript.png"
-          cp "$ROOT/public/images/ai-tools/notion.png" "$OUT/notion-ai.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/chatgpt.png" "$OUT/chatgpt.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/claude.png" "$OUT/claude.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/perplexity.png" "$OUT/perplexity.png"
+          cp "$ASSETROOT/public/images/tools/midjourney.png" "$OUT/midjourney.png"
+          cp "$ASSETROOT/public/images/tools/ideogram.png" "$OUT/ideogram.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/runway.png" "$OUT/runway.png"
+          cp "$ASSETROOT/public/images/tools/elevenlabs.png" "$OUT/elevenlabs.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools-latest/heygen.png" "$OUT/heygen.png"
+          cp "$ASSETROOT/public/images/claude-ai-tools/descript.png" "$OUT/descript.png"
+          cp "$ASSETROOT/public/images/ai-tools/notion.png" "$OUT/notion-ai.png"
 
           UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36'
           curl -fsSL -A "$UA" 'https://www.deepseek.com/favicon.ico' -o "$OUT/deepseek.ico"
@@ -81,15 +92,14 @@ jobs:
           CAND="$CAND" python3 - <<'PY'
           from pathlib import Path
           import json,os,re
-          root=Path(os.environ['CAND']); out=root/'public/images/home-tools-official'
+          r=Path(os.environ['CAND']); out=r/'public/images/home-tools-official'
           files={'ChatGPT':'chatgpt.png','Claude':'claude.png','Gemini':'gemini.png','DeepSeek':'deepseek.ico','Perplexity':'perplexity.png','Midjourney':'midjourney.png','Ideogram':'ideogram.png','Runway':'runway.png','Pika':'pika.ico','Veo':'veo.svg','Luma AI':'luma-ai.ico','ElevenLabs':'elevenlabs.png','HeyGen':'heygen.png','Descript':'descript.png','Notion AI':'notion-ai.png','Zapier':'zapier.ico','Make':'make.ico','n8n':'n8n.ico','Webflow AI':'webflow-ai.png','Gamma AI':'gamma-ai.png'}
+          cats={'ChatGPT':'Assistant','Claude':'Writing','Gemini':'Research','DeepSeek':'Logic','Perplexity':'Search','Midjourney':'Image','Ideogram':'Image','Runway':'Video','Pika':'Video','Veo':'Video','Luma AI':'Video','ElevenLabs':'Voice','HeyGen':'Avatar','Descript':'Audio','Notion AI':'Productivity','Zapier':'Automation','Make':'Automation','n8n':'Automation','Webflow AI':'Website','Gamma AI':'Presentation'}
           for k,v in files.items():
-            p=out/v
-            assert p.exists() and p.stat().st_size>100,(k,v)
+              p=out/v; assert p.is_file() and p.stat().st_size>100,(k,v)
           manifest={k:'/images/home-tools-official/'+v for k,v in files.items()}
           (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
-          p=root/'app/landing/page.tsx'; s=p.read_text()
-          cats={'ChatGPT':'Assistant','Claude':'Writing','Gemini':'Research','DeepSeek':'Logic','Perplexity':'Search','Midjourney':'Image','Ideogram':'Image','Runway':'Video','Pika':'Video','Veo':'Video','Luma AI':'Video','ElevenLabs':'Voice','HeyGen':'Avatar','Descript':'Audio','Notion AI':'Productivity','Zapier':'Automation','Make':'Automation','n8n':'Automation','Webflow AI':'Website','Gamma AI':'Presentation'}
+          p=r/'app/landing/page.tsx'; s=p.read_text()
           block='// AI Tools\nconst aiTools = [\n'+''.join(f"  {{ name: {n!r}, category: {cats[n]!r}, logo: {manifest[n]!r} }},\n" for n in files)+']\n'
           s,n=re.subn(r'// AI Tools\nconst aiTools = \[\n.*?\n\]\n',block,s,count=1,flags=re.S); assert n==1
           s,n=re.subn(r'\n\s{14}const Icon = visual\.icon\n','\n',s,count=1); assert n==1
@@ -103,44 +113,39 @@ jobs:
           diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/diff" || true
           python3 - "$CAND/diff" <<'PY'
           import sys
-          protected=['25+ AI Tools You Will Master','Modern creators combine','Tools Ecosystem','Practical workflows','Guided execution','Portfolio-ready output']
-          for l in open(sys.argv[1]):
-            if l[:1] in '+-' and not l.startswith(('+++','---')) and any(x in l for x in protected): raise SystemExit('NON_ICON_CHANGE')
+          d=open(sys.argv[1]).read(); protected=['25+ AI Tools You Will Master','Modern creators combine','Tools Ecosystem','Practical workflows','Guided execution','Portfolio-ready output']
+          for l in d.splitlines():
+              if l[:1] in '+-' and not l.startswith(('+++','---')) and any(x in l for x in protected): raise SystemExit('NON_ICON_CHANGE_BLOCKED')
+          assert "logo: '/images/home-tools-official/chatgpt.png'" in d and 'src={tool.logo}' in d
           print('ICON_ONLY_DIFF_OK=1')
           PY
 
           cd "$CAND"; npm run build
-
-          APP="$(pm2 jlist | python3 -c 'import json,sys;a=json.load(sys.stdin);print(next((p.get("name","") for p in a if "3955" in p.get("name","")),""))')"
-          test -n "$APP"
-          echo "MAIN_APP=$APP"
-          [[ "$APP" == *3955* ]]
-          cp -a "$ROOT/.next" "$BAK/.next.before"
-          if [ -d "$ROOT/public/images/home-tools-official" ]; then cp -a "$ROOT/public/images/home-tools-official" "$BAK/icons.before"; fi
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
 
           rollback(){
             echo ROLLBACK_START
             cp -a "$BAK/page.tsx.before" "$SRC" || true
-            rm -rf "$ROOT/.next"; cp -a "$BAK/.next.before" "$ROOT/.next" || true
-            rm -rf "$ROOT/public/images/home-tools-official"; [ ! -d "$BAK/icons.before" ] || cp -a "$BAK/icons.before" "$ROOT/public/images/home-tools-official"
+            rm -rf "$LIVE/.next"; cp -a "$BAK/.next.before" "$LIVE/.next" || true
+            rm -rf "$LIVE/public/images/home-tools-official"; [ ! -d "$BAK/icons.before" ] || cp -a "$BAK/icons.before" "$LIVE/public/images/home-tools-official"
             pm2 restart "$APP" --update-env || true
             echo ROLLBACK_DONE
           }
 
           cp -a "$CAND/app/landing/page.tsx" "$SRC"
-          rm -rf "$ROOT/public/images/home-tools-official"; cp -a "$OUT" "$ROOT/public/images/home-tools-official"
-          rm -rf "$ROOT/.next.new"; cp -a "$CAND/.next" "$ROOT/.next.new"; rm -rf "$ROOT/.next"; mv "$ROOT/.next.new" "$ROOT/.next"
+          rm -rf "$LIVE/public/images/home-tools-official"; cp -a "$OUT" "$LIVE/public/images/home-tools-official"
+          rm -rf "$LIVE/.next.new-home-icons"; cp -a "$CAND/.next" "$LIVE/.next.new-home-icons"; rm -rf "$LIVE/.next"; mv "$LIVE/.next.new-home-icons" "$LIVE/.next"
           pm2 restart "$APP" --update-env
-          sleep 4
+          sleep 5
 
-          H="$(mktemp)"; code="$(curl -L --compressed -ksS -o "$H" -w '%{http_code}' "https://sikhadenge.in/?icons=$TS")"
-          if [ "$code" != 200 ] || ! grep -q '/images/home-tools-official/' "$H" || ! grep -q 'AI Tools You Will Master' "$H"; then rollback; exit 1; fi
-          while read -r path; do
-            c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"
-            echo "$c $path"
-            if [ "$c" != 200 ]; then rollback; exit 1; fi
-          done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$ROOT/public/images/home-tools-official/manifest.json"'")).values()))')
-          echo "LIVE_HTTP=$code"
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?icons=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?icons=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ] || ! grep -q '/images/home-tools-official/chatgpt.png' "$D" || ! grep -q '/images/home-tools-official/chatgpt.png' "$P"; then rollback; exit 1; fi
+          if ! grep -q 'AI Tools You Will Master' "$P" || ! grep -q 'Modern creators combine' "$P"; then rollback; exit 1; fi
+          while read -r path; do c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"; echo "ASSET=$c $path"; [ "$c" = 200 ] || { rollback; exit 1; }; done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$LIVE/public/images/home-tools-official/manifest.json"'")).values()))')
           echo "BACKUP=$BAK"
-          echo 'HOME_TOOL_ICONS_OFFICIAL_OK=1 ICON_ONLY=1'
+          echo 'HOME_TOOL_ICONS_LIVE_OK=1 ICON_ONLY=1 ASSETS=20'
           REMOTE
