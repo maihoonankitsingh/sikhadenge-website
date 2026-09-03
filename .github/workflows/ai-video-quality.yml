@@ -11,6 +11,8 @@ on:
       - "pages/_document.tsx"
       - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
+      - "scripts/qa-ai-video-masterclass.mjs"
+      - "scripts/check-ai-video-lighthouse.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ai-video-quality.yml"
@@ -26,6 +28,8 @@ on:
       - "pages/_document.tsx"
       - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
+      - "scripts/qa-ai-video-masterclass.mjs"
+      - "scripts/check-ai-video-lighthouse.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ai-video-quality.yml"
@@ -56,9 +60,9 @@ jobs:
         run: node scripts/audit-ai-video-masterclass.mjs
 
   candidate-build:
-    name: Candidate lint and production build
+    name: Candidate build + browser + Lighthouse 90+
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -83,3 +87,70 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
         run: npm run build
+
+      - name: Install Chromium for real browser QA
+        run: npx playwright install --with-deps chromium
+
+      - name: Start production candidate
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          nohup npm start -- -p 3000 > /tmp/ai-video-next.log 2>&1 &
+          echo $! > /tmp/ai-video-next.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000/masterclass/ai-video >/dev/null; then
+              echo "Candidate server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/ai-video-next.log || true
+          echo "Candidate server failed to become ready"
+          exit 1
+
+      - name: Desktop tablet mobile browser QA — each view 90+
+        env:
+          AI_VIDEO_QA_BASE_URL: http://127.0.0.1:3000
+          AI_VIDEO_QA_OUTPUT: artifacts/ai-video-qa
+        run: npm run ai-video:qa
+
+      - name: Lighthouse desktop 90+ categories
+        run: |
+          mkdir -p artifacts/ai-video-lighthouse
+          CHROME_PATH="$(node -e "const {chromium}=require('playwright'); process.stdout.write(chromium.executablePath())")"
+          export CHROME_PATH
+          npx --yes lighthouse@12.8.2 http://127.0.0.1:3000/masterclass/ai-video \
+            --quiet \
+            --preset=desktop \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=artifacts/ai-video-lighthouse/desktop.json \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+
+      - name: Lighthouse mobile 90+ categories
+        run: |
+          CHROME_PATH="$(node -e "const {chromium}=require('playwright'); process.stdout.write(chromium.executablePath())")"
+          export CHROME_PATH
+          npx --yes lighthouse@12.8.2 http://127.0.0.1:3000/masterclass/ai-video \
+            --quiet \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=artifacts/ai-video-lighthouse/mobile.json \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+
+      - name: Enforce Lighthouse 90+ + Core Web Vitals proxy budgets
+        env:
+          AI_VIDEO_LIGHTHOUSE_DIR: artifacts/ai-video-lighthouse
+        run: node scripts/check-ai-video-lighthouse.mjs
+
+      - name: Upload browser and Lighthouse evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-video-90-plus-evidence
+          path: |
+            artifacts/ai-video-qa
+            artifacts/ai-video-lighthouse
+            /tmp/ai-video-next.log
+          if-no-files-found: warn
+          retention-days: 14
