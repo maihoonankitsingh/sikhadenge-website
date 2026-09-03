@@ -18,7 +18,7 @@ env:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -37,122 +37,35 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect active funnel runtimes only
+      - name: Focused tracking audit
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          echo '===== TARGETED_TRACKING_AUDIT_BEGIN ====='
-          echo 'READ_ONLY=1'
-          echo 'UTC='"$(date -u +%FT%TZ)"
-
-          echo '===== ACTIVE NGINX EXACT BLOCKS ====='
-          for f in /etc/nginx/snippets/sikhadenge-ai-video-3940.conf /etc/nginx/snippets/sikhadenge-registration-v2-hot.conf /etc/nginx/sites-enabled/sikhadenge.in-ssl /etc/nginx/sites-enabled/dashboard.sikhadenge.in; do
-            [[ -f "$f" ]] || continue
-            echo "--- $f ---"
-            grep -nE -C 5 'masterclass/ai-video|register-one-step|api/masterclass/lead|registration-stable|registration-v2|3940|3955|3400|sub_filter|script src' "$f" 2>/dev/null | head -360 || true
-          done
-
-          echo '===== SELECTED PM2 RUNTIME MAP ====='
-          PMJSON="$(mktemp)"
-          pm2 jlist > "$PMJSON" 2>/dev/null || echo '[]' > "$PMJSON"
-          python3 - "$PMJSON" <<'PY'
-          import json,sys
-          names={
-            'sikhadenge-ai-workflow-premium-3940',
-            'sikhadenge-checkout-hotfix-3955-20260831-210229',
-            'sikhadenge-dashboard-revenue',
-            'sikhadenge-dashboard-brand',
-            'sikhadenge-ai-video-icons-hotfix-3930',
-          }
-          keys=[
-            'GA4_MEASUREMENT_ID','GA4_API_SECRET','NEXT_PUBLIC_GA_MEASUREMENT_ID','NEXT_PUBLIC_GA4_MEASUREMENT_ID',
-            'META_PIXEL_ID','NEXT_PUBLIC_META_PIXEL_ID','META_CONVERSIONS_API_URL','META_CONVERSIONS_ACCESS_TOKEN','META_ACCESS_TOKEN',
-            'GOOGLE_ADS_OFFLINE_CONVERSION_URL','GOOGLE_ADS_ACCESS_TOKEN','IDENTITY_HASH_SECRET','INTERNAL_CRON_SECRET',
-            'DATABASE_URL','NEXT_PUBLIC_DASHBOARD_URL','DASHBOARD_URL'
-          ]
-          with open(sys.argv[1], encoding='utf-8') as fh:
-            data=json.load(fh)
-          for p in data:
-            if p.get('name') not in names: continue
-            env=p.get('pm2_env') or {}
-            print('--- PM2',p.get('name'),'---')
-            print('status=',env.get('status'))
-            print('cwd=',env.get('pm_cwd'))
-            print('exec=',env.get('pm_exec_path'))
-            print('args=',env.get('args'))
-            for k in keys:
-              v=env.get(k)
-              print(f'{k}_PRESENT={1 if v not in (None,"") else 0}')
-          PY
-
-          echo '===== ACTIVE 3940 SOURCE TRACKING ====='
-          P3940="$(python3 - "$PMJSON" <<'PY'
-          import json,sys
-          a=json.load(open(sys.argv[1], encoding='utf-8'))
-          p=next((x for x in a if x.get('name')=='sikhadenge-ai-workflow-premium-3940'),{})
-          print((p.get('pm2_env') or {}).get('pm_cwd') or '')
-          PY
-          )"
-          echo "P3940=$P3940"
-          if [[ -d "$P3940" ]]; then
-            find "$P3940" -maxdepth 5 -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) 2>/dev/null \
-              | grep -E 'ai-video|masterclass|analytics|track|page' | head -120 || true
-            mapfile -t F3940 < <(grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|utm_source|fbq\(|gtag\(|analytics/events|browser-attribution|URLSearchParams' "$P3940" 2>/dev/null | head -24)
-            for f in "${F3940[@]:-}"; do
-              [[ -f "$f" ]] || continue
-              echo "--- 3940_FILE=$f ---"
-              grep -nE -C 5 'register-one-step|source=ai-video|placement=|utm_source|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|URLSearchParams|localStorage|sessionStorage|fbq\(|gtag\(|analytics/events' "$f" 2>/dev/null | head -220 || true
+          set -Eeu
+          pid_for_port(){ ss -ltnp 2>/dev/null | awk -v p=":$1" '$4 ~ p"$" {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}'; }
+          echo '===== FOCUSED_TRACKING_FINAL_AUDIT ====='
+          for port in 3940 3971 3955 3400; do
+            pid="$(pid_for_port "$port" || true)"; cwd="$(readlink -f /proc/$pid/cwd 2>/dev/null || true)"; echo "PORT=$port PID=${pid:-NONE} CWD=$cwd"
+            [[ -d "$cwd" ]] || continue
+            echo '-- env tracking keys --'
+            for e in "$cwd/.env" "$cwd/.env.local" "$cwd/.env.production" "$cwd/.env.production.local"; do
+              [[ -f "$e" ]] || continue; echo "ENV=$e"
+              grep -E '^(NEXT_PUBLIC_GA_MEASUREMENT_ID|NEXT_PUBLIC_GA4_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_WRITE_KEY)=' "$e" 2>/dev/null | sed -E 's/=(.{0,40}).*/=\1.../' || true
+              grep -E '^(GA4_API_SECRET|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GOOGLE_ADS_ACCESS_TOKEN|SEGMENT_WRITE_KEY|LEAD_INGEST_WEBHOOK_SECRET)=' "$e" 2>/dev/null | sed -E 's/=.*/=PRESENT/' || true
             done
-          fi
-
-          echo '===== AI VIDEO INJECTED HOTFIX TRACKING ====='
-          H="$(find /var/www/sikhadenge.in -type f -name 'ai-video-icons-hotfix.js' 2>/dev/null | head -1 || true)"
-          echo "HOTFIX=$H"
-          if [[ -f "$H" ]]; then
-            grep -nE -C 6 'register-one-step|source=ai-video|placement=|utm_|campaign_id|adset_id|ad_id|fbclid|gclid|URLSearchParams|localStorage|sessionStorage' "$H" | head -300 || true
-          fi
-
-          echo '===== ACTIVE 3955 SOURCE TRACKING ====='
-          P3955="$(python3 - "$PMJSON" <<'PY'
-          import json,sys
-          a=json.load(open(sys.argv[1], encoding='utf-8'))
-          p=next((x for x in a if x.get('name')=='sikhadenge-checkout-hotfix-3955-20260831-210229'),{})
-          print((p.get('pm2_env') or {}).get('pm_cwd') or '')
-          PY
-          )"
-          echo "P3955=$P3955"
-          if [[ -d "$P3955" ]]; then
-            mapfile -t F3955 < <(grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'api/masterclass/lead|RegisterOneStepPage|utm_campaign_id|sendMeta|graph.facebook|fbq\(|META_PIXEL|META_ACCESS|anonymousId|sessionId|fbp|fbc' "$P3955" 2>/dev/null | head -28)
-            for f in "${F3955[@]:-}"; do
-              [[ -f "$f" ]] || continue
-              echo "--- 3955_FILE=$f ---"
-              grep -nE -C 6 'api/masterclass/lead|RegisterOneStepPage|utm_source|utm_medium|utm_campaign|utm_campaign_id|utm_adset_id|utm_ad_id|fbclid|gclid|msclkid|gbraid|wbraid|anonymousId|sessionId|landingUrl|referrer|fbp|fbc|fbq\(|sendMeta|graph.facebook|META_PIXEL|META_ACCESS|event_id|eventID' "$f" 2>/dev/null | head -300 || true
+            echo '-- active source markers --'
+            find "$cwd" -maxdepth 5 -type f \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' 2>/dev/null | head -500 | while read -r f; do
+              if grep -Eq 'clarity\.ms|analytics\.load|segment\.com|googletagmanager|gtag\(|fbq\(|META_PIXEL|GOOGLE_ADS|utm_campaign_id|gclid|fbclid|masterclass/lead' "$f" 2>/dev/null; then
+                echo "FILE=$f"; grep -nE -C 2 'clarity\.ms|analytics\.load|segment\.com|googletagmanager|gtag\(|fbq\(|META_PIXEL|GOOGLE_ADS|utm_campaign_id|utm_adset_id|utm_ad_id|gclid|fbclid|masterclass/lead|eventID|event_id' "$f" 2>/dev/null | head -120 || true
+              fi
             done
-          fi
-
-          echo '===== V72 OVERLAY TRACKING LOGIC ====='
-          V='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023'
-          for f in "$V"/*.js; do
-            [[ -f "$f" ]] || continue
-            echo "--- V72_FILE=$f SHA256=$(sha256sum "$f" | awk '{print $1}') ---"
-            grep -nE -C 5 'fetch\(|submit|form|URLSearchParams|location\.search|location\.href|utm_|campaign_id|adset_id|ad_id|fbclid|gclid|msclkid|anonymousId|sessionId|localStorage|sessionStorage|cookie|fbq\(|gtag\(|eventID|event_id|masterclass/lead' "$f" 2>/dev/null | head -300 || true
           done
-
-          echo '===== WEBSITE ANALYTICS LIBS ====='
-          REL='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
-          for f in "$REL"/lib/sikhadenge-analytics/browser-attribution.ts "$REL"/lib/sikhadenge-analytics/browser-identity.ts "$REL"/lib/sikhadenge-analytics/browser-transport.ts "$REL"/lib/sikhadenge-analytics/event-contract.ts; do
-            [[ -f "$f" ]] || continue
-            echo "--- ANALYTICS_FILE=$f ---"
-            sed -n '1,300p' "$f"
+          echo '===== V72 HASH LOCK ====='
+          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js 2>/dev/null || true
+          echo '===== CTA RAW LIVE ====='
+          for u in 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=audit&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX' 'https://sikhadenge.in/masterclass/claude/free?utm_source=meta&utm_medium=paid_social&utm_campaign=audit&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX'; do
+            echo "URL=$u"; curl -LksS --max-time 20 "$u" | grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' | sed 's/&amp;/\&/g' | sort -u | head -50 || true
           done
-
-          echo '===== LIVE LINK PARAMETER PROPAGATION CHECK ====='
-          curl -LksS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=audit_campaign&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=TESTFBCLICK' \
-            | grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' \
-            | sed 's/&amp;/\&/g' | sort -u | head -80 || true
-
-          rm -f "$PMJSON"
-          echo '===== TARGETED_TRACKING_AUDIT_END ====='
+          echo 'RESULT=FOCUSED_TRACKING_FINAL_AUDIT_COMPLETE'
           REMOTE
