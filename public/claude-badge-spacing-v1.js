@@ -12,14 +12,10 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      /*
-       * Claude page only: normalize the vertical rhythm between
-       * every section eyebrow/badge and the heading that follows it.
-       * No typography, color, sizing, section padding, CTA or content changes.
-       */
+      /* Claude page only: one standard 12px badge-to-heading rhythm. */
 
       html body .sd-eyebrow-pill-v12 {
-        margin-bottom: 10px !important;
+        margin-bottom: 12px !important;
       }
 
       html body .sd-eyebrow-pill-v12 + h2.sd-heading-v11 {
@@ -27,7 +23,7 @@
       }
 
       html body .sd-pill-row-v14 {
-        margin-bottom: 10px !important;
+        margin-bottom: 12px !important;
       }
 
       html body .sd-pill-row-v14 .sd-eyebrow-pill-v12 {
@@ -44,26 +40,7 @@
 
       html body #claude-ai-video-proof-v4 .sd-proof-v4-eyebrow + h2.sd-proof-v4-title,
       html body #claude-ai-video-proof-v4 .sd-proof-v4-eyebrow + h2.sd-heading-v11 {
-        margin-top: 10px !important;
-      }
-
-      @media (max-width: 640px) {
-        html body .sd-eyebrow-pill-v12 {
-          margin-bottom: 8px !important;
-        }
-
-        html body .sd-pill-row-v14 {
-          margin-bottom: 8px !important;
-        }
-
-        html body .sd-pill-row-v14 .sd-eyebrow-pill-v12 {
-          margin-bottom: 0 !important;
-        }
-
-        html body #claude-ai-video-proof-v4 .sd-proof-v4-eyebrow + h2.sd-proof-v4-title,
-        html body #claude-ai-video-proof-v4 .sd-proof-v4-eyebrow + h2.sd-heading-v11 {
-          margin-top: 8px !important;
-        }
+        margin-top: 12px !important;
       }
     `;
     document.head.appendChild(style);
@@ -76,7 +53,7 @@
     document.querySelectorAll("#claude-ai-video-proof-v4 .sd-proof-v4-eyebrow").forEach((el) => {
       el.setAttribute("data-sd-badge-gap-normalized", "1");
     });
-    document.documentElement.setAttribute("data-claude-badge-spacing", "v1");
+    document.documentElement.setAttribute("data-claude-badge-spacing", "v1-standard-12");
   }
 
   function apply() {
