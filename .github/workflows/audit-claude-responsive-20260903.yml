@@ -1,0 +1,149 @@
+name: Audit Claude Responsive 20260903
+
+on:
+  push:
+    branches:
+      - audit/claude-responsive-20260903
+    paths:
+      - .github/workflows/audit-claude-responsive-20260903.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Deep responsive DOM and visual audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p audit/screens
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          PORT=9333
+          PROFILE="$RUNNER_TEMP/claude-responsive-profile"
+          mkdir -p "$PROFILE"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$PROFILE" --remote-allow-origins='*' --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" about:blank >/tmp/claude-responsive-chrome.log 2>&1 &
+          CHPID=$!
+          trap 'kill "$CHPID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 80); do
+            if curl -fsS "http://127.0.0.1:$PORT/json/version" >/dev/null; then ready=1; break; fi
+            sleep .25
+          done
+          if [[ "$ready" != 1 ]]; then cat /tmp/claude-responsive-chrome.log || true; exit 1; fi
+          python3 -m pip -q install websocket-client
+          python3 - <<'PY'
+          import base64, json, pathlib, time, urllib.request, websocket
+          port=9333
+          tabs=json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/json'))
+          ws=websocket.create_connection(tabs[0]['webSocketDebuggerUrl'],timeout=60)
+          seq=0
+          def call(method,params=None):
+              global seq
+              seq+=1
+              ws.send(json.dumps({'id':seq,'method':method,'params':params or {}}))
+              while True:
+                  msg=json.loads(ws.recv())
+                  if msg.get('id')==seq:
+                      if 'error' in msg: raise RuntimeError(msg['error'])
+                      return msg.get('result',{})
+          call('Page.enable'); call('Runtime.enable'); call('Network.enable')
+          views=[
+            ('desktop-1440',1440,900,False,1),
+            ('laptop-1024',1024,768,False,1),
+            ('tablet-768',768,1024,True,1),
+            ('mobile-430',430,932,True,1),
+            ('mobile-390',390,844,True,1),
+          ]
+          out={}
+          js=r'''(() => {
+            const visible=(el)=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0};
+            const text=(el)=>(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();
+            const all=[...document.querySelectorAll('body *')];
+            const clickables=[...document.querySelectorAll('a[href],button,input,select,textarea,[role="button"]')].filter(visible);
+            const sections=[...document.querySelectorAll('section')].filter(visible).map((el,i)=>{const r=el.getBoundingClientRect();return {i,cls:typeof el.className==='string'?el.className:'',h:Math.round(r.height),y:Math.round(r.top+scrollY),textLen:text(el).length,text:text(el).slice(0,90)}});
+            const blankSections=sections.filter(x=>x.h>=80&&x.textLen<8);
+            const overflowEls=all.filter(visible).map(el=>{const r=el.getBoundingClientRect();return {el,r}}).filter(x=>x.r.left<-2||x.r.right>innerWidth+2).slice(0,25).map(x=>({tag:x.el.tagName,cls:typeof x.el.className==='string'?x.el.className:'',left:Math.round(x.r.left),right:Math.round(x.r.right),w:Math.round(x.r.width),text:text(x.el).slice(0,70)}));
+            const clipped=all.filter(el=>visible(el)&&text(el).length>0).filter(el=>{const s=getComputedStyle(el);const x=(el.scrollWidth>el.clientWidth+2)&&(s.overflowX==='hidden'||s.overflow==='hidden');const y=(el.scrollHeight>el.clientHeight+2)&&(s.overflowY==='hidden'||s.overflow==='hidden');return x||y}).slice(0,30).map(el=>({tag:el.tagName,cls:typeof el.className==='string'?el.className:'',text:text(el).slice(0,70),cw:el.clientWidth,sw:el.scrollWidth,ch:el.clientHeight,sh:el.scrollHeight}));
+            const smallTargets=clickables.filter(el=>{const r=el.getBoundingClientRect();return r.width<40||r.height<40}).slice(0,40).map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,w:Math.round(r.width),h:Math.round(r.height),text:text(el).slice(0,50),href:el.getAttribute('href')}});
+            const smallText=all.filter(el=>visible(el)&&text(el).length>0&&el.children.length===0&&parseFloat(getComputedStyle(el).fontSize)<12).slice(0,40).map(el=>({tag:el.tagName,size:getComputedStyle(el).fontSize,text:text(el).slice(0,60)}));
+            const brokenImages=[...document.images].filter(img=>img.complete&&img.naturalWidth===0).map(img=>({src:img.currentSrc||img.src,alt:img.alt}));
+            const ids=[...document.querySelectorAll('[id]')].map(x=>x.id); const dupIds=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))];
+            const headings=[...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(visible).map(h=>({level:Number(h.tagName.slice(1)),text:text(h).slice(0,90)}));
+            const headingSkips=[]; for(let i=1;i<headings.length;i++){if(headings[i].level-headings[i-1].level>1)headingSkips.push({from:headings[i-1],to:headings[i]});}
+            const ctas=clickables.filter(el=>/(register|reserve|seat|join|start|book)/i.test(text(el))).map(el=>{const r=el.getBoundingClientRect();return {text:text(el).slice(0,70),tag:el.tagName,w:Math.round(r.width),h:Math.round(r.height),href:el.getAttribute('href')}}).slice(0,30);
+            const fixed=[...document.querySelectorAll('body *')].filter(el=>visible(el)&&['fixed','sticky'].includes(getComputedStyle(el).position)).slice(0,30).map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,cls:typeof el.className==='string'?el.className:'',pos:getComputedStyle(el).position,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),text:text(el).slice(0,60)}});
+            const bodyText=text(document.body);
+            return {
+              viewport:{w:innerWidth,h:innerHeight,dpr:devicePixelRatio},
+              page:{scrollW:document.documentElement.scrollWidth,clientW:document.documentElement.clientWidth,scrollH:document.documentElement.scrollHeight,bodyTextLen:bodyText.length},
+              horizontalOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+              sections,blankSections,overflowEls,clipped,smallTargets,smallText,brokenImages,dupIds,headings,headingSkips,ctas,fixed,
+              h1Count:headings.filter(x=>x.level===1).length,
+              imageCount:document.images.length,
+              linkCount:document.links.length,
+              buttonCount:[...document.querySelectorAll('button')].length,
+              fontStatus:document.fonts?document.fonts.status:null,
+              title:document.title,
+              lang:document.documentElement.lang,
+              consentVisible:bodyText.includes('Your privacy choices')
+            };
+          })()'''
+          for name,w,h,mobile,dpr in views:
+              call('Emulation.setDeviceMetricsOverride',{'width':w,'height':h,'deviceScaleFactor':dpr,'mobile':mobile})
+              call('Page.navigate',{'url':f'https://sikhadenge.in/masterclass/claude/free?v=deep-responsive-audit-{name}-20260903'})
+              time.sleep(10)
+              # Close consent UI when possible so layout review reflects the landing page.
+              call('Runtime.evaluate',{'expression':'''(()=>{const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').trim()==='Reject non-essential');if(b){b.click();return true}return false})()''','returnByValue':True})
+              time.sleep(1)
+              val=call('Runtime.evaluate',{'expression':js,'returnByValue':True})['result']['value']
+              out[name]=val
+              shot=call('Page.captureScreenshot',{'format':'png','captureBeyondViewport':True,'fromSurface':True})
+              pathlib.Path(f'audit/screens/{name}.png').write_bytes(base64.b64decode(shot['data']))
+          pathlib.Path('audit/responsive-dom-audit.json').write_text(json.dumps(out,indent=2))
+          ws.close()
+          PY
+
+      - name: Lighthouse desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          URL='https://sikhadenge.in/masterclass/claude/free?v=lighthouse-responsive-audit-20260903'
+          mkdir -p audit/lighthouse
+          npx --yes lighthouse "$URL" --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit/lighthouse/desktop.json --form-factor=desktop --screenEmulation.width=1440 --screenEmulation.height=900 --screenEmulation.deviceScaleFactor=1
+          npx --yes lighthouse "$URL" --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit/lighthouse/tablet.json --form-factor=mobile --screenEmulation.width=768 --screenEmulation.height=1024 --screenEmulation.deviceScaleFactor=1 --screenEmulation.mobile=true
+          npx --yes lighthouse "$URL" --quiet --chrome-path="$CHROME" --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --output=json --output-path=audit/lighthouse/mobile.json --form-factor=mobile --screenEmulation.width=390 --screenEmulation.height=844 --screenEmulation.deviceScaleFactor=1 --screenEmulation.mobile=true
+          python3 - <<'PY'
+          import json,pathlib
+          out={}
+          for name in ['desktop','tablet','mobile']:
+              d=json.loads(pathlib.Path(f'audit/lighthouse/{name}.json').read_text())
+              cats=d['categories']; a=d['audits']
+              def score(cat):
+                  x=cats.get(cat,{}).get('score')
+                  return None if x is None else round(x*100)
+              def metric(k):
+                  x=a.get(k,{}).get('numericValue')
+                  return None if x is None else round(x,2)
+              out[name]={
+                'performance':score('performance'),'accessibility':score('accessibility'),'bestPractices':score('best-practices'),'seo':score('seo'),
+                'FCP_ms':metric('first-contentful-paint'),'LCP_ms':metric('largest-contentful-paint'),'CLS':metric('cumulative-layout-shift'),'TBT_ms':metric('total-blocking-time'),'SpeedIndex_ms':metric('speed-index'),
+                'transferBytes':metric('total-byte-weight'),'domSizeScore':a.get('dom-size',{}).get('score'),
+                'unusedJsSavingsMs':a.get('unused-javascript',{}).get('details',{}).get('overallSavingsMs'),
+                'unusedCssSavingsMs':a.get('unused-css-rules',{}).get('details',{}).get('overallSavingsMs'),
+              }
+          pathlib.Path('audit/lighthouse-summary.json').write_text(json.dumps(out,indent=2))
+          print(json.dumps(out,indent=2))
+          PY
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-responsive-deep-audit-20260903
+          path: audit/
+          retention-days: 1
