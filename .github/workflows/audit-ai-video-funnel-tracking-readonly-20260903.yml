@@ -55,7 +55,9 @@ jobs:
           done
 
           echo '===== SELECTED PM2 RUNTIME MAP ====='
-          pm2 jlist 2>/dev/null | python3 - <<'PY'
+          PMJSON="$(mktemp)"
+          pm2 jlist > "$PMJSON" 2>/dev/null || echo '[]' > "$PMJSON"
+          python3 - "$PMJSON" <<'PY'
           import json,sys
           names={
             'sikhadenge-ai-workflow-premium-3940',
@@ -70,7 +72,8 @@ jobs:
             'GOOGLE_ADS_OFFLINE_CONVERSION_URL','GOOGLE_ADS_ACCESS_TOKEN','IDENTITY_HASH_SECRET','INTERNAL_CRON_SECRET',
             'DATABASE_URL','NEXT_PUBLIC_DASHBOARD_URL','DASHBOARD_URL'
           ]
-          data=json.load(sys.stdin)
+          with open(sys.argv[1], encoding='utf-8') as fh:
+            data=json.load(fh)
           for p in data:
             if p.get('name') not in names: continue
             env=p.get('pm2_env') or {}
@@ -85,7 +88,13 @@ jobs:
           PY
 
           echo '===== ACTIVE 3940 SOURCE TRACKING ====='
-          P3940="$(pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); p=next((x for x in a if x.get("name")=="sikhadenge-ai-workflow-premium-3940"),{}); print((p.get("pm2_env") or {}).get("pm_cwd") or "")')"
+          P3940="$(python3 - "$PMJSON" <<'PY'
+          import json,sys
+          a=json.load(open(sys.argv[1], encoding='utf-8'))
+          p=next((x for x in a if x.get('name')=='sikhadenge-ai-workflow-premium-3940'),{})
+          print((p.get('pm2_env') or {}).get('pm_cwd') or '')
+          PY
+          )"
           echo "P3940=$P3940"
           if [[ -d "$P3940" ]]; then
             find "$P3940" -maxdepth 5 -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) 2>/dev/null \
@@ -99,15 +108,20 @@ jobs:
           fi
 
           echo '===== AI VIDEO INJECTED HOTFIX TRACKING ====='
-          H='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/public/ai-video-icons-hotfix.js'
-          if [[ ! -f "$H" ]]; then H="$(find /var/www/sikhadenge.in -type f -name 'ai-video-icons-hotfix.js' 2>/dev/null | head -1)"; fi
+          H="$(find /var/www/sikhadenge.in -type f -name 'ai-video-icons-hotfix.js' 2>/dev/null | head -1 || true)"
           echo "HOTFIX=$H"
           if [[ -f "$H" ]]; then
             grep -nE -C 6 'register-one-step|source=ai-video|placement=|utm_|campaign_id|adset_id|ad_id|fbclid|gclid|URLSearchParams|localStorage|sessionStorage' "$H" | head -300 || true
           fi
 
           echo '===== ACTIVE 3955 SOURCE TRACKING ====='
-          P3955="$(pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); p=next((x for x in a if x.get("name")=="sikhadenge-checkout-hotfix-3955-20260831-210229"),{}); print((p.get("pm2_env") or {}).get("pm_cwd") or "")')"
+          P3955="$(python3 - "$PMJSON" <<'PY'
+          import json,sys
+          a=json.load(open(sys.argv[1], encoding='utf-8'))
+          p=next((x for x in a if x.get('name')=='sikhadenge-checkout-hotfix-3955-20260831-210229'),{})
+          print((p.get('pm2_env') or {}).get('pm_cwd') or '')
+          PY
+          )"
           echo "P3955=$P3955"
           if [[ -d "$P3955" ]]; then
             mapfile -t F3955 < <(grep -RIl --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'api/masterclass/lead|RegisterOneStepPage|utm_campaign_id|sendMeta|graph.facebook|fbq\(|META_PIXEL|META_ACCESS|anonymousId|sessionId|fbp|fbc' "$P3955" 2>/dev/null | head -28)
@@ -131,7 +145,7 @@ jobs:
           for f in "$REL"/lib/sikhadenge-analytics/browser-attribution.ts "$REL"/lib/sikhadenge-analytics/browser-identity.ts "$REL"/lib/sikhadenge-analytics/browser-transport.ts "$REL"/lib/sikhadenge-analytics/event-contract.ts; do
             [[ -f "$f" ]] || continue
             echo "--- ANALYTICS_FILE=$f ---"
-            sed -n '1,300p' "$f" | sed -E 's/(token|secret|password)(["'"' ]*[:=]["'"' ]*)[^,"'"' ]+/\1\2REDACTED/gI'
+            sed -n '1,300p' "$f"
           done
 
           echo '===== LIVE LINK PARAMETER PROPAGATION CHECK ====='
@@ -139,5 +153,6 @@ jobs:
             | grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' \
             | sed 's/&amp;/\&/g' | sort -u | head -80 || true
 
+          rm -f "$PMJSON"
           echo '===== TARGETED_TRACKING_AUDIT_END ====='
           REMOTE
