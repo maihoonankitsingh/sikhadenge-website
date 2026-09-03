@@ -12,6 +12,7 @@ on:
       - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "scripts/qa-ai-video-masterclass.mjs"
+      - "scripts/qa-ai-video-sections.mjs"
       - "scripts/check-ai-video-lighthouse.mjs"
       - "package.json"
       - "package-lock.json"
@@ -29,6 +30,7 @@ on:
       - "next.config.js"
       - "scripts/audit-ai-video-masterclass.mjs"
       - "scripts/qa-ai-video-masterclass.mjs"
+      - "scripts/qa-ai-video-sections.mjs"
       - "scripts/check-ai-video-lighthouse.mjs"
       - "package.json"
       - "package-lock.json"
@@ -113,6 +115,12 @@ jobs:
           AI_VIDEO_QA_BASE_URL: http://127.0.0.1:3000
           AI_VIDEO_QA_OUTPUT: artifacts/ai-video-qa
         run: npm run ai-video:qa
+
+      - name: Section-by-section scroll-context visual QA — 90+
+        env:
+          AI_VIDEO_QA_BASE_URL: http://127.0.0.1:3000
+          AI_VIDEO_SECTION_QA_OUTPUT: artifacts/ai-video-qa/sections
+        run: node scripts/qa-ai-video-sections.mjs
 
       - name: Lighthouse desktop 90+ categories
         run: |
