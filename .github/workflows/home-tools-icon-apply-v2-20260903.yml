@@ -1,4 +1,4 @@
-name: Home Tools Official Icons Exact Live 20260903
+name: Home Tools Official Icons Exact Live V3 20260903
 
 on:
   push:
@@ -44,7 +44,8 @@ jobs:
           export HOME=/root PM2_HOME=/root/.pm2
           APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
           LIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
-          ASSETROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          WEBROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          STATICDIR="$WEBROOT/public/images/home-tools-official"
           SRC="$LIVE/app/landing/page.tsx"
           TS="$(date +%Y%m%d-%H%M%S)"
           CAND="/tmp/sd-home-icons-live-$TS"
@@ -59,24 +60,25 @@ jobs:
 
           cp -a "$SRC" "$BAK/page.tsx.before"
           cp -a "$LIVE/.next" "$BAK/.next.before"
-          [ ! -d "$LIVE/public/images/home-tools-official" ] || cp -a "$LIVE/public/images/home-tools-official" "$BAK/icons.before"
+          [ ! -d "$LIVE/public/images/home-tools-official" ] || cp -a "$LIVE/public/images/home-tools-official" "$BAK/live-icons.before"
+          [ ! -d "$STATICDIR" ] || cp -a "$STATICDIR" "$BAK/static-icons.before"
 
           rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
           ln -s "$LIVE/node_modules" "$CAND/node_modules"
           OUT="$CAND/public/images/home-tools-official"
           rm -rf "$OUT"; mkdir -p "$OUT"
 
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/chatgpt.png" "$OUT/chatgpt.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/claude.png" "$OUT/claude.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/perplexity.png" "$OUT/perplexity.png"
-          cp "$ASSETROOT/public/images/tools/midjourney.png" "$OUT/midjourney.png"
-          cp "$ASSETROOT/public/images/tools/ideogram.png" "$OUT/ideogram.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/runway.png" "$OUT/runway.png"
-          cp "$ASSETROOT/public/images/tools/elevenlabs.png" "$OUT/elevenlabs.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools-latest/heygen.png" "$OUT/heygen.png"
-          cp "$ASSETROOT/public/images/claude-ai-tools/descript.png" "$OUT/descript.png"
-          cp "$ASSETROOT/public/images/ai-tools/notion.png" "$OUT/notion-ai.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/chatgpt.png" "$OUT/chatgpt.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/claude.png" "$OUT/claude.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/gemini.png" "$OUT/gemini.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/perplexity.png" "$OUT/perplexity.png"
+          cp "$WEBROOT/public/images/tools/midjourney.png" "$OUT/midjourney.png"
+          cp "$WEBROOT/public/images/tools/ideogram.png" "$OUT/ideogram.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/runway.png" "$OUT/runway.png"
+          cp "$WEBROOT/public/images/tools/elevenlabs.png" "$OUT/elevenlabs.png"
+          cp "$WEBROOT/public/images/claude-ai-tools-latest/heygen.png" "$OUT/heygen.png"
+          cp "$WEBROOT/public/images/claude-ai-tools/descript.png" "$OUT/descript.png"
+          cp "$WEBROOT/public/images/ai-tools/notion.png" "$OUT/notion-ai.png"
 
           UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/152 Safari/537.36'
           curl -fsSL -A "$UA" 'https://www.deepseek.com/favicon.ico' -o "$OUT/deepseek.ico"
@@ -128,13 +130,15 @@ jobs:
             echo ROLLBACK_START
             cp -a "$BAK/page.tsx.before" "$SRC" || true
             rm -rf "$LIVE/.next"; cp -a "$BAK/.next.before" "$LIVE/.next" || true
-            rm -rf "$LIVE/public/images/home-tools-official"; [ ! -d "$BAK/icons.before" ] || cp -a "$BAK/icons.before" "$LIVE/public/images/home-tools-official"
+            rm -rf "$LIVE/public/images/home-tools-official"; [ ! -d "$BAK/live-icons.before" ] || cp -a "$BAK/live-icons.before" "$LIVE/public/images/home-tools-official"
+            rm -rf "$STATICDIR"; [ ! -d "$BAK/static-icons.before" ] || cp -a "$BAK/static-icons.before" "$STATICDIR"
             pm2 restart "$APP" --update-env || true
             echo ROLLBACK_DONE
           }
 
           cp -a "$CAND/app/landing/page.tsx" "$SRC"
           rm -rf "$LIVE/public/images/home-tools-official"; cp -a "$OUT" "$LIVE/public/images/home-tools-official"
+          rm -rf "$STATICDIR"; mkdir -p "$(dirname "$STATICDIR")"; cp -a "$OUT" "$STATICDIR"
           rm -rf "$LIVE/.next.new-home-icons"; cp -a "$CAND/.next" "$LIVE/.next.new-home-icons"; rm -rf "$LIVE/.next"; mv "$LIVE/.next.new-home-icons" "$LIVE/.next"
           pm2 restart "$APP" --update-env
           sleep 5
@@ -145,7 +149,12 @@ jobs:
           echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
           if [ "$dc" != 200 ] || [ "$pc" != 200 ] || ! grep -q '/images/home-tools-official/chatgpt.png' "$D" || ! grep -q '/images/home-tools-official/chatgpt.png' "$P"; then rollback; exit 1; fi
           if ! grep -q 'AI Tools You Will Master' "$P" || ! grep -q 'Modern creators combine' "$P"; then rollback; exit 1; fi
-          while read -r path; do c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"; echo "ASSET=$c $path"; [ "$c" = 200 ] || { rollback; exit 1; }; done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$LIVE/public/images/home-tools-official/manifest.json"'")).values()))')
+
+          direct_asset="$(curl -sS -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3955/images/home-tools-official/chatgpt.png')"
+          echo "DIRECT_ASSET=$direct_asset"
+          [ "$direct_asset" = 200 ] || { rollback; exit 1; }
+          while read -r path; do c="$(curl -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$path")"; echo "ASSET=$c $path"; [ "$c" = 200 ] || { rollback; exit 1; }; done < <(python3 -c 'import json;print("\n".join(json.load(open("'"$STATICDIR/manifest.json"'")).values()))')
+
           echo "BACKUP=$BAK"
           echo 'HOME_TOOL_ICONS_LIVE_OK=1 ICON_ONLY=1 ASSETS=20'
           REMOTE
