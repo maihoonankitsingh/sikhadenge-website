@@ -59,3 +59,5 @@ jobs:
           find "$ROOT/public" -maxdepth 4 -type f \( -iname '*chatgpt*' -o -iname '*claude*' -o -iname '*gemini*' -o -iname '*deepseek*' -o -iname '*perplexity*' -o -iname '*midjourney*' -o -iname '*ideogram*' -o -iname '*runway*' -o -iname '*pika*' -o -iname '*veo*' -o -iname '*luma*' -o -iname '*eleven*' -o -iname '*heygen*' -o -iname '*descript*' -o -iname '*notion*' -o -iname '*zapier*' -o -iname '*make*' -o -iname '*n8n*' -o -iname '*webflow*' -o -iname '*gamma*' \) 2>/dev/null | head -120 || true
           echo 'AUDIT_END READ_ONLY=1'
           REMOTE
+
+# trigger: source audit only
