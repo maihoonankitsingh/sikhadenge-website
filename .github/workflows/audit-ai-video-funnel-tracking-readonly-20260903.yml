@@ -25,7 +25,6 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
           if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
@@ -33,39 +32,65 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
-          test "$key_type" = "ssh-ed25519"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Focused tracking audit
+      - name: Audit IDs and conversion paths
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeu
           pid_for_port(){ ss -ltnp 2>/dev/null | awk -v p=":$1" '$4 ~ p"$" {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}'; }
-          echo '===== FOCUSED_TRACKING_FINAL_AUDIT ====='
-          for port in 3940 3971 3955 3400; do
-            pid="$(pid_for_port "$port" || true)"; cwd="$(readlink -f /proc/$pid/cwd 2>/dev/null || true)"; echo "PORT=$port PID=${pid:-NONE} CWD=$cwd"
+          echo '===== TRACKING_IDS_AND_CONVERSION_PATHS ====='
+          for port in 3940 3971 3955 3965; do
+            pid="$(pid_for_port "$port" || true)"; cwd="$(readlink -f /proc/$pid/cwd 2>/dev/null || true)"; echo "PORT=$port CWD=$cwd"
             [[ -d "$cwd" ]] || continue
-            echo '-- env tracking keys --'
-            for e in "$cwd/.env" "$cwd/.env.local" "$cwd/.env.production" "$cwd/.env.production.local"; do
-              [[ -f "$e" ]] || continue; echo "ENV=$e"
-              grep -E '^(NEXT_PUBLIC_GA_MEASUREMENT_ID|NEXT_PUBLIC_GA4_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_WRITE_KEY)=' "$e" 2>/dev/null | sed -E 's/=(.{0,40}).*/=\1.../' || true
-              grep -E '^(GA4_API_SECRET|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GOOGLE_ADS_ACCESS_TOKEN|SEGMENT_WRITE_KEY|LEAD_INGEST_WEBHOOK_SECRET)=' "$e" 2>/dev/null | sed -E 's/=.*/=PRESENT/' || true
+            echo '-- process key presence --'
+            if [[ -n "$pid" ]]; then
+              tr '\0' '\n' < /proc/$pid/environ 2>/dev/null | grep -E '^(NEXT_PUBLIC_GA_MEASUREMENT_ID|NEXT_PUBLIC_GA4_MEASUREMENT_ID|GA4_MEASUREMENT_ID|NEXT_PUBLIC_META_PIXEL_ID|META_PIXEL_ID|NEXT_PUBLIC_CLARITY_ID|CLARITY_PROJECT_ID|NEXT_PUBLIC_SEGMENT_WRITE_KEY|NEXT_PUBLIC_GOOGLE_ADS_ID|GOOGLE_ADS_ID|GOOGLE_ADS_CONVERSION_LABEL|META_CAPI_ACCESS_TOKEN|META_CONVERSIONS_ACCESS_TOKEN|META_ACCESS_TOKEN|GA4_API_SECRET|GOOGLE_ADS_ACCESS_TOKEN|LEAD_INGEST_WEBHOOK_SECRET)=' | sed -E 's/=(.*)$/=PRESENT/' || true
+            fi
+            echo '-- bridge constants --'
+            for f in components/consent/GoogleConsentBridge.tsx components/consent/ClarityConsentBridge.tsx components/consent/SegmentConsentBridge.tsx components/consent/MetaConsentBridge.tsx lib/metaConversions.ts lib/metaPixel.ts; do
+              [[ -f "$cwd/$f" ]] || continue; echo "FILE=$cwd/$f"; sed -n '1,45p' "$cwd/$f" | sed -E 's/(ACCESS_TOKEN|API_SECRET|WRITE_KEY)([^=]*=).*/\1\2 REDACTED/' || true
             done
-            echo '-- active source markers --'
-            find "$cwd" -maxdepth 5 -type f \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' 2>/dev/null | head -500 | while read -r f; do
-              if grep -Eq 'clarity\.ms|analytics\.load|segment\.com|googletagmanager|gtag\(|fbq\(|META_PIXEL|GOOGLE_ADS|utm_campaign_id|gclid|fbclid|masterclass/lead' "$f" 2>/dev/null; then
-                echo "FILE=$f"; grep -nE -C 2 'clarity\.ms|analytics\.load|segment\.com|googletagmanager|gtag\(|fbq\(|META_PIXEL|GOOGLE_ADS|utm_campaign_id|utm_adset_id|utm_ad_id|gclid|fbclid|masterclass/lead|eventID|event_id' "$f" 2>/dev/null | head -120 || true
+            echo '-- literal public ids in build/source --'
+            find "$cwd/.next/static" "$cwd" -maxdepth 6 -type f \( -name '*.js' -o -name '*.tsx' -o -name '*.ts' \) 2>/dev/null | head -1200 | xargs -r grep -hoE 'G-[A-Z0-9]{6,}|AW-[0-9]+|clarity\.ms/tag/[A-Za-z0-9_-]+|fbq\("init",[[:space:]]*"?[0-9]{8,}"?|facebook\.com/tr\?id=[0-9]{8,}' 2>/dev/null | sort -u | head -80 || true
+            echo '-- registration/checkout conversion markers --'
+            find "$cwd" -maxdepth 6 -type f \( -name '*.tsx' -o -name '*.ts' -o -name '*.jsx' -o -name '*.js' \) -not -path '*/node_modules/*' -not -path '*/.next/*' 2>/dev/null | head -700 | while read -r f; do
+              if grep -Eq 'CompleteRegistration|generate_lead|Purchase|purchase|sendMeta|trackMeta|GOOGLE_ADS|AW-|conversion|verify-payment|create-order|eventID|event_id' "$f" 2>/dev/null; then
+                echo "FILE=$f"; grep -nE -C 3 'CompleteRegistration|generate_lead|Purchase|purchase|sendMeta|trackMeta|GOOGLE_ADS|AW-|conversion|verify-payment|create-order|eventID|event_id' "$f" | head -180 || true
               fi
             done
           done
-          echo '===== V72 HASH LOCK ====='
-          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js 2>/dev/null || true
-          echo '===== CTA RAW LIVE ====='
-          for u in 'https://sikhadenge.in/masterclass/ai-video?utm_source=meta&utm_medium=paid_social&utm_campaign=audit&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX' 'https://sikhadenge.in/masterclass/claude/free?utm_source=meta&utm_medium=paid_social&utm_campaign=audit&utm_campaign_id=111&utm_adset_id=222&utm_ad_id=333&fbclid=FBX&gclid=GX'; do
-            echo "URL=$u"; curl -LksS --max-time 20 "$u" | grep -Eo '/gen-ai-masterclass/register-one-step[^"'"'< ]*' | sed 's/&amp;/\&/g' | sort -u | head -50 || true
+
+          echo '===== EXACT CTA SOURCE ====='
+          for port in 3940 3971; do
+            pid="$(pid_for_port "$port" || true)"; cwd="$(readlink -f /proc/$pid/cwd 2>/dev/null || true)"; echo "PORT=$port"
+            [[ -d "$cwd" ]] || continue
+            grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -E 'register-one-step|source=ai-video-masterclass|source=claude|URLSearchParams|location\.search|utm_campaign_id' "$cwd/pages" "$cwd/app" "$cwd/components" 2>/dev/null | head -260 || true
           done
-          echo 'RESULT=FOCUSED_TRACKING_FINAL_AUDIT_COMPLETE'
+
+          echo '===== SERVER-WIDE KNOWN TRACKING CONFIG PRESENCE ====='
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          roots=[Path('/var/www/sikhadenge.in'),Path('/opt/sikhadenge-dashboard'),Path('/root/.pm2')]
+          keys=['NEXT_PUBLIC_GA_MEASUREMENT_ID','NEXT_PUBLIC_GA4_MEASUREMENT_ID','GA4_MEASUREMENT_ID','NEXT_PUBLIC_META_PIXEL_ID','META_PIXEL_ID','NEXT_PUBLIC_CLARITY_ID','CLARITY_PROJECT_ID','NEXT_PUBLIC_SEGMENT_WRITE_KEY','SEGMENT_WRITE_KEY','NEXT_PUBLIC_GOOGLE_ADS_ID','GOOGLE_ADS_ID','GOOGLE_ADS_CONVERSION_LABEL','META_CAPI_ACCESS_TOKEN','META_CONVERSIONS_ACCESS_TOKEN','META_ACCESS_TOKEN','GA4_API_SECRET','GOOGLE_ADS_ACCESS_TOKEN','LEAD_INGEST_WEBHOOK_SECRET']
+          for root in roots:
+            if not root.exists(): continue
+            candidates=[root/'dump.pm2'] if root.name=='.pm2' else list(root.rglob('.env'))+list(root.rglob('.env.local'))+list(root.rglob('.env.production'))
+            for p in candidates:
+              if not p.exists(): continue
+              try:
+                if p.stat().st_size>2_000_000: continue
+                t=p.read_text(errors='ignore')
+              except: continue
+              found=[k for k in keys if re.search(rf'(?m)^[ \t]*{re.escape(k)}[ \t]*=',t) or (p.name=='dump.pm2' and f'"{k}"' in t)]
+              if found:
+                print('SOURCE='+str(p)); print('KEYS='+','.join(found))
+          PY
+          echo '===== V72 HASH ====='
+          sha256sum /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js /var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js || true
+          echo 'RESULT=TRACKING_IDS_AND_CONVERSION_PATHS_COMPLETE'
           REMOTE
