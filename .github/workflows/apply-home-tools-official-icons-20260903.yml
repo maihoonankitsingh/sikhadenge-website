@@ -1,0 +1,308 @@
+name: Apply Home Tools Official Icons 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/apply-home-tools-official-icons-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Build candidate, promote icon-only patch, verify live
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          ROOT=/var/www/sikhadenge.in/sikhadenge-website-space
+          SRC="$ROOT/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/www/sikhadenge.in/backups/home-tools-official-icons-$TS"
+          CAND="/var/www/sikhadenge.in/releases/home-tools-official-icons-$TS"
+          PORT=3996
+          ICON_REL=images/home-tools-official
+          ICON_DIR="$CAND/public/$ICON_REL"
+          PROMOTED=0
+          CAND_PID=''
+
+          cleanup_candidate_process() {
+            if [[ -n "${CAND_PID:-}" ]] && kill -0 "$CAND_PID" 2>/dev/null; then
+              kill "$CAND_PID" 2>/dev/null || true
+              wait "$CAND_PID" 2>/dev/null || true
+            fi
+          }
+
+          rollback() {
+            rc=$?
+            cleanup_candidate_process
+            if [[ "$PROMOTED" = 1 ]]; then
+              echo "ROLLBACK_BEGIN rc=$rc"
+              MAIN_APP="$(pm2 jlist | python3 -c 'import json,sys; xs=json.load(sys.stdin); m=[p.get("name","") for p in xs if (p.get("pm2_env") or {}).get("pm_cwd")=="/var/www/sikhadenge.in/sikhadenge-website-space" and "3955" in str((p.get("pm2_env") or {}).get("args", ""))]; print(m[0] if len(m)==1 else "")')"
+              [[ -n "$MAIN_APP" ]] && pm2 stop "$MAIN_APP" >/dev/null 2>&1 || true
+              if [[ -d "$ROOT/.next" ]]; then mv "$ROOT/.next" "$CAND/.next.failed" 2>/dev/null || true; fi
+              if [[ -d "$BACKUP/.next" ]]; then mv "$BACKUP/.next" "$ROOT/.next"; fi
+              if [[ -f "$BACKUP/app-landing-page.tsx" ]]; then cp -a "$BACKUP/app-landing-page.tsx" "$SRC"; fi
+              rm -rf "$ROOT/public/$ICON_REL" 2>/dev/null || true
+              if [[ -d "$BACKUP/home-tools-official.prev" ]]; then mkdir -p "$ROOT/public/images"; mv "$BACKUP/home-tools-official.prev" "$ROOT/public/$ICON_REL"; fi
+              [[ -n "$MAIN_APP" ]] && pm2 restart "$MAIN_APP" --update-env >/dev/null 2>&1 || true
+              echo "ROLLBACK_DONE"
+            fi
+            exit "$rc"
+          }
+          trap rollback ERR INT TERM
+
+          echo '===== PRECHECK ====='
+          test -f "$SRC"
+          grep -Fq 'data-home-tools-premium="v1"' "$SRC"
+          grep -Fq 'AI Tools You Will Master' "$SRC"
+          grep -Fq 'const ToolsLogosSection = () =>' "$SRC"
+          grep -Fq 'icon: Cpu,' "$SRC"
+          grep -Fq 'const Icon = visual.icon' "$SRC"
+          grep -Fq '<Icon' "$SRC"
+          echo "SOURCE=$SRC"
+
+          MAIN_APP="$(pm2 jlist | python3 -c 'import json,sys; xs=json.load(sys.stdin); m=[p.get("name","") for p in xs if (p.get("pm2_env") or {}).get("pm_cwd")=="/var/www/sikhadenge.in/sikhadenge-website-space" and "3955" in str((p.get("pm2_env") or {}).get("args", ""))]; print(m[0] if len(m)==1 else "")')"
+          test -n "$MAIN_APP"
+          echo "MAIN_APP=$MAIN_APP"
+
+          mkdir -p "$BACKUP" "$CAND"
+          cp -a "$SRC" "$BACKUP/app-landing-page.tsx"
+          if [[ -d "$ROOT/public/$ICON_REL" ]]; then cp -a "$ROOT/public/$ICON_REL" "$BACKUP/home-tools-official.prev"; fi
+
+          echo '===== PREPARE CANDIDATE SOURCE ====='
+          rsync -a \
+            --exclude='.next' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='public' \
+            "$ROOT/" "$CAND/"
+          ln -s "$ROOT/node_modules" "$CAND/node_modules"
+          mkdir -p "$ICON_DIR"
+
+          fetch_icon() {
+            name="$1"; url="$2"; out="$3"
+            echo "FETCH $name"
+            curl -A 'Mozilla/5.0' -fL --compressed --retry 2 --retry-delay 1 --connect-timeout 12 --max-time 45 -sS "$url" -o "$out"
+            test -s "$out"
+            size="$(stat -c '%s' "$out")"
+            test "$size" -gt 100
+            printf '%s | %s bytes | %s\n' "$name" "$size" "$(file -b "$out" | cut -c1-100)"
+          }
+
+          echo '===== FETCH CURRENT OFFICIAL BRAND ASSETS ====='
+          fetch_icon 'ChatGPT' 'https://images.ctfassets.net/j22is2dtoxu1/intercom-img-d177d076c9a5453052925143/49d5d812b0a6fcc20a14faa8c629d9fb/icon-ios-1024_401x.png' "$ICON_DIR/chatgpt.png"
+          fetch_icon 'Claude' 'https://claude.ai/favicon.ico' "$ICON_DIR/claude.ico"
+          fetch_icon 'Gemini' 'https://www.gstatic.com/lamda/images/gemini_sparkle_aurora_33f86dc0c0257da337c63.svg' "$ICON_DIR/gemini.svg"
+          fetch_icon 'DeepSeek' 'https://www.deepseek.com/favicon.ico' "$ICON_DIR/deepseek.ico"
+          fetch_icon 'Perplexity' 'https://www.perplexity.ai/favicon.ico' "$ICON_DIR/perplexity.ico"
+          fetch_icon 'Midjourney' 'https://docs.midjourney.com/hc/article_attachments/32084281099149' "$ICON_DIR/midjourney.jpg"
+          fetch_icon 'Ideogram' 'https://ideogram.ai/favicon.ico' "$ICON_DIR/ideogram.ico"
+          fetch_icon 'Runway' 'https://runway.com/icon.png' "$ICON_DIR/runway.png"
+          fetch_icon 'Pika' 'https://pika.art/favicon.ico' "$ICON_DIR/pika.ico"
+          fetch_icon 'Veo / Google DeepMind' 'https://deepmind.google/favicon.ico' "$ICON_DIR/veo.ico"
+          fetch_icon 'Luma AI' 'https://lumalabs.ai/favicons/favicon-black.ico' "$ICON_DIR/luma.ico"
+          fetch_icon 'ElevenLabs' 'https://elevenlabs.io/icon.svg' "$ICON_DIR/elevenlabs.svg"
+          fetch_icon 'HeyGen' 'https://www.heygen.com/favicon.ico' "$ICON_DIR/heygen.ico"
+          cp -a "$ROOT/public/images/claude-ai-tools/descript.png" "$ICON_DIR/descript.png"
+          test -s "$ICON_DIR/descript.png"
+          echo "Descript | $(stat -c '%s' "$ICON_DIR/descript.png") bytes | $(file -b "$ICON_DIR/descript.png" | cut -c1-100)"
+          fetch_icon 'Notion AI' 'https://www.notion.com/front-static/logo-ios.png' "$ICON_DIR/notion.png"
+          fetch_icon 'Zapier' 'https://zapier.com/favicon.ico' "$ICON_DIR/zapier.ico"
+          fetch_icon 'Make' 'https://www.make.com/favicon.ico' "$ICON_DIR/make.ico"
+          fetch_icon 'n8n' 'https://n8n.io/favicon.ico' "$ICON_DIR/n8n.ico"
+          fetch_icon 'Webflow AI' 'https://cdn.prod.website-files.com/686294e263eb7e215bd232f7/686d53ceda66a40cb6b6d546_favicon.png' "$ICON_DIR/webflow.png"
+
+          GAMMA_META="$(curl -A 'Mozilla/5.0' -fL --compressed --connect-timeout 12 --max-time 30 -sS 'https://itunes.apple.com/lookup?id=6768404578')"
+          GAMMA_URL="$(printf '%s' "$GAMMA_META" | python3 -c 'import json,sys; j=json.load(sys.stdin); assert j.get("resultCount")==1; r=j["results"][0]; assert r.get("sellerName")=="Gamma Tech, Inc."; assert r.get("trackId")==6768404578; print(r.get("artworkUrl512") or r.get("artworkUrl100"))')"
+          test -n "$GAMMA_URL"
+          fetch_icon 'Gamma AI' "$GAMMA_URL" "$ICON_DIR/gamma.png"
+
+          test "$(find "$ICON_DIR" -maxdepth 1 -type f | wc -l)" -eq 20
+
+          echo '===== PATCH CANDIDATE: ICONS ONLY ====='
+          python3 - "$CAND/app/landing/page.tsx" <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding='utf-8')
+          start_marker = '// ==================== SECTION 10: TOOLS LOGOS GRID ===================='
+          end_marker = '// ==================== SECTION 11:'
+          assert text.count(start_marker) == 1, 'tools section marker count mismatch'
+          start = text.index(start_marker)
+          end = text.index(end_marker, start) if end_marker in text[start:] else text.index('// ====================', start + len(start_marker))
+          prefix, block, suffix = text[:start], text[start:end], text[end:]
+
+          mapping = [
+              ('ChatGPT', 'Cpu', 'chatgpt.png'),
+              ('Claude', 'Sparkles', 'claude.ico'),
+              ('Gemini', 'Sparkles', 'gemini.svg'),
+              ('DeepSeek', 'Globe', 'deepseek.ico'),
+              ('Perplexity', 'Globe', 'perplexity.ico'),
+              ('Midjourney', 'PenTool', 'midjourney.jpg'),
+              ('Ideogram', 'Lightbulb', 'ideogram.ico'),
+              ('Runway', 'FileVideo', 'runway.png'),
+              ('Pika', 'Sparkles', 'pika.ico'),
+              ('Veo', 'Play', 'veo.ico'),
+              ('Luma AI', 'Layers', 'luma.ico'),
+              ('ElevenLabs', 'BarChart3', 'elevenlabs.svg'),
+              ('HeyGen', 'User', 'heygen.ico'),
+              ('Descript', 'FileText', 'descript.png'),
+              ('Notion AI', 'FileText', 'notion.png'),
+              ('Zapier', 'Zap', 'zapier.ico'),
+              ('Make', 'Layers', 'make.ico'),
+              ('n8n', 'Rocket', 'n8n.ico'),
+              ('Webflow AI', 'Globe', 'webflow.png'),
+              ('Gamma AI', 'Presentation', 'gamma.png'),
+          ]
+
+          for name, old_icon, filename in mapping:
+              key = re.escape(f'"{name}"' if ' ' in name else name)
+              pattern = rf'({key}:\s*\{{\s*)icon:\s*{re.escape(old_icon)},'
+              repl = rf'\1logo: "/images/home-tools-official/{filename}",'
+              block2, count = re.subn(pattern, repl, block, count=1)
+              assert count == 1, f'{name}: expected one icon mapping, got {count}'
+              block = block2
+
+          assert block.count('const Icon = visual.icon') == 1
+          block = block.replace('const Icon = visual.icon', 'const logo = visual.logo', 1)
+
+          icon_pattern = re.compile(
+              r'<Icon\s*\n\s*className="relative z-10 h-5 w-5 drop-shadow-\[0_3px_3px_rgba\(15,23,42,0\.28\)\] md:h-5\.5 md:w-5\.5"\s*\n\s*strokeWidth=\{2\.35\}\s*\n\s*/>'
+          )
+          replacement = '''<img
+                      src={logo}
+                      alt=""
+                      aria-hidden="true"
+                      className="relative z-10 h-5 w-5 object-contain drop-shadow-[0_3px_3px_rgba(15,23,42,0.28)] md:h-5.5 md:w-5.5"
+                    />'''
+          block, count = icon_pattern.subn(replacement, block, count=1)
+          assert count == 1, f'icon JSX replacement count={count}'
+
+          assert block.count('logo: "/images/home-tools-official/') == 20
+          assert 'const Icon = visual.icon' not in block
+          assert '<Icon' not in block
+          assert prefix == text[:start]
+          assert suffix == text[end:]
+
+          path.write_text(prefix + block + suffix, encoding='utf-8')
+          print('PATCH_OK=1 mappings=20 scope=ToolsLogosSection')
+          PY
+
+          echo '===== DIFF SCOPE PROOF ====='
+          diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/icon-only.diff" || true
+          test -s "$CAND/icon-only.diff"
+          grep -Fq 'home-tools-official/chatgpt.png' "$CAND/icon-only.diff"
+          grep -Fq 'home-tools-official/gamma.png' "$CAND/icon-only.diff"
+          if grep -E '^[+-]' "$CAND/icon-only.diff" | grep -vE '^\+\+\+|^---|home-tools-official|const (Icon|logo) = visual\.|<Icon|<img|src=\{logo\}|alt=""|aria-hidden="true"|object-contain|strokeWidth=\{2\.35\}' | grep -q .; then
+            echo 'UNEXPECTED_DIFF_LINES:'
+            grep -E '^[+-]' "$CAND/icon-only.diff" | grep -vE '^\+\+\+|^---|home-tools-official|const (Icon|logo) = visual\.|<Icon|<img|src=\{logo\}|alt=""|aria-hidden="true"|object-contain|strokeWidth=\{2\.35\}'
+            exit 1
+          fi
+          echo 'DIFF_SCOPE=ICON_ONLY'
+
+          echo '===== BUILD ISOLATED CANDIDATE ====='
+          cd "$CAND"
+          npm run build
+
+          echo '===== CANDIDATE QA ====='
+          if ss -ltn | awk '{print $4}' | grep -Eq "(^|:)${PORT}$"; then echo "PORT_${PORT}_BUSY"; exit 1; fi
+          nohup ./node_modules/.bin/next start -p "$PORT" > "$CAND/candidate.log" 2>&1 &
+          CAND_PID=$!
+          ok=0
+          for _ in $(seq 1 30); do
+            sleep 1
+            code="$(curl -sS -o "$CAND/home.html" -w '%{http_code}' "http://127.0.0.1:$PORT/" || true)"
+            if [[ "$code" = 200 ]]; then ok=1; break; fi
+          done
+          test "$ok" = 1
+          grep -Fq '/images/home-tools-official/chatgpt.png' "$CAND/home.html"
+          grep -Fq '/images/home-tools-official/gamma.png' "$CAND/home.html"
+          grep -Fq 'AI Tools You Will Master' "$CAND/home.html"
+          for f in "$ICON_DIR"/*; do
+            rel="/${ICON_REL}/$(basename "$f")"
+            code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT$rel" || true)"
+            [[ "$code" = 200 ]] || { echo "CAND_ASSET_FAIL $rel $code"; exit 1; }
+          done
+          cleanup_candidate_process
+          CAND_PID=''
+          echo 'CANDIDATE_QA=PASS'
+
+          echo '===== PROMOTE ====='
+          mv "$ROOT/.next" "$BACKUP/.next"
+          mv "$CAND/.next" "$ROOT/.next"
+          cp -a "$CAND/app/landing/page.tsx" "$SRC"
+          rm -rf "$ROOT/public/$ICON_REL"
+          mkdir -p "$ROOT/public/images"
+          cp -a "$CAND/public/$ICON_REL" "$ROOT/public/images/home-tools-official"
+          PROMOTED=1
+          pm2 restart "$MAIN_APP" --update-env
+
+          echo '===== LIVE QA ====='
+          live_ok=0
+          for _ in $(seq 1 30); do
+            sleep 1
+            code="$(curl -L --compressed -ksS -o "$CAND/live-home.html" -w '%{http_code}' https://sikhadenge.in/ || true)"
+            if [[ "$code" = 200 ]]; then live_ok=1; break; fi
+          done
+          test "$live_ok" = 1
+          grep -Fq '/images/home-tools-official/chatgpt.png' "$CAND/live-home.html"
+          grep -Fq '/images/home-tools-official/gamma.png' "$CAND/live-home.html"
+          grep -Fq 'AI Tools You Will Master' "$CAND/live-home.html"
+          test "$(grep -Fc 'logo: "/images/home-tools-official/' "$SRC")" -eq 20
+          ! grep -A230 -F '// ==================== SECTION 10: TOOLS LOGOS GRID ====================' "$SRC" | head -230 | grep -Fq 'const Icon = visual.icon'
+
+          for f in "$ROOT/public/$ICON_REL"/*; do
+            rel="/${ICON_REL}/$(basename "$f")"
+            code="$(curl -L --compressed -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$rel" || true)"
+            [[ "$code" = 200 ]] || { echo "LIVE_ASSET_FAIL $rel $code"; exit 1; }
+          done
+
+          for route in / /about-us /courses /contact /blog /gen-ai-masterclass/register-one-step; do
+            code="$(curl -L --compressed -ksS -o /dev/null -w '%{http_code}' "https://sikhadenge.in$route" || true)"
+            echo "ROUTE $route HTTP=$code"
+            [[ "$code" = 200 ]] || exit 1
+          done
+
+          echo '===== FINAL PROOF ====='
+          echo "BACKUP=$BACKUP"
+          echo "SOURCE=$SRC"
+          echo "MAIN_APP=$MAIN_APP"
+          echo 'OFFICIAL_ICON_FILES=20'
+          echo 'SOURCE_DIFF_SCOPE=TOOLS_SECTION_ICON_RENDERING_ONLY'
+          echo 'LIVE_HOME_HTTP=200'
+          echo 'LIVE_ASSETS_HTTP=200_ALL'
+          echo 'OTHER_REPRESENTATIVE_ROUTES_HTTP=200'
+          echo 'HOME_TOOLS_OFFICIAL_ICONS_LIVE=1'
+          trap - ERR INT TERM
+          REMOTE
