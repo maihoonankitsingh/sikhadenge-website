@@ -1,0 +1,284 @@
+name: Deploy Claude Final Clean V3 20260903
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-final-clean-v3-20260903.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Restart and revalidate existing zero-hydration clean candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          CAND='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'
+          APP='sikhadenge-claude-final-clean-v2-3984'
+          PORT=3984
+          test -f "$CAND/.next/BUILD_ID"
+          test "$(cat "$CAND/.next/BUILD_ID")" = 'LRGBmNz6chaBg6stHgoDb'
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          cd "$CAND"
+          PORT="$PORT" NODE_ENV=production pm2 start ./node_modules/.bin/next --name "$APP" -- start -p "$PORT" >/dev/null
+          for i in $(seq 1 30); do curl -fsS --max-time 3 "http://127.0.0.1:${PORT}/masterclass/claude/free?v=v3-health" >/tmp/claude-v3-health.html && break || true; sleep 1; done
+          curl -fsS --max-time 10 "http://127.0.0.1:${PORT}/masterclass/claude/free?v=v3-final-health" >/tmp/claude-v3-health.html
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/claude-v3-health.html
+          REMOTE
+          ssh -f -N -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -L 13984:127.0.0.1:3984 "$SSH_USER@$SSH_HOST"
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > precheck.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.setRequestInterception(true);p.on('request',r=>{const u=r.url(),m='/__claude_final_v2/_next/static/';if(u.includes(m))r.continue({url:u.replace(m,'/_next/static/')});else r.continue();});const e=[];p.on('pageerror',x=>e.push(String(x)));p.on('console',m=>{if(m.type()==='error')e.push(m.text())});await p.goto('http://127.0.0.1:13984/masterclass/claude/free?v=v3-precheck',{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,8000));const h=e.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x));const s=await p.evaluate(()=>({h1:(document.querySelector('h1')?.innerText||'').replace(/\s+/g,' ').trim(),sections:document.querySelectorAll('main section').length,cta:[...document.querySelectorAll('a[href]')].some(a=>a.getAttribute('href')==='/gen-ai-masterclass/register-one-step'),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2}));console.log(JSON.stringify({hydration:h.length,state:s,errors:e.slice(0,8)},null,2));if(h.length||!s.cta||s.overflow)process.exit(1);await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node precheck.js
+
+      - name: Install one post-hydration Claude runtime loader
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'cat > /var/www/sikhadenge.in/claude-runtime-loader-v3.js' <<'JS'
+          (()=>{
+            'use strict';
+            if(location.pathname!=='/masterclass/claude/free'||window.__SD_CLAUDE_RUNTIME_LOADER_V3__)return;
+            window.__SD_CLAUDE_RUNTIME_LOADER_V3__=1;
+
+            const style=document.createElement('style');
+            style.id='sd-claude-tech-health-v3-style';
+            style.textContent=`
+              [class*="hostImage"]{background-image:none!important;background-color:#f6eee8!important}
+              @media(max-width:767px){
+                #sd-sitewide-live-proof-host-v1{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+                footer a{min-height:32px;display:inline-flex;align-items:center}
+                footer small,[class*="payment"] small{font-size:11px!important;line-height:1.4!important}
+                #claude-ai-video-proof-v4 .sd-proof-v4-eyebrow{font-size:10px!important}
+                #claude-ai-video-proof-v4 .sd-proof-v4-card small{font-size:11px!important;line-height:1.45!important}
+                #claude-ai-video-proof-v4 .sd-proof-v4-note p{font-size:11px!important}
+                #claude-ai-video-proof-v4 .sd-proof-v4-actions a span{font-size:11px!important}
+              }
+            `;
+            document.head.appendChild(style);
+
+            function lazyHeavyMedia(){
+              const host=[...document.querySelectorAll('[class*="hostImage"]')][0];
+              if(host){
+                const load=()=>{host.style.setProperty('background-image','url(/images/about/about-mission-class.webp)','important');host.style.setProperty('background-color','transparent','important')};
+                if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();load()}},{rootMargin:'650px 0px'});io.observe(host)}else setTimeout(load,3500);
+              }
+              document.querySelectorAll('video').forEach(v=>{if(v.getBoundingClientRect().top>innerHeight*1.2)v.preload='none'});
+              document.querySelectorAll('img').forEach(img=>{if(img.getBoundingClientRect().top>innerHeight*1.25){img.loading='lazy';img.decoding='async';if(img.getAttribute('fetchpriority')==='high')img.setAttribute('fetchpriority','low')}});
+            }
+
+            const legacy=[
+              '/api/social-proof/live?widget=1&v=sitewide-live-proof-v1-20260902-224804',
+              '/claude-proof-hide-old-v2.js?v=20260902-2300',
+              '/claude-proof-static-v4.js?v=claude-proof-static-v4-20260902',
+              '/claude-proof-theme-v2.js?v=claude-proof-premium-v3-20260903',
+              '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b',
+              '/claude-proof-real-logos-v1.js?v=real-logos-note-remove-20260903',
+              '/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903',
+              '/claude-remove-empty-community-v1.js?v=remove-blank-strip-20260903'
+            ];
+            const loadScript=src=>new Promise(resolve=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=resolve;document.body.appendChild(s)});
+
+            function testimonialCss(){
+              if(document.getElementById('sd-testimonial-compat-v3-style'))return;
+              const s=document.createElement('style');s.id='sd-testimonial-compat-v3-style';s.textContent=`
+              #sd-claude-testimonials-v305{position:relative;overflow:hidden;padding:56px 0 58px;background:#fff;font-family:inherit;content-visibility:auto;contain-intrinsic-size:560px}
+              #sd-claude-testimonials-v305 *{box-sizing:border-box}
+              #sd-claude-testimonials-v305 .sd-v305-shell{width:100%;margin:0;padding:0}
+              #sd-claude-testimonials-v305 .sd-v305-head{width:min(calc(100% - 32px),920px);margin:0 auto 38px;text-align:center}
+              #sd-claude-testimonials-v305 .sd-v305-pill{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:7px 14px;border:1px solid rgba(215,99,67,.28);border-radius:999px;background:#fffaf7;color:#bf5234;font-size:10px;font-weight:800;line-height:1;letter-spacing:.12em;text-transform:uppercase}
+              #sd-claude-testimonials-v305 .sd-v305-pill-dot{width:8px;height:8px;border-radius:50%;background:#f36a31;box-shadow:0 0 0 4px rgba(243,106,49,.10)}
+              #sd-claude-testimonials-v305 .sd-v305-title{margin:15px auto 0}
+              #sd-claude-testimonials-v305 .sd-v305-desc{max-width:640px;margin:15px auto 0;color:#64748b;font-size:15.5px;font-weight:500;line-height:1.7}
+              #sd-claude-testimonials-v305 .sd-v305-viewport{position:relative;width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);overflow:hidden;padding:4px 0 10px}
+              #sd-claude-testimonials-v305 .sd-v305-track{display:flex;width:max-content;animation:sd-v305-marquee 36s linear infinite;will-change:transform}
+              #sd-claude-testimonials-v305 .sd-v305-set{display:flex;flex:0 0 auto;gap:16px;padding-right:16px}
+              #sd-claude-testimonials-v305:hover .sd-v305-track,#sd-claude-testimonials-v305:focus-within .sd-v305-track,#sd-claude-testimonials-v305[data-playing="1"] .sd-v305-track{animation-play-state:paused}
+              @keyframes sd-v305-marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+              #sd-claude-testimonials-v305 .sd-v305-card{position:relative;width:280px;min-width:280px;height:420px;flex:0 0 280px;overflow:hidden;border:1px solid rgba(8,23,51,.30);border-radius:17px;background:#fff;box-shadow:0 3px 10px rgba(15,23,42,.055)}
+              #sd-claude-testimonials-v305 .sd-v305-poster-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;background:#f8fafc}
+              #sd-claude-testimonials-v305 .sd-v305-open{position:absolute;z-index:10;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer}
+              #sd-claude-testimonials-v305 .sd-v305-play{position:absolute;left:50%;top:50%;display:grid;width:66px;height:66px;place-items:center;border:0;border-radius:999px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(15,23,42,.13);transform:translate(-50%,-50%);backdrop-filter:blur(5px)}
+              #sd-claude-testimonials-v305 .sd-v305-play svg{width:22px;height:22px;margin-left:3px;fill:#2563eb}
+              #sd-claude-testimonials-v305 .sd-v305-inline-video{position:absolute;z-index:30;inset:0;width:100%;height:100%;border:0;border-radius:inherit;background:#000;object-fit:cover;object-position:center center}
+              #sd-claude-testimonials-v305 .sd-v305-close{position:absolute;z-index:50;top:10px;right:10px;display:grid;width:36px;height:36px;place-items:center;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(2,6,23,.72);color:#fff;cursor:pointer;font-size:20px;line-height:1}
+              @media(max-width:1100px){#sd-claude-testimonials-v305{padding:50px 0 54px}#sd-claude-testimonials-v305 .sd-v305-head{margin-bottom:32px}#sd-claude-testimonials-v305 .sd-v305-card{width:258px;min-width:258px;height:387px;flex-basis:258px}}
+              @media(max-width:640px){#sd-claude-testimonials-v305{padding:44px 0 48px}#sd-claude-testimonials-v305 .sd-v305-head{width:calc(100% - 24px);margin-bottom:27px}#sd-claude-testimonials-v305 .sd-v305-desc{font-size:14px;line-height:1.6}#sd-claude-testimonials-v305 .sd-v305-set{gap:12px;padding-right:12px}#sd-claude-testimonials-v305 .sd-v305-card{width:min(72vw,240px);min-width:min(72vw,240px);height:min(108vw,360px);flex-basis:min(72vw,240px);border-radius:16px}#sd-claude-testimonials-v305 .sd-v305-play{width:58px;height:58px}#sd-claude-testimonials-v305 .sd-v305-play svg{width:19px;height:19px}}
+              @media(prefers-reduced-motion:reduce){#sd-claude-testimonials-v305 .sd-v305-viewport{overflow-x:auto;scrollbar-width:none}#sd-claude-testimonials-v305 .sd-v305-track{animation:none}#sd-claude-testimonials-v305 .sd-v305-set:nth-child(2){display:none}}
+              `;document.head.appendChild(s);
+            }
+
+            function makeCard(i){const n=String(i).padStart(2,'0');return `<article class="sd-v305-card" data-video="/ai-video-testimonials/${n}.mp4"><img class="sd-v305-poster-img" src="/ai-video-testimonials/${n}.jpg" alt="SikhaDenge learner video testimonial ${i}" loading="lazy" decoding="async"><button type="button" class="sd-v305-open" aria-label="Watch real learner testimonial ${i}"><span class="sd-v305-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg></span></button></article>`}
+            function installTestimonials(){
+              if(document.getElementById('sd-claude-testimonials-v305'))return true;
+              const toolHeading=[...document.querySelectorAll('main h2')].find(h=>(h.textContent||'').replace(/\s+/g,' ').trim()==='Learn 25+ AI Tools');
+              const toolSection=toolHeading?.closest('section');if(!toolSection)return false;
+              testimonialCss();
+              const section=document.createElement('section');section.id='sd-claude-testimonials-v305';section.setAttribute('aria-labelledby','sd-v305-title');section.setAttribute('data-sd-testimonial-version','v305-compat-v3');
+              const cards=Array.from({length:6},(_,i)=>makeCard(i+1)).join('');
+              section.innerHTML=`<div class="sd-v305-shell"><header class="sd-v305-head"><div class="sd-v305-pill"><span class="sd-v305-pill-dot" aria-hidden="true"></span>Real Learner Stories</div><h2 class="sd-v305-title sd-heading-v11" id="sd-v305-title">Real learners. <span class="sd-heading-v11-highlight">Real experiences.</span></h2><p class="sd-v305-desc">Hear directly from learners about their Sikhadenge learning experience.</p></header><div class="sd-v305-viewport" aria-label="Real learner video testimonials"><div class="sd-v305-track"><div class="sd-v305-set">${cards}</div><div class="sd-v305-set" aria-hidden="true">${cards}</div></div></div></div>`;
+              toolSection.insertAdjacentElement('afterend',section);
+              section.addEventListener('click',e=>{const open=e.target.closest('.sd-v305-open');const close=e.target.closest('.sd-v305-close');if(close){const card=close.closest('.sd-v305-card');card?.querySelector('video')?.pause();card?.querySelector('video')?.remove();close.remove();card?.classList.remove('is-playing');section.removeAttribute('data-playing');return}if(!open)return;const card=open.closest('.sd-v305-card');if(!card||card.querySelector('video'))return;section.setAttribute('data-playing','1');const v=document.createElement('video');v.className='sd-v305-inline-video';v.src=card.dataset.video;v.controls=true;v.autoplay=true;v.playsInline=true;v.preload='metadata';const x=document.createElement('button');x.type='button';x.className='sd-v305-close';x.setAttribute('aria-label','Close testimonial video');x.textContent='×';card.append(v,x);v.play().catch(()=>{});v.addEventListener('ended',()=>x.click(),{once:true})});
+              return true;
+            }
+
+            const boot=async()=>{
+              lazyHeavyMedia();
+              for(const src of legacy)await loadScript(src);
+              [0,300,900,1800,3200].forEach(ms=>setTimeout(installTestimonials,ms));
+              setTimeout(lazyHeavyMedia,1800);
+              document.documentElement.setAttribute('data-claude-runtime-loader','v3-ready');
+            };
+            if(document.readyState==='complete')setTimeout(boot,250);else addEventListener('load',()=>setTimeout(boot,250),{once:true});
+          })();
+          JS
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'test -s /var/www/sikhadenge.in/claude-runtime-loader-v3.js && node --check /var/www/sikhadenge.in/claude-runtime-loader-v3.js'
+
+      - name: Guarded exact-route switch with unique clean-build assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CAND='/var/www/sikhadenge.in/candidates/claude-final-clean-v2-20260903'
+          BID='LRGBmNz6chaBg6stHgoDb'
+          TS="$(TZ=Asia/Kolkata date +%Y%m%d-%H%M%S)"; BACKUP="/var/backups/sikhadenge/claude-final-clean-v3-$TS"; MARK='/var/backups/sikhadenge/.claude-final-clean-v3-last'
+          mkdir -p "$BACKUP"; cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"; printf '%s\n' "$BACKUP" > "$MARK"
+          python3 - "$NG" "$CAND" "$BID" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]);cand=sys.argv[2];bid=sys.argv[3];s=p.read_text()
+          needle='location = /masterclass/claude/free {';a=s.find(needle)
+          if a<0: raise SystemExit('Claude exact route missing')
+          depth=0;b=None
+          for i in range(a,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0: b=i+1; break
+          if b is None: raise SystemExit('Claude route parse failed')
+          seg=s[a:b]
+          if 'proxy_pass http://127.0.0.1:3930;' not in seg: raise SystemExit('expected old 3930 route missing')
+          if "sub_filter '</body>'" not in seg: raise SystemExit('expected existing body sub_filter missing')
+          seg=seg.replace('proxy_pass http://127.0.0.1:3930;','proxy_pass http://127.0.0.1:3984;',1)
+          # Keep the existing single sub_filter_once directive, but collapse many parser-time scripts to one deferred loader.
+          lines=[]
+          for line in seg.splitlines():
+              if "sub_filter '</body>'" in line:
+                  indent=line[:len(line)-len(line.lstrip())]
+                  line=indent+"sub_filter '</body>' '<script defer src=\"/claude-runtime-loader-v3.js?v=20260903-final\"></script></body>';"
+              lines.append(line)
+          seg='\n'.join(lines)
+          s=s[:a]+seg+s[b:]
+          marker='# CLAUDE_FINAL_CLEAN_V3_ASSETS'
+          if marker not in s:
+              block=f'''\n    {marker}\n    location = /claude-runtime-loader-v3.js {{ alias /var/www/sikhadenge.in/claude-runtime-loader-v3.js; add_header Cache-Control "no-store" always; }}\n    location ^~ /__claude_final_v2/_next/static/ {{ alias {cand}/.next/static/; add_header Cache-Control "public, max-age=31536000, immutable" always; access_log off; }}\n    location ^~ /_next/data/{bid}/ {{ proxy_pass http://127.0.0.1:3984; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; add_header Cache-Control "private, no-store, no-cache, must-revalidate" always; }}\n'''
+              s=s.replace('    location = /masterclass/claude/free {',block+'\n    location = /masterclass/claude/free {',1)
+          p.write_text(s)
+          PY
+          nginx -t
+          systemctl reload nginx
+          curl -fsS --max-time 15 'https://sikhadenge.in/masterclass/claude/free?v=v3-switch-smoke' >/tmp/claude-v3-public.html
+          grep -Fq '/__claude_final_v2/_next/static/' /tmp/claude-v3-public.html
+          grep -Fq '/claude-runtime-loader-v3.js' /tmp/claude-v3-public.html
+          ! grep -Fq '<script src="/claude-proof-static-v4.js' /tmp/claude-v3-public.html
+          echo "SWITCHED_BACKUP=$BACKUP"
+          REMOTE
+
+      - name: Final public multi-viewport DOM and error QA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          mkdir -p qa-v3
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const expectedH1='Master 25+ AI Tools for smarter work, faster execution & better results.';
+          const expectedH2=['Why join this course?','Learn AI Tools by Doing — Live, Practical & Step-by-Step.','From first prompt to professional AI workflow.','Your first step into practical AI mastery.','AI & automation are reshaping hundreds of millions of jobs.',"AI isn't only changing jobs. It's increasing the value of AI skills.",'A complete practical starting kit for modern AI work.','Connect the right AI tool to the work you already do.','Move from quick answers to structured, reviewable work.','Use the right AI tool where speed, quality and structured output matter.','Practical teaching. Clear workflows. Real digital work.','Is this workshop for you?','Learn 25+ AI Tools','Real learners. Real experiences.','Learn AI. Apply it. Work smarter.','Frequently asked questions.','Your first AI workflow starts with one live session.','Trusted checkout experience'];
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const views=[['desktop',1440,1000,false],['laptop',1024,900,false],['tablet',768,1024,true],['mobile430',430,932,true],['mobile390',390,844,true]],out={};
+          for(const [n,w,h,mob] of views){const p=await b.newPage();await p.setViewport({width:w,height:h,isMobile:mob,hasTouch:mob,deviceScaleFactor:1});const errors=[],bad=[];p.on('pageerror',e=>errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')errors.push(m.text())});p.on('response',r=>{if(r.status()>=400)bad.push({status:r.status(),url:r.url(),type:r.request().resourceType()})});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=v3-final-${n}-20260903`,{waitUntil:'domcontentloaded',timeout:45000});await new Promise(r=>setTimeout(r,13000));const st=await p.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(e=>e.id).filter(Boolean),dups=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))],host=document.getElementById('sd-sitewide-live-proof-host-v1'),hs=host?getComputedStyle(host):null;return{h1:(document.querySelector('main h1')?.innerText||document.querySelector('h1')?.innerText||'').replace(/\s+/g,' ').trim(),h2:[...document.querySelectorAll('main h2')].map(e=>(e.innerText||'').replace(/\s+/g,' ').trim()),h1Count:document.querySelectorAll('main h1').length,sections:document.querySelectorAll('main section').length,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,proofRoot:document.querySelectorAll('#claude-ai-video-proof-v4').length,testimonials:document.querySelectorAll('#sd-claude-testimonials-v305').length,loader:document.documentElement.getAttribute('data-claude-runtime-loader'),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,blank:[...document.querySelectorAll('main section')].filter(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&r.height>=80&&(e.innerText||'').trim().length<8}).length,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.currentSrc||i.src),dups,cta:[...document.querySelectorAll('a[href]')].some(a=>a.getAttribute('href')==='/gen-ai-masterclass/register-one-step'),liveProof:host?{display:hs.display,visibility:hs.visibility,opacity:hs.opacity}:null,pageHeight:document.documentElement.scrollHeight}});const hyd=errors.filter(x=>/#418|#425|invariant=418|invariant=425/i.test(x));out[n]={...st,hydration:hyd,bad,errors};await p.screenshot({path:`qa-v3/${n}.png`,fullPage:true});await p.close();}
+          fs.writeFileSync('qa-v3/result.json',JSON.stringify(out,null,2));let fail=[];for(const [n,x] of Object.entries(out)){if(x.hydration.length)fail.push(`${n} hydration ${x.hydration.length}`);if(norm(x.h1)!==expectedH1)fail.push(`${n} H1 mismatch: ${x.h1}`);if(JSON.stringify(x.h2)!==JSON.stringify(expectedH2))fail.push(`${n} H2 mismatch: ${JSON.stringify(x.h2)}`);if(x.h1Count!==1)fail.push(`${n} H1 count ${x.h1Count}`);if(x.sections!==18)fail.push(`${n} sections ${x.sections}`);if(x.jobs!==1||x.skills!==1||x.proofRoot!==1)fail.push(`${n} proof counts ${x.jobs}/${x.skills}/${x.proofRoot}`);if(x.testimonials!==1)fail.push(`${n} testimonials ${x.testimonials}`);if(x.loader!=='v3-ready')fail.push(`${n} loader ${x.loader}`);if(x.overflow)fail.push(`${n} overflow`);if(x.blank)fail.push(`${n} blanks ${x.blank}`);if(x.broken.length)fail.push(`${n} broken ${x.broken}`);if(x.dups.length)fail.push(`${n} duplicate ids ${x.dups}`);if(!x.cta)fail.push(`${n} CTA missing`);const critical=x.bad.filter(r=>['document','script','stylesheet'].includes(r.type));if(critical.length)fail.push(`${n} critical bad ${JSON.stringify(critical)}`);if(n.startsWith('mobile')&&x.liveProof&&x.liveProof.display!=='none')fail.push(`${n} mobile live proof visible`);if(n==='desktop'&&(!x.liveProof||x.liveProof.display==='none'))fail.push('desktop live proof missing');}
+          console.log(JSON.stringify(Object.fromEntries(Object.entries(out).map(([n,x])=>[n,{hydration:x.hydration.length,h1:x.h1,h2:x.h2,sections:x.sections,jobs:x.jobs,skills:x.skills,testimonials:x.testimonials,overflow:x.overflow,blank:x.blank,broken:x.broken.length,dups:x.dups.length,liveProof:x.liveProof,bad:x.bad}])),null,2));if(fail.length){console.error('FINAL_QA_FAILURES\n'+fail.join('\n'));process.exit(1)}console.log('FINAL_QA_PASS');await b.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa.js
+
+      - name: Lighthouse final technical measurement
+        if: success()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --silent lighthouse
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=v3-lh-mobile' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --form-factor=mobile --output=json --output-path=qa-v3/lighthouse-mobile.json || true
+          npx lighthouse 'https://sikhadenge.in/masterclass/claude/free?v=v3-lh-desktop' --quiet --chrome-path="$CHROME" --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' --only-categories=performance,accessibility,best-practices,seo --preset=desktop --output=json --output-path=qa-v3/lighthouse-desktop.json || true
+          python3 - <<'PY'
+          import json,os
+          out={}
+          for n in ('mobile','desktop'):
+              p=f'qa-v3/lighthouse-{n}.json'
+              if not os.path.exists(p):continue
+              d=json.load(open(p));c=d['categories'];a=d['audits'];out[n]={'performance':round(c['performance']['score']*100),'accessibility':round(c['accessibility']['score']*100),'bestPractices':round(c['best-practices']['score']*100),'seo':round(c['seo']['score']*100),'FCP':a['first-contentful-paint']['displayValue'],'LCP':a['largest-contentful-paint']['displayValue'],'CLS':a['cumulative-layout-shift']['displayValue'],'TBT':a['total-blocking-time']['displayValue'],'transfer':a.get('total-byte-weight',{}).get('displayValue')}
+          print('LIGHTHOUSE_FINAL='+json.dumps(out,indent=2));json.dump(out,open('qa-v3/lighthouse-summary.json','w'),indent=2)
+          PY
+
+      - name: Roll back automatically if any final QA failed
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl';MARK='/var/backups/sikhadenge/.claude-final-clean-v3-last'
+          if [[ -f "$MARK" ]]; then B="$(cat "$MARK")"; if [[ -f "$B/sikhadenge.in-ssl.before" ]]; then cp "$B/sikhadenge.in-ssl.before" "$NG"; nginx -t; systemctl reload nginx; echo "ROLLED_BACK=$B"; fi; fi
+          pm2 delete sikhadenge-claude-final-clean-v2-3984 >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
+          REMOTE
+
+      - name: Persist successful clean runtime
+        if: success()
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'export PM2_HOME=/root/.pm2; pm2 save >/dev/null; pm2 status sikhadenge-claude-final-clean-v2-3984'
+
+      - name: Upload final evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-final-clean-v3-qa
+          path: qa-v3/
+          retention-days: 3
