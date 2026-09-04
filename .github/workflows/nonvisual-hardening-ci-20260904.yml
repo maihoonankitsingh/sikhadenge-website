@@ -3,6 +3,7 @@ name: Nonvisual Hardening CI 20260904
 on:
   push:
     branches:
+      - fix/nonvisual-hardening-20260904
       - fix/nonvisual-hardening-integration-20260904
   workflow_dispatch:
 
