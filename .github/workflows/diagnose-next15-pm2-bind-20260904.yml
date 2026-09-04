@@ -1,0 +1,136 @@
+name: Diagnose Next15 PM2 Bind 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/diagnose-next15-pm2-bind-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Diagnose PM2 candidate startup on free ports
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+
+          PROD_APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          TEST_APP='next15-pm2-bind-test-20260904'
+          DIRECT_PORT=43966
+          PM2_PORT=43967
+
+          PROD_PID="$(pm2 pid "$PROD_APP" | tail -1)"
+          test -n "$PROD_PID"; test "$PROD_PID" != '0'
+          LIVE="$(readlink -f "/proc/$PROD_PID/cwd")"
+          CAND="$(find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -name 'next15-v5-*' -printf '%T@ %p\n' | sort -nr | sed -n '1s/^[^ ]* //p')"
+
+          echo "LIVE_RELEASE=$LIVE"
+          echo "CANDIDATE=${CAND:-EMPTY}"
+          node -e "const p=require('$LIVE/package.json'); console.log('LIVE_NEXT='+p.dependencies.next)"
+          curl -fsS --max-time 10 'http://127.0.0.1:3955/' >/dev/null
+          echo 'LIVE_PRODUCTION_HEALTH=PASS'
+
+          test -n "$CAND"; test -d "$CAND"
+          test -f "$CAND/.next/BUILD_ID"
+          node -e "const p=require('$CAND/package.json'); if(p.dependencies.next!=='15.5.24') process.exit(1); console.log('CAND_NEXT='+p.dependencies.next)"
+          echo "CAND_BUILD_ID=$(cat "$CAND/.next/BUILD_ID")"
+
+          echo '--- recent shared PM2 app logs ---'
+          for f in \
+            "$HOME/.pm2/logs/${PROD_APP}-error.log" \
+            "$HOME/.pm2/logs/${PROD_APP}-out.log"; do
+            echo "FILE=$f"
+            tail -120 "$f" 2>/dev/null || true
+          done
+
+          # Refuse occupied diagnostic ports.
+          for port in "$DIRECT_PORT" "$PM2_PORT"; do
+            if ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$port$"; then
+              echo "DIAGNOSTIC_PORT_OCCUPIED=$port"
+              exit 41
+            fi
+          done
+
+          cd "$CAND"
+
+          echo '--- direct node test ---'
+          node node_modules/next/dist/bin/next start -p "$DIRECT_PORT" >.diag-direct.log 2>&1 &
+          DIRECT_PID=$!
+          cleanup_direct() { kill "$DIRECT_PID" >/dev/null 2>&1 || true; wait "$DIRECT_PID" >/dev/null 2>&1 || true; }
+          READY=0
+          for i in $(seq 1 30); do
+            if kill -0 "$DIRECT_PID" 2>/dev/null && curl -fsS --max-time 3 "http://127.0.0.1:$DIRECT_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          echo "DIRECT_READY=$READY"
+          tail -80 .diag-direct.log || true
+          test "$READY" = '1'
+          cleanup_direct
+
+          echo '--- PM2 explicit interpreter test ---'
+          pm2 delete "$TEST_APP" >/dev/null 2>&1 || true
+          NODE_BIN="$(command -v node)"
+          pm2 start "$CAND/node_modules/next/dist/bin/next" \
+            --name "$TEST_APP" \
+            --cwd "$CAND" \
+            --interpreter "$NODE_BIN" \
+            -- start -p "$PM2_PORT"
+
+          READY=0
+          for i in $(seq 1 30); do
+            TPID="$(pm2 pid "$TEST_APP" | tail -1)"
+            if [[ -n "$TPID" && "$TPID" != '0' ]] && curl -fsS --max-time 3 "http://127.0.0.1:$PM2_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          echo "PM2_READY=$READY"
+          pm2 describe "$TEST_APP" | sed -n '1,100p' || true
+          echo '--- PM2 temp logs ---'
+          tail -120 "$HOME/.pm2/logs/${TEST_APP}-error.log" 2>/dev/null || true
+          tail -120 "$HOME/.pm2/logs/${TEST_APP}-out.log" 2>/dev/null || true
+          ss -ltnp | grep ":$PM2_PORT " || true
+          test "$READY" = '1'
+          for route in / /reviews; do curl -fsS --max-time 10 "http://127.0.0.1:$PM2_PORT$route" >/dev/null; done
+          echo 'PM2_CANDIDATE_HEALTH=PASS'
+
+          pm2 delete "$TEST_APP"
+          rm -f "$HOME/.pm2/logs/${TEST_APP}-error.log" "$HOME/.pm2/logs/${TEST_APP}-out.log" || true
+
+          # Production must remain untouched.
+          NOW_PID="$(pm2 pid "$PROD_APP" | tail -1)"
+          NOW_CWD="$(readlink -f "/proc/$NOW_PID/cwd")"
+          test "$NOW_CWD" = "$LIVE"
+          node -e "const p=require('$NOW_CWD/package.json'); if(p.dependencies.next!=='14.2.35') process.exit(1); console.log('LIVE_STILL_NEXT='+p.dependencies.next)"
+          curl -fsS --max-time 10 'http://127.0.0.1:3955/' >/dev/null
+          echo 'PRODUCTION_UNCHANGED=PASS'
+          REMOTE
