@@ -1,0 +1,53 @@
+name: AI Video Golden FAQ-Only Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-2-faq-production-20260904"
+    paths:
+      - "ops/deploy-golden-ai-video-faq-final-only.sh"
+      - ".github/workflows/ai-video-golden-faq-only-guard.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: bash -n ops/deploy-golden-ai-video-faq-final-only.sh
+
+      - name: Enforce exact golden base
+        run: |
+          set -euo pipefail
+          F=ops/deploy-golden-ai-video-faq-final-only.sh
+          grep -Fq 'production-ai-workflow-premium-zero-build-20260829-110420' "$F"
+          grep -Fq '6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51' "$F"
+          grep -Fq '/root/ai-video-GOLDEN-ADS-LIVE-20260903-125516' "$F"
+
+      - name: Enforce FAQ-only scope
+        run: |
+          set -euo pipefail
+          F=ops/deploy-golden-ai-video-faq-final-only.sh
+          grep -Fq 'Cloned HTML differs from golden beyond FAQ script injection' "$F"
+          grep -Fq 'FAQ_COUNT' "$F"
+          grep -Fq 'Expected 15 FAQs' "$F"
+          grep -Fq 'What exactly will I learn in this AI Video Generation Masterclass?' "$F"
+          grep -Fq 'What language is the masterclass in, and can I ask questions live?' "$F"
+          ! grep -Eq 'nginx[[:space:]]+(-s[[:space:]]+reload|restart)|systemctl[[:space:]]+(restart|reload)[[:space:]]+nginx' "$F"
+          ! grep -Fq 'chattr -i "$GOLDEN_HTML"' "$F"
+          ! grep -Fq 'chattr -i "$GOLDEN_RUNTIME"' "$F"
+
+      - name: Validate embedded FAQ JavaScript
+        run: |
+          set -euo pipefail
+          F=ops/deploy-golden-ai-video-faq-final-only.sh
+          awk '/^cat >"\$FAQ_JS" <<'"'"'JS'"'"'$/{capture=1;next} /^JS$/{if(capture){exit}} capture{print}' "$F" > /tmp/faq.js
+          test -s /tmp/faq.js
+          node --check /tmp/faq.js
+          COUNT=$(grep -c '^    \["' /tmp/faq.js)
+          test "$COUNT" -eq 15
+          ! grep -Fq 'MutationObserver' /tmp/faq.js
+
+      - name: Guard summary
+        run: echo 'Golden FAQ-only deployment plan passed syntax and scope guards.'
