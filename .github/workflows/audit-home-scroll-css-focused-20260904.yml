@@ -1,0 +1,56 @@
+name: Audit Home Scroll CSS Focused 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-home-scroll-css-focused-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read exact scroll related CSS and layout
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          echo "LIVE=$LIVE"
+          echo '=== APP LAYOUT ==='
+          nl -ba "$LIVE/app/layout.tsx" | sed -n '1,155p'
+          echo '=== APP GLOBALS 1-120 ==='
+          nl -ba "$LIVE/app/globals.css" | sed -n '1,120p'
+          echo '=== APP GLOBALS 340-410 ==='
+          nl -ba "$LIVE/app/globals.css" | sed -n '340,410p'
+          echo '=== STYLES GLOBALS 115-260 ==='
+          nl -ba "$LIVE/styles/globals.css" | sed -n '115,260p'
+          echo '=== ROOT/PAGE IMPORTS ==='
+          grep -RIn --binary-files=without-match --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
+            -E "styles/globals\.css|app/globals\.css|import ['\"]\.\.?/.*globals\.css|document\.(body|documentElement).*overflow|style\.overflow|overflowY" \
+            "$LIVE/app" "$LIVE/components" "$LIVE/pages" 2>/dev/null | head -220 || true
+          REMOTE
