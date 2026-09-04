@@ -1,0 +1,191 @@
+name: Deploy Next15 Production 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/deploy-next15-production-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Build isolated release and cut over PM2
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          TARGET_SHA='b0c2638d1dc6c8c1168811ab8a09c4c99633e1d2'
+          PROD_PORT=3955
+          TEST_PORT=3965
+          BASE='/var/www/sikhadenge.in'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          REL="$BASE/releases/next15-$TS"
+          CUTOVER=0
+          OLD=''
+          OLD_PID=''
+
+          rollback() {
+            set +e
+            echo 'ROLLBACK_BEGIN'
+            pm2 delete "$APP" >/dev/null 2>&1 || true
+            if [[ -n "$OLD" && -x "$OLD/node_modules/.bin/next" ]]; then
+              cd "$OLD"
+              pm2 start "$OLD/node_modules/next/dist/bin/next" --name "$APP" --cwd "$OLD" -- start -p "$PROD_PORT"
+              sleep 3
+              curl -fsS --max-time 15 "http://127.0.0.1:$PROD_PORT/" >/dev/null || true
+              pm2 save >/dev/null 2>&1 || true
+            fi
+            echo 'ROLLBACK_END'
+          }
+
+          on_error() {
+            rc=$?
+            echo "DEPLOY_ERROR rc=$rc"
+            if [[ "$CUTOVER" -eq 1 ]]; then rollback; fi
+            exit "$rc"
+          }
+          trap on_error ERR
+
+          OLD_PID="$(pm2 pid "$APP" | tail -1)"
+          test -n "$OLD_PID"; test "$OLD_PID" != '0'
+          OLD="$(readlink -f "/proc/$OLD_PID/cwd")"
+          test -d "$OLD"
+          echo "OLD_RELEASE=$OLD"
+          echo "NEW_RELEASE=$REL"
+
+          # Preserve the running process environment without printing values.
+          while IFS= read -r -d '' kv; do
+            case "$kv" in
+              PWD=*|OLDPWD=*|SHLVL=*|_=*) ;;
+              *) export "$kv" || true ;;
+            esac
+          done < "/proc/$OLD_PID/environ"
+          export HOME=/root PM2_HOME=/root/.pm2 NODE_ENV=production
+
+          AVAIL="$(df -B1 --output=avail "$BASE" | tail -1 | tr -d ' ')"
+          echo "DISK_AVAILABLE_BYTES=$AVAIL"
+          test "$AVAIL" -ge 1800000000
+
+          mkdir -p "$REL"
+          # Clone the exact currently running source/config, excluding generated dependencies/build output.
+          tar -C "$OLD" \
+            --exclude='./node_modules' \
+            --exclude='./.next' \
+            --exclude='./.git' \
+            -cf - . | tar -C "$REL" -xf -
+
+          # Overlay only the nine files from the verified Next 15 migration commit.
+          fetch_file() {
+            p="$1"
+            mkdir -p "$REL/$(dirname "$p")"
+            curl -fsSL --retry 3 --max-time 45 \
+              "https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/$TARGET_SHA/$p" \
+              -o "$REL/$p"
+          }
+          fetch_file 'package.json'
+          fetch_file 'package-lock.json'
+          fetch_file 'app/layout.tsx'
+          fetch_file 'app/[skill]/page.tsx'
+          fetch_file 'app/blog/[slug]/page.tsx'
+          fetch_file 'app/expert/[slug]/page.tsx'
+          fetch_file 'app/reviews/page.tsx'
+          fetch_file 'components/Footer.tsx'
+          fetch_file 'pages/contact.tsx'
+
+          cd "$REL"
+          node - <<'NODE'
+          const p=require('./package.json');
+          if(p.dependencies?.next!=='15.5.24') throw new Error('Next version mismatch');
+          if(p.dependencies?.react!=='19.2.8') throw new Error('React version mismatch');
+          if(p.dependencies?.['react-dom']!=='19.2.8') throw new Error('React DOM version mismatch');
+          console.log('PACKAGE_VERSION_GATE_OK');
+          NODE
+
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+          npm run build
+          printf '%s\n' "$TARGET_SHA" > .next15-production-sha
+
+          # Candidate smoke test on an isolated port while the existing production process remains online.
+          node node_modules/next/dist/bin/next start -p "$TEST_PORT" >.next15-smoke.log 2>&1 &
+          TEST_PID=$!
+          cleanup_test() { kill "$TEST_PID" >/dev/null 2>&1 || true; wait "$TEST_PID" >/dev/null 2>&1 || true; }
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:$TEST_PORT/" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS --max-time 10 "http://127.0.0.1:$TEST_PORT/" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$TEST_PORT/about-us" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$TEST_PORT/reviews" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$TEST_PORT/experts" >/dev/null
+          cleanup_test
+          echo 'ISOLATED_SMOKE_OK'
+
+          # Controlled PM2 cutover. From here every failure automatically rolls back to OLD.
+          CUTOVER=1
+          pm2 delete "$APP"
+          for i in $(seq 1 15); do
+            if ! ss -ltn | grep -q ":$PROD_PORT "; then break; fi
+            sleep 1
+          done
+          cd "$REL"
+          pm2 start "$REL/node_modules/next/dist/bin/next" --name "$APP" --cwd "$REL" -- start -p "$PROD_PORT"
+
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:$PROD_PORT/" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS --max-time 10 "http://127.0.0.1:$PROD_PORT/" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$PROD_PORT/about-us" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$PROD_PORT/reviews" >/dev/null
+          curl -fsS --max-time 10 "http://127.0.0.1:$PROD_PORT/experts" >/dev/null
+
+          NEW_PID="$(pm2 pid "$APP" | tail -1)"
+          NEW_CWD="$(readlink -f "/proc/$NEW_PID/cwd")"
+          test "$NEW_CWD" = "$REL"
+          node -e "const p=require('$NEW_CWD/package.json'); if(p.dependencies.next!=='15.5.24') process.exit(1); console.log('LIVE_NEXT='+p.dependencies.next)"
+
+          curl -fsS --max-time 20 "https://sikhadenge.in/?next15=$TS" >/dev/null
+          curl -fsS --max-time 20 "https://sikhadenge.in/about-us?next15=$TS" >/dev/null
+          curl -fsS --max-time 20 "https://sikhadenge.in/reviews?next15=$TS" >/dev/null
+
+          pm2 save
+          CUTOVER=0
+          trap - ERR
+          echo 'NEXT15_PRODUCTION_DEPLOY_SUCCESS'
+          echo "ACTIVE_RELEASE=$REL"
+          echo "ROLLBACK_RELEASE=$OLD"
+          REMOTE
