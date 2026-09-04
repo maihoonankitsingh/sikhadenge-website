@@ -15,7 +15,7 @@ type TextReview = {
 };
 
 function useAutoMarquee(
-  ref: React.RefObject<HTMLDivElement>,
+  ref: React.RefObject<HTMLDivElement | null>,
   opts: {
     speed?: number; // px per frame
     enabled?: boolean;

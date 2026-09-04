@@ -113,7 +113,7 @@ function Icon({
 }
 
 function useOutsideClick(
-  refs: React.RefObject<HTMLElement>[],
+  refs: React.RefObject<HTMLElement | null>[],
   onOutside: () => void,
   enabled: boolean
 ) {
