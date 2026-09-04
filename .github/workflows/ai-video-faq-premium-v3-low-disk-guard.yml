@@ -1,0 +1,44 @@
+name: AI Video FAQ Premium V3 Low Disk Guard
+
+on:
+  push:
+    branches:
+      - ops/ai-video-v90-2-faq-production-20260904
+    paths:
+      - ops/deploy-ai-video-faq-premium-v3-low-disk.sh
+      - .github/workflows/ai-video-faq-premium-v3-low-disk-guard.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-faq-premium-v3-low-disk.sh
+      - name: Safety invariants
+        run: |
+          set -euo pipefail
+          F=ops/deploy-ai-video-faq-premium-v3-low-disk.sh
+          grep -Fq 'FAILED_PARTIAL="/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-premium-v3-20260904-133056"' "$F"
+          grep -Fq 'rm -rf --one-file-system "$FAILED_PARTIAL"' "$F"
+          grep -Fq 'Refusing to delete current live release' "$F"
+          grep -Fq 'Less than 128 MB free' "$F" || grep -Fq 'less than 128 MB free' "$F"
+          grep -Fq 'ai-video-faq-premium-v3-inline' "$F"
+          grep -Fq 'data-ai-faq-v3' "$F"
+          grep -Fq 'cp -f "$BACKUP_DIR/ai-video.html.before-v3" "$CURRENT_HTML"' "$F"
+          ! grep -Fq 'nginx -s reload' "$F"
+          ! grep -Fq 'systemctl restart nginx' "$F"
+          ! grep -Fq 'chattr -i' "$F"
+          ! grep -Fq 'rm -rf /var/www/sikhadenge.in/releases/*' "$F"
+      - name: Embedded JS syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path('ops/deploy-ai-video-faq-premium-v3-low-disk.sh').read_text()
+          m=re.search(r"cat > \"\$FAQ_JS\" <<'JS'\n(.*?)\nJS\nnode --check", text, re.S)
+          if not m:
+              raise SystemExit('embedded FAQ JS block not found')
+          Path('/tmp/faq-v3.js').write_text(m.group(1))
+          PY
+          node --check /tmp/faq-v3.js
