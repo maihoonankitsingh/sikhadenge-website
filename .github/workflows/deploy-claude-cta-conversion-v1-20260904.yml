@@ -1,0 +1,231 @@
+name: Deploy Claude CTA Conversion V1 20260904
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-claude-cta-conversion-v1-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy CTA asset to Claude exact route only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSET='/var/www/sikhadenge.in/claude-cta-conversion-v1.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/7fa1f50104e545a5ca95d171049c766651924649/public/claude-cta-conversion-v1.js'
+          MARKER='/var/backups/sikhadenge/.claude-cta-conversion-v1-last'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-cta-conversion-v1-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-cta-conversion-v1.js.before"
+          printf '%s\n' "$BACKUP" > "$MARKER"
+
+          rollback(){
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-cta-conversion-v1.js.before" ]]; then cp "$BACKUP/claude-cta-conversion-v1.js.before" "$ASSET"; else rm -f "$ASSET"; fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY_FAIL=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --retry 3 --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_CTA_CONVERSION_V1__' "$TMP"
+          grep -Fq 'Reserve My Free Seat' "$TMP"
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+          node --check "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); s=p.read_text(); route='location = /masterclass/claude/free {'; a=s.find(route)
+          if a < 0: raise SystemExit('Claude exact route missing')
+          brace=s.find('{',a); d=0; b=None
+          for i in range(brace,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: b=i+1; break
+          if b is None: raise SystemExit('Claude route parse failed')
+          seg=s[a:b]
+          seg=re.sub(r'<script[^>]+src="/claude-cta-conversion-v1\.js[^\"]*"[^>]*></script>','',seg)
+          script='<script defer src="/claude-cta-conversion-v1.js?v=cta-conversion-v1-20260904"></script>'
+          anchor="</body>';"; pos=seg.find(anchor)
+          if pos < 0: raise SystemExit('Claude body injection anchor missing')
+          seg=seg[:pos]+script+seg[pos:]
+          s=s[:a]+seg+s[b:]
+          if '# CLAUDE_CTA_CONVERSION_V1_ASSET' not in s:
+              block='''    # CLAUDE_CTA_CONVERSION_V1_ASSET
+              location = /claude-cta-conversion-v1.js {
+                  alias /var/www/sikhadenge.in/claude-cta-conversion-v1.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_CTA_CONVERSION_V1_ASSET_END
+
+          '''
+              idx=s.find(route); s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          curl -fsS --max-time 20 'https://sikhadenge.in/claude-cta-conversion-v1.js?v=cta-conversion-v1-20260904' | grep -Fq '__CLAUDE_CTA_CONVERSION_V1__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=cta-conversion-server-20260904' -o "$HTML"
+          test "$(grep -o '/claude-cta-conversion-v1.js?v=cta-conversion-v1-20260904' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$HTML"
+          grep -Fq '/claude-faq-v2.js' "$HTML"
+
+          AI="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=cta-conversion-isolation-20260904' -o "$AI"
+          ! grep -Fq '/claude-cta-conversion-v1.js' "$AI"
+
+          echo "CTA_SERVER_PASS BACKUP=$BACKUP"
+          trap - ERR
+          REMOTE
+
+      - name: Verify CTA conversion desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          mkdir -p cta-v1-qa
+          cat > cta-v1-qa/check.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const compact=s=>(s||'').replace(/\s+/g,'').replace(/→/g,'');
+          const EXPECTED_H1='Master 25+ AI Tools for smarter work, faster execution & better results.';
+          const EXPECTED_CTA='Reserve My Free Seat';
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]],out={},fail=[];
+            for(const [name,width,height,isMobile] of views){
+              const page=await browser.newPage();
+              await page.setViewport({width,height,isMobile,hasTouch:isMobile,deviceScaleFactor:1});
+              await page.goto(`https://sikhadenge.in/masterclass/claude/free?v=cta-v1-${name}-20260904`,{waitUntil:'domcontentloaded',timeout:45000});
+              await page.waitForFunction(()=>document.documentElement.getAttribute('data-claude-cta-conversion')==='v1',{timeout:30000});
+              await new Promise(r=>setTimeout(r,1200));
+              const x=await page.evaluate(()=>{
+                const reg='/gen-ai-masterclass/register-one-step';
+                const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+                const all=[...document.querySelectorAll(`a[href="${reg}"]`)];
+                const visible=all.filter(el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return !!(r.width&&r.height&&cs.display!=='none'&&cs.visibility!=='hidden'&&parseFloat(cs.opacity)>0)});
+                const sticky=document.querySelector('[data-sd-cta-sticky-v1="1"]');
+                const stickyA=sticky?.querySelector(`a[href="${reg}"]`)||null;
+                const r=stickyA?.getBoundingClientRect(),cs=stickyA?getComputedStyle(stickyA):null;
+                const ids=[...document.querySelectorAll('[id]')].map(e=>e.id).filter(Boolean);
+                return {
+                  root:document.documentElement.getAttribute('data-claude-cta-conversion'),
+                  countMarker:document.documentElement.getAttribute('data-claude-cta-count-v1'),
+                  stickyMarker:document.documentElement.getAttribute('data-claude-cta-sticky-found-v1'),
+                  count:all.length,
+                  visible:visible.length,
+                  labels:all.map(a=>norm(a.textContent).replace(/→/g,'').trim()),
+                  sticky:!!sticky,
+                  stickyText:stickyA?norm(stickyA.textContent).replace(/→/g,'').trim():'',
+                  stickyWidth:r?Math.round(r.width):0,
+                  stickyHeight:r?Math.round(r.height):0,
+                  stickyFont:cs?parseFloat(cs.fontSize):0,
+                  stickyRadius:cs?parseFloat(cs.borderRadius):0,
+                  stickyGradient:cs?cs.backgroundImage:'',
+                  h1:norm(document.querySelector('h1')?.textContent),
+                  sections:document.querySelectorAll('main section').length,
+                  faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                  jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,
+                  skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                  dups:[...new Set(ids.filter((v,i)=>ids.indexOf(v)!==i))]
+                };
+              });
+              out[name]=x;
+              await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));
+              await new Promise(r=>setTimeout(r,500));
+              await page.screenshot({path:`cta-v1-qa/${name}-sticky.png`,fullPage:false});
+              await page.close();
+
+              if(x.root!=='v1'||x.countMarker!=='8'||x.stickyMarker!=='1') fail.push(`${name}: CTA markers`);
+              if(x.count!==8||x.visible!==7) fail.push(`${name}: CTA count changed ${x.count}/${x.visible}`);
+              if(x.labels.some(label=>label!==EXPECTED_CTA)) fail.push(`${name}: CTA copy not normalized`);
+              if(!x.sticky||x.stickyText!==EXPECTED_CTA) fail.push(`${name}: sticky CTA missing/copy`);
+              if(name==='desktop'&&(x.stickyHeight<56||x.stickyFont<15||x.stickyWidth<250)) fail.push(`${name}: sticky CTA sizing`);
+              if(name==='tablet'&&(x.stickyHeight<54||x.stickyFont<14||x.stickyWidth<220)) fail.push(`${name}: sticky CTA sizing`);
+              if(name==='mobile'&&(x.stickyHeight<54||x.stickyFont<13.5||x.stickyWidth<190)) fail.push(`${name}: sticky CTA sizing`);
+              if(x.stickyRadius<14||!x.stickyGradient.includes('linear-gradient')) fail.push(`${name}: sticky CTA visual style`);
+              if(compact(x.h1)!==compact(EXPECTED_H1)) fail.push(`${name}: hero H1 changed`);
+              if(x.sections!==18) fail.push(`${name}: section count changed`);
+              if(x.faq!==15||x.jobs!==1||x.skills!==1) fail.push(`${name}: existing content changed`);
+              if(x.overflow) fail.push(`${name}: horizontal overflow`);
+              if(x.dups.length) fail.push(`${name}: duplicate IDs`);
+            }
+            fs.writeFileSync('cta-v1-qa/result.json',JSON.stringify(out,null,2));
+            console.log(JSON.stringify(out,null,2));
+            if(fail.length){console.error('CTA_V1_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
+            console.log('CLAUDE_CTA_CONVERSION_V1_3VIEW_QA_PASS');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node cta-v1-qa/check.js
+
+      - name: Roll back on QA failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; ASSET='/var/www/sikhadenge.in/claude-cta-conversion-v1.js'; M='/var/backups/sikhadenge/.claude-cta-conversion-v1-last'
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; [[ ! -f "$B/sikhadenge.in-ssl.before" ]] || cp "$B/sikhadenge.in-ssl.before" "$NG"; if [[ -f "$B/claude-cta-conversion-v1.js.before" ]]; then cp "$B/claude-cta-conversion-v1.js.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; echo "CTA_ROLLED_BACK=$B"; fi
+          REMOTE
+
+      - name: Upload CTA visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-cta-conversion-v1-qa
+          path: cta-v1-qa/
+          retention-days: 3
+          if-no-files-found: warn
