@@ -1,0 +1,219 @@
+name: Disk Cleanup Secondary Guarded 20260904
+
+on:
+  push:
+    branches:
+      - reconcile/production-source-next15-20260904
+    paths:
+      - '.github/workflows/disk-cleanup-secondary-guarded-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/reconcile/production-source-next15-20260904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Guarded secondary cleanup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          BASE=/var/www/sikhadenge.in
+          TS=$(date +%Y%m%d-%H%M%S)
+          Q="$BASE/.cleanup-quarantine-secondary-$TS"
+          PM2_BEFORE=/tmp/cleanup2-pm2-before.$$
+          PM2_AFTER=/tmp/cleanup2-pm2-after.$$
+          MOVED=/tmp/cleanup2-moved.$$
+          : > "$MOVED"
+          trap 'rm -f "$PM2_BEFORE" "$PM2_AFTER" "$MOVED"' EXIT
+
+          snapshot_pm2() {
+            pm2 jlist 2>/dev/null | node -e '
+              let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const p of JSON.parse(s)){const e=p.pm2_env||{};console.log([p.name||"",e.status||"",e.pm_cwd||"",e.pm_exec_path||""].join("|"));}});' | sort
+          }
+          proc_refs() {
+            target="$1"
+            for l in /proc/[0-9]*/cwd /proc/[0-9]*/fd/*; do
+              r=$(readlink -f "$l" 2>/dev/null || true)
+              case "$r" in "$target"|"$target"/*) return 0;; esac
+            done
+            return 1
+          }
+          mount_refs() {
+            target="$1"
+            findmnt -R -n -o TARGET "$target" 2>/dev/null | grep -q .
+          }
+          rollback_files() {
+            tac "$MOVED" 2>/dev/null | while IFS='|' read -r src dst; do
+              [ -e "$src" ] || continue
+              [ ! -e "$dst" ] || continue
+              mkdir -p "$(dirname "$dst")"
+              mv -- "$src" "$dst" || true
+            done
+          }
+          smoke() {
+            local bad=0
+            for url in 'https://sikhadenge.in/' 'https://sikhadenge.in/contact-us' 'https://sikhadenge.in/masterclass/claude/free'; do
+              code=$(curl -L --max-time 20 -sS -o /dev/null -w '%{http_code}' "$url" || echo 000)
+              echo "SMOKE|$code|$url"
+              case "$code" in 2*|3*) ;; *) bad=1;; esac
+            done
+            return "$bad"
+          }
+
+          echo '===== DISK BEFORE ====='
+          BEFORE=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          df -hT /
+          snapshot_pm2 > "$PM2_BEFORE"
+          NGINX_BEFORE=$(nginx -T 2>&1 | sha256sum | awk '{print $1}')
+          PM2_DUMP_BEFORE=$(sha256sum /root/.pm2/dump.pm2 2>/dev/null | awk '{print $1}' || true)
+          smoke
+
+          mkdir -p "$Q/pm2-logs" "$Q/tmp"
+          chmod 700 "$Q"
+
+          echo '===== PM2 LOG CLEANUP ====='
+          mapfile -t ACTIVE_NAMES < <(cut -d'|' -f1 "$PM2_BEFORE")
+          is_current_active_log() {
+            f=$(basename "$1")
+            for n in "${ACTIVE_NAMES[@]}"; do
+              case "$f" in "$n"-out.log|"$n"-error.log) return 0;; esac
+            done
+            return 1
+          }
+          while IFS= read -r f; do
+            [ -f "$f" ] || { echo "LOG_RACE_ABSENT|$f"; continue; }
+            [ ! -L "$f" ] || { echo "LOG_SKIP_SYMLINK|$f"; continue; }
+            proc_refs "$f" && { echo "LOG_SKIP_OPEN|$f"; continue; }
+            rotated=NO
+            case "$(basename "$f")" in *__20*.log) rotated=YES;; esac
+            if [ "$rotated" = YES ] || ! is_current_active_log "$f"; then
+              dest="$Q/pm2-logs/$(basename "$f")"
+              [ -e "$dest" ] && dest="$dest.$RANDOM"
+              if mv -- "$f" "$dest" 2>/dev/null; then
+                printf '%s|%s\n' "$dest" "$f" >> "$MOVED"
+                echo "LOG_QUARANTINED|$f"
+              else
+                echo "LOG_RACE_SKIP|$f"
+              fi
+            fi
+          done < <(find /root/.pm2/logs -maxdepth 1 -type f -name '*.log' -print 2>/dev/null)
+
+          echo '===== STALE TMP CLEANUP (>24H) ====='
+          while IFS= read -r p; do
+            [ -e "$p" ] || continue
+            [ ! -L "$p" ] || { echo "TMP_SKIP_SYMLINK|$p"; continue; }
+            real=$(realpath -e "$p" 2>/dev/null || true)
+            case "$real" in /tmp/*) ;; *) echo "TMP_BLOCK_REALPATH|$p"; continue;; esac
+            proc_refs "$real" && { echo "TMP_SKIP_OPEN|$real"; continue; }
+            mount_refs "$real" && { echo "TMP_SKIP_MOUNT|$real"; continue; }
+            dest="$Q/tmp/$(basename "$real")"
+            [ -e "$dest" ] && dest="$dest.$RANDOM"
+            if mv -- "$real" "$dest" 2>/dev/null; then
+              printf '%s|%s\n' "$dest" "$real" >> "$MOVED"
+              echo "TMP_QUARANTINED|$real"
+            else
+              echo "TMP_RACE_SKIP|$real"
+            fi
+          done < <(find /tmp -mindepth 1 -maxdepth 1 -mmin +1440 -print 2>/dev/null)
+
+          echo '===== FILE QUARANTINE SIZE ====='
+          du -xsh "$Q" || true
+
+          snapshot_pm2 > "$PM2_AFTER"
+          FAIL=0
+          cmp -s "$PM2_BEFORE" "$PM2_AFTER" || { echo 'PM2_STATE_CHANGED=YES'; FAIL=1; }
+          [ "$FAIL" -ne 0 ] || echo 'PM2_STATE_CHANGED=NO'
+          NGINX_AFTER=$(nginx -T 2>&1 | sha256sum | awk '{print $1}')
+          [ "$NGINX_BEFORE" = "$NGINX_AFTER" ] || { echo 'NGINX_CHANGED=YES'; FAIL=1; }
+          [ "$NGINX_BEFORE" != "$NGINX_AFTER" ] || echo 'NGINX_CHANGED=NO'
+          PM2_DUMP_AFTER=$(sha256sum /root/.pm2/dump.pm2 2>/dev/null | awk '{print $1}' || true)
+          [ "$PM2_DUMP_BEFORE" = "$PM2_DUMP_AFTER" ] || { echo 'PM2_DUMP_CHANGED=YES'; FAIL=1; }
+          [ "$PM2_DUMP_BEFORE" != "$PM2_DUMP_AFTER" ] || echo 'PM2_DUMP_CHANGED=NO'
+          smoke || FAIL=1
+          if [ "$FAIL" -ne 0 ]; then
+            echo 'FILE_VERIFY=FAIL_ROLLBACK'
+            rollback_files
+            exit 1
+          fi
+          echo 'FILE_VERIFY=PASS'
+
+          # Quarantine contains only selected logs/tmp entries. Never follow symlinks.
+          find "$Q" -xdev \( -type f -o -type d \) -exec chattr -i -a -- {} + 2>/dev/null || true
+          rm -rf --one-file-system -- "$Q"
+          [ ! -e "$Q" ]
+          echo 'FILE_QUARANTINE_DELETED=YES'
+
+          echo '===== JOURNAL VACUUM ====='
+          journalctl --disk-usage 2>/dev/null || true
+          journalctl --vacuum-size=64M 2>/dev/null || true
+          journalctl --disk-usage 2>/dev/null || true
+
+          echo '===== DOCKER IMAGE/BUILD CACHE GATE ====='
+          DOCKER_CONTAINERS=$(docker ps -aq 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+          echo "DOCKER_CONTAINER_COUNT=$DOCKER_CONTAINERS"
+          docker system df 2>/dev/null || true
+          if [ "$DOCKER_CONTAINERS" = "0" ]; then
+            echo 'DOCKER_PRUNE_GATE=PASS_NO_CONTAINERS'
+            docker image prune -a -f || true
+            docker builder prune -a -f || true
+            echo 'DOCKER_VOLUMES_PRUNED=NO'
+          else
+            echo 'DOCKER_PRUNE_GATE=SKIP_CONTAINERS_PRESENT'
+          fi
+          docker system df 2>/dev/null || true
+
+          echo '===== FINAL SAFETY VERIFY ====='
+          snapshot_pm2 > "$PM2_AFTER"
+          cmp -s "$PM2_BEFORE" "$PM2_AFTER" || { echo 'FINAL_PM2_CHANGED=YES'; exit 1; }
+          NGINX_FINAL=$(nginx -T 2>&1 | sha256sum | awk '{print $1}')
+          [ "$NGINX_BEFORE" = "$NGINX_FINAL" ] || { echo 'FINAL_NGINX_CHANGED=YES'; exit 1; }
+          PM2_DUMP_FINAL=$(sha256sum /root/.pm2/dump.pm2 2>/dev/null | awk '{print $1}' || true)
+          [ "$PM2_DUMP_BEFORE" = "$PM2_DUMP_FINAL" ] || { echo 'FINAL_PM2_DUMP_CHANGED=YES'; exit 1; }
+          smoke
+
+          AFTER=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          df -hT /
+          python3 - <<PY
+          before=$BEFORE
+          after=$AFTER
+          reclaimed=max(0,before-after)
+          print(f'SECONDARY_RECLAIMED_BYTES={reclaimed}')
+          print(f'SECONDARY_RECLAIMED_GIB={reclaimed/1024/1024/1024:.2f}')
+          PY
+          echo 'ACTIVE_RELEASES_TOUCHED=NO'
+          echo 'PM2_CHANGED=NO'
+          echo 'NGINX_CHANGED=NO'
+          echo 'DATABASE_TOUCHED=NO'
+          echo 'DOCKER_VOLUMES_TOUCHED=NO'
+          echo '===== SECONDARY CLEANUP COMPLETE ====='
+          REMOTE
