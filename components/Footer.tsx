@@ -108,7 +108,7 @@ export default function Footer() {
       />
 
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
-        <div className="rounded-[30px] border border-slate-200/80 bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8 lg:p-10">
+        <div className="p-6 sm:p-8 lg:p-10">
           <div className="grid gap-10 lg:grid-cols-[1.45fr_0.8fr_0.9fr_1.2fr] lg:gap-12">
             <div>
               <a
