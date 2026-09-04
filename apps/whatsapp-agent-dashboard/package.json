@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "worker:masterclass-flow": "tsx scripts/masterclass-flow-worker.ts",
     "test:admission-flow": "tsx tests/admission-conversation-flow.test.ts && tsx tests/contextual-message.test.ts",
-    "test:masterclass-flow": "tsx tests/masterclass-community-flow.test.ts && tsx tests/masterclass-two-step-flow.test.ts && tsx tests/masterclass-image-flow.test.ts",
+    "test:masterclass-flow": "tsx tests/masterclass-community-flow.test.ts && tsx tests/masterclass-two-step-flow.test.ts && tsx tests/masterclass-image-flow.test.ts && tsx tests/masterclass-worker-runtime-policy.test.ts",
     "test:template-studio": "tsx tests/template-media-service.test.ts",
     "test:learning-feedback": "tsx tests/conversation-feedback.test.ts",
     "test:social-agent": "tsx tests/social-webhook-agent-bridge.test.ts",
