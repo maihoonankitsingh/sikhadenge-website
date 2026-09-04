@@ -10,16 +10,57 @@
   const ROOT_ATTR = "data-claude-cta-conversion";
   const CTA_ATTR = "data-sd-cta-primary-v1";
   const STICKY_ATTR = "data-sd-cta-sticky-v1";
-  const LABEL = "Reserve My Free Seat";
+  const MAIN_LABEL = "Get My Free Seat • ₹999 →";
+  const FREE_LABEL = "Free";
 
   const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
-  const labelPattern = /^(?:Reserve My Free Seat|Get My Free Seat · 100% · Free|Reserve My Free Seat →|Register Now for Free|Yes, Reserve My Free Seat)$/i;
 
   function ensureStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
+    let style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = STYLE_ID;
+      document.head.appendChild(style);
+    }
+
     style.textContent = `
+      html body [${CTA_ATTR}="1"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        white-space: nowrap !important;
+      }
+
+      html body [${CTA_ATTR}="1"] .sd-cta-main-copy-v2 {
+        display: inline-flex !important;
+        align-items: center !important;
+        min-width: 0 !important;
+        color: inherit !important;
+        font: inherit !important;
+        line-height: inherit !important;
+        letter-spacing: inherit !important;
+        white-space: nowrap !important;
+      }
+
+      html body [${CTA_ATTR}="1"] .sd-cta-free-pill-v2 {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        min-height: 38px !important;
+        padding: 0 18px !important;
+        border-radius: 999px !important;
+        background: #FFFFFF !important;
+        color: #D94F32 !important;
+        font-family: "__manrope_a43dd5", "__manrope_Fallback_a43dd5", Manrope, sans-serif !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        font-weight: 760 !important;
+        letter-spacing: -.01em !important;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 3px 10px rgba(29,25,23,.08) !important;
+      }
+
       html body [${CTA_ATTR}="1"]:focus-visible {
         outline: 3px solid rgba(215,110,75,.34) !important;
         outline-offset: 3px !important;
@@ -59,15 +100,15 @@
       }
 
       html body [${STICKY_ATTR}="1"] a[href="${REG}"] {
-        min-width: 262px !important;
+        min-width: 318px !important;
         min-height: 58px !important;
-        padding: 0 18px 0 22px !important;
+        padding: 8px 10px 8px 20px !important;
         border: 1px solid rgba(135,47,24,.16) !important;
         border-radius: 16px !important;
         background: linear-gradient(135deg,#BF5234 0%,#D76E4B 100%) !important;
         color: #FFFFFF !important;
         font-family: "__manrope_a43dd5", "__manrope_Fallback_a43dd5", Manrope, sans-serif !important;
-        font-size: 15px !important;
+        font-size: 14px !important;
         line-height: 1.1 !important;
         font-weight: 760 !important;
         letter-spacing: -.014em !important;
@@ -88,26 +129,11 @@
         box-shadow: 0 10px 24px rgba(191,82,52,.22), inset 0 1px 0 rgba(255,255,255,.18) !important;
       }
 
-      html body [${STICKY_ATTR}="1"] a[href="${REG}"] .sd-cta-arrow-v1 {
-        display: inline-grid !important;
-        place-items: center !important;
-        flex: 0 0 34px !important;
-        width: 34px !important;
-        height: 34px !important;
-        margin-left: 12px !important;
-        border-radius: 999px !important;
-        background: rgba(255,255,255,.16) !important;
-        color: #FFFFFF !important;
-        font-size: 19px !important;
-        font-weight: 600 !important;
-        line-height: 1 !important;
-      }
-
       @media (max-width: 1024px) {
         html body [${STICKY_ATTR}="1"] a[href="${REG}"] {
-          min-width: 232px !important;
+          min-width: 296px !important;
           min-height: 56px !important;
-          font-size: 14px !important;
+          font-size: 13.5px !important;
         }
         html body [${STICKY_ATTR}="1"] [data-sd-cta-sticky-free-v1="1"] {
           font-size: 26px !important;
@@ -131,29 +157,41 @@
           font-size: 11.5px !important;
           line-height: 1.2 !important;
         }
+        html body [${CTA_ATTR}="1"] {
+          gap: 8px !important;
+        }
+        html body [${CTA_ATTR}="1"] .sd-cta-main-copy-v2 {
+          font-size: 12.5px !important;
+        }
+        html body [${CTA_ATTR}="1"] .sd-cta-free-pill-v2 {
+          min-height: 34px !important;
+          padding: 0 14px !important;
+          font-size: 12px !important;
+        }
         html body [${STICKY_ATTR}="1"] a[href="${REG}"] {
-          min-width: 202px !important;
-          min-height: 56px !important;
-          padding: 0 11px 0 16px !important;
+          min-width: 258px !important;
+          min-height: 54px !important;
+          padding: 7px 8px 7px 14px !important;
           border-radius: 15px !important;
-          font-size: 13.5px !important;
+          font-size: 12.5px !important;
           font-weight: 760 !important;
           letter-spacing: -.012em !important;
           box-shadow: 0 12px 28px rgba(191,82,52,.25), inset 0 1px 0 rgba(255,255,255,.2) !important;
         }
-        html body [${STICKY_ATTR}="1"] a[href="${REG}"] .sd-cta-arrow-v1 {
-          flex-basis: 30px !important;
-          width: 30px !important;
-          height: 30px !important;
-          margin-left: 8px !important;
-          font-size: 17px !important;
-        }
       }
 
       @media (max-width: 370px) {
+        html body [${CTA_ATTR}="1"] .sd-cta-main-copy-v2 {
+          font-size: 11.5px !important;
+        }
+        html body [${CTA_ATTR}="1"] .sd-cta-free-pill-v2 {
+          min-height: 32px !important;
+          padding: 0 11px !important;
+          font-size: 11.5px !important;
+        }
         html body [${STICKY_ATTR}="1"] a[href="${REG}"] {
-          min-width: 190px !important;
-          font-size: 13px !important;
+          min-width: 244px !important;
+          padding-left: 11px !important;
         }
       }
 
@@ -163,7 +201,6 @@
         }
       }
     `;
-    document.head.appendChild(style);
   }
 
   function deepestExact(root, text) {
@@ -172,42 +209,26 @@
     return matches.find((node) => ![...node.children].some((child) => normalize(child.textContent) === text)) || matches.at(-1) || null;
   }
 
-  function normalizeAnchorLabel(anchor) {
-    const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    const exact = nodes.find((node) => labelPattern.test(normalize(node.nodeValue)));
-    if (exact) {
-      exact.nodeValue = LABEL;
-      return true;
-    }
+  function ensureAnchorContent(anchor) {
+    const main = anchor.querySelector(':scope > .sd-cta-main-copy-v2');
+    const pill = anchor.querySelector(':scope > .sd-cta-free-pill-v2');
+    if (main && pill && normalize(main.textContent) === MAIN_LABEL && normalize(pill.textContent) === FREE_LABEL && anchor.children.length === 2) return;
 
-    const text = normalize(anchor.textContent);
-    if (!labelPattern.test(text)) return false;
-    const iconLike = [...anchor.children].filter((child) => {
-      const t = normalize(child.textContent);
-      return !t || t === "→" || child.querySelector("svg");
-    });
-    anchor.replaceChildren(document.createTextNode(LABEL), ...iconLike);
-    return true;
-  }
+    const mainCopy = document.createElement("span");
+    mainCopy.className = "sd-cta-main-copy-v2";
+    mainCopy.textContent = MAIN_LABEL;
 
-  function ensureStickyArrow(anchor) {
-    if (anchor.querySelector(".sd-cta-arrow-v1")) return;
-    const existing = [...anchor.children].find((child) => normalize(child.textContent) === "→" || child.querySelector("svg"));
-    if (existing) {
-      existing.classList.add("sd-cta-arrow-v1");
-      return;
-    }
-    const arrow = document.createElement("span");
-    arrow.className = "sd-cta-arrow-v1";
-    arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = "→";
-    anchor.appendChild(arrow);
+    const freePill = document.createElement("span");
+    freePill.className = "sd-cta-free-pill-v2";
+    freePill.textContent = FREE_LABEL;
+    freePill.setAttribute("aria-hidden", "true");
+
+    anchor.replaceChildren(mainCopy, freePill);
+    anchor.setAttribute("aria-label", "Get My Free Seat — ₹999 value, Free now");
   }
 
   function markStickyCopy(sticky) {
-    const eyebrow = deepestExact(sticky, "FREE LIVE AI TOOLS MASTERCLASS");
+    const eyebrow = deepestExact(sticky, "FREE LIVE AI TOOLS MASTERCLASS") || deepestExact(sticky, "MASTERCLASS VALUE");
     const free = deepestExact(sticky, "FREE");
     const time = [...sticky.querySelectorAll("span,p,strong,small,div")]
       .filter((node) => /8:00 PM IST/i.test(normalize(node.textContent)))
@@ -226,7 +247,7 @@
     const anchors = [...document.querySelectorAll(`a[href="${REG}"]`)];
     anchors.forEach((anchor) => {
       anchor.setAttribute(CTA_ATTR, "1");
-      normalizeAnchorLabel(anchor);
+      ensureAnchorContent(anchor);
     });
 
     let sticky = document.querySelector('[class*="heroOfferBar"]');
@@ -248,14 +269,15 @@
       const anchor = sticky.querySelector(`a[href="${REG}"]`);
       if (anchor) {
         anchor.setAttribute(CTA_ATTR, "1");
-        normalizeAnchorLabel(anchor);
-        ensureStickyArrow(anchor);
+        ensureAnchorContent(anchor);
       }
     }
 
-    document.documentElement.setAttribute(ROOT_ATTR, "v1");
+    document.documentElement.setAttribute(ROOT_ATTR, "v2-copy-999-free");
     document.documentElement.setAttribute("data-claude-cta-count-v1", String(anchors.length));
     document.documentElement.setAttribute("data-claude-cta-sticky-found-v1", sticky ? "1" : "0");
+    document.documentElement.setAttribute("data-claude-cta-main-copy-v2", MAIN_LABEL);
+    document.documentElement.setAttribute("data-claude-cta-free-copy-v2", FREE_LABEL);
   }
 
   let raf = 0;
