@@ -1,0 +1,155 @@
+name: Deploy Homepage Pills Center 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-homepage-pills-center-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Patch and deploy homepage pills only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/tmp/sd-home-pills-center-$TS"
+          BAK="/var/backups/sikhadenge/home-pills-center-$TS"
+          STAGE="$LIVE/.next.home-pills-center-stage-$TS"
+          ROLLBACK_STAGE="$LIVE/.next.home-pills-center-rollback-$TS"
+          OLDNEXT="$LIVE/.next.pre-home-pills-center-$TS"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+          test -f "$SRC"
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          cp -a "$LIVE/.next" "$BAK/.next.before"
+          rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          NEWSRC="$CAND/app/landing/page.tsx"
+          python3 - "$NEWSRC" "$SRC" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); live=Path(sys.argv[2])
+          before=p.read_text(encoding='utf-8')
+          pattern=re.compile(r'<(div|span)([^>]*?)className="([^"]*rounded-full[^"]*)"([^>]*)>')
+          changes=[]
+          def patch(m):
+              tag,pre,cls,post=m.groups()
+              # Text-bearing pills only. Excludes decorative circles/dots because they have no px/py pair.
+              if 'px-' not in cls or 'py-' not in cls:
+                  return m.group(0)
+              old=cls
+              tokens=cls.split()
+              if 'justify-center' not in tokens:
+                  tokens.append('justify-center')
+              if 'text-center' not in tokens:
+                  tokens.append('text-center')
+              # Standalone section/eyebrow pills: center the pill itself, not just its contents.
+              is_section_pill = ('inline-flex' in tokens and (('px-4' in tokens and 'py-2' in tokens) or ('px-3.5' in tokens and 'py-2' in tokens)))
+              if is_section_pill:
+                  tokens=[('flex' if t=='inline-flex' else t) for t in tokens]
+                  if 'w-fit' not in tokens: tokens.append('w-fit')
+                  if 'mx-auto' not in tokens: tokens.append('mx-auto')
+              new=' '.join(tokens)
+              if new!=old:
+                  changes.append((tag,old,new))
+              return f'<{tag}{pre}className="{new}"{post}>'
+          after=pattern.sub(patch,before)
+          if not changes:
+              raise SystemExit('no textual homepage pills matched')
+          # Strong scope guard: only className values may differ; no text/content/structure changes.
+          masker=re.compile(r'className="[^"]*"')
+          if masker.sub('className=""',before) != masker.sub('className=""',after):
+              raise SystemExit('guard failed: non-className content changed')
+          # Buttons/anchors are intentionally excluded by the div/span-only matcher.
+          p.write_text(after,encoding='utf-8')
+          print('TEXTUAL_PILLS_CHANGED=',len(changes))
+          print('STANDALONE_CENTERED=',sum('mx-auto' in new and 'mx-auto' not in old for _,old,new in changes))
+          for i,(tag,old,new) in enumerate(changes,1):
+              print(f'CHANGE_{i} <{tag}>: {old} -> {new}')
+          # live source and candidate source were identical before the patch
+          if live.read_text(encoding='utf-8') != before:
+              raise SystemExit('live source changed during candidate preparation')
+          PY
+          cd "$CAND"
+          npm run build
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+          rm -rf "$STAGE" "$ROLLBACK_STAGE"
+          cp -a "$CAND/.next" "$STAGE"
+          cp -a "$BAK/.next.before" "$ROLLBACK_STAGE"
+          test -f "$STAGE/BUILD_ID"
+          test -f "$ROLLBACK_STAGE/BUILD_ID"
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$LIVE/.next.failed-home-pills-center-$TS" || true; fi
+            if [ -d "$ROLLBACK_STAGE" ]; then mv "$ROLLBACK_STAGE" "$LIVE/.next" || true; else cp -a "$BAK/.next.before" "$LIVE/.next" || true; fi
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+          cp -a "$NEWSRC" "$SRC"
+          if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$OLDNEXT"; fi
+          mv "$STAGE" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 6
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?pillcenter=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?pillcenter=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+          python3 - "$SRC" <<'PY'
+          from pathlib import Path
+          import re,sys
+          s=Path(sys.argv[1]).read_text(encoding='utf-8')
+          pattern=re.compile(r'<(div|span)([^>]*?)className="([^"]*rounded-full[^"]*)"([^>]*)>')
+          textual=[]
+          bad=[]
+          section=[]
+          for m in pattern.finditer(s):
+              cls=m.group(3)
+              if 'px-' not in cls or 'py-' not in cls: continue
+              textual.append(cls)
+              if 'justify-center' not in cls or 'text-center' not in cls:
+                  bad.append(cls)
+              if (('px-4' in cls and 'py-2' in cls) or ('px-3.5' in cls and 'py-2' in cls)) and ('flex' in cls):
+                  section.append(cls)
+          print('LIVE_TEXTUAL_PILLS=',len(textual))
+          print('LIVE_UNCENTERED_TEXTUAL_PILLS=',len(bad))
+          print('LIVE_CENTERED_SECTION_PILLS=',sum('mx-auto' in c and 'w-fit' in c for c in section))
+          if bad:
+              raise SystemExit('some textual pills are still not centered')
+          PY
+          echo "BACKUP=$BAK"
+          echo "PREVIOUS_NEXT=$OLDNEXT"
+          echo 'HOME_PILLS_CENTER_LIVE_OK=1 HOMEPAGE_ONLY=1 CLASSNAME_ONLY=1 CTA_UNTOUCHED=1'
+          REMOTE
