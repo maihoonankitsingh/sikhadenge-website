@@ -1,0 +1,262 @@
+name: Deploy Home Single Scrollbar 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-home-single-scrollbar-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Patch homepage only and build candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/var/tmp/sd-home-single-scroll-$TS"
+          BAK="/var/backups/sikhadenge/home-single-scroll-$TS"
+          STAGE="$LIVE/.next.home-single-scroll-stage-$TS"
+          OLDNEXT="$LIVE/.next.pre-home-single-scroll-$TS"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+          test -f "$SRC"
+          test -f "$LIVE/.next/BUILD_ID"
+          cp -a "$SRC" "$BAK/page.tsx.before"
+
+          rsync -a --delete \
+            --exclude 'node_modules' \
+            --exclude '.next*' \
+            --exclude 'public' \
+            --exclude 'data' \
+            "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          ln -s "$LIVE/public" "$CAND/public"
+          ln -s "$LIVE/data" "$CAND/data"
+          NEWSRC="$CAND/app/landing/page.tsx"
+
+          python3 - "$NEWSRC" "$SRC" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]); live=Path(sys.argv[2])
+          before=p.read_text(encoding='utf-8')
+          needle='export default function LandingPage() {\n  return ('
+          if before.count(needle)!=1:
+              raise SystemExit(f'guard failed: LandingPage anchor count={before.count(needle)}')
+          hook='''export default function LandingPage() {
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const properties = [
+      [html, "height"],
+      [html, "min-height"],
+      [html, "overflow-y"],
+      [body, "height"],
+      [body, "min-height"],
+      [body, "overflow-y"],
+    ] as const;
+    const previous = properties.map(([element, property]) => ({
+      element,
+      property,
+      value: element.style.getPropertyValue(property),
+      priority: element.style.getPropertyPriority(property),
+    }));
+
+    html.style.setProperty("height", "auto", "important");
+    html.style.setProperty("min-height", "100%", "important");
+    html.style.setProperty("overflow-y", "auto", "important");
+    body.style.setProperty("height", "auto", "important");
+    body.style.setProperty("min-height", "100%", "important");
+    body.style.setProperty("overflow-y", "visible", "important");
+
+    return () => {
+      previous.forEach(({ element, property, value, priority }) => {
+        if (value) element.style.setProperty(property, value, priority);
+        else element.style.removeProperty(property);
+      });
+    };
+  }, []);
+
+  return ('''
+          after=before.replace(needle,hook,1)
+          marker='html.style.setProperty("overflow-y", "auto", "important")'
+          if after.count(marker)!=1 or after.count('body.style.setProperty("overflow-y", "visible", "important")')!=1:
+              raise SystemExit('single-scroll hook verification failed')
+          # strict containment: removing inserted hook reconstructs exact source
+          if after.replace(hook,needle,1)!=before:
+              raise SystemExit('guard failed: change outside LandingPage hook')
+          p.write_text(after,encoding='utf-8')
+          if live.read_text(encoding='utf-8')!=before:
+              raise SystemExit('live source changed during candidate preparation')
+          print('HOME_ONLY_SINGLE_SCROLL_HOOK=1')
+          print('OTHER_SOURCE_CHANGES=0')
+          PY
+
+          cd "$CAND"
+          npm run build
+          test -f "$CAND/.next/BUILD_ID"
+
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+          rm -rf "$STAGE"
+          mv "$CAND/.next" "$STAGE"
+          test -f "$STAGE/BUILD_ID"
+
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            if [ -d "$LIVE/.next" ]; then
+              rm -rf "$LIVE/.next.failed-home-single-scroll-$TS"
+              mv "$LIVE/.next" "$LIVE/.next.failed-home-single-scroll-$TS" || true
+            fi
+            if [ -d "$OLDNEXT" ]; then mv "$OLDNEXT" "$LIVE/.next" || true; fi
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+
+          cp -a "$NEWSRC" "$SRC"
+          mv "$LIVE/.next" "$OLDNEXT"
+          mv "$STAGE" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 7
+
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?single_scroll=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?single_scroll=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+
+          python3 - "$SRC" <<'PY'
+          from pathlib import Path
+          import sys
+          s=Path(sys.argv[1]).read_text(encoding='utf-8')
+          required=[
+            'html.style.setProperty("height", "auto", "important")',
+            'html.style.setProperty("overflow-y", "auto", "important")',
+            'body.style.setProperty("height", "auto", "important")',
+            'body.style.setProperty("overflow-y", "visible", "important")',
+            'previous.forEach(({ element, property, value, priority }) =>',
+          ]
+          missing=[x for x in required if x not in s]
+          print('SOURCE_MARKERS_MISSING=',missing)
+          if missing: raise SystemExit('source marker verification failed')
+          PY
+
+          echo "$TS" > "$BAK/deploy-ts.txt"
+          echo "$LIVE" > "$BAK/live-path.txt"
+          echo "BACKUP_SOURCE=$BAK/page.tsx.before"
+          echo "DEPLOY_TS=$TS"
+          echo 'HOME_SINGLE_SCROLL_SOURCE_DEPLOYED=1'
+          REMOTE
+      - name: Clean Chrome live QA desktop mobile and route cleanup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          TMP="$(mktemp -d)"; cd "$TMP"
+          npm init -y >/dev/null 2>&1
+          npm install playwright-core@1.55.0 --no-save >/dev/null 2>&1
+          cat > qa.js <<'JS'
+          const { chromium } = require('playwright-core');
+          const exe=process.env.CHROME;
+          async function audit(page,label){
+            await page.waitForTimeout(2200);
+            return page.evaluate(async(label)=>{
+              const all=[...document.querySelectorAll('*')];
+              const vertical=all.filter(el=>{
+                const cs=getComputedStyle(el);
+                return el.scrollHeight>el.clientHeight+2 && ['auto','scroll'].includes(cs.overflowY);
+              }).map(el=>({tag:el.tagName,id:el.id||'',overflowY:getComputedStyle(el).overflowY,clientH:el.clientHeight,scrollH:el.scrollHeight}));
+              const html=document.documentElement, body=document.body;
+              window.scrollTo(0,1000); await new Promise(r=>setTimeout(r,150));
+              const middle={winY:window.scrollY,htmlTop:html.scrollTop,bodyTop:body.scrollTop};
+              const max=Math.max(0,html.scrollHeight-innerHeight);
+              window.scrollTo(0,999999); await new Promise(r=>setTimeout(r,150));
+              const bottom={winY:window.scrollY,htmlTop:html.scrollTop,bodyTop:body.scrollTop,max};
+              window.scrollTo(0,0);
+              return {
+                label,vertical,
+                html:{height:getComputedStyle(html).height,overflowY:getComputedStyle(html).overflowY,clientH:html.clientHeight,scrollH:html.scrollHeight},
+                body:{height:getComputedStyle(body).height,overflowY:getComputedStyle(body).overflowY,clientH:body.clientHeight,scrollH:body.scrollHeight},
+                middle,bottom
+              };
+            },label);
+          }
+          (async()=>{
+            const browser=await chromium.launch({executablePath:exe,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:1365,height:768}});
+            await page.goto('https://sikhadenge.in/?single_scroll_live_qa=desktop',{waitUntil:'networkidle',timeout:60000});
+            const desktop=await audit(page,'HOME_DESKTOP'); console.log(JSON.stringify(desktop,null,2));
+            if(desktop.vertical.length!==1 || desktop.vertical[0].tag!=='HTML') throw new Error('desktop: expected only HTML vertical scroller');
+            if(desktop.middle.winY<900 || desktop.bottom.winY<desktop.bottom.max-50) throw new Error('desktop: page scrolling failed');
+            if(desktop.body.overflowY!=='visible') throw new Error('desktop: body is still vertical scroll owner');
+
+            await page.goto('https://sikhadenge.in/about-us?single_scroll_live_qa=route_cleanup',{waitUntil:'networkidle',timeout:60000});
+            const about=await audit(page,'ABOUT_AFTER_HOME'); console.log(JSON.stringify(about,null,2));
+            if(about.body.overflowY==='visible' && about.body.clientH===about.body.scrollH) throw new Error('route cleanup: homepage inline body style appears leaked');
+
+            await page.setViewportSize({width:390,height:844});
+            await page.goto('https://sikhadenge.in/?single_scroll_live_qa=mobile',{waitUntil:'networkidle',timeout:60000});
+            const mobile=await audit(page,'HOME_MOBILE'); console.log(JSON.stringify(mobile,null,2));
+            if(mobile.vertical.length!==1 || mobile.vertical[0].tag!=='HTML') throw new Error('mobile: expected only HTML vertical scroller');
+            if(mobile.middle.winY<900 || mobile.bottom.winY<mobile.bottom.max-50) throw new Error('mobile: page scrolling failed');
+            if(mobile.body.overflowY!=='visible') throw new Error('mobile: body is still vertical scroll owner');
+            await browser.close();
+            console.log('HOME_SINGLE_SCROLL_LIVE_QA_OK=1 DESKTOP=1 MOBILE=1 ROUTE_CLEANUP=1');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          CHROME="$CHROME" node qa.js
+      - name: Roll back if browser QA failed
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"; LIVE="$(readlink -f /proc/$PID/cwd)"
+          BAK="$(ls -1dt /var/backups/sikhadenge/home-single-scroll-* 2>/dev/null | head -1 || true)"
+          if [ -n "$BAK" ] && [ -f "$BAK/page.tsx.before" ]; then
+            cp -a "$BAK/page.tsx.before" "$LIVE/app/landing/page.tsx"
+            echo 'SOURCE_ROLLBACK_APPLIED=1'
+          fi
+          # Rebuild rollback only if current build contains failed change; safer than guessing old build path after completed swap.
+          CAND="/var/tmp/sd-home-single-scroll-rollback-$(date +%s)"
+          mkdir -p "$CAND"; trap 'rm -rf "$CAND"' EXIT
+          rsync -a --delete --exclude node_modules --exclude '.next*' --exclude public --exclude data "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"; ln -s "$LIVE/public" "$CAND/public"; ln -s "$LIVE/data" "$CAND/data"
+          cd "$CAND"; npm run build; test -f .next/BUILD_ID
+          rm -rf "$LIVE/.next.rollback-failed-single-scroll"; mv "$LIVE/.next" "$LIVE/.next.rollback-failed-single-scroll"; mv "$CAND/.next" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          echo 'ROLLBACK_REBUILD_DONE=1'
+          REMOTE
