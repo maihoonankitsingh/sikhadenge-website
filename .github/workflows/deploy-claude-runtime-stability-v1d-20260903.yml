@@ -1,4 +1,4 @@
-name: Next 15 Stage Reliable Runner 20260904
+name: Next 15 Active Source Inspect 20260904
 on:
   push:
     branches:
@@ -12,31 +12,21 @@ env:
   SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 jobs:
-  stage:
+  inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 30
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
       - name: Configure SSH
         shell: bash
         run: |
           set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"
-          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"
-          KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
-            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
-          else
-            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
-          fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Stage isolated Next 15 candidate on port 3995
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Print relevant candidate source
         shell: bash
         run: |
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' < ops/next15-stage.sh
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "sed -n '1,220p' /var/www/sikhadenge.in/candidates/next15-maintenance-lts-20260904/app/admin/dashboard/page.tsx"
