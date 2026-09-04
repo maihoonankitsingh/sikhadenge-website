@@ -26,8 +26,8 @@ jobs:
       - name: ESLint diagnostic
         continue-on-error: true
         run: npx eslint .
-      - name: Production dependency audit
-        continue-on-error: true
-        run: timeout 90s npm audit --omit=dev --audit-level=high
       - name: Production build
         run: npm run build
+      - name: Production dependency audit
+        continue-on-error: true
+        run: timeout 30s npm audit --omit=dev --audit-level=high
