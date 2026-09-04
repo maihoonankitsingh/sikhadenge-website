@@ -1,0 +1,35 @@
+name: AI Video Golden FAQ Premium V2 Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-2-faq-production-20260904"
+    paths:
+      - "ops/deploy-golden-ai-video-faq-premium-v2.sh"
+      - ".github/workflows/ai-video-golden-faq-premium-v2-guard.yml"
+
+jobs:
+  validate-premium-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-golden-ai-video-faq-premium-v2.sh
+      - name: FAQ-only safety invariants
+        run: |
+          set -euo pipefail
+          F=ops/deploy-golden-ai-video-faq-premium-v2.sh
+          grep -Fq 'BASE_APP="sikhadenge-ai-video-golden-faq-3940-20260904-130510"' "$F"
+          grep -Fq 'Scope:        FAQ typography / spacing / chevron / copy only' "$F"
+          grep -Fq 'ai-video-faq-premium-v2-inline' "$F"
+          grep -Fq 'Non-FAQ HTML equivalence: PASS' "$F"
+          grep -Fq '<svg viewBox="0 0 24 24">' "$F"
+          grep -Fq 'color:#111827!important' "$F"
+          grep -Fq 'font-size:15.5px!important' "$F"
+          grep -Fq 'FAQ_COUNT=15' "$F"
+          grep -Fq 'pm2 restart "$BASE_APP"' "$F"
+          ! grep -Fq 'nginx -s reload' "$F"
+          ! grep -Fq 'systemctl restart nginx' "$F"
+          ! grep -Fq 'chattr -i "$GOLDEN_HTML"' "$F"
+          ! grep -Fq 'chattr -i "$GOLDEN_RUNTIME"' "$F"
+          echo 'Premium FAQ V2 deploy guard PASS'
