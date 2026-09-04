@@ -69,12 +69,21 @@ def layout(s):
 rw(Path('app/layout.tsx'), layout)
 
 def skill(s):
-    if 'params: Promise<{ skill: string }>' in s: return s
-    marker='export async function generateStaticParams()'
-    if marker in s: s=s.replace(marker,'type SkillPageProps = {\n  params: Promise<{ skill: string }>;\n};\n\n'+marker,1)
-    s=s.replace('export function generateMetadata({ params }: { params: { skill: string } }): Metadata {','export async function generateMetadata({ params }: SkillPageProps): Promise<Metadata> {\n  const { skill } = await params;')
-    s=s.replace('export default function SkillPage({ params }: { params: { skill: string } }) {','export default async function SkillPage({ params }: SkillPageProps) {\n  const { skill } = await params;')
-    return s.replace('params.skill','skill')
+    old_meta='export function generateMetadata({ params }: { params: { skill: string } }): Metadata {'
+    old_page='export default function SkillPage({ params }: { params: { skill: string } }) {'
+    if old_meta in s:
+        s=s.replace(old_meta,'export async function generateMetadata({ params }: SkillPageProps): Promise<Metadata> {\n  const { skill } = await params;',1)
+    if old_page in s:
+        s=s.replace(old_page,'export default async function SkillPage({ params }: SkillPageProps) {\n  const { skill } = await params;',1)
+    s=s.replace('params.skill','skill')
+    if 'SkillPageProps' in s and 'type SkillPageProps' not in s:
+        decl='type SkillPageProps = {\n  params: Promise<{ skill: string }>;\n};\n\n'
+        anchors=['export async function generateStaticParams()','export async function generateMetadata','export const dynamicParams']
+        for a in anchors:
+            if a in s:
+                s=s.replace(a,decl+a,1)
+                break
+    return s
 rw(Path('app/[skill]/page.tsx'), skill)
 
 def blog(s):
@@ -94,6 +103,23 @@ def expert(s):
     s=s.replace('export default function ExpertPage({ params }: { params: { slug: string } }) {','export default async function ExpertPage({ params }: ExpertPageProps) {\n  const { slug } = await params;')
     return s.replace('params.slug','slug')
 rw(Path('app/expert/[slug]/page.tsx'), expert)
+
+# Next 15 request APIs are async. Active release contains admission routes not present in the older main snapshot.
+def async_cookies(s):
+    s=s.replace('const cookieStore = cookies();','const cookieStore = await cookies();')
+    s=s.replace('const cookieStore=cookies();','const cookieStore=await cookies();')
+    s=s.replace('cookies().get(', '(await cookies()).get(')
+    s=s.replace('cookies().has(', '(await cookies()).has(')
+    s=s.replace('cookies().getAll(', '(await cookies()).getAll(')
+    return s
+for p in root.rglob('*.ts'):
+    if 'node_modules' not in p.parts and '.next' not in p.parts and 'cookies()' in p.read_text(errors='ignore'):
+        old=p.read_text(); new=async_cookies(old)
+        if new!=old: p.write_text(new)
+for p in root.rglob('*.tsx'):
+    if 'node_modules' not in p.parts and '.next' not in p.parts and 'cookies()' in p.read_text(errors='ignore'):
+        old=p.read_text(); new=async_cookies(old)
+        if new!=old: p.write_text(new)
 PY
 
 cd "$CAND"
