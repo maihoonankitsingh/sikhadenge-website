@@ -1,0 +1,86 @@
+name: Audit Home Scroll Runtime 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-home-scroll-runtime-20260904.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Runtime browser scrollbar audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          echo "CHROME=$CHROME"
+          test -n "$CHROME"
+          TMP="$(mktemp -d)"
+          cd "$TMP"
+          npm init -y >/dev/null 2>&1
+          npm install playwright-core@1.55.0 --no-save >/dev/null 2>&1
+          cat > audit.js <<'JS'
+          const { chromium } = require('playwright-core');
+          const cp = require('child_process');
+          const exe = process.env.CHROME;
+          async function inspect(page, url, label) {
+            await page.goto(url, {waitUntil:'networkidle', timeout:60000});
+            await page.waitForTimeout(2500);
+            const out = await page.evaluate(() => {
+              const norm = (el) => {
+                const cs = getComputedStyle(el);
+                const r = el.getBoundingClientRect();
+                return {
+                  tag: el.tagName,
+                  id: el.id || '',
+                  cls: (typeof el.className === 'string' ? el.className : '').slice(0,180),
+                  overflowY: cs.overflowY,
+                  overflowX: cs.overflowX,
+                  position: cs.position,
+                  clientH: el.clientHeight,
+                  scrollH: el.scrollHeight,
+                  clientW: el.clientWidth,
+                  scrollW: el.scrollWidth,
+                  top: Math.round(r.top),
+                  left: Math.round(r.left),
+                  width: Math.round(r.width),
+                  height: Math.round(r.height),
+                };
+              };
+              const all = [...document.querySelectorAll('*')];
+              const vertical = all.filter(el => {
+                const cs = getComputedStyle(el);
+                return el.scrollHeight > el.clientHeight + 2 && ['auto','scroll'].includes(cs.overflowY);
+              }).map(norm);
+              const fixedTall = all.filter(el => {
+                const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+                return cs.position === 'fixed' && r.height > innerHeight * .65;
+              }).map(norm);
+              return {
+                url: location.href,
+                innerWidth, innerHeight,
+                scrollingElement: document.scrollingElement?.tagName,
+                html: norm(document.documentElement),
+                body: norm(document.body),
+                vertical,
+                fixedTall,
+                iframes: [...document.querySelectorAll('iframe')].map(norm),
+                bodyChildren: [...document.body.children].map(norm).slice(0,40),
+              };
+            });
+            console.log(`=== ${label} ===`);
+            console.log(JSON.stringify(out, null, 2));
+          }
+          (async()=>{
+            const browser = await chromium.launch({executablePath:exe, headless:true, args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page = await browser.newPage({viewport:{width:1365,height:768}});
+            await inspect(page,'https://sikhadenge.in/?runtime_scroll_audit=1','HOME_DESKTOP');
+            await inspect(page,'https://sikhadenge.in/about-us?runtime_scroll_audit=1','ABOUT_DESKTOP');
+            await page.setViewportSize({width:390,height:844});
+            await inspect(page,'https://sikhadenge.in/?runtime_scroll_audit_mobile=1','HOME_MOBILE');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          CHROME="$CHROME" node audit.js
