@@ -124,4 +124,4 @@ process.on("uncaughtException", (error) => {
 log("started", { intervalSeconds: INTERVAL_MS / 1_000 });
 void runCycle();
 timer = setInterval(() => void runCycle(), INTERVAL_MS);
-timer.unref();
+// Keep the interval referenced so the standalone PM2 worker stays alive.
