@@ -1,0 +1,82 @@
+name: Diagnose Next15 Node Abort 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/diagnose-next15-node-abort-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Cleanup failed candidates and diagnose host
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f "/proc/$PID/cwd")"
+          echo "ACTIVE_PID=$PID"
+          echo "ACTIVE_RELEASE=$LIVE"
+          node -v
+          npm -v
+          echo '--- memory before cleanup ---'
+          free -h
+          echo '--- disk before cleanup ---'
+          df -h "$LIVE"
+          echo '--- active release size/top-level ---'
+          du -sh "$LIVE" || true
+          du -sh "$LIVE"/* "$LIVE"/.[!.]* 2>/dev/null | sort -h | tail -30 || true
+          echo '--- process environment key names only ---'
+          tr '\0' '\n' < "/proc/$PID/environ" | sed 's/=.*//' | sort -u
+          echo '--- node-related environment values (safe subset) ---'
+          tr '\0' '\n' < "/proc/$PID/environ" | grep -E '^(NODE_ENV|NODE_OPTIONS|PORT)=' || true
+          echo '--- recent kernel OOM/abort hints ---'
+          dmesg -T 2>/dev/null | grep -Ei 'out of memory|oom|killed process|segfault|trap|abort' | tail -40 || true
+
+          for d in \
+            '/var/www/sikhadenge.in/releases/next15-20260904-143541' \
+            '/var/www/sikhadenge.in/releases/next15-v2-20260904-143758'; do
+            if [[ -d "$d" && "$d" != "$LIVE" ]]; then
+              echo "REMOVING_FAILED_CANDIDATE=$d"
+              rm -rf --one-file-system "$d"
+            fi
+          done
+          echo '--- disk after cleanup ---'
+          df -h "$LIVE"
+          echo '--- active runtime remains ---'
+          pm2 describe "$APP" | sed -n '1,35p'
+          curl -fsS --max-time 10 'http://127.0.0.1:3955/' >/dev/null
+          echo 'ACTIVE_SITE_OK'
+          REMOTE
