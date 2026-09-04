@@ -1,0 +1,73 @@
+name: Test Home Single Scroll Candidates 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/test-home-single-scroll-candidates-20260904.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Simulate homepage-only scrollbar fixes in clean Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          TMP="$(mktemp -d)"; cd "$TMP"
+          npm init -y >/dev/null 2>&1
+          npm install playwright-core@1.55.0 --no-save >/dev/null 2>&1
+          cat > test.js <<'JS'
+          const { chromium } = require('playwright-core');
+          const exe = process.env.CHROME;
+          async function measure(page,label){
+            return await page.evaluate(async (label)=>{
+              const all=[...document.querySelectorAll('*')];
+              const vertical=all.filter(el=>{
+                const cs=getComputedStyle(el);
+                return el.scrollHeight>el.clientHeight+2 && ['auto','scroll'].includes(cs.overflowY);
+              }).map(el=>({tag:el.tagName,id:el.id||'',overflowY:getComputedStyle(el).overflowY,clientH:el.clientHeight,scrollH:el.scrollHeight}));
+              const start={winY:window.scrollY,htmlTop:document.documentElement.scrollTop,bodyTop:document.body.scrollTop};
+              window.scrollTo(0,1000); await new Promise(r=>setTimeout(r,120));
+              const afterWindow={winY:window.scrollY,htmlTop:document.documentElement.scrollTop,bodyTop:document.body.scrollTop};
+              document.documentElement.scrollTop=1500; document.body.scrollTop=1500; await new Promise(r=>setTimeout(r,120));
+              const afterDirect={winY:window.scrollY,htmlTop:document.documentElement.scrollTop,bodyTop:document.body.scrollTop};
+              const maxBody=Math.max(0,document.body.scrollHeight-innerHeight);
+              const maxHtml=Math.max(0,document.documentElement.scrollHeight-innerHeight);
+              window.scrollTo(0,999999); document.body.scrollTop=999999; document.documentElement.scrollTop=999999; await new Promise(r=>setTimeout(r,120));
+              const bottom={winY:window.scrollY,htmlTop:document.documentElement.scrollTop,bodyTop:document.body.scrollTop,maxBody,maxHtml};
+              window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0;
+              return {
+                label,
+                html:{overflowY:getComputedStyle(document.documentElement).overflowY,height:getComputedStyle(document.documentElement).height,clientH:document.documentElement.clientHeight,scrollH:document.documentElement.scrollHeight},
+                body:{overflowY:getComputedStyle(document.body).overflowY,height:getComputedStyle(document.body).height,clientH:document.body.clientHeight,scrollH:document.body.scrollHeight},
+                vertical,start,afterWindow,afterDirect,bottom
+              };
+            },label);
+          }
+          async function run(css,label){
+            const browser=await chromium.launch({executablePath:exe,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:1365,height:768}});
+            await page.goto('https://sikhadenge.in/?scroll_candidate='+encodeURIComponent(label),{waitUntil:'networkidle',timeout:60000});
+            await page.waitForTimeout(1800);
+            if(css) await page.addStyleTag({content:css});
+            await page.waitForTimeout(200);
+            const result=await measure(page,label);
+            console.log(JSON.stringify(result,null,2));
+            await browser.close();
+            return result;
+          }
+          (async()=>{
+            const baseline=await run('', 'BASELINE');
+            const a=await run('html{height:auto!important;min-height:100%!important;overflow-y:auto!important} body{height:auto!important;min-height:100%!important;overflow-y:visible!important}', 'A_HTML_ONLY');
+            const b=await run('html{overflow-y:hidden!important} body{height:100%!important;overflow-y:auto!important}', 'B_BODY_ONLY');
+            function goodA(x){return x.vertical.length===1 && x.vertical[0].tag==='HTML' && x.afterWindow.winY>=900 && x.bottom.winY>=Math.max(1000,x.bottom.maxHtml-50);}
+            function goodB(x){return x.vertical.length===1 && x.vertical[0].tag==='BODY' && x.afterDirect.bodyTop>=1400 && x.bottom.bodyTop>=Math.max(1000,x.bottom.maxBody-50);}
+            console.log('A_PASS='+Number(goodA(a)));
+            console.log('B_PASS='+Number(goodB(b)));
+            if(!goodA(a) && !goodB(b)) process.exit(2);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          CHROME="$CHROME" node test.js
