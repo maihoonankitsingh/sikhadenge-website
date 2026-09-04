@@ -1,0 +1,216 @@
+name: Deploy Next15 Production V6 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/deploy-next15-production-v6-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Build validate PM2 and cut over
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          TEST_APP='next15-pm2-v6-test'
+          TARGET_SHA='b0c2638d1dc6c8c1168811ab8a09c4c99633e1d2'
+          PROD_PORT=3955
+          DIRECT_PORT=43965
+          PM2_TEST_PORT=43967
+          BASE='/var/www/sikhadenge.in'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          REL="$BASE/releases/next15-v6-$TS"
+          CUTOVER=0
+          DIRECT_PID=''
+          NODE_BIN="$(command -v node)"
+
+          OLD_PID="$(pm2 pid "$APP" | tail -1)"
+          test -n "$OLD_PID"; test "$OLD_PID" != '0'
+          OLD="$(readlink -f "/proc/$OLD_PID/cwd")"
+          test -d "$OLD"
+          echo "OLD_RELEASE=$OLD"
+          node -e "const p=require('$OLD/package.json'); console.log('OLD_NEXT='+p.dependencies.next)"
+          curl -fsS --max-time 10 "http://127.0.0.1:$PROD_PORT/" >/dev/null
+
+          cleanup_tests() {
+            set +e
+            if [[ -n "$DIRECT_PID" ]]; then kill "$DIRECT_PID" >/dev/null 2>&1 || true; wait "$DIRECT_PID" >/dev/null 2>&1 || true; fi
+            pm2 delete "$TEST_APP" >/dev/null 2>&1 || true
+          }
+          rollback() {
+            set +e
+            echo 'ROLLBACK_BEGIN'
+            cleanup_tests
+            pm2 delete "$APP" >/dev/null 2>&1 || true
+            cd "$OLD"
+            NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 pm2 start "$OLD/node_modules/next/dist/bin/next" --name "$APP" --cwd "$OLD" -- start -p "$PROD_PORT" || true
+            for i in $(seq 1 40); do curl -fsS --max-time 3 "http://127.0.0.1:$PROD_PORT/" >/dev/null && break; sleep 1; done
+            pm2 save >/dev/null 2>&1 || true
+            echo 'ROLLBACK_END'
+          }
+          on_error() {
+            rc=$?
+            echo "DEPLOY_ERROR rc=$rc"
+            echo '--- production app logs tail ---'
+            tail -120 "$HOME/.pm2/logs/${APP}-error.log" 2>/dev/null || true
+            tail -120 "$HOME/.pm2/logs/${APP}-out.log" 2>/dev/null || true
+            cleanup_tests
+            [[ "$CUTOVER" -eq 0 ]] || rollback
+            exit "$rc"
+          }
+          trap on_error ERR
+
+          for port in "$DIRECT_PORT" "$PM2_TEST_PORT"; do
+            if ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$port$"; then echo "TEST_PORT_OCCUPIED=$port"; exit 40; fi
+          done
+
+          AVAIL="$(df -B1 --output=avail "$BASE" | tail -1 | tr -d ' ')"
+          echo "DISK_AVAILABLE_BYTES=$AVAIL"
+          test "$AVAIL" -ge 5000000000
+          mkdir -p "$REL"
+          tar -C "$OLD" \
+            --exclude='./node_modules' --exclude='./.next' --exclude='./.next.*' \
+            --exclude='./public' --exclude='./data' --exclude='./backups' \
+            --exclude='./502' --exclude='./.git' --exclude='*.zip' \
+            -cf - . | tar -C "$REL" -xf -
+          ln -s "$OLD/public" "$REL/public"
+          ln -s "$OLD/data" "$REL/data"
+
+          fetch_file() {
+            p="$1"
+            mkdir -p "$REL/$(dirname "$p")"
+            curl --globoff -fsSL --retry 3 --max-time 45 \
+              "https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/$TARGET_SHA/$p" \
+              -o "$REL/$p"
+          }
+          for p in \
+            'package.json' 'package-lock.json' 'app/layout.tsx' 'app/[skill]/page.tsx' \
+            'app/blog/[slug]/page.tsx' 'app/expert/[slug]/page.tsx' 'app/reviews/page.tsx' \
+            'components/Footer.tsx' 'pages/contact.tsx'; do fetch_file "$p"; done
+
+          cd "$REL"
+          node -e "const p=require('./package.json'); if(p.dependencies.next!=='15.5.24'||p.dependencies.react!=='19.2.8'||p.dependencies['react-dom']!=='19.2.8') process.exit(1); console.log('PACKAGE_GATE=PASS')"
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+          npm run build
+          test -f .next/BUILD_ID
+          echo "BUILD_ID=$(cat .next/BUILD_ID)"
+          echo 'BUILD_GATE=PASS'
+
+          # 1) Direct Node smoke.
+          node node_modules/next/dist/bin/next start -p "$DIRECT_PORT" >.v6-direct.log 2>&1 &
+          DIRECT_PID=$!
+          READY=0
+          for i in $(seq 1 40); do
+            if kill -0 "$DIRECT_PID" 2>/dev/null && curl -fsS --max-time 3 "http://127.0.0.1:$DIRECT_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          test "$READY" = '1'
+          for route in / /about-us /reviews /experts; do
+            code="$(curl -sS -o /tmp/v6-direct-body --max-time 12 -w '%{http_code}' "http://127.0.0.1:$DIRECT_PORT$route")"
+            echo "DIRECT $route HTTP=$code"; test "$code" = '200'
+          done
+          kill "$DIRECT_PID" >/dev/null 2>&1 || true; wait "$DIRECT_PID" >/dev/null 2>&1 || true; DIRECT_PID=''
+          echo 'DIRECT_SMOKE=PASS'
+
+          # 2) PM2 smoke using the exact invocation style that production will use.
+          pm2 delete "$TEST_APP" >/dev/null 2>&1 || true
+          pm2 start "$REL/node_modules/next/dist/bin/next" --name "$TEST_APP" --cwd "$REL" --interpreter "$NODE_BIN" -- start -p "$PM2_TEST_PORT"
+          READY=0
+          for i in $(seq 1 40); do
+            TPID="$(pm2 pid "$TEST_APP" | tail -1)"
+            if [[ -n "$TPID" && "$TPID" != '0' ]] && curl -fsS --max-time 3 "http://127.0.0.1:$PM2_TEST_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          if [[ "$READY" != '1' ]]; then
+            pm2 describe "$TEST_APP" || true
+            tail -120 "$HOME/.pm2/logs/${TEST_APP}-error.log" 2>/dev/null || true
+            tail -120 "$HOME/.pm2/logs/${TEST_APP}-out.log" 2>/dev/null || true
+            false
+          fi
+          for route in / /reviews; do curl -fsS --max-time 10 "http://127.0.0.1:$PM2_TEST_PORT$route" >/dev/null; done
+          echo 'PM2_SMOKE=PASS'
+          pm2 delete "$TEST_APP"
+
+          # 3) Production cutover only after both direct and PM2 candidate smokes pass.
+          CUTOVER=1
+          pm2 delete "$APP"
+          for i in $(seq 1 30); do
+            if ! ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$PROD_PORT$"; then break; fi
+            sleep 1
+          done
+          if ss -ltnp | awk '{print $4}' | grep -Eq "(^|:)$PROD_PORT$"; then ss -ltnp | grep ":$PROD_PORT " || true; false; fi
+
+          : > "$HOME/.pm2/logs/${APP}-error.log" 2>/dev/null || true
+          : > "$HOME/.pm2/logs/${APP}-out.log" 2>/dev/null || true
+          cd "$REL"
+          pm2 start "$REL/node_modules/next/dist/bin/next" --name "$APP" --cwd "$REL" --interpreter "$NODE_BIN" -- start -p "$PROD_PORT"
+          READY=0
+          for i in $(seq 1 50); do
+            NEW_PID="$(pm2 pid "$APP" | tail -1)"
+            if [[ -n "$NEW_PID" && "$NEW_PID" != '0' ]] && curl -fsS --max-time 3 "http://127.0.0.1:$PROD_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          if [[ "$READY" != '1' ]]; then
+            pm2 describe "$APP" || true
+            ss -ltnp | grep ":$PROD_PORT " || true
+            false
+          fi
+
+          NEW_PID="$(pm2 pid "$APP" | tail -1)"
+          NEW_CWD="$(readlink -f "/proc/$NEW_PID/cwd")"
+          echo "NEW_PID=$NEW_PID"
+          echo "NEW_CWD=$NEW_CWD"
+          test "$NEW_CWD" = "$REL"
+          node -e "const p=require('$NEW_CWD/package.json'); if(p.dependencies.next!=='15.5.24') process.exit(1); console.log('LIVE_NEXT='+p.dependencies.next)"
+          for route in / /about-us /reviews /experts; do
+            code="$(curl -sS -o /tmp/v6-local --max-time 12 -w '%{http_code}' "http://127.0.0.1:$PROD_PORT$route")"
+            echo "LOCAL_LIVE $route HTTP=$code"; test "$code" = '200'
+          done
+          BUST="$(date +%s)"
+          for route in / /about-us /reviews; do
+            code="$(curl -sS -o /tmp/v6-public --max-time 20 -w '%{http_code}' "https://sikhadenge.in${route}?next15=$BUST")"
+            echo "PUBLIC_LIVE $route HTTP=$code"; test "$code" = '200'
+          done
+          pm2 save
+          CUTOVER=0
+          trap - ERR
+          echo 'NEXT15_PRODUCTION_DEPLOY_SUCCESS'
+          echo "ACTIVE_RELEASE=$REL"
+          echo "ROLLBACK_RELEASE=$OLD"
+          df -h "$BASE"
+          REMOTE
