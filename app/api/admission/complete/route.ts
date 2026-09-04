@@ -5,8 +5,8 @@ import path from "path";
 import { mkdir, rm, writeFile } from "fs/promises";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { verifyAdmissionCompletionToken } from "@/lib/admission-token";
+import { prisma } from "../../../../lib/prisma";
+import { verifyAdmissionCompletionToken } from "../../../../lib/admission-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
