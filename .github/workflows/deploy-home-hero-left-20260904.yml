@@ -1,0 +1,165 @@
+name: Deploy Home Hero Left 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-home-hero-left-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Patch only three hero alignment classes and deploy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/var/tmp/sd-home-hero-left-$TS"
+          BAK="/var/backups/sikhadenge/home-hero-left-$TS"
+          STAGE="$LIVE/.next.home-hero-left-stage-$TS"
+          OLDNEXT="$LIVE/.next.pre-home-hero-left-$TS"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+          test -f "$SRC"
+          test -f "$LIVE/.next/BUILD_ID"
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          rsync -a --delete --exclude node_modules --exclude '.next*' --exclude public --exclude data "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          ln -s "$LIVE/public" "$CAND/public"
+          ln -s "$LIVE/data" "$CAND/data"
+          NEWSRC="$CAND/app/landing/page.tsx"
+          python3 - "$NEWSRC" "$SRC" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]); live=Path(sys.argv[2])
+          before=p.read_text(encoding='utf-8')
+          pairs=[
+            ('className="flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full justify-center text-center w-fit mx-auto"',
+             'className="flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full justify-start text-left w-fit mx-0"'),
+            ('className="text-[34px] sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-[1.08] tracking-[-0.03em] text-center mx-auto"',
+             'className="text-[34px] sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-[1.08] tracking-[-0.03em] text-left mx-0"'),
+            ('className="max-w-xl text-[15px] md:text-base text-white/75 leading-7 md:leading-relaxed text-center mx-auto"',
+             'className="max-w-xl text-[15px] md:text-base text-white/75 leading-7 md:leading-relaxed text-left mx-0"'),
+          ]
+          after=before
+          for old,new in pairs:
+              if after.count(old)!=1:
+                  raise SystemExit(f'guard failed expected exactly one target: {old}')
+              after=after.replace(old,new,1)
+          for old,new in pairs:
+              if after.count(new)!=1 or after.count(old)!=0:
+                  raise SystemExit('replacement verification failed')
+          # strict scope: reverse all three changes and require byte-for-byte source recovery
+          check=after
+          for old,new in reversed(pairs):
+              check=check.replace(new,old,1)
+          if check!=before:
+              raise SystemExit('scope guard failed: change outside requested hero alignment classes')
+          p.write_text(after,encoding='utf-8')
+          if live.read_text(encoding='utf-8')!=before:
+              raise SystemExit('live source changed during candidate preparation')
+          print('HERO_ALIGNMENT_TARGETS_CHANGED=3')
+          print('OTHER_SOURCE_CHANGES=0')
+          PY
+          cd "$CAND"
+          npm run build
+          test -f "$CAND/.next/BUILD_ID"
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+          rm -rf "$STAGE"
+          mv "$CAND/.next" "$STAGE"
+          test -f "$STAGE/BUILD_ID"
+          cp -a "$NEWSRC" "$SRC"
+          mv "$LIVE/.next" "$OLDNEXT"
+          mv "$STAGE" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 7
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?hero_left=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?hero_left=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then
+            cp -a "$BAK/page.tsx.before" "$SRC"
+            rm -rf "$LIVE/.next.failed-home-hero-left-$TS"
+            mv "$LIVE/.next" "$LIVE/.next.failed-home-hero-left-$TS" || true
+            mv "$OLDNEXT" "$LIVE/.next" || true
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+            exit 1
+          fi
+          grep -Fq 'tracking-[-0.03em] text-left mx-0' "$SRC"
+          grep -Fq 'md:leading-relaxed text-left mx-0' "$SRC"
+          grep -Fq 'rounded-full justify-start text-left w-fit mx-0' "$SRC"
+          rm -rf "$OLDNEXT"
+          echo "BACKUP_SOURCE=$BAK/page.tsx.before"
+          echo 'HOME_HERO_LEFT_DEPLOY_OK=1 ONLY_ALIGNMENT_TARGETS=3'
+          REMOTE
+      - name: Clean Chrome live QA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          TMP="$(mktemp -d)"; cd "$TMP"
+          npm init -y >/dev/null 2>&1
+          npm install playwright-core@1.55.0 --no-save >/dev/null 2>&1
+          cat > qa.js <<'JS'
+          const { chromium } = require('playwright-core');
+          const exe = process.env.CHROME;
+          (async()=>{
+            const browser=await chromium.launch({executablePath:exe,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:1365,height:768}});
+            await page.goto('https://sikhadenge.in/?hero_left_qa=1',{waitUntil:'networkidle',timeout:60000});
+            await page.waitForTimeout(1800);
+            const out=await page.evaluate(()=>{
+              const h1=[...document.querySelectorAll('h1')].find(x=>x.textContent?.includes('Become an AI Expert'));
+              if(!h1) throw new Error('hero h1 not found');
+              const col=h1.parentElement;
+              const badge=col?.children?.[0];
+              const p=col?.querySelector('p');
+              if(!badge || !p) throw new Error('hero badge/paragraph not found');
+              const hb=h1.getBoundingClientRect(), bb=badge.getBoundingClientRect(), pb=p.getBoundingClientRect();
+              const csH=getComputedStyle(h1), csB=getComputedStyle(badge), csP=getComputedStyle(p);
+              return {
+                h1:{align:csH.textAlign,left:Math.round(hb.left)},
+                badge:{align:csB.textAlign,marginLeft:csB.marginLeft,left:Math.round(bb.left)},
+                p:{align:csP.textAlign,marginLeft:csP.marginLeft,left:Math.round(pb.left)},
+                deltas:{badgeH1:Math.abs(bb.left-hb.left),pH1:Math.abs(pb.left-hb.left)}
+              };
+            });
+            console.log(JSON.stringify(out,null,2));
+            if(out.h1.align!=='left' || out.p.align!=='left' || out.badge.align!=='left') throw new Error('hero text is not left aligned');
+            if(out.deltas.badgeH1>4 || out.deltas.pH1>4) throw new Error('hero elements do not share left edge');
+            await browser.close();
+            console.log('HOME_HERO_LEFT_QA_OK=1');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          CHROME="$CHROME" node qa.js
