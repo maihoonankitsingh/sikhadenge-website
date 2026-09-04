@@ -1,0 +1,273 @@
+name: Deploy Claude FAQ V2 20260904
+
+on:
+  push:
+    paths:
+      - .github/workflows/deploy-claude-faq-v2-20260904.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          if [[ -z "${SSH_PORT:-}" ]]; then SSH_PORT=22; fi
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only Claude FAQ asset and exact-route loader
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSET='/var/www/sikhadenge.in/claude-faq-v2.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/14b59b0e12ee5d603b054f37698c0f9652eb60e3/public/claude-faq-v2.js'
+          MARKER='/var/backups/sikhadenge/.claude-faq-v2-last'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-faq-v2-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-faq-v2.js.before"
+          printf '%s\n' "$BACKUP" > "$MARKER"
+
+          rollback() {
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-faq-v2.js.before" ]]; then
+              cp "$BACKUP/claude-faq-v2.js.before" "$ASSET"
+            else
+              rm -f "$ASSET"
+            fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY FAILED rc=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_FAQ_V2__' "$TMP"
+          grep -Fq 'data-sd-claude-faq-v2' "$TMP"
+          grep -Fq 'Is this AI tools masterclass really free?' "$TMP"
+          grep -Fq 'How do I reserve my free seat?' "$TMP"
+          node --check "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          route = 'location = /masterclass/claude/free {'
+          start = s.find(route)
+          if start < 0:
+              raise SystemExit('Claude exact route not found')
+
+          brace = s.find('{', start)
+          depth = 0
+          end = None
+          for i in range(brace, len(s)):
+              if s[i] == '{':
+                  depth += 1
+              elif s[i] == '}':
+                  depth -= 1
+                  if depth == 0:
+                      end = i + 1
+                      break
+          if end is None:
+              raise SystemExit('Claude exact route parse failed')
+
+          seg = s[start:end]
+          script = '<script defer src="/claude-faq-v2.js?v=faq15-brand-20260904"></script>'
+          seg = re.sub(r'<script[^>]+src="/claude-faq-v2\.js[^\"]*"[^>]*></script>', '', seg)
+          anchor = "</body>';"
+          pos = seg.find(anchor)
+          if pos < 0:
+              raise SystemExit('Claude body sub_filter anchor not found')
+          seg = seg[:pos] + script + seg[pos:]
+          s = s[:start] + seg + s[end:]
+
+          asset_marker = '# CLAUDE_FAQ_V2_ASSET'
+          if asset_marker not in s:
+              block = '''    # CLAUDE_FAQ_V2_ASSET
+              location = /claude-faq-v2.js {
+                  alias /var/www/sikhadenge.in/claude-faq-v2.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_FAQ_V2_ASSET_END
+
+          '''
+              idx = s.find(route)
+              if idx < 0:
+                  raise SystemExit('Could not place FAQ asset location')
+              s = s[:idx] + block + s[idx:]
+
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          curl -fsS --max-time 20 'https://sikhadenge.in/claude-faq-v2.js?v=faq15-brand-20260904' | grep -Fq '__CLAUDE_FAQ_V2__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=faq-v2-server-20260904' -o "$HTML"
+          test "$(grep -o '/claude-faq-v2.js?v=faq15-brand-20260904' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$HTML"
+
+          AI="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=faq-v2-isolation-20260904' -o "$AI"
+          if grep -Fq '/claude-faq-v2.js' "$AI"; then
+            echo 'FAQ patch leaked into AI Video page'
+            exit 1
+          fi
+
+          echo "BACKUP=$BACKUP"
+          echo 'CLAUDE_FAQ_V2_SERVER_OK'
+          trap - ERR
+          REMOTE
+
+      - name: Verify FAQ on desktop tablet and mobile Chrome
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          mkdir -p faq-qa
+          cat > faq-qa/qa.js <<'JS'
+          const puppeteer = require('puppeteer-core');
+          const fs = require('fs');
+          const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+
+          (async () => {
+            const browser = await puppeteer.launch({
+              executablePath: process.env.CHROME,
+              headless: true,
+              args: ['--no-sandbox', '--disable-dev-shm-usage']
+            });
+            const views = [
+              ['desktop', 1440, 1000, false],
+              ['tablet', 768, 1024, true],
+              ['mobile', 390, 844, true]
+            ];
+            const results = {};
+            const failures = [];
+
+            for (const [name, width, height, mobile] of views) {
+              const page = await browser.newPage();
+              await page.setViewport({width, height, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1});
+              await page.goto(`https://sikhadenge.in/masterclass/claude/free?v=faq-v2-${name}-20260904`, {
+                waitUntil: 'domcontentloaded',
+                timeout: 45000
+              });
+              await new Promise(r => setTimeout(r, 14000));
+
+              const state = await page.evaluate(() => {
+                const section = document.querySelector('section[data-sd-claude-faq-v2="1"]');
+                const items = section ? [...section.querySelectorAll('details.sd-faq-v2-item')] : [];
+                const h1 = (document.querySelector('main h1')?.innerText || document.querySelector('h1')?.innerText || '').replace(/\s+/g, ' ').trim();
+                const heading = section?.querySelector('h2')?.innerText?.replace(/\s+/g, ' ').trim() || '';
+                return {
+                  marker: document.documentElement.getAttribute('data-claude-faq-v2'),
+                  section: !!section,
+                  count: items.length,
+                  openCount: items.filter(x => x.open).length,
+                  firstOpen: !!items[0]?.open,
+                  questions: items.map(x => (x.querySelector('summary')?.innerText || '').replace(/\s+/g, ' ').trim()),
+                  answers: items.map(x => (x.querySelector('.sd-faq-v2-answer')?.innerText || '').replace(/\s+/g, ' ').trim()),
+                  heading,
+                  h1,
+                  cta: [...document.querySelectorAll('a[href]')].some(a => a.getAttribute('href') === '/gen-ai-masterclass/register-one-step'),
+                  overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+                  faqOverflow: section ? section.scrollWidth > section.clientWidth + 2 : true,
+                  proofJobs: document.querySelectorAll('#ai-video-job-impact-v80').length,
+                  proofSkills: document.querySelectorAll('#ai-video-ai-opportunity-v85').length,
+                  duplicateIds: (() => { const ids=[...document.querySelectorAll('[id]')].map(e=>e.id).filter(Boolean); return [...new Set(ids.filter((v,i)=>ids.indexOf(v)!==i))]; })()
+                };
+              });
+
+              results[name] = state;
+              const section = await page.$('section[data-sd-claude-faq-v2="1"]');
+              if (section) await section.screenshot({path: `faq-qa/${name}.png`});
+              await page.close();
+
+              if (!state.section || state.marker !== '15' || state.count !== 15) failures.push(`${name}: FAQ marker/count invalid`);
+              if (state.openCount !== 1 || !state.firstOpen) failures.push(`${name}: accordion default state invalid`);
+              if (state.questions.some(q => !q) || state.answers.some(a => !a)) failures.push(`${name}: empty FAQ content`);
+              if (state.heading !== 'Frequently asked questions.') failures.push(`${name}: FAQ heading changed`);
+              if (state.h1 !== 'Master 25+ AI Tools for smarter work, faster execution & better results.') failures.push(`${name}: hero H1 changed`);
+              if (!state.cta) failures.push(`${name}: registration CTA missing`);
+              if (state.overflow || state.faqOverflow) failures.push(`${name}: horizontal overflow`);
+              if (state.duplicateIds.length) failures.push(`${name}: duplicate IDs ${state.duplicateIds.join(',')}`);
+              if (state.proofJobs !== 1 || state.proofSkills !== 1) failures.push(`${name}: proof sections changed`);
+            }
+
+            fs.writeFileSync('faq-qa/result.json', JSON.stringify(results, null, 2));
+            console.log(JSON.stringify(results, null, 2));
+            if (failures.length) {
+              console.error('FAQ_QA_FAIL\n' + failures.join('\n'));
+              process.exit(1);
+            }
+            console.log('CLAUDE_FAQ_V2_3VIEW_QA_PASS');
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          JS
+          node faq-qa/qa.js
+
+      - name: Roll back automatically on QA failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSET='/var/www/sikhadenge.in/claude-faq-v2.js'
+          MARKER='/var/backups/sikhadenge/.claude-faq-v2-last'
+          if [[ -f "$MARKER" ]]; then
+            B="$(cat "$MARKER")"
+            if [[ -f "$B/sikhadenge.in-ssl.before" ]]; then cp "$B/sikhadenge.in-ssl.before" "$NG"; fi
+            if [[ -f "$B/claude-faq-v2.js.before" ]]; then cp "$B/claude-faq-v2.js.before" "$ASSET"; else rm -f "$ASSET"; fi
+            nginx -t && systemctl reload nginx
+            echo "FAQ_ROLLED_BACK=$B"
+          fi
+          REMOTE
+
+      - name: Upload FAQ visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-faq-v2-qa
+          path: faq-qa/
+          retention-days: 3
+          if-no-files-found: warn
