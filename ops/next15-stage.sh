@@ -78,8 +78,7 @@ def skill(s):
     s=s.replace('params.skill','skill')
     if 'SkillPageProps' in s and 'type SkillPageProps' not in s:
         decl='type SkillPageProps = {\n  params: Promise<{ skill: string }>;\n};\n\n'
-        anchors=['export async function generateStaticParams()','export async function generateMetadata','export const dynamicParams']
-        for a in anchors:
+        for a in ['export async function generateStaticParams()','export async function generateMetadata','export const dynamicParams']:
             if a in s:
                 s=s.replace(a,decl+a,1)
                 break
@@ -104,7 +103,19 @@ def expert(s):
     return s.replace('params.slug','slug')
 rw(Path('app/expert/[slug]/page.tsx'), expert)
 
-# Next 15 request APIs are async. Active release contains admission routes not present in the older main snapshot.
+def admin_dashboard(s):
+    old='searchParams?: Record<string, string | string[] | undefined>;'
+    new='searchParams?: Promise<Record<string, string | string[] | undefined>>;'
+    if old in s:
+        s=s.replace(old,new,1)
+    marker='  const cookieStore = await cookies();'
+    if marker in s and 'const resolvedSearchParams = (await searchParams) || {};' not in s:
+        s=s.replace(marker,'  const resolvedSearchParams = (await searchParams) || {};\n'+marker,1)
+    s=s.replace('searchParams?.','resolvedSearchParams.')
+    s=s.replace('searchParams.','resolvedSearchParams.')
+    return s
+rw(Path('app/admin/dashboard/page.tsx'), admin_dashboard)
+
 def async_cookies(s):
     s=s.replace('const cookieStore = cookies();','const cookieStore = await cookies();')
     s=s.replace('const cookieStore=cookies();','const cookieStore=await cookies();')
@@ -112,14 +123,12 @@ def async_cookies(s):
     s=s.replace('cookies().has(', '(await cookies()).has(')
     s=s.replace('cookies().getAll(', '(await cookies()).getAll(')
     return s
-for p in root.rglob('*.ts'):
-    if 'node_modules' not in p.parts and '.next' not in p.parts and 'cookies()' in p.read_text(errors='ignore'):
-        old=p.read_text(); new=async_cookies(old)
-        if new!=old: p.write_text(new)
-for p in root.rglob('*.tsx'):
-    if 'node_modules' not in p.parts and '.next' not in p.parts and 'cookies()' in p.read_text(errors='ignore'):
-        old=p.read_text(); new=async_cookies(old)
-        if new!=old: p.write_text(new)
+for p in list(root.rglob('*.ts')) + list(root.rglob('*.tsx')):
+    if 'node_modules' in p.parts or '.next' in p.parts: continue
+    old=p.read_text(errors='ignore')
+    if 'cookies()' not in old: continue
+    new=async_cookies(old)
+    if new!=old: p.write_text(new)
 PY
 
 cd "$CAND"
