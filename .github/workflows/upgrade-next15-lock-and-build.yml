@@ -27,24 +27,50 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: Apply React 19 ref typing migration
+      - name: Apply Next 15 migration fixes
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          reviews = Path('app/reviews/page.tsx')
-          text = reviews.read_text()
-          old = 'ref: React.RefObject<HTMLDivElement>,'
-          new = 'ref: React.RefObject<HTMLDivElement | null>,'
-          if old in text:
-              reviews.write_text(text.replace(old, new, 1))
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old in text:
+                  p.write_text(text.replace(old, new, 1))
 
-          contact = Path('pages/contact.tsx')
-          text = contact.read_text()
-          old = 'refs: React.RefObject<HTMLElement>[],'
-          new = 'refs: React.RefObject<HTMLElement | null>[],'
+          replace_once(
+              'app/reviews/page.tsx',
+              'ref: React.RefObject<HTMLDivElement>,',
+              'ref: React.RefObject<HTMLDivElement | null>,'
+          )
+          replace_once(
+              'pages/contact.tsx',
+              'refs: React.RefObject<HTMLElement>[],',
+              'refs: React.RefObject<HTMLElement | null>[],'
+          )
+
+          blog = Path('app/blog/[slug]/page.tsx')
+          text = blog.read_text()
+          old = '''export async function generateMetadata({\n  params,\n}: {\n  params: { slug: string };\n}): Promise<Metadata> {\n  const post = getBlogs().find((item) => item.slug === params.slug);\n  const parsed = parseSlug(params.slug, post);'''
+          new = '''type BlogPostProps = {\n  params: Promise<{ slug: string }>;\n};\n\nexport async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {\n  const { slug } = await params;\n  const post = getBlogs().find((item) => item.slug === slug);\n  const parsed = parseSlug(slug, post);'''
           if old in text:
-              contact.write_text(text.replace(old, new, 1))
+              text = text.replace(old, new, 1)
+              text = text.replace('const canonical = `${BASE_URL}/blog/${params.slug}`;', 'const canonical = `${BASE_URL}/blog/${slug}`;', 1)
+              text = text.replace('export default function BlogPost({ params }: { params: { slug: string } }) {', 'export default async function BlogPost({ params }: BlogPostProps) {\n  const { slug } = await params;', 1)
+              text = text.replace('item.slug === params.slug', 'item.slug === slug')
+              text = text.replace('parseSlug(params.slug, post)', 'parseSlug(slug, post)')
+              text = text.replace('item.slug !== params.slug', 'item.slug !== slug')
+              text = text.replace('`${BASE_URL}/blog/${params.slug}`', '`${BASE_URL}/blog/${slug}`')
+              blog.write_text(text)
+
+          expert = Path('app/expert/[slug]/page.tsx')
+          text = expert.read_text()
+          old = 'export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {\n  const pageData = generatedPages.find((p) => p.slug === params.slug);'
+          new = 'type ExpertPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\nexport async function generateMetadata({ params }: ExpertPageProps): Promise<Metadata> {\n  const { slug } = await params;\n  const pageData = generatedPages.find((p) => p.slug === slug);'
+          if old in text:
+              text = text.replace(old, new, 1)
+              text = text.replace('export default function ExpertPage({ params }: { params: { slug: string } }) {\n  const pageData = generatedPages.find((p) => p.slug === params.slug);', 'export default async function ExpertPage({ params }: ExpertPageProps) {\n  const { slug } = await params;\n  const pageData = generatedPages.find((p) => p.slug === slug);', 1)
+              expert.write_text(text)
           PY
 
       - name: Generate fresh lockfile
@@ -56,11 +82,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json app/reviews/page.tsx pages/contact.tsx
+          git add package-lock.json app/reviews/page.tsx pages/contact.tsx app/blog/'[slug]'/page.tsx app/expert/'[slug]'/page.tsx
           if git diff --cached --quiet; then
             echo "Migration files already synchronized"
           else
-            git commit -m "fix: migrate React 19 ref typings and lockfile"
+            git commit -m "fix: complete Next 15 async route migration"
             git push origin HEAD:upgrade-next15-security-20260904
           fi
 
