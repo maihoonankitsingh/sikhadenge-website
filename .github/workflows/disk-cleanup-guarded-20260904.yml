@@ -1,0 +1,270 @@
+name: Disk Cleanup Guarded 20260904
+
+on:
+  push:
+    branches:
+      - reconcile/production-source-next15-20260904
+    paths:
+      - '.github/workflows/disk-cleanup-guarded-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/reconcile/production-source-next15-20260904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Quarantine verify and delete unused files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          BASE=/var/www/sikhadenge.in
+          TS=$(date +%Y%m%d-%H%M%S)
+          Q="$BASE/.cleanup-quarantine-$TS"
+          STATE_BEFORE=/tmp/sikhadenge-cleanup-pm2-before.$$
+          STATE_AFTER=/tmp/sikhadenge-cleanup-pm2-after.$$
+          REFS=/tmp/sikhadenge-cleanup-pm2-refs.$$
+          MOVED=/tmp/sikhadenge-cleanup-moved.$$
+          : > "$MOVED"
+
+          cleanup_tmp() { rm -f "$STATE_BEFORE" "$STATE_AFTER" "$REFS" "$MOVED"; }
+          trap cleanup_tmp EXIT
+
+          snapshot_pm2() {
+            pm2 jlist 2>/dev/null | node -e '
+              let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+                for (const p of JSON.parse(s)) {
+                  const e=p.pm2_env||{};
+                  console.log([p.name||"",e.status||"",e.pm_cwd||"",e.pm_exec_path||""].join("|"));
+                }
+              });' | sort
+          }
+          snapshot_refs() {
+            pm2 jlist 2>/dev/null | node -e '
+              let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+                for (const p of JSON.parse(s)) {
+                  const e=p.pm2_env||{};
+                  if(e.pm_cwd) console.log(e.pm_cwd);
+                  if(e.pm_exec_path) console.log(e.pm_exec_path);
+                }
+              });' | sort -u
+          }
+          path_has_proc_ref() {
+            target="$1"
+            for l in /proc/[0-9]*/cwd /proc/[0-9]*/fd/*; do
+              r=$(readlink -f "$l" 2>/dev/null || true)
+              case "$r" in "$target"|"$target"/*) return 0;; esac
+            done
+            return 1
+          }
+          path_has_mount() {
+            target="$1"
+            findmnt -R -n -o TARGET "$target" 2>/dev/null | grep -q .
+          }
+          nginx_refs_path() {
+            target="$1"
+            nginx -T 2>/dev/null | grep -Fq -- "$target"
+          }
+          pm2_refs_path() {
+            target="$1"
+            while IFS= read -r r; do
+              case "$r" in "$target"|"$target"/*) return 0;; esac
+            done < "$REFS"
+            return 1
+          }
+          gate_dir() {
+            p="$1"; allow="$2"
+            [ -d "$p" ] || { echo "SKIP_ABSENT|$p"; return 1; }
+            [ ! -L "$p" ] || { echo "BLOCK_SYMLINK|$p"; return 1; }
+            real=$(realpath -e "$p")
+            case "$real" in "$allow"/*) ;; *) echo "BLOCK_REALPATH|$real"; return 1;; esac
+            if pm2_refs_path "$real"; then echo "BLOCK_PM2_REF|$real"; return 1; fi
+            if nginx_refs_path "$real"; then echo "BLOCK_NGINX_REF|$real"; return 1; fi
+            if path_has_proc_ref "$real"; then echo "BLOCK_PROC_REF|$real"; return 1; fi
+            if path_has_mount "$real"; then echo "BLOCK_MOUNT|$real"; return 1; fi
+            echo "GATE_PASS|$real"
+            return 0
+          }
+          move_dir() {
+            p="$1"; allow="$2"; bucket="$3"
+            if gate_dir "$p" "$allow"; then
+              real=$(realpath -e "$p")
+              mkdir -p "$Q/$bucket"
+              [ "$(stat -c %d "$real")" = "$(stat -c %d "$Q")" ] || { echo "BLOCK_CROSS_FS|$real"; return 1; }
+              dest="$Q/$bucket/$(basename "$real")"
+              mv -- "$real" "$dest"
+              printf '%s|%s\n' "$dest" "$real" >> "$MOVED"
+              echo "QUARANTINED|$real"
+            fi
+          }
+          rollback() {
+            echo '===== ROLLBACK QUARANTINE ====='
+            tac "$MOVED" 2>/dev/null | while IFS='|' read -r src dst; do
+              [ -e "$src" ] || continue
+              mkdir -p "$(dirname "$dst")"
+              mv -- "$src" "$dst"
+              echo "RESTORED|$dst"
+            done
+            rmdir "$Q"/* 2>/dev/null || true
+            rmdir "$Q" 2>/dev/null || true
+          }
+
+          echo '===== DISK BEFORE ====='
+          df -hT /
+          BEFORE=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          snapshot_pm2 > "$STATE_BEFORE"
+          snapshot_refs > "$REFS"
+          NGINX_BEFORE=$(nginx -T 2>&1 | sha256sum | awk '{print $1}')
+          PM2_DUMP_BEFORE=$(sha256sum /root/.pm2/dump.pm2 2>/dev/null | awk '{print $1}' || true)
+
+          mkdir -p "$Q"
+          chmod 700 "$Q"
+          echo "QUARANTINE=$Q"
+
+          echo '===== EXACT RELEASE CANDIDATES ====='
+          move_dir "$BASE/releases/production-ai-workflow-premium-zero-build-20260829-110420" "$BASE/releases" releases || true
+          move_dir "$BASE/releases/next15-v3-20260904-144145" "$BASE/releases" releases || true
+          move_dir "$BASE/releases/next15-v5-20260904-144924" "$BASE/releases" releases || true
+          move_dir "$BASE/releases/next15-v6-20260904-145319" "$BASE/releases" releases || true
+
+          echo '===== NON-RUNTIME OLD ARTIFACTS ====='
+          move_dir "$BASE/_seo-reports" "$BASE" artifacts || true
+          move_dir "$BASE/.sikhadenge-pr93-deploy-20260807T052122Z-2139479" "$BASE" artifacts || true
+          move_dir "$BASE/components.bak.2026-03-18-193632.outside_project" "$BASE" artifacts || true
+
+          echo '===== OLD PM2 LOGS ====='
+          mkdir -p "$Q/pm2-logs"
+          mapfile -t ACTIVE_NAMES < <(cut -d'|' -f1 "$STATE_BEFORE")
+          is_active_log_name() {
+            f=$(basename "$1")
+            for n in "${ACTIVE_NAMES[@]}"; do
+              case "$f" in "$n"-out.log|"$n"-error.log) return 0;; esac
+            done
+            return 1
+          }
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            [ ! -L "$f" ] || continue
+            if path_has_proc_ref "$f"; then echo "LOG_BLOCK_OPEN|$f"; continue; fi
+            old_rotated=NO
+            case "$(basename "$f")" in *__20*.log) old_rotated=YES;; esac
+            if [ "$old_rotated" = YES ] || ! is_active_log_name "$f"; then
+              dest="$Q/pm2-logs/$(basename "$f")"
+              [ -e "$dest" ] && dest="$dest.$RANDOM"
+              mv -- "$f" "$dest"
+              printf '%s|%s\n' "$dest" "$f" >> "$MOVED"
+              echo "LOG_QUARANTINED|$f"
+            fi
+          done < <(find /root/.pm2/logs -maxdepth 1 -type f -name '*.log' -print 2>/dev/null)
+
+          echo '===== STALE TMP TOP-LEVEL (>24H, UNREFERENCED) ====='
+          mkdir -p "$Q/tmp"
+          while IFS= read -r p; do
+            [ -e "$p" ] || continue
+            [ ! -L "$p" ] || { echo "TMP_SKIP_SYMLINK|$p"; continue; }
+            real=$(realpath -e "$p" 2>/dev/null || true)
+            case "$real" in /tmp/*) ;; *) echo "TMP_BLOCK_REALPATH|$p"; continue;; esac
+            if path_has_proc_ref "$real"; then echo "TMP_BLOCK_PROC_REF|$real"; continue; fi
+            if path_has_mount "$real"; then echo "TMP_BLOCK_MOUNT|$real"; continue; fi
+            dest="$Q/tmp/$(basename "$real")"
+            [ -e "$dest" ] && dest="$dest.$RANDOM"
+            mv -- "$real" "$dest"
+            printf '%s|%s\n' "$dest" "$real" >> "$MOVED"
+            echo "TMP_QUARANTINED|$real"
+          done < <(find /tmp -mindepth 1 -maxdepth 1 -mmin +1440 -print 2>/dev/null)
+
+          echo '===== QUARANTINE SIZE ====='
+          du -xsh "$Q" || true
+
+          echo '===== VERIFY ACTIVE STATE ====='
+          FAIL=0
+          snapshot_pm2 > "$STATE_AFTER"
+          if ! cmp -s "$STATE_BEFORE" "$STATE_AFTER"; then
+            echo 'PM2_STATE_CHANGED=YES'; diff -u "$STATE_BEFORE" "$STATE_AFTER" || true; FAIL=1
+          else
+            echo 'PM2_STATE_CHANGED=NO'
+          fi
+          NGINX_AFTER=$(nginx -T 2>&1 | sha256sum | awk '{print $1}')
+          [ "$NGINX_BEFORE" = "$NGINX_AFTER" ] || { echo 'NGINX_CONFIG_CHANGED=YES'; FAIL=1; }
+          [ "$NGINX_BEFORE" != "$NGINX_AFTER" ] || echo 'NGINX_CONFIG_CHANGED=NO'
+          PM2_DUMP_AFTER=$(sha256sum /root/.pm2/dump.pm2 2>/dev/null | awk '{print $1}' || true)
+          [ "$PM2_DUMP_BEFORE" = "$PM2_DUMP_AFTER" ] || { echo 'PM2_DUMP_CHANGED=YES'; FAIL=1; }
+          [ "$PM2_DUMP_BEFORE" != "$PM2_DUMP_AFTER" ] || echo 'PM2_DUMP_CHANGED=NO'
+
+          while IFS= read -r r; do
+            case "$r" in /var/www/sikhadenge.in/*)
+              if [ ! -e "$r" ]; then echo "ACTIVE_REF_MISSING|$r"; FAIL=1; fi
+            esac
+          done < "$REFS"
+
+          for url in 'https://sikhadenge.in/' 'https://sikhadenge.in/contact-us'; do
+            code=$(curl -L --max-time 20 -sS -o /dev/null -w '%{http_code}' "$url" || echo 000)
+            echo "SMOKE|$code|$url"
+            case "$code" in 2*|3*) ;; *) FAIL=1;; esac
+          done
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo 'VERIFY_RESULT=FAIL_ROLLBACK'
+            rollback
+            exit 1
+          fi
+          echo 'VERIFY_RESULT=PASS'
+
+          echo '===== PERMANENT DELETE QUARANTINE ====='
+          [ -d "$Q" ] && [ ! -L "$Q" ]
+          QREAL=$(realpath -e "$Q")
+          case "$QREAL" in "$BASE"/.cleanup-quarantine-*) ;; *) echo 'QUARANTINE_REALPATH_BLOCK'; rollback; exit 1;; esac
+          rm -rf --one-file-system -- "$QREAL"
+          [ ! -e "$QREAL" ] || { echo 'QUARANTINE_DELETE_FAILED'; exit 1; }
+          echo 'QUARANTINE_DELETED=YES'
+
+          echo '===== DISK AFTER ====='
+          AFTER=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          df -hT /
+          python3 - <<PY
+          before=$BEFORE
+          after=$AFTER
+          reclaimed=max(0,before-after)
+          print(f'RECLAIMED_BYTES={reclaimed}')
+          print(f'RECLAIMED_GIB={reclaimed/1024/1024/1024:.2f}')
+          PY
+          echo 'PROJECT_ACTIVE_FILES_TOUCHED=NO'
+          echo 'PM2_CHANGED=NO'
+          echo 'NGINX_CHANGED=NO'
+          echo 'DATABASE_TOUCHED=NO'
+          echo 'DOCKER_TOUCHED=NO'
+          echo '===== CLEANUP COMPLETE ====='
+          REMOTE
