@@ -1,0 +1,100 @@
+name: Disk Cleanup Audit Readonly 20260904
+
+on:
+  push:
+    branches:
+      - reconcile/production-source-next15-20260904
+    paths:
+      - '.github/workflows/disk-cleanup-audit-readonly-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/reconcile/production-source-next15-20260904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only disk inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          echo '===== DISK ====='
+          df -hT /
+          df -ih /
+          echo
+          echo '===== ACTIVE PM2 REFERENCES ====='
+          pm2 jlist 2>/dev/null | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+              try { for (const p of JSON.parse(s)) {
+                const e=p.pm2_env||{}; console.log([p.name,e.status,e.pm_cwd,e.pm_exec_path].filter(Boolean).join(" | "));
+              }} catch(e){ console.error(String(e)); process.exit(1); }
+            });'
+          echo
+          echo '===== NGINX ABSOLUTE PATH REFERENCES ====='
+          nginx -T 2>/dev/null | grep -Eo '/(var|root|srv|opt)/[^ ;"\047]+' | sort -u | head -n 1000 || true
+          echo
+          scan_root() {
+            root="$1"
+            echo "===== ROOT $root ====="
+            if [ ! -d "$root" ]; then echo 'ABSENT'; return; fi
+            find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%p\n' | sort | while IFS= read -r d; do
+              sz=$(du -xsb "$d" 2>/dev/null | awk '{print $1}')
+              mt=$(stat -c '%y' "$d" 2>/dev/null | cut -d. -f1)
+              echo "DIR|$sz|$mt|$d"
+            done
+          }
+          scan_root /var/www/sikhadenge.in/releases
+          scan_root /var/www/sikhadenge.in/candidates
+          scan_root /var/www/sikhadenge.in/staging
+          echo
+          echo '===== PM2 LOGS ====='
+          du -xah /root/.pm2/logs 2>/dev/null | sort -h | tail -n 80 || true
+          echo
+          echo '===== JOURNAL ====='
+          journalctl --disk-usage 2>/dev/null || true
+          echo
+          echo '===== ROOT CACHE/TEMP ====='
+          for p in /root/.cache /root/.npm /root/.local/share /tmp /var/tmp; do
+            [ -e "$p" ] && du -xsh "$p" 2>/dev/null || true
+          done
+          echo
+          echo '===== DOCKER READONLY ====='
+          docker system df 2>/dev/null || true
+          echo
+          echo '===== LARGE TOP-LEVEL /VAR/WWW ====='
+          du -x -d 2 -h /var/www/sikhadenge.in 2>/dev/null | sort -h | tail -n 120 || true
+          echo '===== AUDIT COMPLETE ====='
+          REMOTE
