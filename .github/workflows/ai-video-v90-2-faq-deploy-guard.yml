@@ -1,0 +1,88 @@
+name: AI Video V90.2 FAQ Deploy Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-2-faq-production-20260904"
+    paths:
+      - "ops/deploy-ai-video-v90-2-faq.sh"
+      - ".github/workflows/ai-video-v90-2-faq-deploy-guard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-deploy-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-v90-2-faq.sh
+
+      - name: Compile embedded Python helpers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          source = Path('ops/deploy-ai-video-v90-2-faq.sh').read_text()
+          blocks = re.findall(r"<<'PY'\n(.*?)\nPY", source, re.S)
+          if len(blocks) < 3:
+              raise SystemExit(f'Expected at least 3 embedded Python helpers, found {len(blocks)}')
+          for i, block in enumerate(blocks, 1):
+              compile(block, f'embedded-python-{i}', 'exec')
+          print(f'Compiled {len(blocks)} embedded Python helpers')
+          PY
+
+      - name: Enforce exact V90.2 and rollback topology
+        run: |
+          set -euo pipefail
+          S=ops/deploy-ai-video-v90-2-faq.sh
+          grep -Fq 'DEPLOY_SHA="46aa3c4d63a265e6b1da13710ef8420acca78363"' "$S"
+          grep -Fq 'PREV_APP="sikhadenge-ai-video-v90-1-3940-20260904-105133"' "$S"
+          grep -Fq 'DEEP_APP="sikhadenge-ai-video-v90-3940-20260903-220828"' "$S"
+          grep -Fq 'ORIGINAL_APP="sikhadenge-ai-workflow-premium-3940"' "$S"
+          grep -Fq 'EXPECTED_RUNTIME_SHA="6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51"' "$S"
+          grep -Fq 'V90.1 → V90.2' "$S"
+
+      - name: Enforce cwd-safe source audit and FAQ checks
+        run: |
+          set -euo pipefail
+          S=ops/deploy-ai-video-v90-2-faq.sh
+          grep -Fq '(cd "$NEW_RELEASE" && node scripts/audit-ai-video-masterclass.mjs)' "$S"
+          grep -Fq 'verify_faq_html "$PAGE_HTML"' "$S"
+          grep -Fq 'verify_faq_html "$TEMP_BODY"' "$S"
+          grep -Fq 'verify_faq_html "$LIVE_BODY"' "$S"
+          grep -Fq "if count < 15:" "$S"
+          grep -Fq 'AI VIDEO MASTERCLASS FAQS' "$S"
+          grep -Fq 'Which AI video tools will be discussed?' "$S"
+
+      - name: Enforce zero-impact safety invariants
+        run: |
+          set -euo pipefail
+          S=ops/deploy-ai-video-v90-2-faq.sh
+          ! grep -Eq 'chattr[[:space:]]+-i' "$S"
+          ! grep -Eq 'nginx[[:space:]]+(-s[[:space:]]+reload|reload)' "$S"
+          ! grep -Eq 'systemctl[[:space:]]+(reload|restart)[[:space:]]+nginx' "$S"
+          ! grep -Eq 'service[[:space:]]+nginx[[:space:]]+(reload|restart)' "$S"
+          ! grep -Fq 'pm2 delete "$PREV_APP"' "$S"
+          ! grep -Fq 'pm2 delete "$DEEP_APP"' "$S"
+          ! grep -Fq 'pm2 delete "$ORIGINAL_APP"' "$S"
+          grep -Fq '[[ "$HTML_ATTR" == *i* ]]' "$S"
+          grep -Fq '[[ "$RUNTIME_ATTR" == *i* ]]' "$S"
+          grep -Fq '[[ "$RUNTIME_SHA" == "$EXPECTED_RUNTIME_SHA" ]]' "$S"
+          grep -Fq '[[ "$CUTOVER" == "1" ]] && rollback' "$S"
+
+      - name: Guard summary
+        run: |
+          echo '✅ Bash syntax valid'
+          echo '✅ Embedded Python helpers compile'
+          echo '✅ Exact validated FAQ source pinned'
+          echo '✅ V90.1 immediate rollback preserved'
+          echo '✅ V90 + original golden layers preserved'
+          echo '✅ Golden immutable files never unlocked'
+          echo '✅ No Nginx reload/restart'
+          echo '✅ FAQ count/content verified before and after cutover'
