@@ -22,6 +22,9 @@ function clientIp(req: NextApiRequest): string {
   const cf = req.headers["cf-connecting-ip"];
   if (typeof cf === "string" && cf.trim()) return cf.trim();
 
+  const realIp = req.headers["x-real-ip"];
+  if (typeof realIp === "string" && realIp.trim()) return realIp.trim();
+
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.trim()) {
     return forwarded.split(",")[0]?.trim() || "unknown";
@@ -31,17 +34,17 @@ function clientIp(req: NextApiRequest): string {
 }
 
 function pruneLoginAttempts(now: number) {
-  for (const [key, value] of loginAttempts) {
+  loginAttempts.forEach((value, key) => {
     if (now - value.windowStartedAt > LOGIN_WINDOW_MS) loginAttempts.delete(key);
-  }
+  });
 
   if (loginAttempts.size <= LOGIN_MAP_MAX_ENTRIES) return;
 
-  const oldest = [...loginAttempts.entries()]
+  const oldest = Array.from(loginAttempts.entries())
     .sort((a, b) => a[1].windowStartedAt - b[1].windowStartedAt)
     .slice(0, loginAttempts.size - LOGIN_MAP_MAX_ENTRIES);
 
-  for (const [key] of oldest) loginAttempts.delete(key);
+  oldest.forEach(([key]) => loginAttempts.delete(key));
 }
 
 function isLoginRateLimited(key: string): boolean {
@@ -70,6 +73,8 @@ function constantTimeEqual(input: string, expected: string): boolean {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false });
