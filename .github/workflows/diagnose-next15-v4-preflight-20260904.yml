@@ -1,0 +1,67 @@
+name: Diagnose Next15 V4 Preflight 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/diagnose-next15-v4-preflight-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Print activation preflight state
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -u
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          EXPECTED_SHA='b0c2638d1dc6c8c1168811ab8a09c4c99633e1d2'
+          OLD_PID="$(pm2 pid "$APP" 2>/dev/null | tail -1)"
+          echo "OLD_PID=${OLD_PID:-EMPTY}"
+          if [[ -n "$OLD_PID" && "$OLD_PID" != '0' && -e "/proc/$OLD_PID/cwd" ]]; then OLD="$(readlink -f "/proc/$OLD_PID/cwd")"; else OLD=''; fi
+          echo "OLD=${OLD:-EMPTY}"
+          echo '--- candidate directories ---'
+          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -name 'next15-v3-*' -printf '%T@ %p\n' | sort -nr || true
+          CAND="$(find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -name 'next15-v3-*' -printf '%T@ %p\n' | sort -nr | sed -n '1s/^[^ ]* //p')"
+          echo "CAND=${CAND:-EMPTY}"
+          [[ -n "$CAND" && -d "$CAND" ]] && echo 'GATE_DIR=PASS' || echo 'GATE_DIR=FAIL'
+          [[ -n "$OLD" && "$CAND" != "$OLD" ]] && echo 'GATE_NOT_LIVE=PASS' || echo 'GATE_NOT_LIVE=FAIL'
+          [[ -f "$CAND/.next/BUILD_ID" ]] && { echo 'GATE_BUILD_ID=PASS'; printf 'BUILD_ID='; cat "$CAND/.next/BUILD_ID"; } || echo 'GATE_BUILD_ID=FAIL'
+          [[ -f "$CAND/.next15-production-sha" ]] && { echo 'GATE_SHA_FILE=PASS'; printf 'CAND_SHA='; cat "$CAND/.next15-production-sha"; } || echo 'GATE_SHA_FILE=FAIL'
+          [[ -f "$CAND/.next15-production-sha" && "$(cat "$CAND/.next15-production-sha")" = "$EXPECTED_SHA" ]] && echo 'GATE_SHA_MATCH=PASS' || echo 'GATE_SHA_MATCH=FAIL'
+          [[ -f "$CAND/package.json" ]] && node -e "const p=require('$CAND/package.json'); console.log('CAND_NEXT='+p.dependencies.next,'CAND_REACT='+p.dependencies.react)" || true
+          echo '--- test port state ---'
+          ss -ltnp | grep ':43965 ' || echo 'TEST_PORT_43965_FREE'
+          echo '--- production state ---'
+          [[ -n "$OLD" && -f "$OLD/package.json" ]] && node -e "const p=require('$OLD/package.json'); console.log('LIVE_NEXT='+p.dependencies.next)" || true
+          curl -fsS --max-time 10 'http://127.0.0.1:3955/' >/dev/null && echo 'LIVE_HTTP=PASS' || echo 'LIVE_HTTP=FAIL'
+          REMOTE
