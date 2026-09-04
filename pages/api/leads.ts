@@ -22,6 +22,9 @@ function getClientIp(req: NextApiRequest): string {
   const cf = req.headers["cf-connecting-ip"];
   if (typeof cf === "string" && cf.trim()) return cf.trim();
 
+  const realIp = req.headers["x-real-ip"];
+  if (typeof realIp === "string" && realIp.trim()) return realIp.trim();
+
   const xff = req.headers["x-forwarded-for"];
   if (typeof xff === "string" && xff.trim()) {
     return xff.split(",")[0]?.trim() || "unknown";
@@ -81,10 +84,6 @@ function safeObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object") return null;
   if (Array.isArray(value)) return null;
   return value as Record<string, unknown>;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : "Server error";
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Resp>) {
@@ -199,9 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     return res.status(200).json({ ok: true, lead });
   } catch (error: unknown) {
-    return res.status(500).json({
-      ok: false,
-      error: errorMessage(error),
-    });
+    console.error("Lead API failed:", error);
+    return res.status(500).json({ ok: false, error: "Server error" });
   }
 }
