@@ -48,7 +48,10 @@ jobs:
           TS="$(date +%Y%m%d-%H%M%S)"
           B="/var/backups/sikhadenge/claude-cta-typography-v3-$TS"
           M='/var/backups/sikhadenge/.claude-cta-typography-v3-last'
-          mkdir -p "$B"; cp "$NG" "$B/nginx.before"; [[ ! -f "$ASSET" ]] || cp "$ASSET" "$B/asset.before"; echo "$B" > "$M"
+          mkdir -p "$B"
+          cp "$NG" "$B/nginx.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$B/asset.before"
+          echo "$B" > "$M"
           rollback(){ set +e; cp "$B/nginx.before" "$NG"; if [[ -f "$B/asset.before" ]]; then cp "$B/asset.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; }
           trap 'rc=$?; rollback; exit $rc' ERR
 
@@ -80,21 +83,14 @@ jobs:
           seg=seg[:pos]+tag+seg[pos:]
           s=s[:a]+seg+s[b:]
           if '# CLAUDE_CTA_TYPOGRAPHY_V3_ASSET' not in s:
-              block='''    # CLAUDE_CTA_TYPOGRAPHY_V3_ASSET
-    location = /claude-cta-typography-v3.js {
-        alias /var/www/sikhadenge.in/claude-cta-typography-v3.js;
-        default_type application/javascript;
-        add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
-        access_log off;
-    }
-    # CLAUDE_CTA_TYPOGRAPHY_V3_ASSET_END
-
-'''
+              block="    # CLAUDE_CTA_TYPOGRAPHY_V3_ASSET\n    location = /claude-cta-typography-v3.js {\n        alias /var/www/sikhadenge.in/claude-cta-typography-v3.js;\n        default_type application/javascript;\n        add_header Cache-Control \"private, no-store, no-cache, must-revalidate, max-age=0\" always;\n        access_log off;\n    }\n    # CLAUDE_CTA_TYPOGRAPHY_V3_ASSET_END\n\n"
               idx=s.find(route); s=s[:idx]+block+s[idx:]
           p.write_text(s)
           PY
 
-          nginx -t; systemctl reload nginx; sleep 2
+          nginx -t
+          systemctl reload nginx
+          sleep 2
           H="$(mktemp)"; A="$(mktemp)"
           curl -fsS 'https://sikhadenge.in/masterclass/claude/free?v=cta-type-v3-server' -o "$H"
           test "$(grep -o '/claude-cta-typography-v3.js?v=cta-type-v3-20260904' "$H" | wc -l)" -eq 1
@@ -102,6 +98,7 @@ jobs:
           grep -Fq '/gen-ai-masterclass/register-one-step' "$H"
           curl -fsS 'https://sikhadenge.in/masterclass/ai-video?v=cta-type-v3-isolation' -o "$A"
           ! grep -Fq '/claude-cta-typography-v3.js' "$A"
+          echo "CTA_TYPE_V3_SERVER_PASS BACKUP=$B"
           trap - ERR
           REMOTE
 
@@ -130,15 +127,20 @@ jobs:
                 return {ct:ct.length,main:ct.map(a=>parseFloat(getComputedStyle(a.querySelector('.sd-cta-main-copy-v2')).fontSize)),pill:ct.map(a=>parseFloat(getComputedStyle(a.querySelector('.sd-cta-free-pill-v2')).fontSize)),sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
               });
               out[name]=x;
-              await p.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight/2)); await new Promise(r=>setTimeout(r,250)); await p.screenshot({path:`cta-type-v3-qa/${name}.png`}); await p.close();
+              await p.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight/2));
+              await new Promise(r=>setTimeout(r,250));
+              await p.screenshot({path:`cta-type-v3-qa/${name}.png`});
+              await p.close();
               if(x.ct!==8) fail.push(`${name}: CTA count ${x.ct}`);
               if(x.main.some(v=>v!==mainPx)) fail.push(`${name}: main sizes ${x.main}`);
               if(x.pill.some(v=>v!==pillPx)) fail.push(`${name}: pill sizes ${x.pill}`);
               if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1||x.overflow) fail.push(`${name}: page regression`);
             }
-            fs.writeFileSync('cta-type-v3-qa/result.json',JSON.stringify(out,null,2)); console.log(JSON.stringify(out,null,2));
+            fs.writeFileSync('cta-type-v3-qa/result.json',JSON.stringify(out,null,2));
+            console.log(JSON.stringify(out,null,2));
             if(fail.length){console.error('CTA_TYPE_V3_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
-            console.log('CLAUDE_CTA_TYPOGRAPHY_V3_3VIEW_QA_PASS'); await b.close();
+            console.log('CLAUDE_CTA_TYPOGRAPHY_V3_3VIEW_QA_PASS');
+            await b.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
           node cta-type-v3-qa/check.js
@@ -151,7 +153,7 @@ jobs:
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set +e
           NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; ASSET='/var/www/sikhadenge.in/claude-cta-typography-v3.js'; M='/var/backups/sikhadenge/.claude-cta-typography-v3-last'
-          if [[ -f "$M" ]]; then B="$(cat "$M")"; cp "$B/nginx.before" "$NG"; if [[ -f "$B/asset.before" ]]; then cp "$B/asset.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; fi
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; cp "$B/nginx.before" "$NG"; if [[ -f "$B/asset.before" ]]; then cp "$B/asset.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; echo "ROLLED_BACK=$B"; fi
           REMOTE
 
       - name: Upload QA
