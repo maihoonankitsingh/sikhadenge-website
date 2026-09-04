@@ -85,3 +85,5 @@ jobs:
           curl -ksS -o /tmp/site-home.html -w 'PUBLIC_HOME=%{http_code}\n' --max-time 15 https://sikhadenge.in/
           grep -Fq 'Become an AI Expert' /tmp/site-home.html && echo 'HOME_SIGNATURE=OK' || echo 'HOME_SIGNATURE=MISSING'
           REMOTE
+
+# retrigger: 20260904
