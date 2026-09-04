@@ -162,3 +162,5 @@ jobs:
           path: cta-type-v3-qa/
           retention-days: 3
           if-no-files-found: warn
+
+# trigger: 20260904-cta-type-v3
