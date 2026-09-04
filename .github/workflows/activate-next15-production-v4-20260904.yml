@@ -1,0 +1,163 @@
+name: Activate Next15 Production V4 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/activate-next15-production-v4-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Verify candidate and cut over production
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          EXPECTED_SHA='b0c2638d1dc6c8c1168811ab8a09c4c99633e1d2'
+          PROD_PORT=3955
+          TEST_PORT=43965
+          CUTOVER=0
+
+          OLD_PID="$(pm2 pid "$APP" | tail -1)"
+          test -n "$OLD_PID"; test "$OLD_PID" != '0'
+          OLD="$(readlink -f "/proc/$OLD_PID/cwd")"
+          CAND="$(find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -name 'next15-v3-*' -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)"
+          test -n "$CAND"; test -d "$CAND"; test "$CAND" != "$OLD"
+          test -f "$CAND/.next/BUILD_ID"
+          test -f "$CAND/.next15-production-sha"
+          test "$(cat "$CAND/.next15-production-sha")" = "$EXPECTED_SHA"
+
+          echo "OLD_RELEASE=$OLD"
+          echo "CANDIDATE=$CAND"
+          node -e "const p=require('$OLD/package.json'); console.log('OLD_NEXT='+p.dependencies.next)"
+          node -e "const p=require('$CAND/package.json'); if(p.dependencies.next!=='15.5.24'||p.dependencies.react!=='19.2.8'||p.dependencies['react-dom']!=='19.2.8') process.exit(1); console.log('CANDIDATE_NEXT='+p.dependencies.next)"
+          echo "BUILD_ID=$(cat "$CAND/.next/BUILD_ID")"
+
+          # The previous test port collided with another service. Refuse to reuse any occupied port.
+          if ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$TEST_PORT$"; then
+            echo "TEST_PORT_OCCUPIED=$TEST_PORT"
+            exit 40
+          fi
+
+          rollback() {
+            set +e
+            echo 'ROLLBACK_BEGIN'
+            pm2 delete "$APP" >/dev/null 2>&1 || true
+            cd "$OLD"
+            NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 pm2 start "$OLD/node_modules/next/dist/bin/next" --name "$APP" --cwd "$OLD" -- start -p "$PROD_PORT" || true
+            for i in $(seq 1 30); do curl -fsS --max-time 3 "http://127.0.0.1:$PROD_PORT/" >/dev/null && break; sleep 1; done
+            pm2 save >/dev/null 2>&1 || true
+            echo 'ROLLBACK_END'
+          }
+          on_error() { rc=$?; echo "ACTIVATION_ERROR rc=$rc"; [[ "$CUTOVER" -eq 0 ]] || rollback; exit "$rc"; }
+          trap on_error ERR
+
+          cd "$CAND"
+          : > .v4-smoke.log
+          node node_modules/next/dist/bin/next start -p "$TEST_PORT" >.v4-smoke.log 2>&1 &
+          TEST_PID=$!
+          cleanup_test() { kill "$TEST_PID" >/dev/null 2>&1 || true; wait "$TEST_PID" >/dev/null 2>&1 || true; }
+          trap 'cleanup_test; on_error' ERR
+
+          # Confirm this exact PID survived startup and the port is listening.
+          READY=0
+          for i in $(seq 1 40); do
+            if kill -0 "$TEST_PID" 2>/dev/null && curl -fsS --max-time 3 "http://127.0.0.1:$TEST_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          test "$READY" = '1'
+          kill -0 "$TEST_PID"
+          echo "TEST_PID=$TEST_PID"
+          ss -ltnp | grep ":$TEST_PORT " || true
+
+          for route in / /about-us /reviews /experts; do
+            code="$(curl -sS -o /tmp/v4-body --max-time 10 -w '%{http_code}' "http://127.0.0.1:$TEST_PORT$route")"
+            echo "SMOKE $route HTTP=$code"
+            test "$code" = '200'
+          done
+          cleanup_test
+          trap on_error ERR
+          echo 'ISOLATED_NEXT15_SMOKE_OK'
+
+          CUTOVER=1
+          pm2 delete "$APP"
+          for i in $(seq 1 20); do
+            if ! ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$PROD_PORT$"; then break; fi
+            sleep 1
+          done
+          if ss -ltn | awk '{print $4}' | grep -Eq "(^|:)$PROD_PORT$"; then
+            echo "PRODUCTION_PORT_STILL_OCCUPIED=$PROD_PORT"
+            false
+          fi
+
+          cd "$CAND"
+          NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 pm2 start "$CAND/node_modules/next/dist/bin/next" --name "$APP" --cwd "$CAND" -- start -p "$PROD_PORT"
+          READY=0
+          for i in $(seq 1 40); do
+            NEW_PID="$(pm2 pid "$APP" | tail -1)"
+            if [[ -n "$NEW_PID" && "$NEW_PID" != '0' ]] && curl -fsS --max-time 3 "http://127.0.0.1:$PROD_PORT/" >/dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          test "$READY" = '1'
+
+          NEW_PID="$(pm2 pid "$APP" | tail -1)"
+          NEW_CWD="$(readlink -f "/proc/$NEW_PID/cwd")"
+          echo "NEW_PID=$NEW_PID"
+          echo "NEW_CWD=$NEW_CWD"
+          test "$NEW_CWD" = "$CAND"
+          node -e "const p=require('$NEW_CWD/package.json'); if(p.dependencies.next!=='15.5.24') process.exit(1); console.log('LIVE_NEXT='+p.dependencies.next)"
+
+          for route in / /about-us /reviews /experts; do
+            code="$(curl -sS -o /tmp/v4-live --max-time 10 -w '%{http_code}' "http://127.0.0.1:$PROD_PORT$route")"
+            echo "LOCAL_LIVE $route HTTP=$code"
+            test "$code" = '200'
+          done
+
+          TS="$(date +%s)"
+          for route in / /about-us /reviews; do
+            code="$(curl -sS -o /tmp/v4-public --max-time 20 -w '%{http_code}' "https://sikhadenge.in${route}?next15=$TS")"
+            echo "PUBLIC_LIVE $route HTTP=$code"
+            test "$code" = '200'
+          done
+
+          pm2 save
+          CUTOVER=0
+          trap - ERR
+          echo 'NEXT15_PRODUCTION_ACTIVATION_SUCCESS'
+          echo "ACTIVE_RELEASE=$CAND"
+          echo "ROLLBACK_RELEASE=$OLD"
+          df -h /var/www/sikhadenge.in
+          REMOTE
