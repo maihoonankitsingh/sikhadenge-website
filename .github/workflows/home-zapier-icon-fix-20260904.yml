@@ -1,0 +1,145 @@
+name: Home Zapier Official App Icon Fix 20260904
+
+on:
+  push:
+    paths:
+      - .github/workflows/home-zapier-icon-fix-20260904.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only Zapier official app icon
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          LIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          WEBROOT='/var/www/sikhadenge.in/sikhadenge-website-space'
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/tmp/sd-zapier-icon-$TS"
+          BAK="/var/backups/sikhadenge/home-zapier-icon-$TS"
+          NEWREL="$LIVE/public/images/home-tools-icons-v4"
+          NEWSTATIC="$WEBROOT/public/images/home-tools-icons-v4"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+
+          PID="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID/cwd)" = "$LIVE" ]
+          grep -q "name: 'Zapier'.*/images/home-tools-icons-v3/zapier.svg" "$SRC"
+          grep -q 'AI Tools You Will Master' "$SRC"
+
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          cp -a "$LIVE/.next" "$BAK/.next.before"
+          rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+
+          OUT="$CAND/public/images/home-tools-icons-v4"
+          mkdir -p "$OUT"
+
+          # Current official Zapier website/app favicon, fetched directly from zapier.com.
+          curl -fsSL --retry 3 'https://zapier.com/favicon.ico' -o "$OUT/zapier.ico"
+          test -s "$OUT/zapier.ico"
+          [ "$(wc -c < "$OUT/zapier.ico")" -gt 500 ]
+          file "$OUT/zapier.ico"
+
+          CAND="$CAND" python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path(os.environ['CAND'])/'app/landing/page.tsx'
+          s=p.read_text()
+          old="{ name: 'Zapier', category: 'Automation', logo: '/images/home-tools-icons-v3/zapier.svg' }"
+          new="{ name: 'Zapier', category: 'Automation', logo: '/images/home-tools-icons-v4/zapier.ico' }"
+          assert s.count(old)==1
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          print('ZAPIER_MAPPING_PATCH_READY=1')
+          PY
+
+          diff -u "$SRC" "$CAND/app/landing/page.tsx" > "$CAND/diff" || true
+          cat "$CAND/diff"
+          python3 - "$CAND/diff" <<'PY'
+          import sys
+          d=open(sys.argv[1]).read()
+          changed=[]
+          for line in d.splitlines():
+              if line.startswith(('+++','---','@@')): continue
+              if line[:1] in '+-': changed.append(line)
+          assert len(changed)==2, changed
+          assert all('Zapier' in x and 'category' in x for x in changed), changed
+          assert '/images/home-tools-icons-v4/zapier.ico' in d
+          print('ZAPIER_ONLY_DIFF_GUARD_OK=1')
+          PY
+
+          cd "$CAND"
+          npm run build
+
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            rm -rf "$LIVE/.next"; cp -a "$BAK/.next.before" "$LIVE/.next" || true
+            rm -rf "$NEWREL" "$NEWSTATIC"
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+
+          cp -a "$CAND/app/landing/page.tsx" "$SRC"
+          rm -rf "$NEWREL" "$NEWSTATIC"
+          cp -a "$OUT" "$NEWREL"
+          mkdir -p "$(dirname "$NEWSTATIC")"
+          cp -a "$OUT" "$NEWSTATIC"
+          rm -rf "$LIVE/.next.new-zapier"
+          cp -a "$CAND/.next" "$LIVE/.next.new-zapier"
+          rm -rf "$LIVE/.next"
+          mv "$LIVE/.next.new-zapier" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 5
+
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?zapiericon=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?zapiericon=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+          if ! grep -q '/images/home-tools-icons-v4/zapier.ico' "$P"; then rollback; exit 1; fi
+          if ! grep -q 'AI Tools You Will Master' "$P"; then rollback; exit 1; fi
+          ac="$(curl -ksS -o /dev/null -w '%{http_code}' 'https://sikhadenge.in/images/home-tools-icons-v4/zapier.ico')"
+          echo "ZAPIER_ASSET_HTTP=$ac"
+          if [ "$ac" != 200 ]; then rollback; exit 1; fi
+
+          echo "BACKUP=$BAK"
+          echo 'HOME_ZAPIER_OFFICIAL_APP_ICON_LIVE_OK=1 ONLY_ZAPIER_CHANGED=1'
+          REMOTE
