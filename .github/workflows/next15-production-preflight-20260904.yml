@@ -32,58 +32,34 @@ jobs:
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
           KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
-            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
-          else
-            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
-          fi
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect live website topology
+      - name: Inspect active release and routing
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           export PM2_HOME=/root/.pm2
-          LIVE='/var/www/sikhadenge.in/sikhadenge-website-space'
-          echo '===== HOST ====='
-          hostname
-          date -Is
-          echo '===== LIVE PATH ====='
-          ls -ld "$LIVE" || true
-          readlink -f "$LIVE" || true
-          echo '===== LIVE GIT ====='
-          if [ -d "$LIVE/.git" ] || git -C "$LIVE" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            git -C "$LIVE" status --short --branch || true
-            printf 'HEAD='; git -C "$LIVE" rev-parse HEAD || true
-            printf 'BRANCH='; git -C "$LIVE" branch --show-current || true
-            git -C "$LIVE" remote -v | sed -E 's#(https://)[^/@]+@#\1***@#g' || true
-          else
-            echo 'NOT_A_GIT_WORKTREE'
-          fi
-          echo '===== LIVE PACKAGE ====='
-          if [ -f "$LIVE/package.json" ]; then
-            node -e "const p=require('$LIVE/package.json'); console.log(JSON.stringify({next:p.dependencies?.next,react:p.dependencies?.react,reactDom:p.dependencies?.['react-dom']},null,2))"
-          fi
-          echo '===== INSTALLED RUNTIME ====='
-          if [ -f "$LIVE/node_modules/next/package.json" ]; then node -p "require('$LIVE/node_modules/next/package.json').version"; else echo 'NO_INSTALLED_NEXT'; fi
-          if [ -f "$LIVE/.next/BUILD_ID" ]; then printf 'BUILD_ID='; cat "$LIVE/.next/BUILD_ID"; fi
-          echo '===== ENV FILE NAMES ONLY ====='
-          find "$LIVE" -maxdepth 1 -type f -name '.env*' -printf '%f\n' | sort || true
-          echo '===== PM2 ====='
-          pm2 jlist | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{for(const p of JSON.parse(s)){console.log(JSON.stringify({name:p.name,pid:p.pid,status:p.pm2_env?.status,cwd:p.pm2_env?.pm_cwd,script:p.pm2_env?.pm_exec_path,args:p.pm2_env?.args,port:p.pm2_env?.env?.PORT,NODE_ENV:p.pm2_env?.env?.NODE_ENV}))}})" || pm2 ls
-          echo '===== LISTENERS 3000-4999 ====='
-          ss -ltnp | grep -E ':(3[0-9]{3}|4[0-9]{3})\b' || true
-          echo '===== NGINX REFERENCES ====='
-          grep -RniE 'sikhadenge-website-space|proxy_pass http://127\.0\.0\.1:[0-9]+' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -n 120 || true
-          echo '===== LOCAL HEALTH ====='
-          curl -ksS -o /tmp/site-home.html -w 'PUBLIC_HOME=%{http_code}\n' --max-time 15 https://sikhadenge.in/
-          grep -Fq 'Become an AI Expert' /tmp/site-home.html && echo 'HOME_SIGNATURE=OK' || echo 'HOME_SIGNATURE=MISSING'
+          R='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          echo '===== ACTIVE 3955 RELEASE ====='
+          ls -ld "$R"
+          if [ -f "$R/package.json" ]; then node -e "const p=require('$R/package.json'); console.log(JSON.stringify({next:p.dependencies?.next,react:p.dependencies?.react,reactDom:p.dependencies?.['react-dom']},null,2))"; fi
+          if [ -f "$R/node_modules/next/package.json" ]; then printf 'INSTALLED_NEXT='; node -p "require('$R/node_modules/next/package.json').version"; fi
+          if [ -f "$R/.next/BUILD_ID" ]; then printf 'BUILD_ID='; cat "$R/.next/BUILD_ID"; echo; fi
+          echo 'ENV_FILES:'; find "$R" -maxdepth 1 -type f -name '.env*' -printf '%f\n' | sort || true
+          echo '===== ACTIVE RELEASE GIT/PROVENANCE ====='
+          if git -C "$R" rev-parse --is-inside-work-tree >/dev/null 2>&1; then git -C "$R" status --short --branch || true; printf 'HEAD='; git -C "$R" rev-parse HEAD || true; else echo NOT_GIT; fi
+          echo '===== NGINX 120-540 ====='
+          nl -ba "$NG" | sed -n '120,540p' | sed -E 's/(authorization|token|secret|password|cookie)[^;]*/\1 [REDACTED]/Ig'
+          echo '===== 3955 DIRECT ROUTES ====='
+          for u in / /about-us /blog /experts /reviews /contact /robots.txt /sitemap.xml; do code="$(curl -sS -o /tmp/x -w '%{http_code}' --max-time 10 "http://127.0.0.1:3955$u" || true)"; printf '%s %s\n' "$code" "$u"; done
+          echo '===== ROOT NEXT BUILD ASSET SAMPLE ====='
+          curl -sS --max-time 10 http://127.0.0.1:3955/ | grep -oE '/_next/static/[^" ]+' | head -n 8 || true
           REMOTE
-
-# retrigger: 20260904
