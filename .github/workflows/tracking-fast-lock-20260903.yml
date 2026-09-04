@@ -2,6 +2,8 @@
 name: Tracking Fast Lock 20260903
 on:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/tracking-fast-lock-20260903.yml
 permissions:
