@@ -1,0 +1,184 @@
+name: Deploy Homepage Headings Center V3 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-homepage-headings-center-v3-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Build and deploy heading alignment only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/var/tmp/sd-home-headings-center-v3-$TS"
+          BAK="/var/backups/sikhadenge/home-headings-center-v3-$TS"
+          STAGE="$LIVE/.next.home-headings-center-v3-stage-$TS"
+          OLDNEXT="$LIVE/.next.pre-home-headings-center-v3-$TS"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+          test -f "$SRC"
+          test -f "$LIVE/.next/BUILD_ID"
+          cp -a "$SRC" "$BAK/page.tsx.before"
+
+          echo '===== DISK BEFORE V3 ====='
+          df -h / | tail -1
+
+          # Copy source only. Explicitly exclude all historical build trees and large immutable runtime data.
+          rsync -a --delete \
+            --exclude 'node_modules' \
+            --exclude '.next*' \
+            --exclude 'public' \
+            --exclude 'data' \
+            "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          ln -s "$LIVE/public" "$CAND/public"
+          ln -s "$LIVE/data" "$CAND/data"
+          NEWSRC="$CAND/app/landing/page.tsx"
+
+          python3 - "$NEWSRC" "$SRC" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); live=Path(sys.argv[2])
+          before=p.read_text(encoding='utf-8'); after=before
+          heading_changes=[]; sub_changes=[]
+
+          # Homepage section-level h1/h2 only. Hidden SEO headings are excluded.
+          pat=re.compile(r'<(h1|h2)\s+className="([^"]*)">')
+          def hpatch(m):
+              tag,cls=m.groups()
+              if 'sr-only' in cls.split(): return m.group(0)
+              toks=cls.split(); old=cls
+              if 'text-center' not in toks: toks.append('text-center')
+              if 'mx-auto' not in toks: toks.append('mx-auto')
+              new=' '.join(toks)
+              if new!=old: heading_changes.append((tag,old,new))
+              return f'<{tag} className="{new}">'
+          after=pat.sub(hpatch,after)
+
+          # Supporting paragraph immediately after a section h1/h2.
+          pair=re.compile(r'(</h[12]>\s*\n\s*<p\s+className=")([^"]*)(">)')
+          def ppatch(m):
+              cls=m.group(2); toks=cls.split(); old=cls
+              if 'text-center' not in toks: toks.append('text-center')
+              if 'mx-auto' not in toks: toks.append('mx-auto')
+              new=' '.join(toks)
+              if new!=old: sub_changes.append((old,new))
+              return m.group(1)+new+m.group(3)
+          after=pair.sub(ppatch,after)
+
+          if len(heading_changes) != 12:
+              raise SystemExit(f'guard failed: expected 12 visible heading changes, got {len(heading_changes)}')
+          if len(sub_changes) != 10:
+              raise SystemExit(f'guard failed: expected 10 supporting subheading changes, got {len(sub_changes)}')
+          masker=re.compile(r'className="[^"]*"')
+          if masker.sub('className=""',before) != masker.sub('className=""',after):
+              raise SystemExit('guard failed: non-className content changed')
+          p.write_text(after,encoding='utf-8')
+          print('VISIBLE_HEADINGS_CHANGED=',len(heading_changes))
+          print('IMMEDIATE_SUBHEADINGS_CHANGED=',len(sub_changes))
+          if live.read_text(encoding='utf-8') != before:
+              raise SystemExit('live source changed during candidate preparation')
+          PY
+
+          echo '===== CANDIDATE SIZE BEFORE BUILD ====='
+          du -sh "$CAND"
+          cd "$CAND"
+          npm run build
+          test -f "$CAND/.next/BUILD_ID"
+          echo '===== CANDIDATE SIZE AFTER BUILD ====='
+          du -sh "$CAND/.next"
+          echo '===== DISK AFTER BUILD ====='
+          df -h / | tail -1
+
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+          rm -rf "$STAGE"
+          # Same filesystem: rename candidate build; no duplicate copy.
+          mv "$CAND/.next" "$STAGE"
+          test -f "$STAGE/BUILD_ID"
+
+          rollback(){
+            echo ROLLBACK_START
+            cp -a "$BAK/page.tsx.before" "$SRC" || true
+            if [ -d "$LIVE/.next" ]; then
+              rm -rf "$LIVE/.next.failed-home-headings-v3-$TS"
+              mv "$LIVE/.next" "$LIVE/.next.failed-home-headings-v3-$TS" || true
+            fi
+            if [ -d "$OLDNEXT" ]; then mv "$OLDNEXT" "$LIVE/.next" || true; fi
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+          }
+
+          cp -a "$NEWSRC" "$SRC"
+          mv "$LIVE/.next" "$OLDNEXT"
+          mv "$STAGE" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 6
+
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?headingcenterv3=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?headingcenterv3=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
+
+          python3 - "$SRC" <<'PY'
+          from pathlib import Path
+          import re,sys
+          s=Path(sys.argv[1]).read_text(encoding='utf-8')
+          heads=[]; bad=[]
+          for m in re.finditer(r'<(h1|h2)\s+className="([^"]*)">',s):
+              cls=m.group(2)
+              if 'sr-only' in cls.split(): continue
+              heads.append(cls)
+              if 'text-center' not in cls.split() or 'mx-auto' not in cls.split(): bad.append(cls)
+          subs=[]; badsubs=[]
+          for m in re.finditer(r'</h[12]>\s*\n\s*<p\s+className="([^"]*)">',s):
+              cls=m.group(1); subs.append(cls)
+              if 'text-center' not in cls.split() or 'mx-auto' not in cls.split(): badsubs.append(cls)
+          print('LIVE_VISIBLE_H1_H2=',len(heads))
+          print('LIVE_UNCENTERED_H1_H2=',len(bad))
+          print('LIVE_IMMEDIATE_SUBHEADINGS=',len(subs))
+          print('LIVE_UNCENTERED_SUBHEADINGS=',len(badsubs))
+          if len(heads) != 12 or len(subs) != 10 or bad or badsubs:
+              raise SystemExit('live heading/subheading verification failed')
+          PY
+
+          # Success: previous active build no longer needed; source backup retained.
+          rm -rf "$OLDNEXT"
+          echo '===== DISK AFTER SUCCESS ====='
+          df -h / | tail -1
+          echo "BACKUP_SOURCE=$BAK/page.tsx.before"
+          echo 'HOME_HEADINGS_CENTER_V3_LIVE_OK=1 HOMEPAGE_ONLY=1 CLASSNAME_ONLY=1 CARD_TITLES_UNTOUCHED=1'
+          REMOTE
