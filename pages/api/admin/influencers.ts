@@ -1,5 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
 import { requireAdmin } from "../../../lib/auth";
 
@@ -52,17 +53,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           passwordHash,
           isActive: true,
         },
-        select: { id: true, name: true, email: true, promoCode: true, isActive: true, createdAt: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          promoCode: true,
+          isActive: true,
+          createdAt: true,
+        },
       });
       return res.json({ ok: true, item: created });
-    } catch (e: any) {
-      const msg = String(e?.message || "");
-      if (msg.includes("Unique constraint") || msg.includes("unique")) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
         return res.status(409).json({ ok: false, error: "Promo code or email already exists" });
       }
+      console.error("Admin influencer create failed:", error);
       return res.status(500).json({ ok: false, error: "Server error" });
     }
   }
 
+  res.setHeader("Allow", "GET, POST");
   return res.status(405).json({ ok: false });
 }

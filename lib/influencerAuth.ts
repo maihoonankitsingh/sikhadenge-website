@@ -16,12 +16,18 @@ function newToken() {
 export async function createInfluencerSession(res: NextApiResponse, influencerId: string) {
   const token = newToken();
   const tokenHash = sha256(token);
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+
+  await prisma.influencerSession.deleteMany({
+    where: { expiresAt: { lt: now } },
+  });
 
   await prisma.influencerSession.create({
     data: { influencerId, tokenHash, expiresAt },
   });
 
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
   res.setHeader(
     "Set-Cookie",
     `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 24 * 60 * 60}; Secure`
@@ -34,6 +40,7 @@ export async function clearInfluencerSession(req: NextApiRequest, res: NextApiRe
     const tokenHash = sha256(token);
     await prisma.influencerSession.deleteMany({ where: { tokenHash } }).catch(() => null);
   }
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
   res.setHeader(
     "Set-Cookie",
     `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure`
@@ -41,6 +48,8 @@ export async function clearInfluencerSession(req: NextApiRequest, res: NextApiRe
 }
 
 export async function requireInfluencer(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+
   const token = readCookie(req, COOKIE_NAME);
   if (!token) {
     res.status(401).json({ ok: false, error: "Unauthorized" });
@@ -54,6 +63,9 @@ export async function requireInfluencer(req: NextApiRequest, res: NextApiRespons
   });
 
   if (!session || session.expiresAt.getTime() < Date.now()) {
+    if (session) {
+      await prisma.influencerSession.deleteMany({ where: { tokenHash } }).catch(() => null);
+    }
     res.status(401).json({ ok: false, error: "Unauthorized" });
     return null;
   }
@@ -64,6 +76,7 @@ export async function requireInfluencer(req: NextApiRequest, res: NextApiRespons
   });
 
   if (!influencer || !influencer.isActive) {
+    await prisma.influencerSession.deleteMany({ where: { tokenHash } }).catch(() => null);
     res.status(401).json({ ok: false, error: "Unauthorized" });
     return null;
   }
@@ -79,7 +92,13 @@ function readCookie(req: NextApiRequest, name: string) {
     const eq = p.indexOf("=");
     if (eq === -1) continue;
     const k = p.slice(0, eq);
-    if (k === name) return decodeURIComponent(p.slice(eq + 1));
+    if (k === name) {
+      try {
+        return decodeURIComponent(p.slice(eq + 1));
+      } catch {
+        return "";
+      }
+    }
   }
   return "";
 }
