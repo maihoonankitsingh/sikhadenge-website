@@ -29,17 +29,17 @@ fail(){ echo "❌ $*" >&2; return 1; }
 
 pm2_value(){
   local app="$1" key="$2"
-  pm2 jlist | python3 - "$app" "$key" <<'PY'
+  pm2 jlist | python3 -c '
 import json,sys
-app,key=sys.argv[1:3]
+app,key=sys.argv[1],sys.argv[2]
 for item in json.load(sys.stdin):
-    if item.get('name')==app:
-        env=item.get('pm2_env') or {}
-        print(env.get(key,'missing'))
+    if item.get("name")==app:
+        env=item.get("pm2_env") or {}
+        print(env.get(key,"missing"))
         break
 else:
-    print('missing')
-PY
+    print("missing")
+' "$app" "$key"
 }
 
 wait_200(){
@@ -105,17 +105,16 @@ log "4/8 — Identify current port-3940 app"
 LISTENER_PID="$(fuser -n tcp "$PORT" 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+$' | head -1 || true)"
 if [[ -n "$LISTENER_PID" ]]; then
   CURRENT_CWD="$(readlink -f "/proc/${LISTENER_PID}/cwd" 2>/dev/null || true)"
-  CURRENT_APP="$(pm2 jlist | python3 - "$CURRENT_CWD" <<'PY'
+  CURRENT_APP="$(pm2 jlist | python3 -c '
 import json,os,sys
-cwd=os.path.realpath(sys.argv[1]) if sys.argv[1] else ''
+cwd=os.path.realpath(sys.argv[1]) if sys.argv[1] else ""
 for item in json.load(sys.stdin):
-    env=item.get('pm2_env') or {}
-    pcwd=env.get('pm_cwd') or ''
-    if env.get('status')=='online' and pcwd and os.path.realpath(pcwd)==cwd:
-        print(item.get('name',''))
+    env=item.get("pm2_env") or {}
+    pcwd=env.get("pm_cwd") or ""
+    if env.get("status")=="online" and pcwd and os.path.realpath(pcwd)==cwd:
+        print(item.get("name", ""))
         break
-PY
-)"
+' "$CURRENT_CWD")"
   echo "Current listener PID: $LISTENER_PID"
   echo "Current CWD:          ${CURRENT_CWD:-unknown}"
   echo "Current PM2 app:      ${CURRENT_APP:-unknown}"
