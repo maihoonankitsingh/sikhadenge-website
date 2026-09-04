@@ -1,0 +1,41 @@
+name: AI Video Golden FAQ Inline Retry Guard
+
+on:
+  push:
+    branches:
+      - "ops/ai-video-v90-2-faq-production-20260904"
+    paths:
+      - "ops/deploy-golden-ai-video-faq-final-only-inline-retry.sh"
+      - ".github/workflows/ai-video-golden-faq-inline-retry-guard.yml"
+  pull_request:
+    paths:
+      - "ops/deploy-golden-ai-video-faq-final-only-inline-retry.sh"
+      - ".github/workflows/ai-video-golden-faq-inline-retry-guard.yml"
+
+jobs:
+  validate-inline-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: bash -n ops/deploy-golden-ai-video-faq-final-only-inline-retry.sh
+
+      - name: Generate patched deploy without executing production actions
+        env:
+          PATCH_ONLY: "1"
+        run: bash ops/deploy-golden-ai-video-faq-final-only-inline-retry.sh
+
+      - name: Verify inline-only invariants
+        run: |
+          PATCHED=/tmp/deploy-golden-ai-video-faq-final-only-inline-fixed.sh
+          test -f "$PATCHED"
+          bash -n "$PATCHED"
+          grep -Fq 'FAQ_RUNTIME=inline-html' "$PATCHED"
+          grep -Fq 'id="ai-video-faq-final-only-inline"' "$PATCHED"
+          grep -Fq 'Golden HTML equivalence after removing inline FAQ runtime: PASS' "$PATCHED"
+          grep -Fq 'What exactly will I learn in this AI Video Generation Masterclass?' "$PATCHED"
+          grep -Fq 'What language is the masterclass in, and can I ask questions live?' "$PATCHED"
+          ! grep -Fq 'https://sikhadenge.in/$FAQ_JS_NAME' "$PATCHED"
+          ! grep -Fq 'wait_200 "${LIVE_URL%/}/$FAQ_JS_NAME"' "$PATCHED"
