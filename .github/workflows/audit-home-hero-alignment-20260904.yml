@@ -30,7 +30,7 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read exact homepage hero source only
+      - name: Read exact rendered hero alignment source only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -42,10 +42,11 @@ jobs:
           LIVE="$(readlink -f /proc/$PID/cwd)"
           SRC="$LIVE/app/landing/page.tsx"
           echo "SRC=$SRC"
-          LINE="$(grep -nF 'Become an AI Expert with' "$SRC" | head -1 | cut -d: -f1)"
+          grep -nF 'CONFIG.hero.headline' "$SRC" || true
+          LINE="$(grep -nF 'CONFIG.hero.headline' "$SRC" | tail -1 | cut -d: -f1)"
           test -n "$LINE"
-          START=$((LINE-30)); [ "$START" -lt 1 ] && START=1
-          END=$((LINE+40))
-          echo "HERO_HEADING_LINE=$LINE"
+          START=$((LINE-45)); [ "$START" -lt 1 ] && START=1
+          END=$((LINE+55))
+          echo "RENDERED_HERO_LINE=$LINE"
           nl -ba "$SRC" | sed -n "${START},${END}p"
           REMOTE
