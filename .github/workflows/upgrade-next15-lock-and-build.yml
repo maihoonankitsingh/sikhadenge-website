@@ -7,6 +7,7 @@ on:
     paths:
       - package.json
       - package-lock.json
+      - app/layout.tsx
       - app/reviews/page.tsx
       - pages/contact.tsx
       - .github/workflows/upgrade-next15-lock-and-build.yml
