@@ -19,9 +19,9 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  inspect:
+  stage-next15:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     environment: whatsapp-agent-production
     steps:
       - name: Configure SSH
@@ -32,34 +32,152 @@ jobs:
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
           KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
           chmod 600 "$KEY"
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect active release and routing
+      - name: Stage and verify Next 15 candidate without cutover
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           export PM2_HOME=/root/.pm2
-          R='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
-          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          echo '===== ACTIVE 3955 RELEASE ====='
-          ls -ld "$R"
-          if [ -f "$R/package.json" ]; then node -e "const p=require('$R/package.json'); console.log(JSON.stringify({next:p.dependencies?.next,react:p.dependencies?.react,reactDom:p.dependencies?.['react-dom']},null,2))"; fi
-          if [ -f "$R/node_modules/next/package.json" ]; then printf 'INSTALLED_NEXT='; node -p "require('$R/node_modules/next/package.json').version"; fi
-          if [ -f "$R/.next/BUILD_ID" ]; then printf 'BUILD_ID='; cat "$R/.next/BUILD_ID"; echo; fi
-          echo 'ENV_FILES:'; find "$R" -maxdepth 1 -type f -name '.env*' -printf '%f\n' | sort || true
-          echo '===== ACTIVE RELEASE GIT/PROVENANCE ====='
-          if git -C "$R" rev-parse --is-inside-work-tree >/dev/null 2>&1; then git -C "$R" status --short --branch || true; printf 'HEAD='; git -C "$R" rev-parse HEAD || true; else echo NOT_GIT; fi
-          echo '===== NGINX 120-540 ====='
-          nl -ba "$NG" | sed -n '120,540p' | sed -E 's/(authorization|token|secret|password|cookie)[^;]*/\1 [REDACTED]/Ig'
-          echo '===== 3955 DIRECT ROUTES ====='
-          for u in / /about-us /blog /experts /reviews /contact /robots.txt /sitemap.xml; do code="$(curl -sS -o /tmp/x -w '%{http_code}' --max-time 10 "http://127.0.0.1:3955$u" || true)"; printf '%s %s\n' "$code" "$u"; done
-          echo '===== ROOT NEXT BUILD ASSET SAMPLE ====='
-          curl -sS --max-time 10 http://127.0.0.1:3955/ | grep -oE '/_next/static/[^" ]+' | head -n 8 || true
+          ACTIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          CAND='/var/www/sikhadenge.in/candidates/next15-maintenance-lts-20260904'
+          APP='sikhadenge-next15-candidate-3995'
+          PORT=3995
+
+          test -d "$ACTIVE"
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+          if ss -ltn | grep -qE ":${PORT}\\b"; then echo "candidate port ${PORT} already occupied"; exit 20; fi
+
+          echo '===== COPY ACTIVE RELEASE ====='
+          rm -rf "$CAND"
+          mkdir -p "$CAND"
+          rsync -a --delete --exclude=node_modules --exclude=.next "$ACTIVE/" "$CAND/"
+          rm -rf "$CAND/node_modules" "$CAND/.next"
+
+          echo '===== UPGRADE DEPENDENCIES ====='
+          node - "$CAND/package.json" <<'NODE'
+          const fs=require('fs');
+          const f=process.argv[2];
+          const p=JSON.parse(fs.readFileSync(f,'utf8'));
+          p.dependencies=p.dependencies||{};
+          p.devDependencies=p.devDependencies||{};
+          p.dependencies.next='15.5.24';
+          p.dependencies.react='19.2.8';
+          p.dependencies['react-dom']='19.2.8';
+          p.devDependencies['@types/react']='^19';
+          p.devDependencies['@types/react-dom']='^19';
+          p.devDependencies['eslint-config-next']='15.5.24';
+          fs.writeFileSync(f,JSON.stringify(p,null,2)+'\n');
+          NODE
+
+          echo '===== APPLY MIGRATION DELTA TO ACTIVE SOURCE ====='
+          python3 - "$CAND" <<'PY'
+          from pathlib import Path
+          import re, sys
+          root=Path(sys.argv[1])
+
+          def rw(path, fn):
+              p=root/path
+              if p.exists():
+                  old=p.read_text()
+                  new=fn(old)
+                  if new!=old: p.write_text(new)
+
+          rw(Path('app/reviews/page.tsx'), lambda s:s.replace('ref: React.RefObject<HTMLDivElement>,','ref: React.RefObject<HTMLDivElement | null>,'))
+          rw(Path('pages/contact.tsx'), lambda s:s.replace('refs: React.RefObject<HTMLElement>[],','refs: React.RefObject<HTMLElement | null>[],'))
+
+          def layout(s):
+              hp=r'const Header\s*=\s*dynamic\(\(\)\s*=>\s*import\(["\']\.\./components/Header["\']\),\s*\{\s*ssr:\s*false\s*\}\s*\);'
+              fp=r'const Footer\s*=\s*dynamic\(\(\)\s*=>\s*import\(["\']\.\./components/Footer["\']\),\s*\{\s*ssr:\s*false\s*\}\s*\);'
+              if re.search(hp,s):
+                  s=re.sub(hp,'',s)
+                  if '../components/Header' not in '\n'.join(x for x in s.splitlines() if x.startswith('import ')):
+                      s='import Header from "../components/Header";\n'+s
+              if re.search(fp,s):
+                  s=re.sub(fp,'',s)
+                  if '../components/Footer' not in '\n'.join(x for x in s.splitlines() if x.startswith('import ')):
+                      s='import Footer from "../components/Footer";\n'+s
+              if 'dynamic(' not in s:
+                  s=re.sub(r'^import dynamic from ["\']next/dynamic["\'];\n?','',s,flags=re.M)
+              return s
+          rw(Path('app/layout.tsx'),layout)
+
+          def skill(s):
+              if 'params: Promise<{ skill: string }>' in s: return s
+              marker='export async function generateStaticParams()'
+              if marker in s: s=s.replace(marker,'type SkillPageProps = {\n  params: Promise<{ skill: string }>;\n};\n\n'+marker,1)
+              s=s.replace('export function generateMetadata({ params }: { params: { skill: string } }): Metadata {','export async function generateMetadata({ params }: SkillPageProps): Promise<Metadata> {\n  const { skill } = await params;')
+              s=s.replace('export default function SkillPage({ params }: { params: { skill: string } }) {','export default async function SkillPage({ params }: SkillPageProps) {\n  const { skill } = await params;')
+              s=s.replace('params.skill','skill')
+              return s
+          rw(Path('app/[skill]/page.tsx'),skill)
+
+          def blog(s):
+              if 'params: Promise<{ slug: string }>' in s: return s
+              anchor='export async function generateMetadata({' 
+              if anchor in s: s=s.replace(anchor,'type BlogPostProps = {\n  params: Promise<{ slug: string }>;\n};\n\n'+anchor,1)
+              s=re.sub(r'export async function generateMetadata\(\{\s*params,?\s*\}:\s*\{\s*params:\s*\{\s*slug:\s*string\s*\};?\s*\}\):\s*Promise<Metadata>\s*\{','export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {\n  const { slug } = await params;',s,count=1)
+              s=s.replace('export default function BlogPost({ params }: { params: { slug: string } }) {','export default async function BlogPost({ params }: BlogPostProps) {\n  const { slug } = await params;')
+              s=s.replace('params.slug','slug')
+              return s
+          rw(Path('app/blog/[slug]/page.tsx'),blog)
+
+          def expert(s):
+              if 'params: Promise<{ slug: string }>' in s: return s
+              anchor='export async function generateMetadata'
+              if anchor in s: s=s.replace(anchor,'type ExpertPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\n'+anchor,1)
+              s=re.sub(r'export async function generateMetadata\(\{ params \}: \{ params: \{ slug: string \} \}\): Promise<Metadata> \{','export async function generateMetadata({ params }: ExpertPageProps): Promise<Metadata> {\n  const { slug } = await params;',s,count=1)
+              s=s.replace('export default function ExpertPage({ params }: { params: { slug: string } }) {','export default async function ExpertPage({ params }: ExpertPageProps) {\n  const { slug } = await params;')
+              s=s.replace('params.slug','slug')
+              return s
+          rw(Path('app/expert/[slug]/page.tsx'),expert)
+          PY
+
+          echo '===== CLEAN INSTALL ====='
+          cd "$CAND"
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --no-audit --no-fund
+
+          echo '===== TYPECHECK ====='
+          npx tsc --noEmit
+
+          echo '===== PRODUCTION BUILD ====='
+          npm run build
+          echo "CAND_NEXT=$(node -p \"require('./node_modules/next/package.json').version\")"
+          echo "CAND_BUILD_ID=$(cat .next/BUILD_ID)"
+
+          echo '===== START PORT 3995 ====='
+          pm2 start ./node_modules/.bin/next --name "$APP" -- start -p "$PORT" >/dev/null
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 4 "http://127.0.0.1:${PORT}/" >/tmp/next15-home.html; then ok=1; break; fi
+            sleep 1
+          done
+          test "$ok" = 1
+          grep -Fq 'Become an AI Expert' /tmp/next15-home.html
+
+          echo '===== ROUTE GATE ====='
+          for u in / /about-us /blog /experts /contact /robots.txt /sitemap.xml; do
+            code="$(curl -sS -o /tmp/next15-route -w '%{http_code}' --max-time 10 "http://127.0.0.1:${PORT}$u" || true)"
+            echo "$code $u"
+            case "$u" in
+              /contact) test "$code" = 200 -o "$code" = 308 ;;
+              *) test "$code" = 200 ;;
+            esac
+          done
+
+          echo '===== STAGE SUCCESS: LIVE NGINX STILL ON 3955 ====='
+          grep -n 'proxy_pass http://127.0.0.1:3955' /etc/nginx/sites-enabled/sikhadenge.in-ssl | head -n 20
           REMOTE
