@@ -1,0 +1,107 @@
+name: Audit Claude CTA Conversion 20260904
+
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-claude-cta-conversion-20260904.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Audit desktop tablet mobile CTA system
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          mkdir -p cta-audit
+          cat > cta-audit/audit.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]];
+          const url='https://sikhadenge.in/masterclass/claude/free';
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const output={};
+            for(const [name,width,height,isMobile] of views){
+              const page=await browser.newPage();
+              await page.setViewport({width,height,isMobile,hasTouch:isMobile,deviceScaleFactor:1});
+              await page.goto(`${url}?cta-audit=${Date.now()}-${name}`,{waitUntil:'domcontentloaded',timeout:45000});
+              await new Promise(r=>setTimeout(r,10000));
+              const data=await page.evaluate(()=>{
+                const reg='/gen-ai-masterclass/register-one-step';
+                const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+                const all=[...document.querySelectorAll('a[href],button')];
+                const candidates=all.filter(el=>{
+                  const t=norm(el.textContent).toLowerCase();
+                  const href=el.getAttribute('href')||'';
+                  return href===reg || /(reserve|register|join|claim|seat|free)/i.test(t);
+                }).map((el,i)=>{
+                  const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+                  const parent=el.closest('section,header,footer,main,div');
+                  return {
+                    i,
+                    tag:el.tagName,
+                    text:norm(el.textContent),
+                    href:el.getAttribute('href')||'',
+                    visible:!!(r.width&&r.height&&cs.display!=='none'&&cs.visibility!=='hidden'&&parseFloat(cs.opacity)>0),
+                    x:Math.round(r.x),y:Math.round(r.y+scrollY),w:Math.round(r.width),h:Math.round(r.height),
+                    position:cs.position,
+                    bg:cs.backgroundColor,
+                    color:cs.color,
+                    radius:cs.borderRadius,
+                    fontSize:cs.fontSize,
+                    fontWeight:cs.fontWeight,
+                    boxShadow:cs.boxShadow,
+                    parentText:norm(parent?.textContent).slice(0,140)
+                  };
+                });
+                const sections=[...document.querySelectorAll('main section')];
+                const regEls=[...document.querySelectorAll(`a[href="${reg}"]`)];
+                const fixed=[...document.querySelectorAll('body *')].filter(el=>{
+                  const cs=getComputedStyle(el); const r=el.getBoundingClientRect();
+                  return (cs.position==='fixed'||cs.position==='sticky')&&r.width>0&&r.height>0;
+                }).slice(0,25).map(el=>({tag:el.tagName,id:el.id,cls:el.className?.toString?.().slice(0,180)||'',text:norm(el.textContent).slice(0,180),position:getComputedStyle(el).position,top:getComputedStyle(el).top,bottom:getComputedStyle(el).bottom}));
+                return {
+                  title:document.title,
+                  h1:norm(document.querySelector('h1')?.textContent),
+                  sections:sections.length,
+                  docHeight:document.documentElement.scrollHeight,
+                  viewportWidth:innerWidth,
+                  viewportHeight:innerHeight,
+                  registrationLinks:regEls.length,
+                  visibleRegistrationLinks:regEls.filter(el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return r.width&&r.height&&cs.display!=='none'&&cs.visibility!=='hidden'}).length,
+                  ctas:candidates,
+                  fixedSticky:fixed,
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                  faqCount:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                  jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,
+                  skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length
+                };
+              });
+              output[name]=data;
+              await page.screenshot({path:`cta-audit/${name}-top.png`,fullPage:false});
+              await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+              await new Promise(r=>setTimeout(r,800));
+              await page.screenshot({path:`cta-audit/${name}-bottom.png`,fullPage:false});
+              await page.close();
+            }
+            fs.writeFileSync('cta-audit/result.json',JSON.stringify(output,null,2));
+            console.log(JSON.stringify(output,null,2));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node cta-audit/audit.js
+
+      - name: Upload CTA audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-cta-audit-20260904
+          path: cta-audit/
+          retention-days: 3
