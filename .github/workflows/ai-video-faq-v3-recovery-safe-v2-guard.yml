@@ -1,0 +1,45 @@
+name: AI Video FAQ V3 Recovery Safe V2 Guard
+
+on:
+  push:
+    paths:
+      - 'ops/deploy-ai-video-faq-premium-v3-recovery-safe-v2.sh'
+      - '.github/workflows/ai-video-faq-v3-recovery-safe-v2-guard.yml'
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-faq-premium-v3-recovery-safe-v2.sh
+      - name: Validate lambda substitution hardening
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('ops/deploy-ai-video-faq-premium-v3-recovery-safe-v2.sh').read_text()
+          required=[
+            'pat.sub(lambda _m: replacement',
+            'Expected unsafe re.sub replacement line not found',
+            'bash -n "$TMP_SCRIPT"',
+            'exec bash "$TMP_SCRIPT"',
+            'fb23f9ce6e09df5d7122c05bf6ad42517ecfe985'
+          ]
+          missing=[x for x in required if x not in s]
+          if missing:
+            raise SystemExit('Missing guards: '+repr(missing))
+          print('Recovery V2 wrapper guard: PASS')
+          PY
+      - name: Simulate replacement with backslash regex payload
+        run: |
+          python3 - <<'PY'
+          import re
+          html='<script id="ai-video-faq-premium-v2-inline">OLD</script>'
+          js=r"function f(){return /\s+/.test('x');}"
+          pat=re.compile(r'<script id="ai-video-faq-premium-v2-inline">.*?</script>',re.S)
+          replacement='<script id="ai-video-faq-premium-v3-inline">\n'+js+'\n</script>'
+          out=pat.sub(lambda _m: replacement,html,count=1)
+          assert r'/\s+/' in out
+          assert 'ai-video-faq-premium-v3-inline' in out
+          print('Backslash-safe substitution simulation: PASS')
+          PY
