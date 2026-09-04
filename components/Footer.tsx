@@ -20,7 +20,7 @@ type SocialPlatform = "instagram" | "linkedin" | "pinterest" | "whatsapp";
 
 const socialLinks: Array<{ href: string; label: string; platform: SocialPlatform }> = [
   {
-    href: "https://www.instagram.com/sikhadenge.institute",
+    href: "https://www.instagram.com/sikhadenge.ai/",
     label: "Instagram",
     platform: "instagram",
   },
