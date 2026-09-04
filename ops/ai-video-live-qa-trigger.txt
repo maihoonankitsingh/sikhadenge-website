@@ -1,5 +1,5 @@
-AI Video V90 live-production QA trigger
-Deployed source: 75889cdbef1c0fb7591d0b6f7dff24b25ff6b662
-Production app: sikhadenge-ai-video-v90-3940-20260903-220828
-Triggered: 2026-09-03
-Run: full-live-diagnostics-v2
+AI Video V90.1 live-production QA trigger
+Deployed source: c216c8470d761aae1baa644e2cb3dc8d78b936c7
+Production app: sikhadenge-ai-video-v90-1-3940-20260904-105133
+Triggered: 2026-09-04
+Run: full-live-diagnostics-v90-1-final
