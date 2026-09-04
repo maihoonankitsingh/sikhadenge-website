@@ -1,10 +1,10 @@
-name: Footer Professional Live Deploy 20260904
+name: Footer Instagram Link Live Sync 20260904
 on:
   push:
     paths:
       - '.github/workflows/footer-professional-live-deploy-20260904.yml'
 permissions:
-  contents: read
+  contents: write
 env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
   SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
@@ -17,6 +17,41 @@ jobs:
     timeout-minutes: 25
     environment: whatsapp-agent-production
     steps:
+      - name: Sync footer source in GitHub
+        id: sync
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          OLD='https://www.instagram.com/sikhadenge.institute'
+          NEW='https://www.instagram.com/sikhadenge.ai/'
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('components/Footer.tsx')
+          old = 'https://www.instagram.com/sikhadenge.institute'
+          new = 'https://www.instagram.com/sikhadenge.ai/'
+          s = p.read_text(encoding='utf-8')
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one old Instagram URL, found {s.count(old)}')
+          s2 = s.replace(old, new)
+          if s2.count(new) != 1:
+              raise SystemExit('new Instagram URL validation failed')
+          p.write_text(s2, encoding='utf-8')
+          PY
+          git diff --check
+          test "$(git diff --numstat -- components/Footer.tsx | awk '{print $1+$2}')" = "2"
+          git config user.name 'Sikhadenge Deploy Bot'
+          git config user.email 'deploy-bot@sikhadenge.in'
+          git add components/Footer.tsx
+          git commit -m 'fix: update official Instagram footer link'
+          git push origin HEAD:main
+          SHA="$(git rev-parse HEAD)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "FOOTER_SOURCE_SYNCED=$SHA"
+
       - name: SSH setup
         shell: bash
         run: |
@@ -30,63 +65,63 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Deploy footer only
+
+      - name: Deploy Instagram link only
         shell: bash
+        env:
+          FOOTER_COMMIT: ${{ steps.sync.outputs.sha }}
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "FOOTER_COMMIT='$FOOTER_COMMIT' bash -s" <<'REMOTE'
           set -Eeuo pipefail
           export HOME=/root PM2_HOME=/root/.pm2
+          : "${FOOTER_COMMIT:?missing FOOTER_COMMIT}"
           APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
-          FOOTER_COMMIT='f288528bbbe67c6cf86b6cbd60893e9227d362c6'
+          OLD_URL='https://www.instagram.com/sikhadenge.institute'
+          NEW_URL='https://www.instagram.com/sikhadenge.ai/'
           PID="$(pm2 pid "$APP" | tail -1)"
           LIVE="$(readlink -f /proc/$PID/cwd)"
           SRC="$LIVE/components/Footer.tsx"
           TS="$(date +%Y%m%d-%H%M%S)"
-          CAND="/tmp/sd-footer-pro-v2-$TS"
-          BAK="/var/backups/sikhadenge/footer-professional-v2-$TS"
-          STAGE="$LIVE/.next.footer-v2-stage-$TS"
-          ROLLBACK_STAGE="$LIVE/.next.footer-v2-rollback-$TS"
-          OLDNEXT="$LIVE/.next.pre-footer-v2-$TS"
+          CAND="/tmp/sd-footer-instagram-$TS"
+          BAK="/var/backups/sikhadenge/footer-instagram-$TS"
+          STAGE="$LIVE/.next.footer-instagram-stage-$TS"
+          ROLLBACK_STAGE="$LIVE/.next.footer-instagram-rollback-$TS"
+          OLDNEXT="$LIVE/.next.pre-footer-instagram-$TS"
           mkdir -p "$CAND" "$BAK"
           trap 'rm -rf "$CAND"' EXIT
 
           test -f "$SRC"
-          grep -q 'FOOTERLESS_CHECKOUT_PATH' "$SRC"
-          grep -q 'sikhadenge-header-safe-320.png' "$SRC"
+          grep -Fq "$OLD_URL" "$SRC"
           cp -a "$SRC" "$BAK/Footer.tsx.before"
           cp -a "$LIVE/.next" "$BAK/.next.before"
 
           rsync -a --delete --exclude node_modules --exclude .next "$LIVE/" "$CAND/"
           ln -s "$LIVE/node_modules" "$CAND/node_modules"
           curl -fsSL --retry 3 "https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/$FOOTER_COMMIT/components/Footer.tsx" -o "$CAND/components/Footer.tsx"
-
           NEW="$CAND/components/Footer.tsx"
-          test -s "$NEW"
-          grep -q 'FOOTERLESS_CHECKOUT_PATH' "$NEW"
-          grep -q 'sikhadenge-header-safe-320.png' "$NEW"
-          grep -q 'instagram.com/sikhadenge.institute' "$NEW"
-          grep -q 'linkedin.com/company/sikhadenge' "$NEW"
-          grep -q 'pinterest.com/sikhadenge' "$NEW"
-          grep -q 'wa.me/918808505575' "$NEW"
-          grep -q 'mailto:support@sikhadenge.in' "$NEW"
-          grep -q 'tel:+918808505575' "$NEW"
-          grep -q 'function SocialIcon' "$NEW"
-          grep -q 'footer-instagram-gradient' "$NEW"
-          grep -q 'fill="#0A66C2"' "$NEW"
-          grep -q 'fill="#E60023"' "$NEW"
-          grep -q 'fill="#25D366"' "$NEW"
-          if grep -q 'cdn.simpleicons.org' "$NEW"; then echo EXTERNAL_ICON_CDN_STILL_PRESENT; exit 1; fi
 
-          echo '=== FOOTER-ONLY SOURCE DIFF ==='
-          diff -u "$SRC" "$NEW" || true
+          python3 - "$SRC" "$NEW" <<'PY'
+          from pathlib import Path
+          import sys
+          src, newp = map(Path, sys.argv[1:])
+          before = src.read_text(encoding='utf-8')
+          after = newp.read_text(encoding='utf-8')
+          old = 'https://www.instagram.com/sikhadenge.institute'
+          new = 'https://www.instagram.com/sikhadenge.ai/'
+          if before.count(old) != 1:
+              raise SystemExit('live old URL count is not exactly one')
+          expected = before.replace(old, new)
+          if after != expected:
+              raise SystemExit('guard failed: Footer diff is not Instagram-URL-only')
+          print('INSTAGRAM_URL_ONLY_DIFF_OK=1')
+          PY
 
           cd "$CAND"
           npm run build
 
           PID2="$(pm2 pid "$APP" | tail -1)"
           [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
-
           rm -rf "$STAGE" "$ROLLBACK_STAGE"
           cp -a "$CAND/.next" "$STAGE"
           cp -a "$BAK/.next.before" "$ROLLBACK_STAGE"
@@ -96,7 +131,7 @@ jobs:
           rollback(){
             echo ROLLBACK_START
             cp -a "$BAK/Footer.tsx.before" "$SRC" || true
-            if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$LIVE/.next.failed-footer-v2-$TS" || true; fi
+            if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$LIVE/.next.failed-footer-instagram-$TS" || true; fi
             if [ -d "$ROLLBACK_STAGE" ]; then mv "$ROLLBACK_STAGE" "$LIVE/.next" || true; else cp -a "$BAK/.next.before" "$LIVE/.next" || true; fi
             pm2 restart "$APP" --update-env || true
             echo ROLLBACK_DONE
@@ -109,28 +144,17 @@ jobs:
           sleep 6
 
           D="$(mktemp)"; P="$(mktemp)"
-          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?footerv2=$TS" || true)"
-          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?footerv2=$TS" || true)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?instagramfix=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?instagramfix=$TS" || true)"
           echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
           if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
-
-          for needle in \
-            'instagram.com/sikhadenge.institute' \
-            'linkedin.com/company/sikhadenge' \
-            'pinterest.com/sikhadenge' \
-            'wa.me/918808505575' \
-            'ThinkGrow Pvt. Ltd. Practical, future-ready learning' \
-            'Working hours: 10:00 AM - 7:00 PM' \
-            'support@sikhadenge.in' \
-            '+91 88085 05575'; do
-            if ! grep -q "$needle" "$P"; then echo "MISSING=$needle"; rollback; exit 1; fi
+          if ! grep -Fq 'instagram.com/sikhadenge.ai/' "$P"; then echo NEW_INSTAGRAM_URL_MISSING; rollback; exit 1; fi
+          if grep -Fq 'instagram.com/sikhadenge.institute' "$P"; then echo OLD_INSTAGRAM_URL_STILL_PRESENT; rollback; exit 1; fi
+          for needle in 'linkedin.com/company/sikhadenge' 'pinterest.com/sikhadenge' 'wa.me/918808505575' 'support@sikhadenge.in' '+91 88085 05575'; do
+            if ! grep -Fq "$needle" "$P"; then echo "MISSING=$needle"; rollback; exit 1; fi
           done
-
-          if grep -q 'href="https://www.instagram.com/"' "$P"; then echo OLD_GENERIC_INSTAGRAM_PRESENT; rollback; exit 1; fi
-          if grep -q 'href="https://www.linkedin.com/"' "$P"; then echo OLD_GENERIC_LINKEDIN_PRESENT; rollback; exit 1; fi
 
           echo "BACKUP=$BAK"
           echo "PREVIOUS_NEXT=$OLDNEXT"
-          echo 'FOOTER_PROFESSIONAL_LIVE_OK=1 FOOTER_ONLY=1 VERIFIED_SOCIAL_LINKS=1 LOCAL_SOCIAL_SVGS=1'
+          echo 'INSTAGRAM_LINK_LIVE_OK=1 FOOTER_ONLY=1 URL_ONLY=1'
           REMOTE
-# trigger 4
