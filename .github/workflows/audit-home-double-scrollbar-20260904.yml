@@ -1,0 +1,71 @@
+name: Audit Home Double Scrollbar 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-home-double-scrollbar-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect homepage scroll containers read only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          echo "LIVE=$LIVE"
+          echo '=== LANDING PAGE SCROLL TOKENS ==='
+          grep -nEi 'overflow(-[xy])?-(auto|scroll)|overflow:\s*(auto|scroll)|h-screen|min-h-screen|max-h|100vh|100dvh|scrollbar|fixed inset|position:\s*fixed' "$LIVE/app/landing/page.tsx" || true
+          echo '=== LANDING PAGE RETURN / OUTER WRAPPERS ==='
+          grep -nE 'return \(|<main|<div className=|className="[^"]*(min-h|h-screen|overflow|fixed)' "$LIVE/app/landing/page.tsx" | head -180 || true
+          echo '=== LAYOUT / GLOBAL CSS SCROLL TOKENS ==='
+          for f in "$LIVE/app/layout.tsx" "$LIVE/app/globals.css" "$LIVE/styles/globals.css" "$LIVE/components/Header.tsx" "$LIVE/components/Footer.tsx"; do
+            [ -f "$f" ] || continue
+            echo "FILE=$f"
+            grep -nEi 'overflow(-[xy])?-(auto|scroll|hidden)|overflow:\s*(auto|scroll|hidden)|h-screen|min-h-screen|max-h|100vh|100dvh|scrollbar|html|body' "$f" | head -180 || true
+          done
+          echo '=== SITEWIDE INJECTED WIDGET SCROLL TOKENS ==='
+          for f in /var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js /var/www/sikhadenge.in/social-proof-live/server.js; do
+            [ -f "$f" ] || continue
+            echo "FILE=$f"
+            grep -nEi 'overflow|scroll|100vh|100dvh|height:|max-height|position:\s*fixed|fixed' "$f" | head -180 || true
+          done
+          echo '=== REPO-WIDE LIKELY NESTED VERTICAL SCROLLERS ==='
+          grep -RIni --binary-files=without-match \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git \
+            -E 'overflow-y-(auto|scroll)|overflow:\s*(auto|scroll)|height:\s*100vh|h-screen' \
+            "$LIVE/app" "$LIVE/components" "$LIVE/styles" 2>/dev/null | head -260 || true
+          echo '=== HOME HTML BASIC CHECK ==='
+          T="$(mktemp)"
+          curl -kLsS 'https://sikhadenge.in/?scroll_audit=1' -o "$T"
+          echo "PUBLIC_HTML_BYTES=$(wc -c < "$T")"
+          grep -oE 'class="[^"]*(overflow-y-(auto|scroll)|h-screen|max-h-[^ ]*)[^"]*"' "$T" | head -80 || true
+          rm -f "$T"
+          REMOTE
