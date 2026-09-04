@@ -53,23 +53,25 @@ jobs:
               contact.write_text(text.replace(old, new, 1))
           PY
 
-      - name: Refresh lockfile
-        run: npm install --package-lock-only --ignore-scripts
+      - name: Generate fresh lockfile
+        run: |
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Commit migration files
         run: |
-          if git diff --quiet -- package-lock.json app/reviews/page.tsx pages/contact.tsx; then
-            echo "Migration files already synchronized"
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package-lock.json app/reviews/page.tsx pages/contact.tsx
-          git commit -m "fix: migrate React 19 ref typings and lockfile"
-          git push origin HEAD:upgrade-next15-security-20260904
+          if git diff --cached --quiet; then
+            echo "Migration files already synchronized"
+          else
+            git commit -m "fix: migrate React 19 ref typings and lockfile"
+            git push origin HEAD:upgrade-next15-security-20260904
+          fi
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Type check
         run: npx tsc --noEmit
