@@ -3,7 +3,7 @@ set -Eeuo pipefail
 export PM2_HOME=/root/.pm2
 
 ACTIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
-CAND='/var/www/sikhadenge.in/candidates/next15-maintenance-lts-20260904'
+CAND='/var/www/sikhadenge.in/candidates/next15-maintenance-lts-20260904-v2'
 APP='sikhadenge-next15-candidate-3995'
 PORT=3995
 
@@ -14,11 +14,11 @@ if ss -ltn | grep -qE ":${PORT}\\b"; then
   exit 20
 fi
 
-echo '===== COPY ACTIVE RELEASE ====='
+echo '===== COPY ACTIVE RELEASE TO FRESH V2 CANDIDATE ====='
 rm -rf "$CAND"
 mkdir -p "$CAND"
-rsync -a --delete --exclude=node_modules --exclude=.next "$ACTIVE/" "$CAND/"
-rm -rf "$CAND/node_modules" "$CAND/.next"
+rsync -a --delete --exclude=node_modules --exclude='.next*' "$ACTIVE/" "$CAND/"
+rm -rf "$CAND/node_modules"
 
 echo '===== UPGRADE DEPENDENCIES ====='
 node - "$CAND/package.json" <<'NODE'
