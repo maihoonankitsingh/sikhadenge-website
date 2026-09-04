@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import styles from "../../../styles/ai-video-masterclass.module.css";
+import faqStyles from "../../../styles/ai-video-faq-premium.module.css";
 import processStyles from "../../../styles/ai-video-process-premium.module.css";
 
 const registerHref = "/gen-ai-masterclass/register-one-step?source=ai-video-masterclass";
@@ -93,12 +94,21 @@ const audiences = [
 ] as const;
 
 const faqs = [
-  ["Is this masterclass only about AI video generation?", "Yes. The session focuses on practical AI video-generation workflows rather than a broad tour of unrelated AI tools."],
-  ["Do I need video-editing experience?", "No. The workflow starts from the beginning and keeps the finishing process beginner friendly."],
-  ["Will we cover text-to-video and image-to-video?", "Yes. Both are covered, including prompting, references, motion, iteration and consistency."],
-  ["Do I need coding?", "No. The workflow is creator friendly and does not require coding."],
-  ["Will the masterclass cover ads and reels?", "Yes. Practical examples include product ads, reels, cinematic clips and image-to-video outputs."],
+  ["What exactly will I learn in this AI Video Generation Masterclass?", "You’ll learn a repeatable AI-video workflow from prompt and shot planning to generation, refinement and finishing. The session focuses on practical output for ads, reels, product films and image-to-video clips."],
+  ["Is this AI video masterclass beginner-friendly?", "Yes. The masterclass is designed for beginners and explains the workflow step by step, so you can follow even if you are new to AI video tools."],
+  ["How long is the live masterclass?", "The masterclass is a focused 2-hour live session built around practical demonstrations, workflow decisions and live Q&A."],
+  ["Is the session live or recorded?", "This page is for a live masterclass. Recording availability is not promised on this page, so joining live is the best way to follow the demos and ask questions in real time."],
+  ["Do I need video-editing experience before joining?", "No. Prior video-editing experience is not required. The session starts from the workflow basics and keeps the finishing process beginner friendly."],
+  ["Do I need coding or technical AI knowledge?", "No. The workflow is creator friendly and does not require coding or an advanced technical background."],
+  ["Will you cover both text-to-video and image-to-video?", "Yes. The masterclass covers both text-to-video and image-to-video workflows, including prompting, references, motion, iteration and consistency."],
+  ["Which AI video tools will be discussed?", "The page features tools such as Kling AI, Higgsfield, Google Veo, Runway, Pika, Luma AI, Hailuo AI and Seedance. Tool interfaces can change, so the focus is on transferable workflow skills rather than memorising one dashboard."],
+  ["Will I learn how to write better prompts for AI video?", "Yes. You’ll learn how to think beyond static prompts by defining the subject, action, camera, lighting, timing and sound so the model has clearer creative direction."],
+  ["Will the masterclass cover camera movement, lighting and shot design?", "Yes. Shot design is a core part of the workflow, including framing, camera movement, lighting, style and the visual intent behind each clip."],
+  ["Will I learn how to keep multiple AI-generated scenes consistent?", "Yes. The session covers references, shot planning and controlled iteration so multiple clips can feel connected instead of looking like unrelated generations."],
+  ["Will we create ads, reels and product-style videos?", "Yes. Practical examples and workflows are built around product ads, reels, cinematic clips, creator content and short visual sequences."],
   ["Do I need every paid AI tool before joining?", "No. You can learn the workflow without owning every paid subscription. Individual tools may have their own free limits, credits or paid plans."],
+  ["Who is this masterclass most useful for?", "It is designed for creators, video editors, freelancers, agencies, marketers, founders, students and beginners who want stronger AI-generated video output."],
+  ["What language is the masterclass in, and can I ask questions live?", "The session is taught in easy Hinglish and includes live Q&A, so you can follow the demonstrations and ask questions during the masterclass."],
 ] as const;
 
 type AnalyticsWindow = Window & {
@@ -556,18 +566,22 @@ function AiVideoMasterclassPage() {
           </div>
         </section>
 
-        <section className={styles.faqSection} id="faq" aria-labelledby="faq-title">
-          <div className={styles.container}>
-            <div className={styles.sectionHead}>
-              <span>COMMON QUESTIONS</span>
-              <h2 id="faq-title">Know before you <em>reserve your seat.</em></h2>
+        <section className={faqStyles.section} id="faq" aria-labelledby="faq-title">
+          <div className={`${styles.container} ${faqStyles.shell}`}>
+            <div className={faqStyles.head}>
+              <span>AI VIDEO MASTERCLASS FAQS</span>
+              <h2 id="faq-title">Everything you need to know <em>before you join live.</em></h2>
+              <p>Clear answers about the format, tools, skill level, language and practical workflow inside this focused 2-hour live session.</p>
             </div>
 
-            <div className={styles.faqGrid}>
+            <div className={faqStyles.list}>
               {faqs.map(([question, answer]) => (
-                <details key={question}>
-                  <summary>{question}<span aria-hidden="true">+</span></summary>
-                  <p>{answer}</p>
+                <details className={faqStyles.item} key={question}>
+                  <summary className={faqStyles.question}>
+                    <span>{question}</span>
+                    <span className={faqStyles.icon} aria-hidden="true">⌄</span>
+                  </summary>
+                  <div className={faqStyles.answer}><p>{answer}</p></div>
                 </details>
               ))}
             </div>
