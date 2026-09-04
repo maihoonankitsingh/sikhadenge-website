@@ -1,0 +1,188 @@
+name: Deploy Claude Sticky CTA V4 20260904
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-claude-sticky-cta-v4-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only Claude sticky CTA v4
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSET='/var/www/sikhadenge.in/claude-sticky-cta-v4.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/77ab99a59e887179cbca8915fc91fd79f291bbb8/public/claude-sticky-cta-v4.js'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          B="/var/backups/sikhadenge/claude-sticky-cta-v4-$TS"
+          M='/var/backups/sikhadenge/.claude-sticky-cta-v4-last'
+          mkdir -p "$B"
+          cp "$NG" "$B/nginx.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$B/asset.before"
+          echo "$B" > "$M"
+          rollback(){ set +e; cp "$B/nginx.before" "$NG"; if [[ -f "$B/asset.before" ]]; then cp "$B/asset.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; }
+          trap 'rc=$?; rollback; exit $rc' ERR
+
+          T="$(mktemp)"
+          curl -fsSL --retry 3 --max-time 30 "$SOURCE" -o "$T"
+          grep -Fq '__CLAUDE_STICKY_CTA_V4__' "$T"
+          grep -Fq 'data-sd-sticky-cta-button-v4' "$T"
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$T"
+          install -m 0644 "$T" "$ASSET"
+          node --check "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); s=p.read_text(); route='location = /masterclass/claude/free {'; a=s.find(route)
+          if a<0: raise SystemExit('route missing')
+          q=s.find('{',a); d=0; b=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: b=i+1; break
+          if b is None: raise SystemExit('route parse failed')
+          seg=s[a:b]
+          seg=re.sub(r'<script[^>]+src="/claude-sticky-cta-v4\.js[^\"]*"[^>]*></script>','',seg)
+          tag='<script defer src="/claude-sticky-cta-v4.js?v=sticky-cta-v4-20260904"></script>'
+          anchor="</body>';"; pos=seg.find(anchor)
+          if pos<0: raise SystemExit('body injection anchor missing')
+          seg=seg[:pos]+tag+seg[pos:]
+          s=s[:a]+seg+s[b:]
+          if '# CLAUDE_STICKY_CTA_V4_ASSET' not in s:
+              block="    # CLAUDE_STICKY_CTA_V4_ASSET\n    location = /claude-sticky-cta-v4.js {\n        alias /var/www/sikhadenge.in/claude-sticky-cta-v4.js;\n        default_type application/javascript;\n        add_header Cache-Control \"private, no-store, no-cache, must-revalidate, max-age=0\" always;\n        access_log off;\n    }\n    # CLAUDE_STICKY_CTA_V4_ASSET_END\n\n"
+              idx=s.find(route); s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+          H="$(mktemp)"; A="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/masterclass/claude/free?v=sticky-cta-v4-server' -o "$H"
+          test "$(grep -o '/claude-sticky-cta-v4.js?v=sticky-cta-v4-20260904' "$H" | wc -l)" -eq 1
+          grep -Fq '/claude-cta-conversion-v1.js' "$H"
+          grep -Fq '/claude-cta-typography-v3.js' "$H"
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$H"
+          curl -fsS 'https://sikhadenge.in/masterclass/ai-video?v=sticky-cta-v4-isolation' -o "$A"
+          ! grep -Fq '/claude-sticky-cta-v4.js' "$A"
+          echo "CLAUDE_STICKY_CTA_V4_SERVER_PASS BACKUP=$B"
+          trap - ERR
+          REMOTE
+
+      - name: Verify sticky CTA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          mkdir -p sticky-cta-v4-qa
+          cat > sticky-cta-v4-qa/check.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const compact=s=>(s||'').replace(/\s+/g,'');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[['desktop',1440,1000,false,390,60],['tablet',768,1024,true,340,56],['mobile',390,844,true,280,54]],out={},fail=[];
+            for(const [name,w,h,m,minW,minH] of views){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=sticky-cta-v4-${name}`,{waitUntil:'domcontentloaded',timeout:45000});
+              await p.waitForFunction(()=>document.documentElement.getAttribute('data-claude-sticky-cta')==='v4',{timeout:30000});
+              await new Promise(r=>setTimeout(r,1100));
+              const x=await p.evaluate(()=>{
+                const reg='/gen-ai-masterclass/register-one-step';
+                const ct=[...document.querySelectorAll(`a[href="${reg}"]`)];
+                const sticky=document.querySelector('[data-sd-sticky-cta-v4="1"]');
+                const btn=sticky?.querySelector('[data-sd-sticky-cta-button-v4="1"]');
+                const r=btn?.getBoundingClientRect(); const c=btn?getComputedStyle(btn):null;
+                return {
+                  ct:ct.length,
+                  sticky:!!sticky,
+                  btn:!!btn,
+                  width:r?.width||0,
+                  height:r?.height||0,
+                  radius:c?.borderRadius||'',
+                  shadow:c?.boxShadow||'',
+                  cursor:c?.cursor||'',
+                  bg:c?.backgroundImage||'',
+                  main:btn?.querySelector('.sd-cta-main-copy-v2')?.textContent?.trim()||'',
+                  free:btn?.querySelector('.sd-cta-free-pill-v2')?.textContent?.trim()||'',
+                  href:btn?.getAttribute('href')||'',
+                  h1:document.querySelector('h1')?.textContent||'',
+                  sections:document.querySelectorAll('main section').length,
+                  faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                  jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,
+                  skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2
+                };
+              });
+              out[name]=x;
+              await p.screenshot({path:`sticky-cta-v4-qa/${name}.png`});
+              await p.close();
+              if(x.ct!==8||!x.sticky||!x.btn) fail.push(`${name}: sticky CTA missing/count ${x.ct}`);
+              if(x.width<minW||x.height<minH) fail.push(`${name}: CTA too small ${x.width}x${x.height}`);
+              if(x.shadow==='none'||x.cursor!=='pointer'||!x.bg.includes('linear-gradient')) fail.push(`${name}: CTA affordance missing`);
+              if(x.main!=='Get My Free Seat • ₹999 →'||x.free!=='Free'||x.href!==reg) fail.push(`${name}: CTA content/link changed`);
+              if(compact(x.h1)!==compact('Master 25+ AI Tools for smarter work, faster execution & better results.')) fail.push(`${name}: H1 changed`);
+              if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1||x.overflow) fail.push(`${name}: page regression`);
+            }
+            fs.writeFileSync('sticky-cta-v4-qa/result.json',JSON.stringify(out,null,2)); console.log(JSON.stringify(out,null,2));
+            if(fail.length){console.error('CLAUDE_STICKY_CTA_V4_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
+            console.log('CLAUDE_STICKY_CTA_V4_3VIEW_QA_PASS'); await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node sticky-cta-v4-qa/check.js
+
+      - name: Roll back on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; ASSET='/var/www/sikhadenge.in/claude-sticky-cta-v4.js'; M='/var/backups/sikhadenge/.claude-sticky-cta-v4-last'
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; cp "$B/nginx.before" "$NG"; if [[ -f "$B/asset.before" ]]; then cp "$B/asset.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; echo "ROLLED_BACK=$B"; fi
+          REMOTE
+
+      - name: Upload QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-sticky-cta-v4-qa
+          path: sticky-cta-v4-qa/
+          retention-days: 3
+          if-no-files-found: warn
