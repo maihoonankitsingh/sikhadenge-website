@@ -156,7 +156,7 @@ jobs:
               if(x.ct!==8||!x.sticky||!x.btn) fail.push(`${name}: sticky CTA missing/count ${x.ct}`);
               if(x.width<minW||x.height<minH) fail.push(`${name}: CTA too small ${x.width}x${x.height}`);
               if(x.shadow==='none'||x.cursor!=='pointer'||!x.bg.includes('linear-gradient')) fail.push(`${name}: CTA affordance missing`);
-              if(x.main!=='Get My Free Seat • ₹999 →'||x.free!=='Free'||x.href!==reg) fail.push(`${name}: CTA content/link changed`);
+              if(x.main!=='Get My Free Seat • ₹999 →'||x.free!=='Free'||x.href!=='/gen-ai-masterclass/register-one-step') fail.push(`${name}: CTA content/link changed`);
               if(compact(x.h1)!==compact('Master 25+ AI Tools for smarter work, faster execution & better results.')) fail.push(`${name}: H1 changed`);
               if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1||x.overflow) fail.push(`${name}: page regression`);
             }
