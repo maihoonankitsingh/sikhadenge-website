@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - upgrade-next15-security-20260904
-    paths:
-      - package.json
-      - package-lock.json
-      - app/layout.tsx
-      - app/reviews/page.tsx
-      - pages/contact.tsx
-      - .github/workflows/upgrade-next15-lock-and-build.yml
   workflow_dispatch:
 
 permissions:
