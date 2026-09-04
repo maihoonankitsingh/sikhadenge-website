@@ -85,7 +85,6 @@ jobs:
           import re,sys
           root=Path(sys.argv[1])
 
-          # React 19 nullable refs.
           p=root/'app/reviews/page.tsx'
           if p.exists():
               s=p.read_text(); s=s.replace('ref: React.RefObject<HTMLDivElement>,','ref: React.RefObject<HTMLDivElement | null>,'); p.write_text(s)
@@ -93,7 +92,6 @@ jobs:
           if p.exists():
               s=p.read_text(); s=s.replace('refs: React.RefObject<HTMLElement>[],','refs: React.RefObject<HTMLElement | null>[],'); p.write_text(s)
 
-          # Server-component layout: preserve all active-release content, only remove ssr:false wrappers for Header/Footer.
           p=root/'app/layout.tsx'
           if p.exists():
               s=p.read_text()
@@ -111,7 +109,6 @@ jobs:
                   s=re.sub(r'^import dynamic from ["\']next/dynamic["\'];\n?', '', s, flags=re.M)
               p.write_text(s)
 
-          # Known Next 15 async dynamic-route params. Only transform exact old contracts; leave already-migrated files intact.
           p=root/'app/[skill]/page.tsx'
           if p.exists():
               s=p.read_text()
@@ -170,3 +167,5 @@ jobs:
           done
           echo '===== CANDIDATE READY - NO NGINX CHANGE MADE ====='
           REMOTE
+
+# trigger: 20260904-1
