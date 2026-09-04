@@ -44,7 +44,7 @@ jobs:
           set -Eeuo pipefail
           NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
           ASSET='/var/www/sikhadenge.in/claude-cta-typography-v3.js'
-          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/10893198fcbf1f09986c94c1dce4b9176720dd36/public/claude-cta-typography-v3.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/a5ef70c7eb615fb6ed0a12aaf3a375f36bfcf46f/public/claude-cta-typography-v3.js'
           TS="$(date +%Y%m%d-%H%M%S)"
           B="/var/backups/sikhadenge/claude-cta-typography-v3-$TS"
           M='/var/backups/sikhadenge/.claude-cta-typography-v3-last'
@@ -58,8 +58,9 @@ jobs:
           T="$(mktemp)"
           curl -fsSL --retry 3 --max-time 30 "$SOURCE" -o "$T"
           grep -Fq '__CLAUDE_CTA_TYPOGRAPHY_V3__' "$T"
-          grep -Fq 'font-size: 16px' "$T"
-          grep -Fq 'font-size: 14px' "$T"
+          grep -Fq 'main: "16px"' "$T"
+          grep -Fq 'main: "14px"' "$T"
+          grep -Fq 'style.setProperty("font-size"' "$T"
           install -m 0644 "$T" "$ASSET"
           node --check "$ASSET"
 
@@ -77,7 +78,7 @@ jobs:
           if b is None: raise SystemExit('route parse failed')
           seg=s[a:b]
           seg=re.sub(r'<script[^>]+src="/claude-cta-typography-v3\.js[^\"]*"[^>]*></script>','',seg)
-          tag='<script defer src="/claude-cta-typography-v3.js?v=cta-type-v3-20260904"></script>'
+          tag='<script defer src="/claude-cta-typography-v3.js?v=cta-type-v3b-20260904"></script>'
           anchor="</body>';"; pos=seg.find(anchor)
           if pos<0: raise SystemExit('body injection anchor missing')
           seg=seg[:pos]+tag+seg[pos:]
@@ -92,13 +93,13 @@ jobs:
           systemctl reload nginx
           sleep 2
           H="$(mktemp)"; A="$(mktemp)"
-          curl -fsS 'https://sikhadenge.in/masterclass/claude/free?v=cta-type-v3-server' -o "$H"
-          test "$(grep -o '/claude-cta-typography-v3.js?v=cta-type-v3-20260904' "$H" | wc -l)" -eq 1
+          curl -fsS 'https://sikhadenge.in/masterclass/claude/free?v=cta-type-v3b-server' -o "$H"
+          test "$(grep -o '/claude-cta-typography-v3.js?v=cta-type-v3b-20260904' "$H" | wc -l)" -eq 1
           grep -Fq '/claude-cta-conversion-v1.js' "$H"
           grep -Fq '/gen-ai-masterclass/register-one-step' "$H"
-          curl -fsS 'https://sikhadenge.in/masterclass/ai-video?v=cta-type-v3-isolation' -o "$A"
+          curl -fsS 'https://sikhadenge.in/masterclass/ai-video?v=cta-type-v3b-isolation' -o "$A"
           ! grep -Fq '/claude-cta-typography-v3.js' "$A"
-          echo "CTA_TYPE_V3_SERVER_PASS BACKUP=$B"
+          echo "CTA_TYPE_V3B_SERVER_PASS BACKUP=$B"
           trap - ERR
           REMOTE
 
@@ -110,40 +111,42 @@ jobs:
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
           export CHROME
-          mkdir -p cta-type-v3-qa
-          cat > cta-type-v3-qa/check.js <<'JS'
+          mkdir -p cta-type-v3b-qa
+          cat > cta-type-v3b-qa/check.js <<'JS'
           const puppeteer=require('puppeteer-core'),fs=require('fs');
           (async()=>{
             const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
             const views=[['desktop',1440,1000,false,16,13.5],['tablet',768,1024,true,15,13],['mobile',390,844,true,14,12.5]],out={},fail=[];
             for(const [name,w,h,m,mainPx,pillPx] of views){
               const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=cta-type-v3-${name}`,{waitUntil:'domcontentloaded',timeout:45000});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=cta-type-v3b-${name}`,{waitUntil:'domcontentloaded',timeout:45000});
               await p.waitForFunction(()=>document.documentElement.getAttribute('data-claude-cta-typography')==='v3',{timeout:30000});
-              await new Promise(r=>setTimeout(r,900));
+              await new Promise(r=>setTimeout(r,1100));
               const x=await p.evaluate(()=>{
                 const reg='/gen-ai-masterclass/register-one-step';
                 const ct=[...document.querySelectorAll(`a[href="${reg}"]`)];
-                return {ct:ct.length,main:ct.map(a=>parseFloat(getComputedStyle(a.querySelector('.sd-cta-main-copy-v2')).fontSize)),pill:ct.map(a=>parseFloat(getComputedStyle(a.querySelector('.sd-cta-free-pill-v2')).fontSize)),sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+                const main=ct.map(a=>a.querySelector('.sd-cta-main-copy-v2'));
+                const pill=ct.map(a=>a.querySelector('.sd-cta-free-pill-v2'));
+                return {ct:ct.length,main:main.map(e=>e?parseFloat(getComputedStyle(e).fontSize):null),pill:pill.map(e=>e?parseFloat(getComputedStyle(e).fontSize):null),sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
               });
               out[name]=x;
               await p.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight/2));
               await new Promise(r=>setTimeout(r,250));
-              await p.screenshot({path:`cta-type-v3-qa/${name}.png`});
+              await p.screenshot({path:`cta-type-v3b-qa/${name}.png`});
               await p.close();
               if(x.ct!==8) fail.push(`${name}: CTA count ${x.ct}`);
               if(x.main.some(v=>v!==mainPx)) fail.push(`${name}: main sizes ${x.main}`);
               if(x.pill.some(v=>v!==pillPx)) fail.push(`${name}: pill sizes ${x.pill}`);
               if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1||x.overflow) fail.push(`${name}: page regression`);
             }
-            fs.writeFileSync('cta-type-v3-qa/result.json',JSON.stringify(out,null,2));
+            fs.writeFileSync('cta-type-v3b-qa/result.json',JSON.stringify(out,null,2));
             console.log(JSON.stringify(out,null,2));
-            if(fail.length){console.error('CTA_TYPE_V3_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
-            console.log('CLAUDE_CTA_TYPOGRAPHY_V3_3VIEW_QA_PASS');
+            if(fail.length){console.error('CTA_TYPE_V3B_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
+            console.log('CLAUDE_CTA_TYPOGRAPHY_V3B_3VIEW_QA_PASS');
             await b.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node cta-type-v3-qa/check.js
+          node cta-type-v3b-qa/check.js
 
       - name: Roll back on failure
         if: failure()
@@ -160,7 +163,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: claude-cta-typography-v3-qa
-          path: cta-type-v3-qa/
+          name: claude-cta-typography-v3b-qa
+          path: cta-type-v3b-qa/
           retention-days: 3
           if-no-files-found: warn
