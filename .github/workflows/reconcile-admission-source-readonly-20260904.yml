@@ -44,7 +44,7 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Read admission dependency source only
+      - name: Read backend dependency source only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -54,11 +54,12 @@ jobs:
           test -d "$ROOT"
           echo '===== ADMISSION TOKEN ====='
           sha256sum "$ROOT/lib/admission-token.ts"
-          sed -n '1,260p' "$ROOT/lib/admission-token.ts"
-          echo '===== PRISMA ADMISSION MODEL ====='
-          awk 'BEGIN{p=0} /^model Admission[[:space:]]*\{/{p=1} p{print} p && /^\}/{exit}' "$ROOT/prisma/schema.prisma"
+          sed -n '1,320p' "$ROOT/lib/admission-token.ts"
+          echo '===== FULL PRISMA SCHEMA ====='
+          sha256sum "$ROOT/prisma/schema.prisma"
+          sed -n '1,1200p' "$ROOT/prisma/schema.prisma"
           echo '===== DASHBOARD AUTH ====='
           sha256sum "$ROOT/lib/dashboard-auth.ts"
-          sed -n '1,260p' "$ROOT/lib/dashboard-auth.ts"
+          sed -n '1,320p' "$ROOT/lib/dashboard-auth.ts"
           echo '===== READONLY COMPLETE ====='
           REMOTE
