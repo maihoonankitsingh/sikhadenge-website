@@ -1,0 +1,29 @@
+name: Nonvisual Hardening CI 20260904
+
+on:
+  push:
+    branches:
+      - fix/nonvisual-hardening-20260904
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci --no-audit --no-fund
+      - name: TypeScript validation
+        run: npx tsc --noEmit
+      - name: ESLint diagnostic
+        run: npx eslint .
+      - name: Production build
+        run: npm run build
