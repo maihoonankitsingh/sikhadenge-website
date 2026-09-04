@@ -1,0 +1,93 @@
+name: Diagnose Next15 Reviews 500 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/diagnose-next15-reviews-500-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Capture isolated reviews failure
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f "/proc/$PID/cwd")"
+          CAND="$(find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -name 'next15-v3-*' -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)"
+          test -n "$CAND"; test -d "$CAND"; test "$CAND" != "$LIVE"
+          echo "LIVE_RELEASE=$LIVE"
+          echo "CANDIDATE=$CAND"
+          node -e "const p=require('$LIVE/package.json'); console.log('LIVE_NEXT='+p.dependencies.next)"
+          node -e "const p=require('$CAND/package.json'); console.log('CANDIDATE_NEXT='+p.dependencies.next)"
+
+          echo '--- prior smoke log tail ---'
+          tail -120 "$CAND/.next15-smoke.log" 2>/dev/null || true
+
+          TEST_PORT=3965
+          if ss -ltnp | grep -q ":$TEST_PORT "; then
+            OLDTESTPID="$(ss -ltnp | sed -n "s/.*:$TEST_PORT .*pid=\([0-9]*\).*/\1/p" | head -1)"
+            [[ -z "$OLDTESTPID" ]] || kill "$OLDTESTPID" || true
+            sleep 1
+          fi
+          cd "$CAND"
+          : > .reviews-diagnostic.log
+          node node_modules/next/dist/bin/next start -p "$TEST_PORT" >.reviews-diagnostic.log 2>&1 &
+          TPID=$!
+          cleanup() { kill "$TPID" >/dev/null 2>&1 || true; wait "$TPID" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 30); do curl -fsS --max-time 3 "http://127.0.0.1:$TEST_PORT/" >/dev/null && break; sleep 1; done
+
+          echo '--- reviews response headers/body prefix ---'
+          set +e
+          curl -sS --max-time 10 -D /tmp/reviews.headers "http://127.0.0.1:$TEST_PORT/reviews" -o /tmp/reviews.body
+          RC=$?
+          set -e
+          cat /tmp/reviews.headers | sed -n '1,30p'
+          head -c 1200 /tmp/reviews.body | tr '\n' ' '; echo
+          echo "CURL_RC=$RC"
+          sleep 2
+          echo '--- diagnostic server log ---'
+          tail -200 .reviews-diagnostic.log
+          echo '--- relevant asset targets ---'
+          for f in t1.mp4 t2.mp4 t3.mp4 t4.mp4 t5.mp4 t6.mp4 t7.mp4; do
+            if [[ -e "$CAND/public/images/testimonials/$f" ]]; then ls -lh "$CAND/public/images/testimonials/$f"; else echo "MISSING $f"; fi
+          done
+          echo '--- live unchanged ---'
+          test "$(readlink -f /proc/$(pm2 pid "$APP" | tail -1)/cwd)" = "$LIVE"
+          curl -fsS --max-time 10 'http://127.0.0.1:3955/' >/dev/null
+          echo 'LIVE_UNCHANGED_OK'
+          REMOTE
