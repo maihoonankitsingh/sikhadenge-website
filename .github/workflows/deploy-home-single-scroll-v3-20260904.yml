@@ -1,0 +1,104 @@
+name: Deploy Home Single Scroll V3 20260904
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-home-single-scroll-v3-20260904.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Deploy homepage single scrollbar only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          SRC="$LIVE/app/landing/page.tsx"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          CAND="/var/tmp/sd-home-scroll-v3-$TS"
+          BAK="/var/backups/sikhadenge/home-single-scroll-v3-$TS"
+          STAGE="$LIVE/.next.home-scroll-v3-stage-$TS"
+          OLDNEXT="$LIVE/.next.pre-home-scroll-v3-$TS"
+          mkdir -p "$CAND" "$BAK"
+          trap 'rm -rf "$CAND"' EXIT
+          test -f "$SRC"
+          test -f "$LIVE/.next/BUILD_ID"
+          cp -a "$SRC" "$BAK/page.tsx.before"
+          rsync -a --delete --exclude node_modules --exclude '.next*' --exclude public --exclude data "$LIVE/" "$CAND/"
+          ln -s "$LIVE/node_modules" "$CAND/node_modules"
+          ln -s "$LIVE/public" "$CAND/public"
+          ln -s "$LIVE/data" "$CAND/data"
+          NEWSRC="$CAND/app/landing/page.tsx"
+          python3 - "$NEWSRC" "$SRC" <<'PY'
+          from pathlib import Path
+          import base64,sys
+          p=Path(sys.argv[1]); live=Path(sys.argv[2])
+          before=p.read_text(encoding='utf-8')
+          needle='export default function LandingPage() {\n  return ('
+          hook=base64.b64decode('ZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gTGFuZGluZ1BhZ2UoKSB7CiAgdXNlRWZmZWN0KCgpID0+IHsKICAgIGNvbnN0IGh0bWwgPSBkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQ7CiAgICBjb25zdCBib2R5ID0gZG9jdW1lbnQuYm9keTsKICAgIGNvbnN0IHByZXZpb3VzID0gWwogICAgICBbaHRtbCwgImhlaWdodCIsIGh0bWwuc3R5bGUuZ2V0UHJvcGVydHlWYWx1ZSgiaGVpZ2h0IiksIGh0bWwuc3R5bGUuZ2V0UHJvcGVydHlQcmlvcml0eSgiaGVpZ2h0IildLAogICAgICBbaHRtbCwgIm1pbi1oZWlnaHQiLCBodG1sLnN0eWxlLmdldFByb3BlcnR5VmFsdWUoIm1pbi1oZWlnaHQiKSwgaHRtbC5zdHlsZS5nZXRQcm9wZXJ0eVByaW9yaXR5KCJtaW4taGVpZ2h0IildLAogICAgICBbaHRtbCwgIm92ZXJmbG93LXkiLCBodG1sLnN0eWxlLmdldFByb3BlcnR5VmFsdWUoIm92ZXJmbG93LXkiKSwgaHRtbC5zdHlsZS5nZXRQcm9wZXJ0eVByaW9yaXR5KCJvdmVyZmxvdy15IildLAogICAgICBbYm9keSwgImhlaWdodCIsIGJvZHkuc3R5bGUuZ2V0UHJvcGVydHlWYWx1ZSgiaGVpZ2h0IiksIGJvZHkuc3R5bGUuZ2V0UHJvcGVydHlQcmlvcml0eSgiaGVpZ2h0IildLAogICAgICBbYm9keSwgIm1pbi1oZWlnaHQiLCBib2R5LnN0eWxlLmdldFByb3BlcnR5VmFsdWUoIm1pbi1oZWlnaHQiKSwgYm9keS5zdHlsZS5nZXRQcm9wZXJ0eVByaW9yaXR5KCJtaW4taGVpZ2h0IildLAogICAgICBbYm9keSwgIm92ZXJmbG93LXkiLCBib2R5LnN0eWxlLmdldFByb3BlcnR5VmFsdWUoIm92ZXJmbG93LXkiKSwgYm9keS5zdHlsZS5nZXRQcm9wZXJ0eVByaW9yaXR5KCJvdmVyZmxvdy15IildLAogICAgXSBhcyBjb25zdDsKCiAgICBodG1sLnN0eWxlLnNldFByb3BlcnR5KCJoZWlnaHQiLCAiYXV0byIsICJpbXBvcnRhbnQiKTsKICAgIGh0bWwuc3R5bGUuc2V0UHJvcGVydHkoIm1pbi1oZWlnaHQiLCAiMTAwJSIsICJpbXBvcnRhbnQiKTsKICAgIGh0bWwuc3R5bGUuc2V0UHJvcGVydHkoIm92ZXJmbG93LXkiLCAiYXV0byIsICJpbXBvcnRhbnQiKTsKICAgIGJvZHkuc3R5bGUuc2V0UHJvcGVydHkoImhlaWdodCIsICJhdXRvIiwgImltcG9ydGFudCIpOwogICAgYm9keS5zdHlsZS5zZXRQcm9wZXJ0eSgibWluLWhlaWdodCIsICIxMDAlIiwgImltcG9ydGFudCIpOwogICAgYm9keS5zdHlsZS5zZXRQcm9wZXJ0eSgib3ZlcmZsb3cteSIsICJ2aXNpYmxlIiwgImltcG9ydGFudCIpOwoKICAgIHJldHVybiAoKSA9PiB7CiAgICAgIHByZXZpb3VzLmZvckVhY2goKFtlbGVtZW50LCBwcm9wZXJ0eSwgdmFsdWUsIHByaW9yaXR5XSkgPT4gewogICAgICAgIGlmICh2YWx1ZSkgZWxlbWVudC5zdHlsZS5zZXRQcm9wZXJ0eShwcm9wZXJ0eSwgdmFsdWUsIHByaW9yaXR5KTsKICAgICAgICBlbHNlIGVsZW1lbnQuc3R5bGUucmVtb3ZlUHJvcGVydHkocHJvcGVydHkpOwogICAgICB9KTsKICAgIH07CiAgfSwgW10pOwoKICByZXR1cm4gKA==').decode('utf-8')
+          if before.count(needle)!=1: raise SystemExit(f'anchor guard failed: {before.count(needle)}')
+          after=before.replace(needle,hook,1)
+          if after.replace(hook,needle,1)!=before: raise SystemExit('scope guard failed')
+          if after.count('body.style.setProperty("overflow-y", "visible", "important")')!=1: raise SystemExit('marker guard failed')
+          p.write_text(after,encoding='utf-8')
+          if live.read_text(encoding='utf-8')!=before: raise SystemExit('live changed during candidate prep')
+          print('HOME_SCROLL_PATCH_ONLY=1')
+          PY
+          cd "$CAND"
+          npm run build
+          test -f "$CAND/.next/BUILD_ID"
+          PID2="$(pm2 pid "$APP" | tail -1)"
+          [ "$(readlink -f /proc/$PID2/cwd)" = "$LIVE" ]
+          rm -rf "$STAGE"
+          mv "$CAND/.next" "$STAGE"
+          test -f "$STAGE/BUILD_ID"
+          cp -a "$NEWSRC" "$SRC"
+          mv "$LIVE/.next" "$OLDNEXT"
+          mv "$STAGE" "$LIVE/.next"
+          pm2 restart "$APP" --update-env
+          sleep 7
+          D="$(mktemp)"; P="$(mktemp)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?scrollv3=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?scrollv3=$TS" || true)"
+          echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
+          if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then
+            cp -a "$BAK/page.tsx.before" "$SRC"
+            rm -rf "$LIVE/.next.failed-home-scroll-v3-$TS"
+            mv "$LIVE/.next" "$LIVE/.next.failed-home-scroll-v3-$TS" || true
+            mv "$OLDNEXT" "$LIVE/.next" || true
+            pm2 restart "$APP" --update-env || true
+            echo ROLLBACK_DONE
+            exit 1
+          fi
+          grep -Fq 'body.style.setProperty("overflow-y", "visible", "important")' "$SRC"
+          rm -rf "$OLDNEXT"
+          echo "BACKUP_SOURCE=$BAK/page.tsx.before"
+          echo 'HOME_SINGLE_SCROLL_V3_DEPLOY_OK=1 OTHER_PAGES_SOURCE_UNTOUCHED=1'
+          REMOTE
