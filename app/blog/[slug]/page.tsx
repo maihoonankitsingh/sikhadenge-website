@@ -381,17 +381,18 @@ export async function generateStaticParams() {
 export const dynamicParams = true;
 export const revalidate = 2592000;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const post = getBlogs().find((item) => item.slug === params.slug);
-  const parsed = parseSlug(params.slug, post);
+type BlogPostProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getBlogs().find((item) => item.slug === slug);
+  const parsed = parseSlug(slug, post);
   const title = post?.title || buildHeadline(parsed);
   const description = post?.excerpt || buildDescription(parsed);
   const keywords = buildKeywordList(parsed, title);
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
+  const canonical = `${BASE_URL}/blog/${slug}`;
 
   return {
     title: `${title} | Sikhadenge`,
@@ -433,10 +434,11 @@ export async function generateMetadata({
   };
 }
 
-export default function BlogPost({ params }: { params: { slug: string } }) {
+export default async function BlogPost({ params }: BlogPostProps) {
+  const { slug } = await params;
   const allBlogs = getBlogs();
-  const post = allBlogs.find((item) => item.slug === params.slug);
-  const parsed = parseSlug(params.slug, post);
+  const post = allBlogs.find((item) => item.slug === slug);
+  const parsed = parseSlug(slug, post);
   const title = post?.title || buildHeadline(parsed);
   const category = post?.category || skillCategoryMap[parsed.skillLabel] || "AI Skills";
   const readTime = post?.readTime || "8 min read";
@@ -456,7 +458,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
   ];
 
   const relatedPosts = allBlogs
-    .filter((item) => item.slug !== params.slug)
+    .filter((item) => item.slug !== slug)
     .filter(
       (item) =>
         item.category === category ||
@@ -465,7 +467,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     )
     .slice(0, 6);
 
-  const canonical = `${BASE_URL}/blog/${params.slug}`;
+  const canonical = `${BASE_URL}/blog/${slug}`;
   const description = post?.excerpt || buildDescription(parsed);
   const keywordList = buildKeywordList(parsed, title);
 
