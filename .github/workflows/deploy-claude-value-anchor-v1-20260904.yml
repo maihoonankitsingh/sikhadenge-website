@@ -1,0 +1,228 @@
+name: Deploy Claude Value Anchor V1 20260904
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-claude-value-anchor-v1-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
+          test "$key_type" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy only value-anchor asset to Claude exact route
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export TZ=Asia/Kolkata
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSET='/var/www/sikhadenge.in/claude-value-anchor-v1.js'
+          SOURCE='https://raw.githubusercontent.com/maihoonankitsingh/sikhadenge-website/84558bb96c1db1db057bcad7b2cdd6d1a2c3418a/public/claude-value-anchor-v1.js'
+          MARKER='/var/backups/sikhadenge/.claude-value-anchor-v1-last'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BACKUP="/var/backups/sikhadenge/claude-value-anchor-v1-$TS"
+
+          test -f "$NG"
+          mkdir -p "$BACKUP"
+          cp "$NG" "$BACKUP/sikhadenge.in-ssl.before"
+          [[ ! -f "$ASSET" ]] || cp "$ASSET" "$BACKUP/claude-value-anchor-v1.js.before"
+          printf '%s\n' "$BACKUP" > "$MARKER"
+
+          rollback(){
+            set +e
+            cp "$BACKUP/sikhadenge.in-ssl.before" "$NG"
+            if [[ -f "$BACKUP/claude-value-anchor-v1.js.before" ]]; then cp "$BACKUP/claude-value-anchor-v1.js.before" "$ASSET"; else rm -f "$ASSET"; fi
+            nginx -t && systemctl reload nginx
+          }
+          trap 'rc=$?; echo "DEPLOY_FAIL=$rc"; rollback; exit $rc' ERR
+
+          TMP="$(mktemp)"
+          curl -fsSL --retry 3 --max-time 30 "$SOURCE" -o "$TMP"
+          grep -Fq '__CLAUDE_VALUE_ANCHOR_V1__' "$TMP"
+          grep -Fq 'MASTERCLASS VALUE' "$TMP"
+          grep -Fq '₹999' "$TMP"
+          grep -Fq 'FREE' "$TMP"
+          install -m 0644 "$TMP" "$ASSET"
+          node --check "$ASSET"
+
+          python3 - "$NG" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path(sys.argv[1]); s=p.read_text(); route='location = /masterclass/claude/free {'; a=s.find(route)
+          if a < 0: raise SystemExit('Claude exact route missing')
+          brace=s.find('{',a); d=0; b=None
+          for i in range(brace,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: b=i+1; break
+          if b is None: raise SystemExit('Claude route parse failed')
+          seg=s[a:b]
+          seg=re.sub(r'<script[^>]+src="/claude-value-anchor-v1\.js[^\"]*"[^>]*></script>','',seg)
+          script='<script defer src="/claude-value-anchor-v1.js?v=value-999-free-v1-20260904"></script>'
+          anchor="</body>';"; pos=seg.find(anchor)
+          if pos < 0: raise SystemExit('Claude body injection anchor missing')
+          seg=seg[:pos]+script+seg[pos:]
+          s=s[:a]+seg+s[b:]
+          if '# CLAUDE_VALUE_ANCHOR_V1_ASSET' not in s:
+              block='''    # CLAUDE_VALUE_ANCHOR_V1_ASSET
+              location = /claude-value-anchor-v1.js {
+                  alias /var/www/sikhadenge.in/claude-value-anchor-v1.js;
+                  default_type application/javascript;
+                  add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+                  access_log off;
+              }
+              # CLAUDE_VALUE_ANCHOR_V1_ASSET_END
+
+          '''
+              idx=s.find(route); s=s[:idx]+block+s[idx:]
+          p.write_text(s)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          curl -fsS --max-time 20 'https://sikhadenge.in/claude-value-anchor-v1.js?v=value-999-free-v1-20260904' | grep -Fq '__CLAUDE_VALUE_ANCHOR_V1__'
+          HTML="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/claude/free?v=value-anchor-server-20260904' -o "$HTML"
+          test "$(grep -o '/claude-value-anchor-v1.js?v=value-999-free-v1-20260904' "$HTML" | wc -l)" -eq 1
+          grep -Fq '/claude-cta-conversion-v1.js' "$HTML"
+          grep -Fq '/claude-faq-v2.js' "$HTML"
+          grep -Fq '/gen-ai-masterclass/register-one-step' "$HTML"
+
+          AI="$(mktemp)"
+          curl -fsS --max-time 20 'https://sikhadenge.in/masterclass/ai-video?v=value-anchor-isolation-20260904' -o "$AI"
+          ! grep -Fq '/claude-value-anchor-v1.js' "$AI"
+
+          echo "VALUE_ANCHOR_SERVER_PASS BACKUP=$BACKUP"
+          trap - ERR
+          REMOTE
+
+      - name: Verify ₹999 to FREE value anchor desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          mkdir -p value-v1-qa
+          cat > value-v1-qa/check.js <<'JS'
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
+          const compact=s=>(s||'').replace(/\s+/g,'').replace(/→/g,'');
+          const EXPECTED_H1='Master 25+ AI Tools for smarter work, faster execution & better results.';
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]],out={},fail=[];
+            for(const [name,w,h,m] of views){
+              const p=await b.newPage();
+              await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m,deviceScaleFactor:1});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?v=value-v1-${name}-20260904`,{waitUntil:'domcontentloaded',timeout:45000});
+              await p.waitForFunction(()=>document.documentElement.getAttribute('data-claude-value-anchor')==='v1',{timeout:30000});
+              await new Promise(r=>setTimeout(r,1200));
+              const x=await p.evaluate(()=>{
+                const reg='/gen-ai-masterclass/register-one-step',norm=s=>(s||'').replace(/\s+/g,' ').trim();
+                const sticky=document.querySelector('[data-sd-cta-sticky-v1="1"]');
+                const price=sticky?.querySelector('[data-sd-value-price-v1="1"]');
+                const old=price?.querySelector('.sd-value-old-v1');
+                const free=price?.querySelector('.sd-value-free-v1');
+                const eyebrow=sticky?.querySelector('[data-sd-value-eyebrow-v1="1"]');
+                const ctas=[...document.querySelectorAll(`a[href="${reg}"]`)];
+                const visible=ctas.filter(el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return !!(r.width&&r.height&&cs.display!=='none'&&cs.visibility!=='hidden'&&parseFloat(cs.opacity)>0)});
+                const ids=[...document.querySelectorAll('[id]')].map(e=>e.id).filter(Boolean);
+                return {
+                  marker:document.documentElement.getAttribute('data-claude-value-anchor'),
+                  oldMarker:document.documentElement.getAttribute('data-claude-value-old'),
+                  nowMarker:document.documentElement.getAttribute('data-claude-value-now'),
+                  sticky:!!sticky,
+                  eyebrow:norm(eyebrow?.textContent),
+                  old:norm(old?.textContent),
+                  free:norm(free?.textContent),
+                  oldDecoration:old?getComputedStyle(old).textDecorationLine:'',
+                  priceDisplay:price?getComputedStyle(price).display:'',
+                  ctaCount:ctas.length,
+                  visibleCount:visible.length,
+                  ctaLabels:ctas.map(a=>norm(a.textContent).replace(/→/g,'').trim()),
+                  h1:norm(document.querySelector('h1')?.textContent),
+                  sections:document.querySelectorAll('main section').length,
+                  faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                  jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,
+                  skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                  dups:[...new Set(ids.filter((v,i)=>ids.indexOf(v)!==i))]
+                };
+              });
+              out[name]=x;
+              await p.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));
+              await new Promise(r=>setTimeout(r,400));
+              await p.screenshot({path:`value-v1-qa/${name}-sticky.png`,fullPage:false});
+              await p.close();
+
+              if(x.marker!=='v1'||x.oldMarker!=='999'||x.nowMarker!=='FREE') fail.push(`${name}: value markers`);
+              if(!x.sticky||x.eyebrow!=='MASTERCLASS VALUE'||x.old!=='₹999'||x.free!=='FREE') fail.push(`${name}: price copy`);
+              if(!x.oldDecoration.includes('line-through')||x.priceDisplay!=='inline-flex') fail.push(`${name}: price visual`);
+              if(x.ctaCount!==8||x.visibleCount!==7) fail.push(`${name}: CTA count changed ${x.ctaCount}/${x.visibleCount}`);
+              if(x.ctaLabels.some(label=>label!=='Reserve My Free Seat')) fail.push(`${name}: CTA copy changed`);
+              if(compact(x.h1)!==compact(EXPECTED_H1)) fail.push(`${name}: hero H1 changed`);
+              if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1) fail.push(`${name}: existing content changed`);
+              if(x.overflow) fail.push(`${name}: horizontal overflow`);
+              if(x.dups.length) fail.push(`${name}: duplicate IDs`);
+            }
+            fs.writeFileSync('value-v1-qa/result.json',JSON.stringify(out,null,2));
+            console.log(JSON.stringify(out,null,2));
+            if(fail.length){console.error('VALUE_ANCHOR_V1_QA_FAIL\n'+fail.join('\n'));process.exit(1)}
+            console.log('CLAUDE_VALUE_ANCHOR_V1_3VIEW_QA_PASS');
+            await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node value-v1-qa/check.js
+
+      - name: Roll back on QA failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          NG='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; ASSET='/var/www/sikhadenge.in/claude-value-anchor-v1.js'; M='/var/backups/sikhadenge/.claude-value-anchor-v1-last'
+          if [[ -f "$M" ]]; then B="$(cat "$M")"; [[ ! -f "$B/sikhadenge.in-ssl.before" ]] || cp "$B/sikhadenge.in-ssl.before" "$NG"; if [[ -f "$B/claude-value-anchor-v1.js.before" ]]; then cp "$B/claude-value-anchor-v1.js.before" "$ASSET"; else rm -f "$ASSET"; fi; nginx -t && systemctl reload nginx; echo "ROLLED_BACK=$B"; fi
+          REMOTE
+
+      - name: Upload value-anchor visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-value-anchor-v1-qa
+          path: value-v1-qa/
+          retention-days: 3
+          if-no-files-found: warn
