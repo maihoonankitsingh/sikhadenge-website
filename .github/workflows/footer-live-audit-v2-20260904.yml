@@ -58,4 +58,4 @@ jobs:
           grep -Eo 'https?[^"<> ]*(instagram|facebook|youtube|linkedin|pinterest)[^"<> ]*' "$T" | sed 's/\\u0026/\&/g' | head -80 || true
           rm -f "$T"
           REMOTE
-# trigger: 1
+# trigger: 2
