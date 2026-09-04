@@ -1,0 +1,45 @@
+name: AI Video FAQ V3 Recovery Safe Guard
+
+on:
+  push:
+    branches:
+      - ops/ai-video-v90-2-faq-production-20260904
+    paths:
+      - ops/deploy-ai-video-faq-premium-v3-recovery-safe.sh
+      - .github/workflows/ai-video-faq-v3-recovery-safe-guard.yml
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-faq-premium-v3-recovery-safe.sh
+      - name: Safety invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          F=ops/deploy-ai-video-faq-premium-v3-recovery-safe.sh
+          grep -Fq 'mktemp --suffix=.js' "$F"
+          grep -Fq 'Current approved page healthy before edit' "$F"
+          grep -Fq 'Build candidate HTML without touching live file' "$F"
+          grep -Fq 'Non-FAQ HTML equivalence: PASS' "$F"
+          grep -Fq 'Atomic FAQ-only HTML replacement' "$F"
+          grep -Fq 'PREMIUM FAQ V3 LIVE — RECOVERY-SAFE MODE' "$F"
+          grep -Fq 'Golden runtime SHA changed' "$F"
+          ! grep -Fq 'nginx -s reload' "$F"
+          ! grep -Fq 'systemctl restart nginx' "$F"
+          ! grep -Fq 'chattr -i' "$F"
+          ! grep -Eq 'rm -rf[[:space:]]+/var/www/sikhadenge.in/releases' "$F"
+      - name: Extract embedded FAQ JavaScript and syntax-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ops/deploy-ai-video-faq-premium-v3-recovery-safe.sh').read_text()
+          start=p.index("cat > \"$FAQ_JS\" <<'JS'\n")+len("cat > \"$FAQ_JS\" <<'JS'\n")
+          end=p.index('\nJS\nnode --check', start)
+          Path('/tmp/faq-v3.js').write_text(p[start:end])
+          PY
+          node --check /tmp/faq-v3.js
