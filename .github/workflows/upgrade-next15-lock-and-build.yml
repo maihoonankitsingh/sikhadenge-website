@@ -7,6 +7,8 @@ on:
     paths:
       - package.json
       - package-lock.json
+      - app/reviews/page.tsx
+      - pages/contact.tsx
       - .github/workflows/upgrade-next15-lock-and-build.yml
   workflow_dispatch:
 
@@ -31,8 +33,40 @@ jobs:
           node-version: '20'
           cache: npm
 
+      - name: Apply React 19 ref typing migration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          reviews = Path('app/reviews/page.tsx')
+          text = reviews.read_text()
+          old = 'ref: React.RefObject<HTMLDivElement>,'
+          new = 'ref: React.RefObject<HTMLDivElement | null>,'
+          if old in text:
+              reviews.write_text(text.replace(old, new, 1))
+
+          contact = Path('pages/contact.tsx')
+          text = contact.read_text()
+          old = 'refs: React.RefObject<HTMLElement>[],'
+          new = 'refs: React.RefObject<HTMLElement | null>[],'
+          if old in text:
+              contact.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Refresh lockfile
         run: npm install --package-lock-only --ignore-scripts
+
+      - name: Commit migration files
+        run: |
+          if git diff --quiet -- package-lock.json app/reviews/page.tsx pages/contact.tsx; then
+            echo "Migration files already synchronized"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json app/reviews/page.tsx pages/contact.tsx
+          git commit -m "fix: migrate React 19 ref typings and lockfile"
+          git push origin HEAD:upgrade-next15-security-20260904
 
       - name: Install dependencies
         run: npm ci
@@ -42,15 +76,3 @@ jobs:
 
       - name: Production build
         run: npm run build
-
-      - name: Commit refreshed lockfile
-        run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "package-lock.json already synchronized"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "chore: refresh lockfile for Next.js 15.5.24"
-          git push origin HEAD:upgrade-next15-security-20260904
