@@ -20,18 +20,49 @@ model Lead {
   promoCode    String?
   influencerId String?
   influencer   Influencer? @relation(fields: [influencerId], references: [id])
+  admissions   Admission[]
 }
 
 model Admission {
-  id        String   @id @default(cuid())
-  leadId    String?
-  name      String
-  phone     String
-  course    String?
-  feeTotal  Int?
-  feePaid   Int?     @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  leadId               String?
+  name                 String
+  phone                String
+  studentCode          String?   @unique
+  course               String?
+  feeTotal             Int?
+  feePaid              Int?      @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  lead                 Lead?     @relation(fields: [leadId], references: [id])
+  payments             Payment[]
+  aadhaarLast4         String?
+  highestQualification String?
+  aadhaarFrontUrl      String?
+  aadhaarBackUrl       String?
+  qualificationDocUrl  String?
+
+  @@index([leadId])
+}
+
+model Payment {
+  id                String     @id @default(cuid())
+  admissionId       String?
+  razorpayPaymentId String?    @unique
+  razorpayOrderId   String?
+  razorpaySignature String?
+  event             String?
+  status            String?
+  amount            Int?
+  currency          String     @default("INR")
+  raw               Json?
+  receivedAt        DateTime?
+  createdAt         DateTime   @default(now())
+  admission         Admission? @relation(fields: [admissionId], references: [id])
+
+  @@index([admissionId])
+  @@index([razorpayOrderId])
+  @@index([status])
 }
 
 model Influencer {
