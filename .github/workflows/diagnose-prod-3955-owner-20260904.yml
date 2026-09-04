@@ -1,0 +1,97 @@
+name: Diagnose Production 3955 Owner 20260904
+
+on:
+  push:
+    branches:
+      - audit-next15-production-20260904
+    paths:
+      - '.github/workflows/diagnose-prod-3955-owner-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect port ownership and live health
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -u
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PORT=3955
+
+          echo '=== TIME ==='
+          date -Is
+          echo '=== PM2 STATUS ==='
+          pm2 status || true
+          echo '=== PM2 DESCRIBE ==='
+          pm2 describe "$APP" | sed -n '1,140p' || true
+
+          PM2PID="$(pm2 pid "$APP" 2>/dev/null | tail -1)"
+          echo "PM2_PID=${PM2PID:-EMPTY}"
+          if [[ -n "$PM2PID" && "$PM2PID" != '0' && -e "/proc/$PM2PID" ]]; then
+            echo "PM2_CWD=$(readlink -f "/proc/$PM2PID/cwd" 2>/dev/null || true)"
+            echo "PM2_EXE=$(readlink -f "/proc/$PM2PID/exe" 2>/dev/null || true)"
+            printf 'PM2_CMD='; tr '\0' ' ' < "/proc/$PM2PID/cmdline" 2>/dev/null || true; echo
+            CWD="$(readlink -f "/proc/$PM2PID/cwd" 2>/dev/null || true)"
+            if [[ -n "$CWD" && -f "$CWD/package.json" ]]; then
+              node -e "const p=require('$CWD/package.json'); console.log('PM2_NEXT='+p.dependencies?.next,'PM2_REACT='+p.dependencies?.react)" || true
+            fi
+          fi
+
+          echo '=== SS LISTENER ==='
+          ss -ltnp | grep ":$PORT " || true
+          echo '=== LSOF LISTENER ==='
+          lsof -nP -iTCP:$PORT -sTCP:LISTEN 2>/dev/null || true
+          echo '=== FUSER ==='
+          fuser -v "$PORT/tcp" 2>&1 || true
+
+          LISTENERS="$(ss -ltnp 2>/dev/null | sed -n "s/.*:$PORT .*pid=\([0-9][0-9]*\).*/\1/p" | sort -u)"
+          for PID in $LISTENERS; do
+            echo "=== LISTENER_PID=$PID ==="
+            ps -o pid,ppid,user,lstart,etime,stat,cmd -p "$PID" || true
+            echo "EXE=$(readlink -f "/proc/$PID/exe" 2>/dev/null || true)"
+            echo "CWD=$(readlink -f "/proc/$PID/cwd" 2>/dev/null || true)"
+            printf 'CMDLINE='; tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true; echo
+            PPID="$(ps -o ppid= -p "$PID" | tr -d ' ' || true)"
+            echo "PPID=${PPID:-EMPTY}"
+            [[ -z "$PPID" ]] || ps -o pid,ppid,user,lstart,etime,stat,cmd -p "$PPID" || true
+            command -v pstree >/dev/null 2>&1 && pstree -aps "$PID" || true
+          done
+
+          echo '=== LOCAL HTTP ==='
+          curl -sS -o /tmp/local-body -D /tmp/local-head --max-time 10 "http://127.0.0.1:$PORT/" || true
+          sed -n '1,25p' /tmp/local-head 2>/dev/null || true
+          echo "LOCAL_BODY_BYTES=$(wc -c </tmp/local-body 2>/dev/null || echo 0)"
+          echo '=== PUBLIC HTTP ==='
+          curl -sS -o /tmp/public-body -D /tmp/public-head --max-time 20 "https://sikhadenge.in/?diag3955=$(date +%s)" || true
+          sed -n '1,25p' /tmp/public-head 2>/dev/null || true
+          echo "PUBLIC_BODY_BYTES=$(wc -c </tmp/public-body 2>/dev/null || echo 0)"
+          REMOTE
