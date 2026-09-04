@@ -1,18 +1,22 @@
+import type { Lead } from "@prisma/client";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../lib/prisma";
 
-type Resp = { ok: true; lead: any } | { ok: false; error: string };
+type Resp = { ok: true; lead: Lead | null } | { ok: false; error: string };
 
-/**
- * Simple in-memory rate limiter (per Node process).
- * Good enough for basic spam protection on VPS + single PM2 process.
- */
-const RATE_WINDOW_MS = 10 * 60 * 1000; // 10 min
-const RATE_MAX = 20; // max requests per window per IP
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const RATE_MAX = 20;
+const RATE_MAP_MAX_ENTRIES = 10_000;
 
+type RateEntry = { n: number; t: number };
+type GlobalWithLeadRateLimit = typeof globalThis & {
+  __sd_ipHits?: Map<string, RateEntry>;
+};
+
+const globalRateLimit = globalThis as GlobalWithLeadRateLimit;
 const ipHits =
-  (globalThis as any).__sd_ipHits ??
-  ((globalThis as any).__sd_ipHits = new Map<string, { n: number; t: number }>());
+  globalRateLimit.__sd_ipHits ??
+  (globalRateLimit.__sd_ipHits = new Map<string, RateEntry>());
 
 function getClientIp(req: NextApiRequest): string {
   const cf = req.headers["cf-connecting-ip"];
@@ -20,14 +24,29 @@ function getClientIp(req: NextApiRequest): string {
 
   const xff = req.headers["x-forwarded-for"];
   if (typeof xff === "string" && xff.trim()) {
-    // first ip in list
     return xff.split(",")[0]?.trim() || "unknown";
   }
   return (req.socket?.remoteAddress || "unknown").toString();
 }
 
+function pruneIpHits(now: number) {
+  for (const [ip, entry] of ipHits) {
+    if (now - entry.t > RATE_WINDOW_MS) ipHits.delete(ip);
+  }
+
+  if (ipHits.size <= RATE_MAP_MAX_ENTRIES) return;
+
+  const oldest = [...ipHits.entries()]
+    .sort((a, b) => a[1].t - b[1].t)
+    .slice(0, ipHits.size - RATE_MAP_MAX_ENTRIES);
+
+  for (const [ip] of oldest) ipHits.delete(ip);
+}
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
+  pruneIpHits(now);
+
   const cur = ipHits.get(ip);
 
   if (!cur) {
@@ -35,7 +54,6 @@ function isRateLimited(ip: string): boolean {
     return false;
   }
 
-  // reset window
   if (now - cur.t > RATE_WINDOW_MS) {
     ipHits.set(ip, { n: 1, t: now });
     return false;
@@ -56,14 +74,17 @@ function normalizePhone(value: unknown): string | null {
   if (!value || typeof value !== "string") return null;
   const digits = value.replace(/[^\d]/g, "");
   if (digits.length < 10) return null;
-  // If +91 included etc, keep last 10 digits
   return digits.slice(-10);
 }
 
-function safeObject(value: unknown): Record<string, any> | null {
+function safeObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object") return null;
   if (Array.isArray(value)) return null;
-  return value as Record<string, any>;
+  return value as Record<string, unknown>;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error && error.message ? error.message : "Server error";
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Resp>) {
@@ -74,7 +95,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   const ip = getClientIp(req);
 
-  // rate-limit first
   if (isRateLimited(ip)) {
     return res.status(429).json({ ok: false, error: "Too many requests. Try again later." });
   }
@@ -82,8 +102,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const body = req.body ?? {};
 
-    // Honeypot: if bot fills hidden field, silently accept but don't store.
-    // (frontend me later hidden input add karenge, name: "hp")
     const hp = typeof body.hp === "string" ? body.hp.trim() : "";
     if (hp) {
       return res.status(200).json({ ok: true, lead: null });
@@ -99,8 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const promoCode = normalizePromoCode(body.promoCode);
 
-    const page =
-      typeof body.page === "string" ? body.page.trim() : "counselling-modal";
+    const page = typeof body.page === "string" ? body.page.trim() : "counselling-modal";
 
     if (!fullName || fullName.length < 2) {
       return res.status(400).json({ ok: false, error: "fullName is required" });
@@ -109,7 +126,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return res.status(400).json({ ok: false, error: "valid phone is required" });
     }
 
-    // Duplicate suppression: same phone within last 10 minutes -> return existing lead
     const since = new Date(Date.now() - 10 * 60 * 1000);
     const existing = await prisma.lead.findFirst({
       where: { phone, createdAt: { gte: since } },
@@ -119,7 +135,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return res.status(200).json({ ok: true, lead: existing });
     }
 
-    // promoCode -> influencer mapping
     let influencerId: string | null = null;
     if (promoCode) {
       const inf = await prisma.influencer.findFirst({
@@ -129,8 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       influencerId = inf?.id ?? null;
     }
 
-    // notes: merge page + optional modal notes object
-    const notesObj: Record<string, any> = { page, ip };
+    const notesObj: Record<string, unknown> = { page, ip };
     const notesFromClient = safeObject(body.notes);
     if (notesFromClient) {
       notesObj.form = notesFromClient;
@@ -147,21 +161,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         influencerId,
       },
     });
-        // Push lead to NeoDove (optional)
+
     const neodoveUrl = process.env.NEODOVE_ENDPOINT;
 
     if (neodoveUrl) {
+      const ac = new AbortController();
+      const timeout = setTimeout(() => ac.abort(), 5000);
+
       try {
-        const course =
-          (body?.notes && (body.notes.course || body.notes.Course)) ||
-          body?.course ||
-          body?.Course ||
-          "";
+        const notes = safeObject(body.notes);
+        const courseFromNotes = notes?.course ?? notes?.Course;
+        const course = courseFromNotes ?? body?.course ?? body?.Course ?? "";
 
-        const ac = new AbortController();
-        const t = setTimeout(() => ac.abort(), 5000);
-
-        await fetch(neodoveUrl, {
+        const response = await fetch(neodoveUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -175,21 +187,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           signal: ac.signal,
         });
 
-        clearTimeout(t);
-      } catch (err) {
-        console.error("NeoDove push failed:", err);
+        if (!response.ok) {
+          console.error("NeoDove push failed with status:", response.status);
+        }
+      } catch (error) {
+        console.error("NeoDove push failed:", error);
+      } finally {
+        clearTimeout(timeout);
       }
     }
 
-
     return res.status(200).json({ ok: true, lead });
-  } catch (e: any) {
+  } catch (error: unknown) {
     return res.status(500).json({
       ok: false,
-      error: e?.message ? String(e.message) : "Server error",
+      error: errorMessage(error),
     });
   }
 }
-
-
-
