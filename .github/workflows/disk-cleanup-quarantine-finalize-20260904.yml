@@ -1,0 +1,138 @@
+name: Disk Cleanup Quarantine Finalize 20260904
+
+on:
+  push:
+    branches:
+      - reconcile/production-source-next15-20260904
+    paths:
+      - '.github/workflows/disk-cleanup-quarantine-finalize-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  finalize:
+    if: github.ref == 'refs/heads/reconcile/production-source-next15-20260904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Verify and finalize existing quarantine
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          BASE=/var/www/sikhadenge.in
+          Q="$BASE/.cleanup-quarantine-20260904-184753"
+          [ -d "$Q" ] && [ ! -L "$Q" ]
+          QREAL=$(realpath -e "$Q")
+          [ "$QREAL" = "$Q" ]
+
+          echo '===== QUARANTINE CONTENT ====='
+          du -xsh "$Q"
+          find "$Q" -mindepth 1 -maxdepth 2 -printf '%p\n' | sort | head -n 200
+
+          declare -A RESTORE
+          RESTORE["$Q/releases/production-ai-workflow-premium-zero-build-20260829-110420"]="$BASE/releases/production-ai-workflow-premium-zero-build-20260829-110420"
+          RESTORE["$Q/releases/next15-v3-20260904-144145"]="$BASE/releases/next15-v3-20260904-144145"
+          RESTORE["$Q/releases/next15-v5-20260904-144924"]="$BASE/releases/next15-v5-20260904-144924"
+          RESTORE["$Q/releases/next15-v6-20260904-145319"]="$BASE/releases/next15-v6-20260904-145319"
+          RESTORE["$Q/artifacts/_seo-reports"]="$BASE/_seo-reports"
+          RESTORE["$Q/artifacts/.sikhadenge-pr93-deploy-20260807T052122Z-2139479"]="$BASE/.sikhadenge-pr93-deploy-20260807T052122Z-2139479"
+          RESTORE["$Q/artifacts/components.bak.2026-03-18-193632.outside_project"]="$BASE/components.bak.2026-03-18-193632.outside_project"
+
+          rollback() {
+            echo '===== RESTORE QUARANTINE ====='
+            for src in "${!RESTORE[@]}"; do
+              dst="${RESTORE[$src]}"
+              [ -e "$src" ] || continue
+              [ ! -e "$dst" ] || { echo "RESTORE_COLLISION|$dst"; continue; }
+              mkdir -p "$(dirname "$dst")"
+              mv -- "$src" "$dst"
+              echo "RESTORED|$dst"
+            done
+            find "$Q" -depth -type d -empty -delete 2>/dev/null || true
+          }
+
+          echo '===== VERIFY NO ACTIVE REFERENCES INTO QUARANTINE ====='
+          FAIL=0
+          pm2 jlist 2>/dev/null | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+              for (const p of JSON.parse(s)) { const e=p.pm2_env||{}; console.log(`${p.name}|${e.status}|${e.pm_cwd||""}|${e.pm_exec_path||""}`); }
+            });' > /tmp/pm2-finalize.$$
+          if grep -Fq "$Q" /tmp/pm2-finalize.$$; then echo 'PM2_REF_QUARANTINE=YES'; FAIL=1; else echo 'PM2_REF_QUARANTINE=NO'; fi
+          if nginx -T 2>/dev/null | grep -Fq "$Q"; then echo 'NGINX_REF_QUARANTINE=YES'; FAIL=1; else echo 'NGINX_REF_QUARANTINE=NO'; fi
+          for l in /proc/[0-9]*/cwd /proc/[0-9]*/fd/*; do
+            r=$(readlink -f "$l" 2>/dev/null || true)
+            case "$r" in "$Q"|"$Q"/*) echo "PROC_REF_QUARANTINE|$r"; FAIL=1; break;; esac
+          done
+
+          echo '===== VERIFY KNOWN ACTIVE ROOTS ====='
+          for p in \
+            "$BASE/releases/sitewide-manrope-font-20260902-231335" \
+            "$BASE/releases/production-ai-video-icons-hotfix-20260829-091916" \
+            "$BASE/releases/production-ai-video-golden-faq-final-20260904-130510" \
+            "$BASE/releases/production-20260824-112818" \
+            "$BASE/candidates/claude-ai-shift-research-v2-20260901-213954" \
+            "$BASE/sikhadenge-website-space/public"; do
+            if [ -e "$p" ]; then echo "ACTIVE_ROOT_OK|$p"; else echo "ACTIVE_ROOT_MISSING|$p"; FAIL=1; fi
+          done
+
+          echo '===== LIVE SMOKE ====='
+          for url in 'https://sikhadenge.in/' 'https://sikhadenge.in/contact-us' 'https://sikhadenge.in/masterclass/claude/free'; do
+            code=$(curl -L --max-time 20 -sS -o /dev/null -w '%{http_code}' "$url" || echo 000)
+            echo "SMOKE|$code|$url"
+            case "$code" in 2*|3*) ;; *) FAIL=1;; esac
+          done
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo 'FINALIZE_VERIFY=FAIL_RESTORE'
+            rollback
+            rm -f /tmp/pm2-finalize.$$
+            exit 1
+          fi
+          echo 'FINALIZE_VERIFY=PASS'
+
+          BEFORE=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          rm -rf --one-file-system -- "$Q"
+          AFTER=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          rm -f /tmp/pm2-finalize.$$
+          [ ! -e "$Q" ]
+          echo 'QUARANTINE_DELETED=YES'
+          df -hT /
+          python3 - <<PY
+          before=$BEFORE
+          after=$AFTER
+          print(f'FINALIZE_RECLAIMED_BYTES={max(0,before-after)}')
+          print(f'FINALIZE_RECLAIMED_GIB={max(0,before-after)/1024/1024/1024:.2f}')
+          PY
+          echo 'PM2_CHANGED=NO'
+          echo 'NGINX_CHANGED=NO'
+          echo 'DATABASE_TOUCHED=NO'
+          echo 'DOCKER_TOUCHED=NO'
+          echo '===== FINALIZE COMPLETE ====='
+          REMOTE
