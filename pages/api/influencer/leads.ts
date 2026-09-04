@@ -5,9 +5,10 @@ import { requireInfluencer } from "../../../lib/influencerAuth";
 function tryGetCourseFromNotes(notes: string | null): string | null {
   if (!notes) return null;
   try {
-    const j = JSON.parse(notes);
-    const c = j?.course;
-    return typeof c === "string" && c.trim() ? c.trim() : null;
+    const parsed: unknown = JSON.parse(notes);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const course = (parsed as Record<string, unknown>).course;
+    return typeof course === "string" && course.trim() ? course.trim() : null;
   } catch {
     return null;
   }
@@ -17,7 +18,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const influencer = await requireInfluencer(req, res);
   if (!influencer) return;
 
-  if (req.method !== "GET") return res.status(405).json({ ok: false });
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ ok: false });
+  }
 
   const take = Math.min(100, Math.max(10, parseInt(String(req.query.take || "30"), 10) || 30));
   const skip = Math.max(0, parseInt(String(req.query.skip || "0"), 10) || 0);
@@ -44,9 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     prisma.lead.count({ where }),
   ]);
 
-  const items = itemsRaw.map((it: any) => ({
-    ...it,
-    course: tryGetCourseFromNotes(it.notes),
+  const items = itemsRaw.map((item) => ({
+    ...item,
+    course: tryGetCourseFromNotes(item.notes),
   }));
 
   return res.json({
@@ -58,4 +62,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     items,
   });
 }
-
