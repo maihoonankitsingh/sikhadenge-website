@@ -1,0 +1,117 @@
+name: Disk Cleanup Quarantine Finalize V2 20260904
+
+on:
+  push:
+    branches:
+      - reconcile/production-source-next15-20260904
+    paths:
+      - '.github/workflows/disk-cleanup-quarantine-finalize-v2-20260904.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  finalize:
+    if: github.ref == 'refs/heads/reconcile/production-source-next15-20260904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Clear quarantine-only attributes and delete
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          BASE=/var/www/sikhadenge.in
+          Q="$BASE/.cleanup-quarantine-20260904-184753"
+          [ -d "$Q" ] && [ ! -L "$Q" ]
+          [ "$(realpath -e "$Q")" = "$Q" ]
+
+          echo '===== REMAINING QUARANTINE ====='
+          du -xsh "$Q"
+          df -hT /
+
+          FAIL=0
+          pm2 jlist 2>/dev/null | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{for(const p of JSON.parse(s)){const e=p.pm2_env||{};console.log(`${p.name}|${e.status}|${e.pm_cwd||""}|${e.pm_exec_path||""}`)}});' > /tmp/pm2-qv2.$$
+          grep -Fq "$Q" /tmp/pm2-qv2.$$ && { echo 'BLOCK_PM2_REF=YES'; FAIL=1; } || echo 'BLOCK_PM2_REF=NO'
+          nginx -T 2>/dev/null | grep -Fq "$Q" && { echo 'BLOCK_NGINX_REF=YES'; FAIL=1; } || echo 'BLOCK_NGINX_REF=NO'
+          for l in /proc/[0-9]*/cwd /proc/[0-9]*/fd/*; do
+            r=$(readlink -f "$l" 2>/dev/null || true)
+            case "$r" in "$Q"|"$Q"/*) echo "BLOCK_PROC_REF|$r"; FAIL=1; break;; esac
+          done
+          for p in \
+            "$BASE/releases/sitewide-manrope-font-20260902-231335" \
+            "$BASE/releases/production-ai-video-icons-hotfix-20260829-091916" \
+            "$BASE/releases/production-ai-video-golden-faq-final-20260904-130510" \
+            "$BASE/releases/production-20260824-112818" \
+            "$BASE/candidates/claude-ai-shift-research-v2-20260901-213954" \
+            "$BASE/sikhadenge-website-space/public"; do
+            [ -e "$p" ] || { echo "BLOCK_ACTIVE_ROOT_MISSING|$p"; FAIL=1; }
+          done
+          for url in 'https://sikhadenge.in/' 'https://sikhadenge.in/contact-us' 'https://sikhadenge.in/masterclass/claude/free'; do
+            code=$(curl -L --max-time 20 -sS -o /dev/null -w '%{http_code}' "$url" || echo 000)
+            echo "SMOKE_BEFORE|$code|$url"
+            case "$code" in 2*|3*) ;; *) FAIL=1;; esac
+          done
+          rm -f /tmp/pm2-qv2.$$
+          [ "$FAIL" -eq 0 ] || { echo 'FINALIZE_V2_GATE=FAIL'; exit 1; }
+          echo 'FINALIZE_V2_GATE=PASS'
+
+          BEFORE=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          echo '===== QUARANTINE ATTRIBUTES SAMPLE ====='
+          find "$Q" -xdev \( -type f -o -type d \) -exec lsattr -d -- {} + 2>/dev/null | grep -E '(^| )[a-][^ ]*i|(^| )[a-][^ ]*a' | head -n 100 || true
+
+          # Only regular files/directories physically below the exact quarantine path.
+          # Symlinks are deliberately excluded so attributes on external targets can never be changed.
+          find "$Q" -xdev \( -type f -o -type d \) -exec chattr -i -a -- {} + 2>/dev/null || true
+          rm -rf --one-file-system -- "$Q"
+          [ ! -e "$Q" ] || { echo 'FINALIZE_V2_DELETE_FAILED'; exit 1; }
+          AFTER=$(df -B1 --output=used / | tail -1 | tr -d ' ')
+          echo 'QUARANTINE_DELETED=YES'
+
+          FAIL=0
+          for url in 'https://sikhadenge.in/' 'https://sikhadenge.in/contact-us' 'https://sikhadenge.in/masterclass/claude/free'; do
+            code=$(curl -L --max-time 20 -sS -o /dev/null -w '%{http_code}' "$url" || echo 000)
+            echo "SMOKE_AFTER|$code|$url"
+            case "$code" in 2*|3*) ;; *) FAIL=1;; esac
+          done
+          [ "$FAIL" -eq 0 ] || exit 1
+          df -hT /
+          python3 - <<PY
+          before=$BEFORE
+          after=$AFTER
+          print(f'V2_RECLAIMED_BYTES={max(0,before-after)}')
+          print(f'V2_RECLAIMED_GIB={max(0,before-after)/1024/1024/1024:.2f}')
+          PY
+          echo 'ACTIVE_RELEASES_TOUCHED=NO'
+          echo 'PM2_CHANGED=NO'
+          echo 'NGINX_CHANGED=NO'
+          echo 'DATABASE_TOUCHED=NO'
+          echo 'DOCKER_TOUCHED=NO'
+          echo '===== FINALIZE V2 COMPLETE ====='
+          REMOTE
