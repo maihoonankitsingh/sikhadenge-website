@@ -1,0 +1,71 @@
+name: AI Video Golden FAQ Premium V3 Guard
+
+on:
+  push:
+    branches:
+      - ops/ai-video-v90-2-faq-production-20260904
+    paths:
+      - ops/deploy-golden-ai-video-faq-premium-v3.sh
+      - .github/workflows/ai-video-golden-faq-premium-v3-guard.yml
+  pull_request:
+    paths:
+      - ops/deploy-golden-ai-video-faq-premium-v3.sh
+      - .github/workflows/ai-video-golden-faq-premium-v3-guard.yml
+
+jobs:
+  validate-v3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-golden-ai-video-faq-premium-v3.sh
+      - name: Safety invariants
+        run: |
+          set -euo pipefail
+          f=ops/deploy-golden-ai-video-faq-premium-v3.sh
+          grep -Fq 'PREMIUM FAQ V3 ONLY' "$f"
+          grep -Fq 'data-faq-v3' "$f"
+          grep -Fq 'ai-video-faq-premium-v3-inline' "$f"
+          grep -Fq 'font-size:15.5px!important' "$f"
+          grep -Fq '<svg viewBox="0 0 24 24">' "$f"
+          grep -Fq 'Non-FAQ HTML equivalence: PASS' "$f"
+          grep -Fq 'PREVIOUS_APP=$CURRENT_APP' "$f"
+          grep -Fq 'pm2 restart "$CURRENT_APP"' "$f"
+          grep -Fq 'EXPECTED_RUNTIME_SHA="6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51"' "$f"
+          ! grep -Eq 'nginx[[:space:]]+-s[[:space:]]+reload|systemctl[[:space:]]+(restart|reload)[[:space:]]+nginx|service[[:space:]]+nginx[[:space:]]+(restart|reload)' "$f"
+          ! grep -Eq 'chattr[[:space:]]+-i[[:space:]].*GOLDEN_(HTML|RUNTIME)' "$f"
+      - name: FAQ runtime count and copy
+        run: |
+          set -euo pipefail
+          f=ops/deploy-golden-ai-video-faq-premium-v3.sh
+          count=$(grep -o '^    \["' "$f" | wc -l | tr -d ' ')
+          test "$count" = 15
+          grep -Fq 'What will I learn in the AI Video Generation Masterclass?' "$f"
+          grep -Fq 'What language is the masterclass in, and can I ask questions live?' "$f"
+      - name: Replacement regex simulation
+        run: |
+          python3 - <<'PY'
+          import re
+          variants = [
+            '<script id="ai-video-faq-final-only-inline">old1</script>',
+            '<script id="ai-video-faq-premium-v2-inline">old2</script>',
+            '<script id="ai-video-faq-premium-v3-inline">old3</script>',
+            ''
+          ]
+          pats=[
+            r'<script id="ai-video-faq-final-only-inline">.*?</script>',
+            r'<script id="ai-video-faq-premium-v2-inline">.*?</script>',
+            r'<script id="ai-video-faq-premium-v3-inline">.*?</script>',
+          ]
+          for old in variants:
+            html='A'+old+'B</body>'
+            removed=0
+            for p in pats:
+              html,n=re.subn(p,'',html,count=1,flags=re.S); removed+=n
+            assert removed <= 1
+            block='<script id="ai-video-faq-premium-v3-inline">NEW</script>'
+            html=html.replace('</body>',block+'</body>',1)
+            assert html.count('ai-video-faq-premium-v3-inline') == 1
+            assert html.startswith('AB')
+          print('replacement simulation: PASS')
+          PY
