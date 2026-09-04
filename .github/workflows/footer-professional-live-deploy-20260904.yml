@@ -69,6 +69,8 @@ jobs:
           grep -q 'linkedin.com/company/sikhadenge' "$NEW"
           grep -q 'pinterest.com/sikhadenge' "$NEW"
           grep -q 'wa.me/918808505575' "$NEW"
+          grep -q 'mailto:support@sikhadenge.in' "$NEW"
+          grep -q 'tel:+918808505575' "$NEW"
           grep -q 'function SocialIcon' "$NEW"
           grep -q 'footer-instagram-gradient' "$NEW"
           grep -q 'fill="#0A66C2"' "$NEW"
@@ -119,8 +121,8 @@ jobs:
             'wa.me/918808505575' \
             'ThinkGrow Pvt. Ltd. Practical, future-ready learning' \
             'Working hours: 10:00 AM - 7:00 PM' \
-            'mailto:support@sikhadenge.in' \
-            'tel:+918808505575'; do
+            'support@sikhadenge.in' \
+            '+91 88085 05575'; do
             if ! grep -q "$needle" "$P"; then echo "MISSING=$needle"; rollback; exit 1; fi
           done
 
@@ -131,4 +133,4 @@ jobs:
           echo "PREVIOUS_NEXT=$OLDNEXT"
           echo 'FOOTER_PROFESSIONAL_LIVE_OK=1 FOOTER_ONLY=1 VERIFIED_SOCIAL_LINKS=1 LOCAL_SOCIAL_SVGS=1'
           REMOTE
-# trigger 3
+# trigger 4
