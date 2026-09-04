@@ -33,17 +33,17 @@ function clientIp(req: NextApiRequest): string {
 }
 
 function pruneAttempts(now: number) {
-  for (const [key, value] of loginAttempts) {
+  loginAttempts.forEach((value, key) => {
     if (now - value.windowStartedAt > LOGIN_WINDOW_MS) loginAttempts.delete(key);
-  }
+  });
 
   if (loginAttempts.size <= LOGIN_MAP_MAX_ENTRIES) return;
 
-  const oldest = [...loginAttempts.entries()]
+  const oldest = Array.from(loginAttempts.entries())
     .sort((a, b) => a[1].windowStartedAt - b[1].windowStartedAt)
     .slice(0, loginAttempts.size - LOGIN_MAP_MAX_ENTRIES);
 
-  for (const [key] of oldest) loginAttempts.delete(key);
+  oldest.forEach(([key]) => loginAttempts.delete(key));
 }
 
 function isRateLimited(key: string): boolean {
