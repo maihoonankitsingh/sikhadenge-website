@@ -16,6 +16,7 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 jobs:
   audit:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
     timeout-minutes: 4
