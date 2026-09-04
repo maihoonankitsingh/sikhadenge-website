@@ -1,0 +1,46 @@
+name: AI Video Audience Premium V4 Guard
+
+on:
+  push:
+    paths:
+      - 'ops/deploy-ai-video-audience-premium-v4.sh'
+      - '.github/workflows/ai-video-audience-premium-v4-guard.yml'
+  pull_request:
+    paths:
+      - 'ops/deploy-ai-video-audience-premium-v4.sh'
+      - '.github/workflows/ai-video-audience-premium-v4-guard.yml'
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n ops/deploy-ai-video-audience-premium-v4.sh
+      - name: Extract and syntax-check embedded Audience JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('ops/deploy-ai-video-audience-premium-v4.sh').read_text()
+          m=re.search(r"cat > \"\$AUDIENCE_JS\" <<'JS'\n(.*?)\nJS\n",p,re.S)
+          assert m, 'Audience JS heredoc not found'
+          Path('/tmp/audience-v4.js').write_text(m.group(1))
+          PY
+          node --check /tmp/audience-v4.js
+      - name: Safety invariants
+        run: |
+          S=ops/deploy-ai-video-audience-premium-v4.sh
+          grep -Fq 'sikhadenge-ai-video-golden-faq-3940-20260904-130510' "$S"
+          grep -Fq 'Non-audience HTML equivalence: PASS' "$S"
+          grep -Fq 'ai-video-faq-premium-v3-inline' "$S"
+          grep -Fq 'ai-video-audience-premium-v4-inline' "$S"
+          grep -Fq 'Creators & video editors' "$S"
+          grep -Fq 'Freelancers & agencies' "$S"
+          grep -Fq 'Marketers & founders' "$S"
+          grep -Fq 'Students & beginners' "$S"
+          grep -Fq 'One workflow.' "$S"
+          grep -Fq 'wait_200 "$REGISTER_URL"' "$S"
+          grep -Fq 'EXPECTED_RUNTIME_SHA="6e8c050e8271f95d20e5e7df1f650dba477142eadd694aefdf6259e2fa73cb51"' "$S"
+          ! grep -Eq 'nginx -s reload|systemctl reload nginx|systemctl restart nginx|chattr -i|document\.write|document\.open|MutationObserver|rm -rf' "$S"
+          echo 'Audience V4 safety invariants: PASS'
