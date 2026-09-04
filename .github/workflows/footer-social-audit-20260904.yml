@@ -1,0 +1,68 @@
+name: Footer Social Audit 20260904
+
+on:
+  push:
+    paths:
+      - .github/workflows/footer-social-audit-20260904.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: SSH setup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read-only footer audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export HOME=/root PM2_HOME=/root/.pm2
+          APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
+          PID="$(pm2 pid "$APP" | tail -1)"
+          LIVE="$(readlink -f /proc/$PID/cwd)"
+          echo "LIVE=$LIVE"
+          echo '=== FOOTER MATCHES ==='
+          grep -RIn --exclude-dir=node_modules --exclude-dir=.next --exclude='*.map' -E "ThinkGrow Pvt\. Ltd\.|Quick Links|Working hours: 10:00 AM - 7:00 PM|support@sikhadenge\.in" "$LIVE/app" "$LIVE/components" "$LIVE/src" 2>/dev/null | head -80 || true
+          echo '=== SOCIAL URL MATCHES ==='
+          grep -RIn --exclude-dir=node_modules --exclude-dir=.next --exclude='*.map' -E "instagram\.com|facebook\.com|youtube\.com|linkedin\.com|pinterest\.com" "$LIVE/app" "$LIVE/components" "$LIVE/src" "$LIVE/public" 2>/dev/null | head -160 || true
+          echo '=== LANDING FOOTER CONTEXT ==='
+          SRC="$LIVE/app/landing/page.tsx"
+          if [ -f "$SRC" ]; then
+            python3 - "$SRC" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])
+s=p.read_text(errors='ignore').splitlines()
+for i,line in enumerate(s):
+    if 'ThinkGrow Pvt. Ltd.' in line or 'Quick Links' in line or 'Working hours' in line:
+        a=max(0,i-70); b=min(len(s),i+140)
+        print(f'--- lines {a+1}-{b} ---')
+        for n in range(a,b): print(f'{n+1}: {s[n]}')
+        break
+PY
+          fi
+          REMOTE
