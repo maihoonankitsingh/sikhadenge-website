@@ -1,0 +1,172 @@
+name: Next 15 Production Stage 20260904
+
+on:
+  push:
+    branches:
+      - ops/next15-production-preflight-20260904
+    paths:
+      - .github/workflows/next15-production-stage-20260904.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  stage-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Build isolated Next 15 candidate from active release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          ACTIVE='/var/www/sikhadenge.in/releases/sitewide-manrope-font-20260902-231335'
+          CAND='/var/www/sikhadenge.in/candidates/next15-maintenance-lts-20260904'
+          APP='sikhadenge-next15-candidate-3995'
+          PORT=3995
+
+          echo '===== STAGE PRECHECK ====='
+          test -d "$ACTIVE"
+          test -f "$ACTIVE/package.json"
+          if ss -ltn | grep -qE ":${PORT}\\b"; then echo "PORT_${PORT}_IN_USE"; exit 20; fi
+          pm2 delete "$APP" >/dev/null 2>&1 || true
+
+          echo '===== COPY ACTIVE RELEASE ====='
+          rm -rf "$CAND"
+          mkdir -p "$CAND"
+          rsync -a --delete --exclude=node_modules --exclude=.next "$ACTIVE/" "$CAND/"
+          rm -rf "$CAND/node_modules" "$CAND/.next"
+
+          echo '===== PATCH DEPENDENCY VERSIONS ====='
+          node - "$CAND/package.json" <<'NODE'
+          const fs=require('fs');
+          const f=process.argv[2];
+          const p=JSON.parse(fs.readFileSync(f,'utf8'));
+          p.dependencies ||= {};
+          p.devDependencies ||= {};
+          p.dependencies.next='15.5.24';
+          p.dependencies.react='19.2.8';
+          p.dependencies['react-dom']='19.2.8';
+          p.devDependencies['@types/react']='^19';
+          p.devDependencies['@types/react-dom']='^19';
+          p.devDependencies['eslint-config-next']='15.5.24';
+          fs.writeFileSync(f, JSON.stringify(p,null,2)+'\n');
+          NODE
+
+          echo '===== PATCH NEXT 15 / REACT 19 SOURCE CONTRACTS ====='
+          python3 - "$CAND" <<'PY'
+          from pathlib import Path
+          import re,sys
+          root=Path(sys.argv[1])
+
+          # React 19 nullable refs.
+          p=root/'app/reviews/page.tsx'
+          if p.exists():
+              s=p.read_text(); s=s.replace('ref: React.RefObject<HTMLDivElement>,','ref: React.RefObject<HTMLDivElement | null>,'); p.write_text(s)
+          p=root/'pages/contact.tsx'
+          if p.exists():
+              s=p.read_text(); s=s.replace('refs: React.RefObject<HTMLElement>[],','refs: React.RefObject<HTMLElement | null>[],'); p.write_text(s)
+
+          # Server-component layout: preserve all active-release content, only remove ssr:false wrappers for Header/Footer.
+          p=root/'app/layout.tsx'
+          if p.exists():
+              s=p.read_text()
+              header_pat=r'const Header\s*=\s*dynamic\(\(\)\s*=>\s*import\(["\']\.\./components/Header["\']\),\s*\{\s*ssr:\s*false\s*\}\s*\);'
+              footer_pat=r'const Footer\s*=\s*dynamic\(\(\)\s*=>\s*import\(["\']\.\./components/Footer["\']\),\s*\{\s*ssr:\s*false\s*\}\s*\);'
+              if re.search(header_pat,s):
+                  s=re.sub(header_pat,'',s)
+                  if 'import Header from "../components/Header";' not in s and "import Header from '../components/Header';" not in s:
+                      s='import Header from "../components/Header";\n'+s
+              if re.search(footer_pat,s):
+                  s=re.sub(footer_pat,'',s)
+                  if 'import Footer from "../components/Footer";' not in s and "import Footer from '../components/Footer';" not in s:
+                      s='import Footer from "../components/Footer";\n'+s
+              if 'dynamic(' not in s:
+                  s=re.sub(r'^import dynamic from ["\']next/dynamic["\'];\n?', '', s, flags=re.M)
+              p.write_text(s)
+
+          # Known Next 15 async dynamic-route params. Only transform exact old contracts; leave already-migrated files intact.
+          p=root/'app/[skill]/page.tsx'
+          if p.exists():
+              s=p.read_text()
+              if 'params: Promise<{ skill: string }>' not in s:
+                  marker='export async function generateStaticParams()'
+                  if marker in s: s=s.replace(marker,'type SkillPageProps = {\n  params: Promise<{ skill: string }>;\n};\n\n'+marker,1)
+                  s=s.replace('export function generateMetadata({ params }: { params: { skill: string } }): Metadata {','export async function generateMetadata({ params }: SkillPageProps): Promise<Metadata> {\n  const { skill } = await params;')
+                  s=s.replace('params.skill','skill')
+                  s=s.replace('export default function SkillPage({ params }: { params: { skill: string } }) {','export default async function SkillPage({ params }: SkillPageProps) {\n  const { skill } = await params;')
+                  p.write_text(s)
+
+          p=root/'app/blog/[slug]/page.tsx'
+          if p.exists():
+              s=p.read_text()
+              if 'params: Promise<{ slug: string }>' not in s:
+                  anchor='export async function generateMetadata({' 
+                  if anchor in s:
+                      s=s.replace(anchor,'type BlogPostProps = {\n  params: Promise<{ slug: string }>;\n};\n\n'+anchor,1)
+                  s=re.sub(r'export async function generateMetadata\(\{\s*params,?\s*\}:\s*\{\s*params:\s*\{\s*slug:\s*string\s*\};?\s*\}\):\s*Promise<Metadata>\s*\{', 'export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {\n  const { slug } = await params;', s, count=1)
+                  s=s.replace('params.slug','slug')
+                  s=s.replace('export default function BlogPost({ params }: { params: { slug: string } }) {','export default async function BlogPost({ params }: BlogPostProps) {\n  const { slug } = await params;')
+                  p.write_text(s)
+
+          p=root/'app/expert/[slug]/page.tsx'
+          if p.exists():
+              s=p.read_text()
+              if 'params: Promise<{ slug: string }>' not in s:
+                  anchor='export async function generateMetadata'
+                  if anchor in s: s=s.replace(anchor,'type ExpertPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\n'+anchor,1)
+                  s=re.sub(r'export async function generateMetadata\(\{ params \}: \{ params: \{ slug: string \} \}\): Promise<Metadata> \{', 'export async function generateMetadata({ params }: ExpertPageProps): Promise<Metadata> {\n  const { slug } = await params;', s, count=1)
+                  s=s.replace('params.slug','slug')
+                  s=s.replace('export default function ExpertPage({ params }: { params: { slug: string } }) {','export default async function ExpertPage({ params }: ExpertPageProps) {\n  const { slug } = await params;')
+                  p.write_text(s)
+          PY
+
+          echo '===== INSTALL + BUILD ====='
+          cd "$CAND"
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+          npm run build
+          printf 'CAND_NEXT='; node -p "require('./node_modules/next/package.json').version"
+          printf 'CAND_BUILD_ID='; cat .next/BUILD_ID; echo
+
+          echo '===== START CANDIDATE ====='
+          pm2 start ./node_modules/.bin/next --name "$APP" -- start -p "$PORT" >/dev/null
+          for i in $(seq 1 30); do curl -fsS --max-time 4 "http://127.0.0.1:${PORT}/" >/tmp/next15-home.html && break || true; sleep 1; done
+          grep -Fq 'Become an AI Expert' /tmp/next15-home.html
+
+          echo '===== CANDIDATE ROUTE GATE ====='
+          for u in / /about-us /blog /experts /contact /robots.txt /sitemap.xml; do
+            code="$(curl -sS -o /tmp/next15-route -w '%{http_code}' --max-time 10 "http://127.0.0.1:${PORT}$u" || true)"
+            echo "$code $u"
+            case "$u" in /contact) test "$code" = 200 -o "$code" = 308;; *) test "$code" = 200;; esac
+          done
+          echo '===== CANDIDATE READY - NO NGINX CHANGE MADE ====='
+          REMOTE
