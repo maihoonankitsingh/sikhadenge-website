@@ -33,17 +33,17 @@ function getClientIp(req: NextApiRequest): string {
 }
 
 function pruneIpHits(now: number) {
-  for (const [ip, entry] of ipHits) {
+  ipHits.forEach((entry, ip) => {
     if (now - entry.t > RATE_WINDOW_MS) ipHits.delete(ip);
-  }
+  });
 
   if (ipHits.size <= RATE_MAP_MAX_ENTRIES) return;
 
-  const oldest = [...ipHits.entries()]
+  const oldest = Array.from(ipHits.entries())
     .sort((a, b) => a[1].t - b[1].t)
     .slice(0, ipHits.size - RATE_MAP_MAX_ENTRIES);
 
-  for (const [ip] of oldest) ipHits.delete(ip);
+  oldest.forEach(([ip]) => ipHits.delete(ip));
 }
 
 function isRateLimited(ip: string): boolean {
