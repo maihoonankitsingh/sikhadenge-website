@@ -1,0 +1,72 @@
+name: Full Funnel Tracking Refresh CI
+
+on:
+  push:
+    branches:
+      - fix/full-funnel-tracking-refresh-20260904
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-funnel-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tracking safety assertions
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert/strict');
+          const bridge = fs.readFileSync('components/analytics/FullFunnelTrackingBridge.tsx','utf8');
+          const gate = fs.readFileSync('components/analytics/FullFunnelTrackingGate.tsx','utf8');
+          const consent = fs.readFileSync('components/consent/ConsentTrackingRuntime.tsx','utf8');
+          const app = fs.readFileSync('pages/_app.tsx','utf8');
+          const meta = fs.readFileSync('lib/metaPixel.ts','utf8');
+          const verify = fs.readFileSync('app/api/store/verify-payment/route.ts','utf8');
+
+          assert.match(bridge, /currentConsent\(\)\.advertising !== "granted"/);
+          assert.match(bridge, /NEXT_PUBLIC_GOOGLE_ADS_LEAD_SEND_TO/);
+          assert.match(bridge, /NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_SEND_TO/);
+          assert.doesNotMatch(bridge, /AW-\d+\/[A-Za-z0-9_-]+/);
+          assert.match(gate, /\/masterclass\/ai-video/);
+          assert.match(gate, /\/gen-ai-masterclass\/register-one-step/);
+          assert.match(gate, /\/checkout\//);
+          assert.match(consent, /FullFunnelTrackingGate/);
+          assert.match(app, /ConsentTrackingRuntime/);
+          assert.match(app, /AI_VIDEO_INFORMATIONAL_PILL_STANDARD_V1/);
+          assert.match(meta, /__sdLastLeadEventId/);
+          assert.doesNotMatch(verify, /TRACKED_CHECKOUT_SLUG/);
+          assert.match(verify, /sendStorePurchase/);
+          console.log('FULL_FUNNEL_STATIC_SAFETY=PASS');
+          NODE
+
+      - name: SEO safety gate
+        run: npm run seo:check
+
+      - name: Generate blog Prisma client
+        run: npm run blog:db:generate
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build

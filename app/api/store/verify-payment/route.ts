@@ -3,8 +3,6 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendMetaConversionEvent } from "@/lib/metaConversions";
 
-const TRACKED_CHECKOUT_SLUG = "ai-prompt-starter-pack";
-
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -62,11 +60,13 @@ function purchaseTracking(order: any) {
   };
 }
 
-async function sendTrackedCheckoutPurchase(
+async function sendStorePurchase(
   req: NextRequest,
   order: any,
 ) {
-  if (order?.product?.slug !== TRACKED_CHECKOUT_SLUG) {
+  const productSlug = String(order?.product?.slug || "").trim();
+
+  if (!productSlug) {
     return;
   }
 
@@ -76,7 +76,7 @@ async function sendTrackedCheckoutPurchase(
   const eventSourceUrl =
     req.headers.get("referer") ||
     order.landingPage ||
-    `https://sikhadenge.in/checkout/${TRACKED_CHECKOUT_SLUG}`;
+    `https://sikhadenge.in/checkout/${productSlug}`;
 
   const result = await sendMetaConversionEvent({
     req,
@@ -106,6 +106,7 @@ async function sendTrackedCheckoutPurchase(
   console.log("STORE_META_CAPI_PURCHASE", {
     storeOrderId: order.id,
     eventId: tracking.eventId,
+    productSlug,
     status: result.status,
     reason: result.reason || null,
     httpStatus: result.httpStatus || null,
@@ -267,7 +268,7 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      await sendTrackedCheckoutPurchase(req, updated);
+      await sendStorePurchase(req, updated);
     } catch (trackingError) {
       console.error("STORE_META_CAPI_PURCHASE_UNEXPECTED_ERROR", {
         storeOrderId: updated.id,
