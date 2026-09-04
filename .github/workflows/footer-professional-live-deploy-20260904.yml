@@ -38,16 +38,16 @@ jobs:
           set -Eeuo pipefail
           export HOME=/root PM2_HOME=/root/.pm2
           APP='sikhadenge-checkout-hotfix-3955-20260831-210229'
-          FOOTER_COMMIT='e664386a0f13c9d7074103b094075289af2cc03d'
+          FOOTER_COMMIT='f288528bbbe67c6cf86b6cbd60893e9227d362c6'
           PID="$(pm2 pid "$APP" | tail -1)"
           LIVE="$(readlink -f /proc/$PID/cwd)"
           SRC="$LIVE/components/Footer.tsx"
           TS="$(date +%Y%m%d-%H%M%S)"
-          CAND="/tmp/sd-footer-pro-$TS"
-          BAK="/var/backups/sikhadenge/footer-professional-$TS"
-          STAGE="$LIVE/.next.footer-stage-$TS"
-          ROLLBACK_STAGE="$LIVE/.next.footer-rollback-$TS"
-          OLDNEXT="$LIVE/.next.pre-footer-$TS"
+          CAND="/tmp/sd-footer-pro-v2-$TS"
+          BAK="/var/backups/sikhadenge/footer-professional-v2-$TS"
+          STAGE="$LIVE/.next.footer-v2-stage-$TS"
+          ROLLBACK_STAGE="$LIVE/.next.footer-v2-rollback-$TS"
+          OLDNEXT="$LIVE/.next.pre-footer-v2-$TS"
           mkdir -p "$CAND" "$BAK"
           trap 'rm -rf "$CAND"' EXIT
 
@@ -69,19 +69,14 @@ jobs:
           grep -q 'linkedin.com/company/sikhadenge' "$NEW"
           grep -q 'pinterest.com/sikhadenge' "$NEW"
           grep -q 'wa.me/918808505575' "$NEW"
-          grep -q 'cdn.simpleicons.org/instagram' "$NEW"
+          grep -q 'function SocialIcon' "$NEW"
+          grep -q 'footer-instagram-gradient' "$NEW"
+          grep -q 'fill="#0A66C2"' "$NEW"
+          grep -q 'fill="#E60023"' "$NEW"
+          grep -q 'fill="#25D366"' "$NEW"
+          if grep -q 'cdn.simpleicons.org' "$NEW"; then echo EXTERNAL_ICON_CDN_STILL_PRESENT; exit 1; fi
 
-          for u in \
-            'https://cdn.simpleicons.org/instagram/E4405F' \
-            'https://cdn.simpleicons.org/linkedin/0A66C2' \
-            'https://cdn.simpleicons.org/pinterest/BD081C' \
-            'https://cdn.simpleicons.org/whatsapp/25D366'; do
-            code="$(curl -LsS -o /dev/null -w '%{http_code}' "$u" || true)"
-            echo "SOCIAL_ICON_HTTP=$code URL=$u"
-            [ "$code" = 200 ]
-          done
-
-          echo '=== FOOTER DIFF ==='
+          echo '=== FOOTER-ONLY SOURCE DIFF ==='
           diff -u "$SRC" "$NEW" || true
 
           cd "$CAND"
@@ -99,7 +94,7 @@ jobs:
           rollback(){
             echo ROLLBACK_START
             cp -a "$BAK/Footer.tsx.before" "$SRC" || true
-            if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$LIVE/.next.failed-footer-$TS" || true; fi
+            if [ -d "$LIVE/.next" ]; then mv "$LIVE/.next" "$LIVE/.next.failed-footer-v2-$TS" || true; fi
             if [ -d "$ROLLBACK_STAGE" ]; then mv "$ROLLBACK_STAGE" "$LIVE/.next" || true; else cp -a "$BAK/.next.before" "$LIVE/.next" || true; fi
             pm2 restart "$APP" --update-env || true
             echo ROLLBACK_DONE
@@ -112,8 +107,8 @@ jobs:
           sleep 6
 
           D="$(mktemp)"; P="$(mktemp)"
-          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?footer=$TS" || true)"
-          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?footer=$TS" || true)"
+          dc="$(curl -sS -o "$D" -w '%{http_code}' "http://127.0.0.1:3955/?footerv2=$TS" || true)"
+          pc="$(curl -kLsS -o "$P" -w '%{http_code}' "https://sikhadenge.in/?footerv2=$TS" || true)"
           echo "DIRECT_HTTP=$dc PUBLIC_HTTP=$pc"
           if [ "$dc" != 200 ] || [ "$pc" != 200 ]; then rollback; exit 1; fi
 
@@ -123,7 +118,9 @@ jobs:
             'pinterest.com/sikhadenge' \
             'wa.me/918808505575' \
             'ThinkGrow Pvt. Ltd. Practical, future-ready learning' \
-            'Working hours: 10:00 AM - 7:00 PM'; do
+            'Working hours: 10:00 AM - 7:00 PM' \
+            'mailto:support@sikhadenge.in' \
+            'tel:+918808505575'; do
             if ! grep -q "$needle" "$P"; then echo "MISSING=$needle"; rollback; exit 1; fi
           done
 
@@ -132,6 +129,6 @@ jobs:
 
           echo "BACKUP=$BAK"
           echo "PREVIOUS_NEXT=$OLDNEXT"
-          echo 'FOOTER_PROFESSIONAL_LIVE_OK=1 FOOTER_ONLY=1 VERIFIED_SOCIAL_LINKS=1'
+          echo 'FOOTER_PROFESSIONAL_LIVE_OK=1 FOOTER_ONLY=1 VERIFIED_SOCIAL_LINKS=1 LOCAL_SOCIAL_SVGS=1'
           REMOTE
-# trigger 2
+# trigger 3
