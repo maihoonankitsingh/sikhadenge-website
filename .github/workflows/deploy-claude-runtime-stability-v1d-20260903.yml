@@ -2,6 +2,8 @@ name: Deploy Claude Runtime Stability V1D 20260903
 
 on:
   push:
+    branches:
+      - main
     paths: [.github/workflows/deploy-claude-runtime-stability-v1d-20260903.yml]
 
 permissions:
@@ -16,6 +18,7 @@ env:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     environment: whatsapp-agent-production
