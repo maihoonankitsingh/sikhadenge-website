@@ -17,10 +17,10 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  preflight:
+  inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
       - name: Configure SSH
         shell: bash
@@ -33,54 +33,26 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read-only recovery preflight
+      - name: Inspect exact Nginx injection delta
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          export PM2_HOME=/root/.pm2
-          SOURCE_REPO='/var/www/sikhadenge.in/sikhadenge-website-space'
-          TARGET_SHA='c216c8470d761aae1baa644e2cb3dc8d78b936c7'
-          HIST_PREFIX='/ai-video-real-output-v77/v90-1-c216c8470d76-20260904-105133'
-          echo '=== SOURCE REPO ==='
-          [[ -d "$SOURCE_REPO/.git" ]] && echo 'SOURCE_REPO=OK' || echo 'SOURCE_REPO=MISSING'
-          if [[ -d "$SOURCE_REPO/.git" ]]; then
-            echo "ORIGIN=$(git -C "$SOURCE_REPO" remote get-url origin)"
-            if git -C "$SOURCE_REPO" cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then echo 'TARGET_COMMIT=LOCAL_OK'; else echo 'TARGET_COMMIT=LOCAL_MISSING'; fi
-          fi
-          echo '=== CURRENT APP ==='
-          pm2 jlist >/tmp/pm2-recovery-preflight.json
-          python3 - /tmp/pm2-recovery-preflight.json <<'PY'
-          import json,sys
-          a=json.load(open(sys.argv[1]))
-          for x in a:
-            n=x.get('name') or ''
-            if 'ai-video' in n.lower():
-              e=x.get('pm2_env') or {}
-              print(n,'status='+str(e.get('status')),'cwd='+str(e.get('pm_cwd')),'exec='+str(e.get('pm_exec_path')))
-          PY
-          echo '=== PORTS 3940/3952/3953 ==='
-          ss -lntp | grep -E ':(3940|3952|3953)\b' || true
-          echo '=== NGINX VERSIONED ASSET ROUTE ==='
-          nginx -T 2>/dev/null | grep -n -A8 -B4 'ai-video-real-output-v77' | head -100 || true
-          echo '=== HISTORICAL SEP4 ASSETS PUBLIC STATUS ==='
-          urls=(
-            "$HIST_PREFIX/_next/static/VBOoeOh6nGMStTgyiEDo3/_buildManifest.js"
-            "$HIST_PREFIX/_next/static/chunks/framework-a419983266e4b515.js"
-            "$HIST_PREFIX/_next/static/chunks/pages/masterclass/ai-video-84c3c67d7d82b06e.js"
-            "$HIST_PREFIX/_next/static/css/c0b52290734d33f1.css"
-            "$HIST_PREFIX/_next/static/css/5058feadbe02664c.css"
-            "$HIST_PREFIX/ai-video-kling-mark.svg"
-            "$HIST_PREFIX/ai-video-higgsfield-mark.svg"
-          )
-          for u in "${urls[@]}"; do code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; done
-          echo '=== ASSET FILESYSTEM SEARCH ==='
-          find /var/www/sikhadenge.in /var/backups/sikhadenge /root -type d -path '*v90-1-c216c8470d76-20260904-105133*' -print 2>/dev/null | head -30 || true
-          echo '=== CURRENT LIVE + CLAUDE HASH ==='
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?recovery-preflight=2' -o /tmp/ai-current-preflight.html
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/claude/free?recovery-preflight=2' -o /tmp/claude-current-preflight.html
-          echo "AI_SHA=$(sha256sum /tmp/ai-current-preflight.html | awk '{print $1}') AI_BYTES=$(wc -c </tmp/ai-current-preflight.html)"
-          echo "CLAUDE_SHA=$(sha256sum /tmp/claude-current-preflight.html | awk '{print $1}') CLAUDE_BYTES=$(wc -c </tmp/claude-current-preflight.html)"
-          echo '=== PREFLIGHT COMPLETE ==='
+          curl -fsSL --max-time 15 'http://127.0.0.1:3940/masterclass/ai-video' -o /tmp/ai-upstream.html
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?inj-diff=1' -o /tmp/ai-public.html
+          echo "UPSTREAM_SHA=$(sha256sum /tmp/ai-upstream.html|awk '{print $1}') BYTES=$(wc -c </tmp/ai-upstream.html)"
+          echo "PUBLIC_SHA=$(sha256sum /tmp/ai-public.html|awk '{print $1}') BYTES=$(wc -c </tmp/ai-public.html)"
+          for f in /tmp/ai-upstream.html /tmp/ai-public.html; do
+            echo "=== $f ==="
+            echo "STYLES=$(grep -o '<style' "$f"|wc -l) SCRIPTS=$(grep -o '<script' "$f"|wc -l)"
+            grep -Eo '<script[^>]+src="[^"]+"[^>]*></script>|<style[^>]*>[^<]{0,200}</style>' "$f" | grep -E 'funnel-attribution|social-proof|footer|ai-video' | tail -40 || true
+          done
+          echo '=== NGINX AI LOCATION + INCLUDE/SUB_FILTER ==='
+          nginx -T 2>/dev/null | awk '
+            /location = \/masterclass\/ai-video/ {show=1; depth=0}
+            show {print; opens=gsub(/{/,"{"); closes=gsub(/}/,"}"); depth+=opens-closes; if(depth==0 && opens>0){exit}}
+          ' || true
+          echo '=== RELATED SUB_FILTERS ==='
+          nginx -T 2>/dev/null | grep -nEi -A2 -B2 'funnel-attribution-bridge|social-proof/live\?widget|body footer\{display:none|masterclass/ai-video' | head -180 || true
           REMOTE
