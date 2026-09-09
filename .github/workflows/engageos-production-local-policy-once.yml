@@ -1,0 +1,36 @@
+name: EngageOS production-local policy once
+
+on:
+  push:
+    branches:
+      - fix/engageos-production-local-reconciliation-20260910
+    paths:
+      - .github/workflows/engageos-production-local-policy-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  transform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact policy refactor
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node apps/whatsapp-agent-dashboard/scripts/reconcile-production-local-policy.mjs
+          git diff --check
+          grep -Fq 'inboxConversationTimeFilter' apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+          grep -Fq 'renderWhatsAppTemplateText' apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+          grep -Fq 'WHATSAPP_ANALYTICS_TOKEN=""' apps/whatsapp-agent-dashboard/.env.example
+          git add apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts apps/whatsapp-agent-dashboard/.env.example
+          git rm apps/whatsapp-agent-dashboard/scripts/reconcile-production-local-policy.mjs .github/workflows/engageos-production-local-policy-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'refactor(inbox): centralize recovered production policy'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
