@@ -1,10 +1,9 @@
-name: Restore AI Video Sep4 Golden 20260910
+name: Audit AI Video Main Page Candidates 20260910
 
 on:
   push:
     branches: [main]
     paths:
-      - 'ops/restore-ai-video-sep4-golden-20260910.sh'
       - '.github/workflows/restore-ai-video-sep4-golden-20260910.yml'
 
 permissions:
@@ -18,27 +17,11 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  restore:
+  audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Static safety checks
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          S='ops/restore-ai-video-sep4-golden-20260910.sh'
-          bash -n "$S"
-          grep -Fq "APP='sikhadenge-ai-video-golden-faq-3940-20260904-130510'" "$S"
-          grep -Fq "SNAP='/var/backups/sikhadenge/ai-video-ui-v91-20260910-032700/ai-video.html.before'" "$S"
-          grep -Fq "EXPECTED_SNAPSHOT_SHA='9f7202ae3d3ee585d22f2ebf250ff0f0d1d43ebc58e5a3ae1f2381739c5e8434'" "$S"
-          grep -Fq 'Claude response changed during AI Video restore' "$S"
-          grep -Fq 'UNCHANGED=links,forms,scripts,tracking,checkout,API,Claude,Nginx' "$S"
-          ! grep -Eq 'nginx -s reload|systemctl (reload|restart) nginx|rm -rf|chattr|document\.write|MutationObserver' "$S"
-          echo '✅ Sep4 Golden restore safety guard passed'
-
       - name: Configure SSH
         shell: bash
         run: |
@@ -50,9 +33,47 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Restore exact Sep4 Golden AI Video page
+      - name: Read-only exact V90 candidates
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/restore-ai-video-sep4-golden-20260910.sh
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          shopt -s nullglob
+          echo '=== CURRENT LIVE ==='
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?audit=v90candidates' -o /tmp/live-ai-v90audit.html
+          echo "LIVE_SHA=$(sha256sum /tmp/live-ai-v90audit.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai-v90audit.html)"
+          echo "LIVE_STYLE_TAGS=$(grep -o '<style' /tmp/live-ai-v90audit.html | wc -l) LIVE_SECTIONS=$(grep -o '<section' /tmp/live-ai-v90audit.html | wc -l)"
+
+          echo '=== SOURCE-FIRST RELEASES ==='
+          dirs=(/var/www/sikhadenge.in/releases/production-ai-video-source-first-*)
+          echo "SOURCE_FIRST_COUNT=${#dirs[@]}"
+          for d in "${dirs[@]}"; do
+            f="$d/.next/server/pages/masterclass/ai-video.html"
+            echo "RELEASE=$d"
+            [[ -f "$f" ]] || { echo NO_HTML; continue; }
+            echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
+            echo "STYLE_TAGS=$(grep -o '<style' "$f" | wc -l) SECTIONS=$(grep -o '<section' "$f" | wc -l) SCRIPTS=$(grep -o '<script' "$f" | wc -l)"
+            for m in 'ai-video-hero-title' 'Create cinematic AI videos' 'Get My Free Seat' '30 Crore' 'Everyone says AI will replace' 'Six blocks' 'Understand the tools behind' 'Questions before you join live' 'ai-video-audience-premium-v4-inline' 'ai-video-faq-premium-v3-inline'; do grep -Fqi "$m" "$f" && echo "YES|$m" || echo "NO|$m"; done
+            grep -Eo '/ai-video-real-output-v77/[^" ]+/_next/static' "$f" | sort -u | head -3 || true
+            echo '--'
+          done
+
+          echo '=== ORIGINAL GOLDEN ==='
+          gf='/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/.next/server/pages/masterclass/ai-video.html'
+          if [[ -f "$gf" ]]; then
+            echo "GOLDEN_SHA=$(sha256sum "$gf" | awk '{print $1}') BYTES=$(wc -c <"$gf") MTIME=$(stat -c '%y' "$gf")"
+            echo "STYLE_TAGS=$(grep -o '<style' "$gf" | wc -l) SECTIONS=$(grep -o '<section' "$gf" | wc -l)"
+          fi
+
+          echo '=== ROOT GOLDEN BACKUP ==='
+          rb='/root/ai-video-GOLDEN-ADS-LIVE-20260903-125516'
+          if [[ -e "$rb" ]]; then
+            echo "EXISTS=$rb"
+            find "$rb" -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS|%s|%p\n' 2>/dev/null | sort | head -60
+          else echo MISSING; fi
+
+          echo '=== PM2 DUMP SOURCE-FIRST REFERENCES ==='
+          grep -nEi 'sikhadenge-ai-video-v90|production-ai-video-source-first|sikhadenge-ai-workflow-premium' /root/.pm2/dump.pm2 2>/dev/null | head -140 || true
+          echo '=== AUDIT COMPLETE ==='
+          REMOTE
