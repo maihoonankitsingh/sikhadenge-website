@@ -14,6 +14,7 @@ export * from "@/modules/inbox/application/unified-inbox";
 export * from "@/modules/events/domain/channel-event";
 export * from "@/modules/events/application/event-runtime";
 export * from "@/modules/events/infrastructure/redis-event-queue";
+export * from "@/modules/events/infrastructure/prisma-event-runtime";
 export * from "@/modules/integrations/domain/integration-health";
 export * from "@/modules/policy/domain/consent";
 export * from "@/modules/policy/domain/kill-switch";
