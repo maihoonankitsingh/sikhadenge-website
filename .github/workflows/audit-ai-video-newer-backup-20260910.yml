@@ -1,0 +1,56 @@
+name: Audit AI Video Newer Backup 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-ai-video-newer-backup-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 12
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only server audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== CURRENT AI ROUTE ==='
+          nginx -T 2>/dev/null | grep -A35 -F 'location = /masterclass/ai-video {' | head -36 || true
+          echo '=== RECENT RELATED BACKUPS ==='
+          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -printf '%T@ %TY-%Tm-%Td_%TH:%TM:%TS %p\n' 2>/dev/null | grep -Ei 'ai-video|golden|faq|mobile|responsive|heading' | sort -nr | head -100 || true
+          echo '=== RELATED POINTER FILES ==='
+          find /var/backups/sikhadenge -maxdepth 1 -type f -name '.*last*' -print 2>/dev/null | grep -Ei 'ai|video|golden|faq' | while read -r f; do printf '%s -> ' "$f"; cat "$f"; echo; done || true
+          echo '=== PM2 RELEVANT ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); [print(x.get("name"),"|",x.get("pm2_env",{}).get("status"),"|",x.get("pm2_env",{}).get("pm_exec_path"),"|",x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["ai-video","golden","heading"])]' || true
+          echo '=== DIRECT PORTS ==='
+          for p in 3930 3940 3942 3944 3955; do code=$(curl -sS --max-time 15 -o /tmp/ai-$p.html -w '%{http_code}' http://127.0.0.1:$p/masterclass/ai-video || true); bytes=$(wc -c </tmp/ai-$p.html 2>/dev/null || echo 0); echo "PORT=$p HTTP=$code BYTES=$bytes"; grep -Eo 'Create cinematic AI videos|Six blocks\. Zero filler\.|Master 25\+ AI Tools|Frequently Asked Questions' /tmp/ai-$p.html 2>/dev/null | sort -u | tr '\n' ' '; echo; done
+          echo '=== LIVE ==='
+          code=$(curl -sS --max-time 20 -o /tmp/ai-live.html -w '%{http_code}' 'https://sikhadenge.in/masterclass/ai-video?audit=ai-newer-20260910' || true); echo "LIVE_HTTP=$code BYTES=$(wc -c </tmp/ai-live.html 2>/dev/null || echo 0)"; grep -Eo 'Create cinematic AI videos|Six blocks\. Zero filler\.|Master 25\+ AI Tools|Frequently Asked Questions' /tmp/ai-live.html 2>/dev/null | sort -u | tr '\n' ' '; echo
+          REMOTE
