@@ -20,7 +20,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
       - name: Configure SSH
         shell: bash
@@ -30,40 +30,81 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Exact live versus 3940 audit
+
+      - name: Deep read-only live UI leak audit
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          SNIP='/etc/nginx/snippets/sikhadenge-ai-video-3940.conf'
-          echo '=== SITE REFERENCES ==='
-          grep -n -B3 -A8 -E 'ai-video|3940|sikhadenge-ai-video-3940' "$SITE" | head -100 || true
-          echo '=== AI SNIPPET ==='
-          if [[ -f "$SNIP" ]]; then stat -c '%n | %y | %s bytes' "$SNIP"; cat "$SNIP"; else echo 'SNIPPET_MISSING'; fi
-          echo '=== NGINX EXPANDED AI ROUTE/3940 ==='
-          nginx -T 2>/dev/null | grep -n -B3 -A30 -E 'masterclass/ai-video|proxy_pass http://127\.0\.0\.1:3940' | head -160 || true
-          echo '=== PM2 ==='
           export PM2_HOME=/root/.pm2
-          pm2 jlist | python3 -c 'import json,sys; a=json.load(sys.stdin); [print(x.get("name"),x.get("pm2_env",{}).get("status"),x.get("pm2_env",{}).get("pm_exec_path"),x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["ai-video","golden"])]'
-          echo '=== FETCH DIRECT 3940 ==='
-          curl -fsS --connect-timeout 3 --max-time 15 'http://127.0.0.1:3940/masterclass/ai-video?cmp=3940' -o /tmp/3940.html
-          echo "P3940_BYTES=$(wc -c </tmp/3940.html) P3940_SHA=$(sha256sum /tmp/3940.html | awk '{print $1}')"
-          echo '=== FETCH LIVE ==='
-          curl -fsS --connect-timeout 3 --max-time 15 'https://sikhadenge.in/masterclass/ai-video?cmp=live' -o /tmp/live.html
-          echo "LIVE_BYTES=$(wc -c </tmp/live.html) LIVE_SHA=$(sha256sum /tmp/live.html | awk '{print $1}')"
-          echo '=== NORMALIZED HTML COMPARISON ==='
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510'
+          HTML="$CWD/.next/server/pages/masterclass/ai-video.html"
+          LIVE='https://sikhadenge.in/masterclass/ai-video?deep-ui-audit=20260910'
+
+          echo '=== ROUTE / PROCESS ==='
+          grep -n -B2 -A12 -E 'masterclass/ai-video|3940' /etc/nginx/sites-enabled/sikhadenge.in-ssl | head -120 || true
+          pm2 jlist | python3 -c 'import json,sys; [print(x.get("name"), (x.get("pm2_env") or {}).get("status"), (x.get("pm2_env") or {}).get("pm_cwd")) for x in json.load(sys.stdin) if "ai-video" in (x.get("name") or "")]'
+          stat -c 'HTML=%n | modified=%y | bytes=%s' "$HTML"
+          echo "HTML_SHA=$(sha256sum "$HTML" | awk '{print $1}')"
+
+          echo '=== LIVE FETCH ==='
+          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-live-ui.html
+          echo "LIVE_BYTES=$(wc -c </tmp/ai-live-ui.html) LIVE_SHA=$(sha256sum /tmp/ai-live-ui.html | awk '{print $1}')"
+
+          echo '=== TAG BALANCE ==='
           python3 - <<'PY'
-          import re,hashlib
-          for name,path in [('3940','/tmp/3940.html'),('live','/tmp/live.html')]:
-              s=open(path,errors='ignore').read()
-              s=re.sub(r'cmp=(3940|live)','cmp=X',s)
-              s=re.sub(r'(?i)(nonce|data-nonce)=["\'][^"\']+["\']','',s)
-              print(name, len(s), hashlib.sha256(s.encode()).hexdigest())
-              for m in ['Create cinematic AI videos','Six blocks','Understand the tools','Frequently Asked Questions']:
-                  print(' ',m, m.lower() in s.lower())
+          import re
+          s=open('/tmp/ai-live-ui.html',errors='ignore').read()
+          for tag in ['script','style','section','div']:
+              print(tag, 'open=',len(re.findall(fr'<{tag}\b',s,re.I)), 'close=',len(re.findall(fr'</{tag}>',s,re.I)))
+          print('inline ids:', sorted(set(re.findall(r'id=["\']([^"\']*(?:ai-video|workflow|faq|audience)[^"\']*)["\']',s,re.I)))[:100])
+          print('script srcs:')
+          for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I):
+              if 'ai-video' in src.lower() or 'funnel' in src.lower() or 'masterclass' in src.lower(): print(' ',src)
           PY
+
+          echo '=== VISIBLE CODE-LIKE TEXT OUTSIDE SCRIPT/STYLE ==='
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          import re
+          class P(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True); self.stack=[]; self.bad=[]
+              def handle_starttag(self,tag,attrs): self.stack.append(tag.lower())
+              def handle_startendtag(self,tag,attrs): pass
+              def handle_endtag(self,tag):
+                  tag=tag.lower()
+                  if tag in self.stack:
+                      for i in range(len(self.stack)-1,-1,-1):
+                          if self.stack[i]==tag: self.stack=self.stack[:i]; break
+              def handle_data(self,data):
+                  if any(t in {'script','style','noscript'} for t in self.stack): return
+                  t=' '.join(data.split())
+                  if len(t)<12:return
+                  tokens=['querySelector','document.','function(','function (','=>','createElement','appendChild','textContent','classList','addEventListener','getElementById','setAttribute','innerHTML','replaceWith','var ','const ','let ']
+                  score=sum(x in t for x in tokens)
+                  braces=t.count('{')+t.count('}')
+                  if score>=1 or braces>=3:
+                      self.bad.append((self.stack[-6:],t[:500]))
+          s=open('/tmp/ai-live-ui.html',errors='ignore').read(); p=P(); p.feed(s)
+          print('COUNT=',len(p.bad))
+          for i,(stack,t) in enumerate(p.bad[:80],1): print(f'[{i}] stack={"/".join(stack)} :: {t}')
+          PY
+
+          echo '=== MARKER CONTEXTS ==='
+          python3 - <<'PY'
+          s=open('/tmp/ai-live-ui.html',errors='ignore').read()
+          for m in ['Learn the workflow behind','Six blocks','Understand the tools behind','One workflow.','Built for people who want','Questions before you join live?']:
+              i=s.lower().find(m.lower()); print('\n---',m,'@',i,'---')
+              if i>=0: print(s[max(0,i-700):i+1800].replace('><','>\n<'))
+          PY
+
+          echo '=== AI VIDEO INJECTION MARKERS IN FILE ==='
+          grep -Eo 'id="[^"]+"|src="[^"]+"|data-ai-[^ =]+' "$HTML" | grep -Ei 'ai-video|audience|faq|workflow|tool|proof|funnel' | sort -u | head -160 || true
+
+          echo '=== RECENT AI VIDEO BACKUPS ==='
+          find /root /var/backups/sikhadenge -maxdepth 2 -type f \( -name '*ai-video*.html*' -o -name 'ai-video.html*' \) -printf '%TY-%Tm-%Td %TH:%TM:%TS %s %p\n' 2>/dev/null | sort -r | head -80 || true
           REMOTE
 
-# exact compare marker 20260910-3
+# deep visible-code audit marker 20260910-4
