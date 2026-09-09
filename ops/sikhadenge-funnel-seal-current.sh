@@ -109,7 +109,7 @@ import re,sys,os
 for f in sys.argv[1:]:
     s=open(f,errors='ignore').read()
     for p in re.findall(r'\balias\s+([^;]+);',s):
-        p=p.strip().strip('"\'')
+        p=p.strip().strip('"').strip("'")
         if os.path.isfile(p): print(p)
 PY
 
