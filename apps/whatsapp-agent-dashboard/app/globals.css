@@ -147,3 +147,27 @@ button { cursor: pointer; }
   .topbar-actions .secondary-button, .system-status { display: none; }
   .chat-actions .secondary-button { display: none; }
 }
+
+
+/* SIKHADENGE GLOBAL MANROPE TYPOGRAPHY */
+
+html,
+body {
+  font-family: var(--font-manrope), Manrope, sans-serif !important;
+}
+
+* {
+  font-family: inherit;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-manrope), Manrope, sans-serif !important;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+button,
+input,
+textarea {
+  font-family: var(--font-manrope), Manrope, sans-serif !important;
+}

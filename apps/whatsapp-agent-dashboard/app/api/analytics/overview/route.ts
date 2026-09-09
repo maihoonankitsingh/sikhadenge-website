@@ -14,7 +14,23 @@ const ALLOWED = new Set<DashboardRole>([
   DashboardRole.COUNSELOR,
 ]);
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authorization = request.headers.get("authorization") || "";
+  const bearer = authorization.startsWith("Bearer ")
+    ? authorization.slice(7).trim()
+    : "";
+  const expectedToken =
+    process.env.WHATSAPP_ANALYTICS_TOKEN?.trim() ||
+    process.env.WHATSAPP_AGENT_ANALYTICS_TOKEN?.trim() ||
+    "";
+  const validServiceToken =
+    Boolean(expectedToken) && bearer === expectedToken;
+
+  if (validServiceToken) {
+    return NextResponse.json(await getPlatformAnalytics(), {
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
   const user = await getCurrentDashboardUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!ALLOWED.has(user.role)) return NextResponse.json({ error: "Insufficient permission." }, { status: 403 });
