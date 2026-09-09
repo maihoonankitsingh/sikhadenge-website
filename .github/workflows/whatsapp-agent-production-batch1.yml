@@ -158,6 +158,7 @@ jobs:
           git fetch origin \
             +refs/heads/release/whatsapp-instagram-agent-flow-20260731:refs/remotes/origin/release/whatsapp-instagram-agent-flow-20260731
 
+          repo_root="$(git rev-parse --show-toplevel)"
           live_sha="$(git rev-parse HEAD)"
           release_ref_sha="$(git rev-parse "$RELEASE_REF")"
           tracked_status="$(git status --porcelain --untracked-files=no)"
@@ -176,6 +177,55 @@ jobs:
             printf 'PRESTAGE_DIFF_NUMSTAT_BEGIN\n'
             git diff HEAD --numstat --no-renames
             printf 'PRESTAGE_DIFF_NUMSTAT_END\n'
+
+            # Batch #12 identified these exact ten tracked production-local paths. Preserve
+            # a private binary-capable patch only when the current dirty set still matches
+            # that reviewed allowlist exactly. Unexpected tracked paths fail closed and are
+            # never copied into the recovery artifact.
+            expected_dirty_paths=(
+              apps/whatsapp-agent-dashboard/app/api/analytics/overview/route.ts
+              apps/whatsapp-agent-dashboard/app/api/conversations/route.ts
+              apps/whatsapp-agent-dashboard/app/globals.css
+              apps/whatsapp-agent-dashboard/app/inbox/page.tsx
+              apps/whatsapp-agent-dashboard/app/layout.tsx
+              apps/whatsapp-agent-dashboard/components/inbox/InboxDashboardV2.tsx
+              apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+              apps/whatsapp-agent-dashboard/next-env.d.ts
+              apps/whatsapp-agent-dashboard/package.json
+              apps/whatsapp-agent-dashboard/scripts/masterclass-flow-worker.ts
+            )
+            actual_dirty_paths="$(git -C "$repo_root" diff HEAD --name-only --no-renames | LC_ALL=C sort)"
+            expected_dirty_list="$(printf '%s\n' "${expected_dirty_paths[@]}" | LC_ALL=C sort)"
+            if [[ "$actual_dirty_paths" != "$expected_dirty_list" ]]; then
+              printf 'FAIL: PRESTAGE_DIRTY_PATH_SET_CHANGED\n' >&2
+              exit 35
+            fi
+
+            recovery_dir="/root/sikhadenge-backups/engageos-${RUN_ID}"
+            recovery_patch="$recovery_dir/production-dirty.patch"
+            recovery_manifest="$recovery_dir/production-dirty-manifest.txt"
+            install -d -m 700 "$recovery_dir"
+            git -C "$repo_root" diff HEAD --binary -- "${expected_dirty_paths[@]}" > "$recovery_patch"
+            test -s "$recovery_patch"
+            chmod 600 "$recovery_patch"
+            patch_sha256="$(sha256sum "$recovery_patch" | awk '{print $1}')"
+
+            {
+              printf 'FORMAT_VERSION=1\n'
+              printf 'RUN_ID=%s\n' "$RUN_ID"
+              printf 'LIVE_SHA=%s\n' "$live_sha"
+              printf 'TARGET_SHA=%s\n' "$TARGET_SHA"
+              printf 'DIRTY_COUNT=%s\n' "$tracked_dirty_count"
+              printf 'PATCH_SHA256=%s\n' "$patch_sha256"
+              printf 'TRACKED_STATUS_BEGIN\n'
+              git -C "$repo_root" status --porcelain --untracked-files=no -- "${expected_dirty_paths[@]}"
+              printf 'TRACKED_STATUS_END\n'
+              printf 'DIFF_NUMSTAT_BEGIN\n'
+              git -C "$repo_root" diff HEAD --numstat --no-renames -- "${expected_dirty_paths[@]}"
+              printf 'DIFF_NUMSTAT_END\n'
+            } > "$recovery_manifest"
+            chmod 600 "$recovery_manifest"
+            printf 'PASS: PRESTAGE_DIRTY_PATCH_PRESERVED sha256=%s\n' "$patch_sha256"
           fi
 
           if [[ "$release_ref_sha" != "$TARGET_SHA" ]]; then
@@ -235,6 +285,8 @@ jobs:
           set +e
           mkdir -p production-evidence
           for file_name in \
+            production-dirty.patch \
+            production-dirty-manifest.txt \
             manifest.txt \
             migration-evidence.txt \
             deploy-state.txt \
