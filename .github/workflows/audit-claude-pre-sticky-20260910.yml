@@ -1,0 +1,92 @@
+name: Audit Newer Claude Pre-Sticky Backup 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-pre-sticky-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 12
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect newer Claude backup candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          MARK='/var/backups/sikhadenge/.claude-sticky-cta-v4-last'
+          echo '=== POINTER ==='
+          test -s "$MARK"
+          B="$(cat "$MARK")"
+          echo "BACKUP=$B"
+          test -d "$B"
+          find "$B" -maxdepth 1 -type f -printf '%f | %s bytes | %TY-%Tm-%Td %TH:%TM:%TS\n' | sort
+          test -s "$B/nginx.before"
+
+          echo '=== CLAUDE ROUTE FROM PRE-STICKY BACKUP ==='
+          python3 - "$B/nginx.before" <<'PY'
+          import sys
+          p=sys.argv[1]; s=open(p,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('route parse failed')
+          seg=s[a:end]
+          print(seg)
+          open('/tmp/claude-pre-sticky-route.txt','w').write(seg)
+          PY
+
+          echo '=== ROUTE MARKERS ==='
+          grep -Eo 'proxy_pass http://127\.0\.0\.1:[0-9]+|/[A-Za-z0-9._/-]+\.(js|css)(\?[^"'"'"' ]*)?' /tmp/claude-pre-sticky-route.txt | sort -u || true
+
+          echo '=== ACTIVE LOCAL PORTS 3920-3960 ==='
+          ss -ltnp 2>/dev/null | awk '$4 ~ /:(392[0-9]|393[0-9]|394[0-9]|395[0-9]|3960)$/ {print}' || true
+          echo '=== PM2 CLAUDE/HEADING/AI PROCESSES ==='
+          pm2 jlist 2>/dev/null | python3 -c 'import sys,json; a=json.load(sys.stdin); [print(x.get("name"),x.get("pm2_env",{}).get("status"),x.get("pm2_env",{}).get("pm_exec_path"),x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["claude","heading","ai-video","sikhadenge"])]' || true
+
+          echo '=== DIRECT UPSTREAM CHECK ==='
+          PORT="$(grep -Eo 'proxy_pass http://127\.0\.0\.1:[0-9]+' /tmp/claude-pre-sticky-route.txt | head -1 | grep -Eo '[0-9]+$' || true)"
+          echo "PORT=${PORT:-none}"
+          if [[ -n "${PORT:-}" ]]; then
+            CODE="$(curl -sS --max-time 20 -o /tmp/claude-candidate.html -w '%{http_code}' "http://127.0.0.1:${PORT}/masterclass/claude/free" || true)"
+            echo "DIRECT_HTTP=$CODE BYTES=$(wc -c </tmp/claude-candidate.html 2>/dev/null || echo 0)"
+            if [[ "$CODE" = 200 ]]; then
+              python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/claude-candidate.html').read_text(errors='ignore').lower()
+          for x in ['master 25+ ai tools','better results','faq','job','free seat']:
+              print(f'{x}={x in s}')
+          PY
+            fi
+          fi
+
+          echo '=== BACKUP RECENCY ==='
+          stat -c 'nginx.before mtime=%y size=%s sha256=' "$B/nginx.before" | tr -d '\n'; sha256sum "$B/nginx.before" | awk '{print $1}'
+          REMOTE
