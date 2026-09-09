@@ -1,0 +1,70 @@
+name: Audit Last Best Funnel Backup 20260910
+
+on:
+  push:
+    paths:
+      - .github/workflows/audit-last-best-backup-20260910.yml
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
+          [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect backup and current route wiring read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          B='/var/backups/sikhadenge/ai-ecosystem-v315r-20260830-204006'
+          echo '=== BACKUP EXISTS ==='
+          test -d "$B"
+          stat -c '%n | %y | %s bytes' "$B"
+          echo '=== BACKUP TOP LEVEL ==='
+          find "$B" -maxdepth 2 -mindepth 1 -printf '%y %p %s bytes\n' | sort
+          echo '=== BACKUP TEXT MARKERS ==='
+          grep -RIlE 'masterclass/(ai-video|claude/free)|proxy_pass|3930|3942|3982|ai-video' "$B" 2>/dev/null | head -80 || true
+          echo '=== CURRENT NGINX ROUTES ==='
+          nginx -T 2>/dev/null | awk '
+            /location = \/masterclass\/ai-video/ {show=1; n=0}
+            /location = \/masterclass\/claude\/free/ {show=1; n=0}
+            show {print; n++}
+            show && n>28 {show=0}
+          '
+          echo '=== CURRENT PM2 SUMMARY ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; x=json.load(sys.stdin); print("\n".join(f"{a.get(\"name\")} | {a.get(\"pm2_env\",{}).get(\"status\")} | pid={a.get(\"pid\")}" for a in x))' || true
+          echo '=== LIVE HEADINGS ==='
+          for u in 'https://sikhadenge.in/masterclass/ai-video?audit=backup-20260910' 'https://sikhadenge.in/masterclass/claude/free?audit=backup-20260910'; do
+            echo "URL=$u"
+            curl -fsSL --max-time 20 "$u" | tr '\n' ' ' | sed 's/<[^>]*>/ /g' | tr -s ' ' | cut -c1-700
+            echo
+          done
+          REMOTE
