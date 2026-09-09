@@ -1,0 +1,77 @@
+name: Install Two Funnel Golden Lock 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-two-funnel-golden-lock-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  install-lock:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static safety validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for s in \
+            ops/sikhadenge-funnel-seal-current.sh \
+            ops/sikhadenge-funnel-golden-guard.sh \
+            ops/sikhadenge-funnel-lockctl.sh \
+            ops/install-two-funnel-golden-lock-20260910.sh; do
+            bash -n "$s"
+          done
+          # No filesystem immutable flag and no broad /_next namespace interception.
+          ! grep -R -E 'chattr[[:space:]]+\+i|location[[:space:]]+\^~[[:space:]]+/_next|location[[:space:]]+/_next' \
+            ops/sikhadenge-funnel-* ops/install-two-funnel-golden-lock-20260910.sh
+          # Whole website Nginx must never be overwritten by the guard.
+          ! grep -F 'cp -a "$GOLD/config/site' ops/sikhadenge-funnel-golden-guard.sh
+          grep -Fq 'replace_claude_route' ops/sikhadenge-funnel-golden-guard.sh
+          grep -Fq 'OnUnitActiveSec=60s' ops/install-two-funnel-golden-lock-20260910.sh
+          grep -Fq 'minute % 5' ops/sikhadenge-funnel-golden-guard.sh
+          echo 'SAFETY_VALIDATION=PASS'
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = 'ssh-ed25519'
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Stage lock utilities on production server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SCP=(scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes)
+          "${SCP[@]}" ops/sikhadenge-funnel-seal-current.sh "$SSH_USER@$SSH_HOST:/tmp/sikhadenge-funnel-seal-current.sh"
+          "${SCP[@]}" ops/sikhadenge-funnel-golden-guard.sh "$SSH_USER@$SSH_HOST:/tmp/sikhadenge-funnel-golden-guard.sh"
+          "${SCP[@]}" ops/sikhadenge-funnel-lockctl.sh "$SSH_USER@$SSH_HOST:/tmp/sikhadenge-funnel-lockctl.sh"
+          "${SCP[@]}" ops/install-two-funnel-golden-lock-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/install-two-funnel-golden-lock-20260910.sh"
+      - name: Install and verify production Golden lock
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/install-two-funnel-golden-lock-20260910.sh'
+      - name: Read final lock status
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" '/usr/local/sbin/sikhadenge-funnel-lockctl status'
