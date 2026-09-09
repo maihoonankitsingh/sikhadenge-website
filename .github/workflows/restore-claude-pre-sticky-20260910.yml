@@ -1,0 +1,203 @@
+name: Restore Newer Claude Sep4 Pre-Sticky 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-claude-pre-sticky-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 20
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Restore only Claude route from Sep4 pre-sticky backup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CAND='/var/backups/sikhadenge/claude-sticky-cta-v4-20260904-151348/nginx.before'
+          CAND_SHA='e364a875d5af8af36e03e8035d6f87a758bafa1a6355f58eef64f3e9da25f474'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="/var/backups/sikhadenge/claude-newer-sep4-restore-$TS"
+          mkdir -p "$BK"
+          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?before_newer_restore=1' -o "$BK/claude.before.html"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?before_newer_restore=1' -o "$BK/ai-video.before.html"
+
+          rollback(){
+            rc=$?
+            echo "RESTORE_FAILED rc=$rc -- rollback to immediate pre-change config"
+            cat "$BK/sikhadenge.in-ssl.before" > "$SITE"
+            nginx -t
+            systemctl reload nginx
+            exit "$rc"
+          }
+          trap rollback ERR
+
+          echo '=== VERIFY SEP4 CANDIDATE ==='
+          test -s "$CAND"
+          test "$(sha256sum "$CAND" | awk '{print $1}')" = "$CAND_SHA"
+          curl -fsSL --max-time 25 'http://127.0.0.1:3930/masterclass/claude/free' -o "$BK/claude-3930.direct.html"
+          test "$(wc -c < "$BK/claude-3930.direct.html")" -gt 150000
+
+          python3 - "$CAND" "$BK/candidate-route.conf" <<'PY'
+          import sys,re
+          src,out=sys.argv[1],sys.argv[2]
+          s=open(src,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('candidate route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('candidate route parse failed')
+          seg=s[a:end]
+          needed=['proxy_pass http://127.0.0.1:3930;','/claude-faq-v2.js?v=faq15-final2-20260904','/claude-value-anchor-v1.js?v=value-999-free-final-20260904','/claude-cta-conversion-v1.js?v=cta-copy-999-free-v2-20260904','/claude-cta-typography-v3.js?v=cta-type-v3b-20260904','/funnel-attribution-bridge-v1.js?v=20260903-1']
+          miss=[x for x in needed if x not in seg]
+          if miss: raise SystemExit('candidate missing markers: '+repr(miss))
+          open(out,'w',encoding='utf-8').write(seg+'\n')
+          PY
+
+          echo '=== VERIFY CANDIDATE PUBLIC DEPENDENCIES ==='
+          for u in \
+            '/funnel-attribution-bridge-v1.js?v=20260903-1' \
+            '/claude-proof-hide-old-v2.js?v=20260902-2300' \
+            '/claude-proof-static-v4.js?v=claude-proof-static-v4-20260902' \
+            '/claude-proof-anchor-v3.js?v=claude-proof-anchor-v3-20260902' \
+            '/claude-proof-exact-v1.js?v=claude-exact-ai-video-proof-20260902' \
+            '/claude-proof-theme-v2.js?v=claude-proof-premium-v3-20260903' \
+            '/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b' \
+            '/claude-proof-real-logos-v1.js?v=real-logos-note-remove-20260903' \
+            '/claude-badge-spacing-v1.js?v=badge-gap-standard12-20260903' \
+            '/claude-remove-empty-community-v1.js?v=remove-blank-strip-20260903' \
+            '/claude-faq-v2.js?v=faq15-final2-20260904' \
+            '/claude-value-anchor-v1.js?v=value-999-free-final-20260904' \
+            '/claude-cta-conversion-v1.js?v=cta-copy-999-free-v2-20260904' \
+            '/claude-cta-typography-v3.js?v=cta-type-v3b-20260904' \
+            '/api/social-proof/live?widget=1&v=sitewide-live-proof-v1-20260902-224804'
+          do
+            code="$(curl -L -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://sikhadenge.in${u}" || true)"
+            case "$code" in 200|204|301|302|304) echo "OK $code $u";; *) echo "BAD $code $u"; exit 1;; esac
+          done
+
+          echo '=== INSTALL ONLY CLAUDE EXACT ROUTE ==='
+          python3 - "$SITE" "$BK/candidate-route.conf" <<'PY'
+          import sys
+          p,routef=sys.argv[1],sys.argv[2]
+          s=open(p,encoding='utf-8').read(); route=open(routef,encoding='utf-8').read().rstrip(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('live route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('live route parse failed')
+          out=s[:a]+route+s[end:]
+          open(p,'w',encoding='utf-8').write(out)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          echo '=== SERVER POST-RESTORE QA ==='
+          CL_CODE="$(curl -L -sS --max-time 30 -D "$BK/claude.after.headers" -o "$BK/claude.after.html" -w '%{http_code}' "https://sikhadenge.in/masterclass/claude/free?sep4_restore=$TS")"
+          AI_CODE="$(curl -L -sS --max-time 30 -o "$BK/ai-video.after.html" -w '%{http_code}' "https://sikhadenge.in/masterclass/ai-video?sep4_restore=$TS")"
+          echo "CLAUDE_HTTP=$CL_CODE CLAUDE_BYTES=$(wc -c < "$BK/claude.after.html")"
+          echo "AI_HTTP=$AI_CODE AI_BYTES=$(wc -c < "$BK/ai-video.after.html")"
+          test "$CL_CODE" = 200
+          test "$AI_CODE" = 200
+          grep -Fq '/claude-faq-v2.js?v=faq15-final2-20260904' "$BK/claude.after.html"
+          grep -Fq '/claude-value-anchor-v1.js?v=value-999-free-final-20260904' "$BK/claude.after.html"
+          grep -Fq '/claude-cta-conversion-v1.js?v=cta-copy-999-free-v2-20260904' "$BK/claude.after.html"
+          grep -Fq '/claude-cta-typography-v3.js?v=cta-type-v3b-20260904' "$BK/claude.after.html"
+          grep -Fq 'Create cinematic AI videos' "$BK/ai-video.after.html"
+          echo "$BK" > /var/backups/sikhadenge/.claude-newer-sep4-restore-last
+          echo "SERVER_RESTORE_PASS BACKUP=$BK"
+          trap - ERR
+          REMOTE
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          cat > /tmp/check-claude-sep4.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          const compact=s=>(s||'').replace(/\s+/g,'');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]], fail=[];
+            for(const [name,w,h,m] of views){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?sep4-browser=${name}`,{waitUntil:'domcontentloaded',timeout:45000});
+              await new Promise(r=>setTimeout(r,2500));
+              const x=await p.evaluate(()=>({
+                h1:document.querySelector('h1')?.textContent||'',
+                sections:document.querySelectorAll('main section').length,
+                faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                jobs:document.querySelectorAll('#ai-video-job-impact-v80').length,
+                skills:document.querySelectorAll('#ai-video-ai-opportunity-v85').length,
+                ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,
+                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                faqScript:!!document.querySelector('script[src*="/claude-faq-v2.js"]'),
+                typeScript:!!document.querySelector('script[src*="/claude-cta-typography-v3.js"]')
+              }));
+              console.log(name,JSON.stringify(x));
+              if(compact(x.h1)!==compact('Master 25+ AI Tools for smarter work, faster execution & better results.')) fail.push(`${name}: h1=${x.h1}`);
+              if(x.sections!==18||x.faq!==15||x.jobs!==1||x.skills!==1||x.ctas<7||x.overflow||!x.faqScript||!x.typeScript) fail.push(`${name}: regression ${JSON.stringify(x)}`);
+              await p.close();
+            }
+            await b.close();
+            if(fail.length){console.error(fail.join('\n'));process.exit(1)}
+            console.log('CLAUDE_SEP4_3VIEW_QA_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node /tmp/check-claude-sep4.js
+
+      - name: Roll back if browser QA fails
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          M='/var/backups/sikhadenge/.claude-newer-sep4-restore-last'
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          if [[ -s "$M" ]]; then
+            B="$(cat "$M")"
+            if [[ -s "$B/sikhadenge.in-ssl.before" ]]; then
+              cat "$B/sikhadenge.in-ssl.before" > "$SITE"
+              nginx -t && systemctl reload nginx
+              echo "BROWSER_QA_ROLLBACK=$B"
+            fi
+          fi
+          REMOTE
