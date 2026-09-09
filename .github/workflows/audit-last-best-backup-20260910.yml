@@ -19,7 +19,7 @@ env:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -35,40 +35,79 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Deep read-only Sep4-Sep5 AI Video candidate audit
+      - name: Forensic read-only AI Video main-page audit
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          echo '=== LIVE NOW ==='
-          curl -fsSL --max-time 20 'https://sikhadenge.in/masterclass/ai-video?audit=sep45-main' -o /tmp/live-ai.html
-          echo "LIVE_SHA=$(sha256sum /tmp/live-ai.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai.html)"
-          grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|Create cinematic AI videos|30 Crore|Six blocks[^<]{0,80}|Understand the tools behind[^<]{0,100}|Real learners[^<]{0,100}' /tmp/live-ai.html | head -40 || true
+          set -u
+          echo '=== LIVE IDENTITY ==='
+          curl -fsSL --max-time 20 'https://sikhadenge.in/masterclass/ai-video?audit=forensic-main' -o /tmp/live-ai.html || true
+          if [[ -s /tmp/live-ai.html ]]; then
+            echo "LIVE_SHA=$(sha256sum /tmp/live-ai.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai.html)"
+            echo "LIVE_STYLE_TAGS=$(grep -o '<style' /tmp/live-ai.html | wc -l) LIVE_SCRIPT_TAGS=$(grep -o '<script' /tmp/live-ai.html | wc -l)"
+          fi
 
-          echo '=== ALL RELEASE DIRS SEP3-SEP6 ==='
-          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
+          echo '=== ALL AI-VIDEO NAMED RELEASES ==='
+          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -iname '*ai-video*' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort || true
 
-          echo '=== ALL BACKUP DIRS SEP3-SEP6 ==='
-          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
+          echo '=== ALL AI-VIDEO / GOLDEN NAMED BACKUPS ==='
+          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 \( -type d -o -type f \) \( -iname '*ai-video*' -o -iname '*golden*' \) -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort || true
 
-          echo '=== AI HERO FILES IN SEP3-SEP6 BACKUPS ==='
-          find /var/backups/sikhadenge -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -160 | while read -r f; do
-            echo "FILE=$f"
-            stat -c 'MTIME=%y BYTES=%s' "$f"
-            echo "SHA=$(sha256sum "$f" | awk '{print $1}')"
-            grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|Create cinematic AI videos|30 Crore|Six blocks[^<]{0,80}|Understand the tools behind[^<]{0,100}|Real learners[^<]{0,100}' "$f" 2>/dev/null | head -20 || true
-          done
+          echo '=== CONTENT MATCHES IN ALL BACKUPS (hero string) ==='
+          n=0
+          while IFS= read -r -d '' f; do
+            [[ $n -ge 160 ]] && break
+            [[ -r "$f" ]] || continue
+            grep -FIlm1 -- 'Create cinematic AI videos' "$f" >/dev/null 2>&1 || continue
+            n=$((n+1))
+            echo "CANDIDATE#$n=$f"
+            stat -c 'MTIME=%y BYTES=%s' "$f" 2>/dev/null || true
+            echo "SHA=$(sha256sum "$f" 2>/dev/null | awk '{print $1}')"
+            echo "STYLE_TAGS=$(grep -o '<style' "$f" 2>/dev/null | wc -l) SCRIPT_TAGS=$(grep -o '<script' "$f" 2>/dev/null | wc -l)"
+            for m in '30 Crore' 'Six blocks' 'Understand the tools behind' 'Everyone says AI will replace' 'better video output' 'Real learners' 'ai-video-ui-v91-inline'; do
+              if grep -Fqi -- "$m" "$f" 2>/dev/null; then echo "MARKER=YES|$m"; else echo "MARKER=NO|$m"; fi
+            done
+          done < <(find /var/backups/sikhadenge -type f -size -8M -print0 2>/dev/null)
+          echo "BACKUP_HERO_MATCH_COUNT_SHOWN=$n"
 
-          echo '=== AI HERO FILES IN SEP3-SEP6 RELEASES ==='
-          find /var/www/sikhadenge.in/releases -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -160 | while read -r f; do
-            echo "FILE=$f"
-            stat -c 'MTIME=%y BYTES=%s' "$f"
-            echo "SHA=$(sha256sum "$f" | awk '{print $1}')"
-          done
+          echo '=== CONTENT MATCHES IN ALL RELEASES (hero string) ==='
+          n=0
+          while IFS= read -r -d '' f; do
+            [[ $n -ge 120 ]] && break
+            [[ -r "$f" ]] || continue
+            grep -FIlm1 -- 'Create cinematic AI videos' "$f" >/dev/null 2>&1 || continue
+            n=$((n+1))
+            echo "RELEASE_CANDIDATE#$n=$f"
+            stat -c 'MTIME=%y BYTES=%s' "$f" 2>/dev/null || true
+            echo "SHA=$(sha256sum "$f" 2>/dev/null | awk '{print $1}')"
+          done < <(find /var/www/sikhadenge.in/releases -type f -size -8M -print0 2>/dev/null)
+          echo "RELEASE_HERO_MATCH_COUNT_SHOWN=$n"
 
-          echo '=== NGINX AI ROUTE ==='
+          echo '=== NGINX HISTORY REFERENCES FOR AI VIDEO ==='
+          grep -RIlm1 -- '/masterclass/ai-video' /etc/nginx /var/backups/sikhadenge 2>/dev/null | head -120 | while read -r f; do
+            echo "NGINX_REF=$f"
+            grep -nE 'masterclass/ai-video|proxy_pass http://127\.0\.0\.1:39[0-9][0-9]|sub_filter.*ai-video|script src=' "$f" 2>/dev/null | head -30 || true
+          done || true
+
+          echo '=== PM2 CURRENT + DUMP AI VIDEO REFERENCES ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist 2>/dev/null | python3 - <<'PY' || true
+          import json,sys
+          try: a=json.load(sys.stdin)
+          except Exception: a=[]
+          for x in a:
+              name=x.get('name') or ''
+              if 'ai-video' in name.lower() or 'golden' in name.lower():
+                  e=x.get('pm2_env',{})
+                  print(name,'|',e.get('status'),'|cwd=',e.get('pm_cwd'),'|exec=',e.get('pm_exec_path'))
+          PY
+          grep -nEi 'ai-video|golden-faq|3940' /root/.pm2/dump.pm2 2>/dev/null | head -100 || true
+
+          echo '=== ROOT HISTORY / OPS REFERENCES SEP3-SEP5 ==='
+          grep -nEi 'ai-video|golden-faq|3940|v90|faq-premium' /root/.bash_history 2>/dev/null | tail -160 || true
+
+          echo '=== CURRENT ROUTE ==='
           nginx -T 2>/dev/null | awk '/location = \/masterclass\/ai-video/ {show=1;d=0} show{print} show&&/{/{d++} show&&/}/{d--;if(d<=0)exit}' || true
+          echo '=== FORENSIC AUDIT COMPLETE ==='
           REMOTE
-
-# sep4-sep5 main-page deep audit: 20260910-0340
