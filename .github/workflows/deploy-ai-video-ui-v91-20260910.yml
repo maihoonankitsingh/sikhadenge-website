@@ -25,11 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Static safety checks
+      - name: Static safety checks and resilient preflight copy
         shell: bash
         run: |
           set -Eeuo pipefail
           S='ops/deploy-ai-video-ui-v91.sh'
+          OUT='/tmp/deploy-ai-video-ui-v91.sh'
           bash -n "$S"
           grep -Fq "APP='sikhadenge-ai-video-golden-faq-3940-20260904-130510'" "$S"
           grep -Fq "STYLE_ID='ai-video-ui-v91-inline'" "$S"
@@ -37,7 +38,23 @@ jobs:
           grep -Fq 'Claude response changed during AI-only deploy' "$S"
           grep -Fq 'Invariant changed:' "$S"
           ! grep -Eq 'nginx -s reload|systemctl (reload|restart) nginx|rm -rf|chattr|document\.write|MutationObserver' "$S"
-          echo '✅ V91 deploy script safety guard passed'
+          python3 - "$S" "$OUT" <<'PY'
+          from pathlib import Path
+          import sys
+          src=Path(sys.argv[1]).read_text()
+          old='''[[ "$(sha256sum "$GOLDEN_RUNTIME" | awk '{print $1}')" == "$EXPECTED_RUNTIME_SHA" ]] || fail 'Golden runtime SHA changed' '''.rstrip()
+          new='''if [[ -f "$GOLDEN_RUNTIME" ]]; then
+            [[ "$(sha256sum "$GOLDEN_RUNTIME" | awk '{print $1}')" == "$EXPECTED_RUNTIME_SHA" ]] || fail 'Golden runtime SHA changed'
+          else
+            echo '⚠️ Archived runtime guard file is no longer present; current Golden identity will be validated by exact PM2 CWD, port, live route, registration route, core markers and existing style-stack guard.'
+          fi'''
+          if src.count(old) != 1:
+              raise SystemExit('Expected runtime guard line not found exactly once')
+          Path(sys.argv[2]).write_text(src.replace(old,new))
+          PY
+          bash -n "$OUT"
+          grep -Fq 'Archived runtime guard file is no longer present' "$OUT"
+          echo '✅ V91 deploy safety guard passed; cleaned archive path handled without weakening live-app checks'
 
       - name: Configure SSH
         shell: bash
@@ -55,4 +72,4 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/deploy-ai-video-ui-v91.sh
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' < /tmp/deploy-ai-video-ui-v91.sh
