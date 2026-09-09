@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 ENV_FILE="${ENV_FILE:-.env}"
+PM2_PROCESS_NAME="${PM2_PROCESS_NAME:-sikhadenge-whatsapp-agent}"
 failures=0
 
 pass() { printf 'PASS: %s\n' "$*"; }
@@ -36,67 +37,123 @@ process.stdout.write(value);
 NODE
 }
 
-effective_value() {
+PM2_JSON=""
+if command -v pm2 >/dev/null 2>&1; then
+  PM2_JSON="$(pm2 jlist 2>/dev/null || true)"
+fi
+
+read_pm2_env_value() {
   local key="$1"
-  if [[ -v "$key" ]]; then
-    printf '%s' "${!key}"
+  if [[ -z "$PM2_JSON" ]]; then
     return 0
   fi
-  read_env_value "$key" "$ENV_FILE"
+  printf '%s' "$PM2_JSON" | node - "$PM2_PROCESS_NAME" "$key" <<'NODE'
+let input = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', (chunk) => { input += chunk; });
+process.stdin.on('end', () => {
+  const [processName, key] = process.argv.slice(2);
+  try {
+    const rows = JSON.parse(input || '[]');
+    const row = rows.find((item) => item?.name === processName || item?.pm2_env?.name === processName);
+    const value = row?.pm2_env?.[key];
+    if (value !== undefined && value !== null) process.stdout.write(String(value));
+  } catch {
+    process.exit(0);
+  }
+});
+NODE
 }
 
 normalize() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | xargs
 }
 
-assert_false_or_absent() {
+source_value() {
   local key="$1"
-  local value normalized
-  value="$(effective_value "$key")"
-  normalized="$(normalize "$value")"
-  case "$normalized" in
-    ''|false|0|off|no)
-      pass "$key is fail-closed"
+  local source="$2"
+  case "$source" in
+    env-file)
+      read_env_value "$key" "$ENV_FILE"
       ;;
-    *)
-      fail "$key must be absent or disabled for the initial EngageOS production deploy"
+    shell)
+      if [[ -v "$key" ]]; then
+        printf '%s' "${!key}"
+      fi
+      ;;
+    pm2)
+      read_pm2_env_value "$key"
       ;;
   esac
+}
+
+assert_false_or_absent() {
+  local key="$1"
+  local source value normalized unsafe=0
+  for source in env-file shell pm2; do
+    value="$(source_value "$key" "$source")"
+    normalized="$(normalize "$value")"
+    case "$normalized" in
+      ''|false|0|off|no) ;;
+      *)
+        fail "$key is enabled in $source; it must be absent or disabled for the initial EngageOS production deploy"
+        unsafe=1
+        ;;
+    esac
+  done
+  if [[ "$unsafe" -eq 0 ]]; then
+    pass "$key is fail-closed across env-file, shell and PM2"
+  fi
 }
 
 assert_exact_or_absent() {
   local key="$1"
   local expected="$2"
-  local value normalized
-  value="$(effective_value "$key")"
-  normalized="$(normalize "$value")"
-  if [[ -z "$normalized" || "$normalized" == "$expected" ]]; then
-    pass "$key is ${expected} or absent"
-  else
-    fail "$key must be absent or ${expected} for the initial EngageOS production deploy"
+  local source value normalized unsafe=0
+  for source in env-file shell pm2; do
+    value="$(source_value "$key" "$source")"
+    normalized="$(normalize "$value")"
+    if [[ -n "$normalized" && "$normalized" != "$expected" ]]; then
+      fail "$key is unsafe in $source; it must be absent or $expected for the initial EngageOS production deploy"
+      unsafe=1
+    fi
+  done
+  if [[ "$unsafe" -eq 0 ]]; then
+    pass "$key is $expected or absent across env-file, shell and PM2"
   fi
 }
 
 assert_empty_or_absent() {
   local key="$1"
-  local value
-  value="$(effective_value "$key")"
-  if [[ -z "$(printf '%s' "$value" | xargs)" ]]; then
-    pass "$key is empty or absent"
-  else
-    fail "$key must be empty or absent for the initial EngageOS production deploy"
+  local source value unsafe=0
+  for source in env-file shell pm2; do
+    value="$(source_value "$key" "$source")"
+    if [[ -n "$(printf '%s' "$value" | xargs)" ]]; then
+      fail "$key is populated in $source; it must be empty or absent for the initial EngageOS production deploy"
+      unsafe=1
+    fi
+  done
+  if [[ "$unsafe" -eq 0 ]]; then
+    pass "$key is empty or absent across env-file, shell and PM2"
   fi
 }
 
 assert_on_or_absent() {
   local key="$1"
-  local value normalized
-  value="$(effective_value "$key")"
-  normalized="$(normalize "$value")"
-  if [[ -z "$normalized" || "$normalized" == "on" || "$normalized" == "true" || "$normalized" == "1" ]]; then
-    pass "$key is protective or absent"
-  else
-    fail "$key must be absent or protective for the initial EngageOS production deploy"
+  local source value normalized unsafe=0
+  for source in env-file shell pm2; do
+    value="$(source_value "$key" "$source")"
+    normalized="$(normalize "$value")"
+    case "$normalized" in
+      ''|on|true|1) ;;
+      *)
+        fail "$key is not protective in $source; it must be absent or protective for the initial EngageOS production deploy"
+        unsafe=1
+        ;;
+    esac
+  done
+  if [[ "$unsafe" -eq 0 ]]; then
+    pass "$key is protective or absent across env-file, shell and PM2"
   fi
 }
 
@@ -106,6 +163,11 @@ if [[ ! -f "$ENV_FILE" ]]; then
   fail "environment file not found: $ENV_FILE"
 else
   pass "environment file found"
+fi
+if [[ -n "$PM2_JSON" ]]; then
+  pass "PM2 environment snapshot available for non-secret flag inspection"
+else
+  fail "PM2 environment snapshot unavailable; cannot prove existing process flags are fail-closed"
 fi
 
 # Phase 3 durable runtime must not be activated by the code-deploy operation.
