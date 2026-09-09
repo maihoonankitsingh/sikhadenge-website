@@ -70,7 +70,6 @@ for spec in "$CSS|$CSS_SHA" "$PAGEJS|$JS_SHA"; do
   got=$(sha256sum /tmp/ai-static-source | awk '{print $1}')
   [[ "$got" == "$want" ]] || { echo "Source hash mismatch $u got=$got" >&2; exit 1; }
 done
-# Prove this stylesheet owns the classes visibly broken in the screenshot.
 curl -fsSL --max-time 12 "http://127.0.0.1:3940$CSS" -o /tmp/ai-golden.css
 for cls in 'ai-video-masterclass_outcomeCard__uo9Xf' 'ai-video-masterclass_moduleGrid__LvmU9' 'ai-video-masterclass_toolGrid__kIEhe'; do
   grep -Fq "$cls" /tmp/ai-golden.css || { echo "Expected class missing from Golden CSS: $cls" >&2; exit 1; }
@@ -78,8 +77,11 @@ done
 echo 'SOURCE_ASSETS_AND_BROKEN_SECTION_CLASSES=VERIFIED'
 
 echo '[2/7] Ensure no conflicting exact locations exist'
+NGINX_ALL="$BACKUP/nginx.before.txt"
+nginx -T >"$NGINX_ALL" 2>/dev/null
 for u in "$CSS" "$PAGEJS"; do
-  c=$(nginx -T 2>/dev/null | grep -F "location = $u {" | wc -l)
+  c=$(awk -v needle="location = $u {" 'index($0,needle){n++} END{print n+0}' "$NGINX_ALL")
+  echo "EXISTING_EXACT_LOCATION_COUNT|$c|$u"
   [[ "$c" -le 1 ]] || { echo "Conflicting locations for $u count=$c" >&2; exit 1; }
 done
 
@@ -89,7 +91,6 @@ from pathlib import Path
 import sys,re
 p=Path(sys.argv[1]); start=sys.argv[2]; end=sys.argv[3]
 s=p.read_text()
-# Remove our own prior managed block, if any, for idempotence.
 pat=re.compile(r'\n?'+re.escape(start)+r'.*?'+re.escape(end)+r'\n?',re.S)
 s=pat.sub('\n',s)
 block=r'''
@@ -155,7 +156,6 @@ wait200 "$REGISTER"
 curl -fsSL --max-time 20 "$CLAUDE?after=$TS" -o "$BACKUP/claude.after.html"
 CLAUDE_AFTER_SHA=$(sha256sum "$BACKUP/claude.after.html" | awk '{print $1}')
 [[ "$CLAUDE_AFTER_SHA" == "$CLAUDE_BEFORE_SHA" ]] || { echo 'Claude changed during AI-only asset fix' >&2; exit 1; }
-# Content markers must remain; this is asset routing only.
 for m in 'Learn the workflow behind' 'Six blocks.' 'Understand the tools behind' 'Everyone says AI will replace you' '30 Crore' 'Questions before you'; do
   grep -Fqi "$m" "$BACKUP/ai.after.html" || { echo "AI content marker missing: $m" >&2; exit 1; }
 done
