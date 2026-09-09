@@ -2,6 +2,7 @@ import { DashboardRole } from "@prisma/client";
 
 import InstagramCommentCapabilityHealth from "../../components/integrations/InstagramCommentCapabilityHealth";
 import IntegrationsManager from "../../components/integrations/IntegrationsManager";
+import MessengerPageCapabilityHealth from "../../components/integrations/MessengerPageCapabilityHealth";
 import VerifiedConnectionHealth from "../../components/integrations/VerifiedConnectionHealth";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
@@ -26,6 +27,7 @@ export default async function IntegrationsPage() {
     >
       <VerifiedConnectionHealth />
       <InstagramCommentCapabilityHealth />
+      <MessengerPageCapabilityHealth />
       <IntegrationsManager />
     </DashboardModuleShell>
   );

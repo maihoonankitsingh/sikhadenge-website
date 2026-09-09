@@ -30,7 +30,7 @@
     "test:unified-inbox-read-model": "tsx tests/engageos-unified-inbox-read-model.test.ts",
     "test:whatsapp-core-migration": "tsx tests/engageos-whatsapp-core-migration.test.ts",
     "test:instagram-comments": "tsx tests/instagram-comment-foundation.test.ts && tsx tests/instagram-comment-runtime-policy.test.ts",
-    "test:messenger-page-engagement": "tsx tests/messenger-page-engagement.test.ts",
+    "test:messenger-page-engagement": "tsx tests/messenger-page-engagement.test.ts && tsx tests/messenger-page-runtime-policy.test.ts",
     "test:migration-bridges": "tsx tests/engageos-migration-bridges.test.ts",
     "test:integration-verification": "tsx tests/integration-read-only-verifier.test.ts",
     "test:roadmap-foundations": "tsx tests/engageos-phases-3-17-foundations.test.ts",
