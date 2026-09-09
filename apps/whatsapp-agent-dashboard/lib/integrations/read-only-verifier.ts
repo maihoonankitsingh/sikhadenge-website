@@ -19,8 +19,10 @@ type ProviderConfig = {
   graphVersion: string;
 };
 
+type Environment = Readonly<Record<string, string | undefined>>;
+
 type VerificationDependencies = {
-  env?: NodeJS.ProcessEnv;
+  env?: Environment;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   now?: () => Date;
@@ -34,7 +36,7 @@ function required(value: string | undefined, name: string): string {
 
 function providerConfig(
   provider: VerifiableMetaProvider,
-  env: NodeJS.ProcessEnv,
+  env: Environment,
 ): ProviderConfig {
   if (provider === "META_WHATSAPP") {
     return {
