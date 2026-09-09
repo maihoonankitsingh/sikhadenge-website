@@ -23,6 +23,7 @@ import {
   createNodeRedisTransportFromEnv,
   type NodeRedisCommandTransport,
 } from "@/modules/events/infrastructure/node-redis-transport";
+import { recordMetaWebhookEvidence } from "@/modules/integrations/infrastructure/prisma-integration-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,6 +41,17 @@ async function eventRuntimeDependencies() {
     store: persistence.store,
     queue: new RedisEventQueue(eventRedis),
   };
+}
+
+async function recordSignedWebhookEvidence(): Promise<void> {
+  const externalAccountId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+    process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
+  if (!externalAccountId) return;
+  await recordMetaWebhookEvidence({
+    channel: "WHATSAPP",
+    externalAccountId,
+  }).catch(() => undefined);
 }
 
 export async function GET(request: Request) {
@@ -115,6 +127,8 @@ export async function POST(request: Request) {
       { status: 400, headers: NO_STORE_HEADERS },
     );
   }
+
+  await recordSignedWebhookEvidence();
 
   let replay: Awaited<ReturnType<typeof reservePersistedWebhookReplay>>;
   try {
