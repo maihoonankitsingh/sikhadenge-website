@@ -31,80 +31,42 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Deep read-only live UI leak audit
+      - name: Inventory current live UI structure
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          export PM2_HOME=/root/.pm2
-          CWD='/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510'
-          HTML="$CWD/.next/server/pages/masterclass/ai-video.html"
-          LIVE='https://sikhadenge.in/masterclass/ai-video?deep-ui-audit=20260910'
-
-          echo '=== ROUTE / PROCESS ==='
-          grep -n -B2 -A12 -E 'masterclass/ai-video|3940' /etc/nginx/sites-enabled/sikhadenge.in-ssl | head -120 || true
-          pm2 jlist | python3 -c 'import json,sys; [print(x.get("name"), (x.get("pm2_env") or {}).get("status"), (x.get("pm2_env") or {}).get("pm_cwd")) for x in json.load(sys.stdin) if "ai-video" in (x.get("name") or "")]'
-          stat -c 'HTML=%n | modified=%y | bytes=%s' "$HTML"
-          echo "HTML_SHA=$(sha256sum "$HTML" | awk '{print $1}')"
-
-          echo '=== LIVE FETCH ==='
-          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-live-ui.html
-          echo "LIVE_BYTES=$(wc -c </tmp/ai-live-ui.html) LIVE_SHA=$(sha256sum /tmp/ai-live-ui.html | awk '{print $1}')"
-
-          echo '=== TAG BALANCE ==='
+          LIVE='https://sikhadenge.in/masterclass/ai-video?ui-inventory=20260910-v91'
+          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-v91-inventory.html
           python3 - <<'PY'
-          import re
-          s=open('/tmp/ai-live-ui.html',errors='ignore').read()
-          for tag in ['script','style','section','div']:
-              print(tag, 'open=',len(re.findall(fr'<{tag}\b',s,re.I)), 'close=',len(re.findall(fr'</{tag}>',s,re.I)))
-          print('inline ids:', sorted(set(re.findall(r'id=["\']([^"\']*(?:ai-video|workflow|faq|audience)[^"\']*)["\']',s,re.I)))[:100])
-          print('script srcs:')
-          for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I):
-              if 'ai-video' in src.lower() or 'funnel' in src.lower() or 'masterclass' in src.lower(): print(' ',src)
+          import re, html
+          s=open('/tmp/ai-v91-inventory.html',errors='ignore').read()
+          print('=== SECTION STARTS ===')
+          for m in re.finditer(r'<section\b([^>]*)>',s,re.I):
+              attrs=m.group(1)
+              cid=re.search(r'id=["\']([^"\']+)',attrs,re.I)
+              cls=re.search(r'class=["\']([^"\']+)',attrs,re.I)
+              tail=s[m.end():m.end()+900]
+              txt=' '.join(re.sub(r'<[^>]+>',' ',tail).split())[:180]
+              print('id=',cid.group(1) if cid else '-', '| class=',cls.group(1) if cls else '-', '| text=',html.unescape(txt))
+          print('\n=== AI MASTERCLASS CLASSES ===')
+          classes=[]
+          for q in re.findall(r'class=["\']([^"\']+)["\']',s,re.I):
+              for c in q.split():
+                  if c.startswith('ai-video-masterclass_'): classes.append(c)
+          for c in sorted(set(classes)): print(c)
+          print('\n=== NON-MODULE V* / CUSTOM CLASSES ===')
+          custom=[]
+          for q in re.findall(r'class=["\']([^"\']+)["\']',s,re.I):
+              for c in q.split():
+                  if c.startswith(('v1','ai-','hero-','proof-','social-','faq-','trust-')) and not c.startswith('ai-video-masterclass_'): custom.append(c)
+          for c in sorted(set(custom))[:400]: print(c)
+          print('\n=== IMPORTANT TEXT -> NEAREST OPEN TAG ===')
+          for text in ['Everyone says AI will replace you','30 Crore','AI isn’t only changing jobs','Six blocks','Understand the tools behind','Real learners','Built for people who want','Questions before']:
+              i=s.lower().find(text.lower())
+              print('\nMARKER',text,'@',i)
+              if i>=0:
+                  j=s.rfind('<',0,i); print(s[j:i+250].replace('\n',' ')[:900])
           PY
-
-          echo '=== VISIBLE CODE-LIKE TEXT OUTSIDE SCRIPT/STYLE ==='
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          import re
-          class P(HTMLParser):
-              def __init__(self):
-                  super().__init__(convert_charrefs=True); self.stack=[]; self.bad=[]
-              def handle_starttag(self,tag,attrs): self.stack.append(tag.lower())
-              def handle_startendtag(self,tag,attrs): pass
-              def handle_endtag(self,tag):
-                  tag=tag.lower()
-                  if tag in self.stack:
-                      for i in range(len(self.stack)-1,-1,-1):
-                          if self.stack[i]==tag: self.stack=self.stack[:i]; break
-              def handle_data(self,data):
-                  if any(t in {'script','style','noscript'} for t in self.stack): return
-                  t=' '.join(data.split())
-                  if len(t)<12:return
-                  tokens=['querySelector','document.','function(','function (','=>','createElement','appendChild','textContent','classList','addEventListener','getElementById','setAttribute','innerHTML','replaceWith','var ','const ','let ']
-                  score=sum(x in t for x in tokens)
-                  braces=t.count('{')+t.count('}')
-                  if score>=1 or braces>=3:
-                      self.bad.append((self.stack[-6:],t[:500]))
-          s=open('/tmp/ai-live-ui.html',errors='ignore').read(); p=P(); p.feed(s)
-          print('COUNT=',len(p.bad))
-          for i,(stack,t) in enumerate(p.bad[:80],1): print(f'[{i}] stack={"/".join(stack)} :: {t}')
-          PY
-
-          echo '=== MARKER CONTEXTS ==='
-          python3 - <<'PY'
-          s=open('/tmp/ai-live-ui.html',errors='ignore').read()
-          for m in ['Learn the workflow behind','Six blocks','Understand the tools behind','One workflow.','Built for people who want','Questions before you join live?']:
-              i=s.lower().find(m.lower()); print('\n---',m,'@',i,'---')
-              if i>=0: print(s[max(0,i-700):i+1800].replace('><','>\n<'))
-          PY
-
-          echo '=== AI VIDEO INJECTION MARKERS IN FILE ==='
-          grep -Eo 'id="[^"]+"|src="[^"]+"|data-ai-[^ =]+' "$HTML" | grep -Ei 'ai-video|audience|faq|workflow|tool|proof|funnel' | sort -u | head -160 || true
-
-          echo '=== RECENT AI VIDEO BACKUPS ==='
-          find /root /var/backups/sikhadenge -maxdepth 2 -type f \( -name '*ai-video*.html*' -o -name 'ai-video.html*' \) -printf '%TY-%Tm-%Td %TH:%TM:%TS %s %p\n' 2>/dev/null | sort -r | head -80 || true
           REMOTE
-
-# deep visible-code audit marker 20260910-4
