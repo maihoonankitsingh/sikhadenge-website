@@ -71,7 +71,14 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          cat /tmp/ai-v90-1-upstream.html | ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'cat > /tmp/ai-v90-1-sep4-main-upstream.html'
+          for attempt in 1 2 3; do
+            if cat /tmp/ai-v90-1-upstream.html | ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'cat > /tmp/ai-v90-1-sep4-main-upstream.html'; then
+              exit 0
+            fi
+            echo "SSH transfer attempt $attempt failed; retrying..."
+            sleep 3
+          done
+          exit 1
 
       - name: Guarded production restore and exact public verification
         shell: bash
@@ -173,15 +180,16 @@ jobs:
           PUBLIC_BYTES=$(wc -c </tmp/ai-v90-main-public-after.html)
           echo "PUBLIC_SHA=$PUBLIC_SHA PUBLIC_BYTES=$PUBLIC_BYTES"
           [[ "$PUBLIC_SHA" == "$EXPECTED_PUBLIC_SHA" ]]
+          [[ "$PUBLIC_BYTES" == 39255 ]]
           [[ "$(grep -o 'funnel-attribution-bridge-v1.js?v=20260903-1' /tmp/ai-v90-main-public-after.html | wc -l)" == 1 ]]
           [[ "$(grep -o '/api/social-proof/live?widget=1&amp;v=sitewide-live-proof-v1-20260902-224804' /tmp/ai-v90-main-public-after.html | wc -l)" == 1 ]]
           grep -Fq 'ai-video-hero-title' /tmp/ai-v90-main-public-after.html
           grep -Fq 'Get My Free Seat' /tmp/ai-v90-main-public-after.html
           grep -Fq 'Six blocks.' /tmp/ai-v90-main-public-after.html
-          grep -Fq 'Know before you reserve your seat.' /tmp/ai-v90-main-public-after.html
           ! grep -Fq '30 Crore' /tmp/ai-v90-main-public-after.html
           ! grep -Fq 'Everyone says AI will replace' /tmp/ai-v90-main-public-after.html
           ! grep -Fq 'ai-video-ui-v91-inline' /tmp/ai-v90-main-public-after.html
+          echo '✅ Public response is byte-for-byte the retained Sep4 production QA artifact'
 
           echo '[7/8] Registration + Claude isolation proof'
           wait200 "$REGISTER"
