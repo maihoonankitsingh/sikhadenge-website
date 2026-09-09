@@ -46,10 +46,13 @@ npx prisma generate
 pm2 restart "$PM2_PROCESS_NAME"
 sleep 5
 
-pm2_json="$(pm2 jlist)"
-pm2_status="$(node - "$PM2_PROCESS_NAME" "$pm2_json" <<'NODE'
-const [name, raw] = process.argv.slice(2);
-const entry = JSON.parse(raw).find((item) => item.name === name);
+PM2_JSON_FILE="$(mktemp)"
+trap 'rm -f "$PM2_JSON_FILE"' EXIT
+pm2 jlist > "$PM2_JSON_FILE"
+pm2_status="$(node - "$PM2_PROCESS_NAME" "$PM2_JSON_FILE" <<'NODE'
+const fs = require('node:fs');
+const [name, file] = process.argv.slice(2);
+const entry = JSON.parse(fs.readFileSync(file, 'utf8')).find((item) => item.name === name);
 if (!entry) process.exit(1);
 process.stdout.write(String(entry.pm2_env?.status || ''));
 NODE
