@@ -1,4 +1,4 @@
-name: Audit AI Video Main Page Candidates 20260910
+name: AI Video Sep4 V90.1 Main Recovery 20260910
 
 on:
   push:
@@ -17,7 +17,7 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  audit:
+  preflight:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
     timeout-minutes: 8
@@ -33,53 +33,51 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Deep validate preserved GOLDEN ADS LIVE backup
+      - name: Read-only recovery preflight
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          rb='/root/ai-video-GOLDEN-ADS-LIVE-20260903-125516'
-          g="$rb/ai-video.GOLDEN.html"
-          l="$rb/live-page.html"
-          sums="$rb/SHA256SUMS.txt"
-          lock="$rb/LOCK-STATE.txt"
-          [[ -f "$g" && -f "$l" && -f "$sums" && -f "$lock" ]]
-          echo '=== LOCK STATE ==='; cat "$lock"
-          echo '=== SAVED SHA256SUMS ==='; cat "$sums"
-          echo '=== CURRENT SHA / STRUCTURE ==='
-          for f in "$g" "$l"; do
-            echo "FILE=$f"
-            echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
-            echo "STYLES=$(grep -o '<style' "$f" | wc -l) SCRIPTS=$(grep -o '<script' "$f" | wc -l) SECTIONS=$(grep -o '<section' "$f" | wc -l)"
-            for m in 'Create cinematic AI videos' 'Everyone says AI will replace' '30 Crore' 'Six blocks' 'Understand the tools behind' 'One workflow' 'Real learners' 'Built for people who want' 'Questions before you join live' 'Trusted checkout experience' 'ai-video-audience-premium-v4-inline' 'ai-video-faq-premium-v3-inline' 'ai-video-ui-v91-inline'; do grep -Fqi "$m" "$f" && echo "YES|$m" || echo "NO|$m"; done
-          done
-          echo '=== GOLDEN STYLE IDS ==='
-          grep -Eo 'id="[^"]*"' "$g" | grep -Ei 'ai-video|style|research|job|faq|audience|legibility|fluid|tablet' | sort -u | head -120 || true
-          echo '=== STATIC DEPENDENCIES ==='
-          python3 - "$g" <<'PY'
-          import re,sys
-          s=open(sys.argv[1],encoding='utf-8').read()
-          vals=[]
-          for pat in [r'<script[^>]+src="([^"]+)"',r'<link[^>]+href="([^"]+)"']:
-              vals += re.findall(pat,s,re.I)
-          for u in sorted(set(x for x in vals if x.startswith('/'))): print(u)
+          export PM2_HOME=/root/.pm2
+          SOURCE_REPO='/var/www/sikhadenge.in/sikhadenge-website-space'
+          TARGET_SHA='c216c8470d761aae1baa644e2cb3dc8d78b936c7'
+          HIST_PREFIX='/ai-video-real-output-v77/v90-1-c216c8470d76-20260904-105133'
+          echo '=== SOURCE REPO ==='
+          [[ -d "$SOURCE_REPO/.git" ]] && echo 'SOURCE_REPO=OK' || echo 'SOURCE_REPO=MISSING'
+          if [[ -d "$SOURCE_REPO/.git" ]]; then
+            echo "ORIGIN=$(git -C "$SOURCE_REPO" remote get-url origin)"
+            if git -C "$SOURCE_REPO" cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then echo 'TARGET_COMMIT=LOCAL_OK'; else echo 'TARGET_COMMIT=LOCAL_MISSING'; fi
+            git -C "$SOURCE_REPO" status --porcelain=v1 | head -20 || true
+          fi
+          echo '=== CURRENT APP ==='
+          pm2 jlist | python3 - <<'PY'
+          import json,sys
+          try:a=json.load(sys.stdin)
+          except:a=[]
+          for x in a:
+            n=x.get('name') or ''
+            if 'ai-video' in n.lower():
+              e=x.get('pm2_env') or {}
+              print(n,'status='+str(e.get('status')),'cwd='+str(e.get('pm_cwd')),'exec='+str(e.get('pm_exec_path')))
           PY
-          echo '=== DEPENDENCY HTTP STATUS ==='
-          python3 - "$g" <<'PY' >/tmp/golden-deps.txt
-          import re,sys
-          s=open(sys.argv[1],encoding='utf-8').read(); vals=[]
-          for pat in [r'<script[^>]+src="([^"]+)"',r'<link[^>]+href="([^"]+)"']:
-              vals += re.findall(pat,s,re.I)
-          for u in sorted(set(x for x in vals if x.startswith('/'))): print(u)
-          PY
-          bad=0; total=0
-          while IFS= read -r u; do
-            total=$((total+1)); code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; [[ "$code" == 200 || "$code" == 204 || "$code" == 304 ]] || bad=$((bad+1));
-          done </tmp/golden-deps.txt
-          echo "DEPENDENCIES_TOTAL=$total BAD=$bad"
-          echo '=== LIVE VS GOLDEN ==='
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?audit=goldencompare' -o /tmp/live-current.html
-          echo "LIVE_SHA=$(sha256sum /tmp/live-current.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-current.html) STYLES=$(grep -o '<style' /tmp/live-current.html | wc -l) SECTIONS=$(grep -o '<section' /tmp/live-current.html | wc -l)"
-          echo '=== VALIDATION COMPLETE ==='
+          echo '=== PORTS 3940/3952/3953 ==='
+          ss -lntp | grep -E ':(3940|3952|3953)\b' || true
+          echo '=== NGINX VERSIONED ASSET ROUTE ==='
+          nginx -T 2>/dev/null | grep -n -A8 -B4 'ai-video-real-output-v77' | head -80 || true
+          echo '=== HISTORICAL SEP4 ASSETS PUBLIC STATUS ==='
+          urls=(
+            "$HIST_PREFIX/_next/static/chunks/pages/masterclass/ai-video-84c3c67d7d82b06e.js"
+            "$HIST_PREFIX/_next/static/css/c0b52290734d33f1.css"
+            "$HIST_PREFIX/_next/static/css/5058feadbe02664c.css"
+            "$HIST_PREFIX/ai-video-kling-mark.svg"
+            "$HIST_PREFIX/ai-video-higgsfield-mark.svg"
+          )
+          for u in "${urls[@]}"; do code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; done
+          echo '=== CURRENT LIVE + CLAUDE HASH ==='
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?recovery-preflight=1' -o /tmp/ai-current-preflight.html
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/claude/free?recovery-preflight=1' -o /tmp/claude-current-preflight.html
+          echo "AI_SHA=$(sha256sum /tmp/ai-current-preflight.html | awk '{print $1}') AI_BYTES=$(wc -c </tmp/ai-current-preflight.html)"
+          echo "CLAUDE_SHA=$(sha256sum /tmp/claude-current-preflight.html | awk '{print $1}') CLAUDE_BYTES=$(wc -c </tmp/claude-current-preflight.html)"
+          echo '=== PREFLIGHT COMPLETE ==='
           REMOTE
