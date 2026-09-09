@@ -4,6 +4,7 @@ set -Eeuo pipefail
 workflow_path="../../.github/workflows/whatsapp-agent-production-batch1.yml"
 script_root="scripts"
 lineage_test="tests/engageos-production-migration-lineage.integration.sh"
+safety_gate="$script_root/engageos-production-high-risk-flag-gate.sh"
 
 scripts=(
   "$script_root/engageos-production-backup.sh"
@@ -11,6 +12,7 @@ scripts=(
   "$script_root/engageos-production-build-deploy.sh"
   "$script_root/engageos-production-verify.sh"
   "$script_root/engageos-production-rollback.sh"
+  "$safety_gate"
   "$script_root/engageos-production-batch1.sh"
 )
 
@@ -85,13 +87,126 @@ if grep -Eqi 'DROP[[:space:]]+TABLE|TRUNCATE[[:space:]]+TABLE|DELETE[[:space:]]+
   exit 1
 fi
 
+# Initial EngageOS code deployment must fail closed if any new high-risk runtime/write flag
+# is active in the live env, invoking shell, or existing PM2 process environment.
+grep -Fq 'pm2 jlist' "$safety_gate"
+for required_flag in \
+  ENGAGEOS_EVENT_RUNTIME_ENABLED \
+  ENGAGEOS_EVENT_WORKER_ENABLED \
+  ENGAGEOS_WHATSAPP_CORE_MODE \
+  ENGAGEOS_WHATSAPP_BACKFILL_COMPLETE \
+  INSTAGRAM_OUTBOUND_MODE \
+  INSTAGRAM_COMMENT_AUTOMATION_ENABLED \
+  INSTAGRAM_COMMENT_ACTION_MODE \
+  FACEBOOK_PAGE_COMMENT_AUTOMATION_ENABLED \
+  FACEBOOK_PAGE_COMMENT_ACTION_MODE \
+  FACEBOOK_PAGE_COMMENT_WRITE_APPROVED \
+  MESSENGER_OUTBOUND_MODE \
+  WHATSAPP_OUTBOUND_MODE \
+  WHATSAPP_CUTOVER_APPROVED \
+  WHATSAPP_OUTBOUND_LIVE_ACK \
+  AGENT_AUTO_REPLY_ENABLED \
+  AGENT_IMMEDIATE_DISPATCH_ENABLED \
+  WHATSAPP_CAMPAIGNS_ENABLED \
+  AUTOMATION_ACTIONS_ENABLED \
+  INTEGRATION_EXTERNAL_WRITES_ENABLED \
+  ENGAGEOS_GROUNDED_AI_POLICY_ENFORCED; do
+  grep -Fq "$required_flag" "$safety_gate"
+done
+
+tmp_root="$(mktemp -d)"
+trap 'rm -rf "$tmp_root"' EXIT
+mkdir -p "$tmp_root/bin"
+cat > "$tmp_root/bin/pm2" <<'PM2'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+if [[ "${1:-}" != "jlist" ]]; then
+  exit 2
+fi
+if [[ "${MOCK_PM2_UNSAFE:-0}" == "1" ]]; then
+  printf '%s\n' '[{"name":"sikhadenge-whatsapp-agent","pm2_env":{"name":"sikhadenge-whatsapp-agent","WHATSAPP_OUTBOUND_MODE":"live"}}]'
+else
+  printf '%s\n' '[{"name":"sikhadenge-whatsapp-agent","pm2_env":{"name":"sikhadenge-whatsapp-agent"}}]'
+fi
+PM2
+chmod +x "$tmp_root/bin/pm2"
+
+safe_env="$tmp_root/safe.env"
+cat > "$safe_env" <<'ENV'
+ENGAGEOS_EVENT_RUNTIME_ENABLED=false
+ENGAGEOS_EVENT_WORKER_ENABLED=false
+ENGAGEOS_WHATSAPP_CORE_MODE=legacy
+ENGAGEOS_WHATSAPP_BACKFILL_COMPLETE=false
+INSTAGRAM_OUTBOUND_MODE=disabled
+INSTAGRAM_COMMENT_AUTOMATION_ENABLED=false
+INSTAGRAM_COMMENT_ACTION_MODE=disabled
+INSTAGRAM_COMMENT_ACTION_KILL_SWITCH=on
+MESSENGER_OUTBOUND_MODE=disabled
+FACEBOOK_PAGE_COMMENT_AUTOMATION_ENABLED=false
+FACEBOOK_PAGE_COMMENT_ACTION_MODE=disabled
+FACEBOOK_PAGE_COMMENT_ACTION_KILL_SWITCH=on
+FACEBOOK_PAGE_COMMENT_WRITE_APPROVED=false
+ENGAGEOS_MESSENGER_POLICY_ENFORCED=false
+WHATSAPP_OUTBOUND_MODE=disabled
+WHATSAPP_CUTOVER_APPROVED=false
+WHATSAPP_OUTBOUND_LIVE_ACK=
+AGENT_MODEL_CALLS_ENABLED=false
+AGENT_AUTO_REPLY_ENABLED=false
+AGENT_IMMEDIATE_DISPATCH_ENABLED=false
+WHATSAPP_CAMPAIGNS_ENABLED=false
+AUTOMATION_ACTIONS_ENABLED=false
+INTEGRATION_EXTERNAL_WRITES_ENABLED=false
+ENGAGEOS_GROUNDED_AI_POLICY_ENFORCED=false
+ENV
+
+env -i \
+  PATH="$tmp_root/bin:$PATH" \
+  ENV_FILE="$safe_env" \
+  PM2_PROCESS_NAME=sikhadenge-whatsapp-agent \
+  bash "$safety_gate" > "$tmp_root/safe.log"
+grep -Fq 'HIGH_RISK_FLAG_GATE_STATUS=PASS' "$tmp_root/safe.log"
+
+unsafe_env="$tmp_root/unsafe.env"
+cp "$safe_env" "$unsafe_env"
+printf '%s\n' 'ENGAGEOS_EVENT_RUNTIME_ENABLED=true' >> "$unsafe_env"
+if env -i \
+  PATH="$tmp_root/bin:$PATH" \
+  ENV_FILE="$unsafe_env" \
+  PM2_PROCESS_NAME=sikhadenge-whatsapp-agent \
+  bash "$safety_gate" > "$tmp_root/unsafe-file.log" 2>&1; then
+  printf 'High-risk gate must reject an enabled durable runtime in ENV_FILE.\n' >&2
+  exit 1
+fi
+grep -Fq 'ENGAGEOS_EVENT_RUNTIME_ENABLED is enabled in env-file' "$tmp_root/unsafe-file.log"
+
+if env -i \
+  PATH="$tmp_root/bin:$PATH" \
+  ENV_FILE="$safe_env" \
+  PM2_PROCESS_NAME=sikhadenge-whatsapp-agent \
+  MOCK_PM2_UNSAFE=1 \
+  bash "$safety_gate" > "$tmp_root/unsafe-pm2.log" 2>&1; then
+  printf 'High-risk gate must reject an unsafe retained PM2 environment.\n' >&2
+  exit 1
+fi
+grep -Fq 'WHATSAPP_OUTBOUND_MODE is unsafe in pm2' "$tmp_root/unsafe-pm2.log"
+
 orchestrator="$script_root/engageos-production-batch1.sh"
 for task in 'TASK 1/5' 'TASK 2/5' 'TASK 3/5' 'TASK 4/5' 'TASK 5/5'; do
   grep -Fq "$task" "$orchestrator"
 done
 grep -Fq 'engageos-production-preflight.sh' "$orchestrator"
+grep -Fq 'engageos-production-high-risk-flag-gate.sh' "$orchestrator"
 grep -Fq 'engageos-production-rollback.sh' "$orchestrator"
 grep -Fq 'PASS: ENGAGEOS_PRODUCTION_BATCH_1_COMPLETE' "$orchestrator"
+
+preflight_line="$(grep -nF 'engageos-production-preflight.sh' "$orchestrator" | head -n1 | cut -d: -f1)"
+safety_line="$(grep -nF 'engageos-production-high-risk-flag-gate.sh' "$orchestrator" | head -n1 | cut -d: -f1)"
+backup_line="$(grep -nF 'engageos-production-backup.sh' "$orchestrator" | head -n1 | cut -d: -f1)"
+test -n "$preflight_line"
+test -n "$safety_line"
+test -n "$backup_line"
+test "$preflight_line" -lt "$safety_line"
+test "$safety_line" -lt "$backup_line"
 
 for required_text in \
   'workflow_dispatch:' \
