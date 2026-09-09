@@ -1,6 +1,10 @@
 import { DashboardRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+import {
+  analyticsServiceTokensFromEnv,
+  isAnalyticsServiceAuthorized,
+} from "../../../../lib/analytics/service-bearer-auth";
 import { getPlatformAnalytics } from "../../../../lib/analytics/platform-analytics";
 import { getCurrentDashboardUser } from "../../../../lib/auth/session";
 
@@ -15,25 +19,21 @@ const ALLOWED = new Set<DashboardRole>([
 ]);
 
 export async function GET(request: Request) {
-  const authorization = request.headers.get("authorization") || "";
-  const bearer = authorization.startsWith("Bearer ")
-    ? authorization.slice(7).trim()
-    : "";
-  const expectedToken =
-    process.env.WHATSAPP_ANALYTICS_TOKEN?.trim() ||
-    process.env.WHATSAPP_AGENT_ANALYTICS_TOKEN?.trim() ||
-    "";
-  const validServiceToken =
-    Boolean(expectedToken) && bearer === expectedToken;
+  const validServiceToken = isAnalyticsServiceAuthorized(
+    request.headers.get("authorization"),
+    analyticsServiceTokensFromEnv(),
+  );
 
   if (validServiceToken) {
     return NextResponse.json(await getPlatformAnalytics(), {
       headers: { "Cache-Control": "no-store" },
     });
   }
+
   const user = await getCurrentDashboardUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!ALLOWED.has(user.role)) return NextResponse.json({ error: "Insufficient permission." }, { status: 403 });
+
   return NextResponse.json(await getPlatformAnalytics(), {
     headers: { "Cache-Control": "no-store" },
   });
