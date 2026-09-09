@@ -56,31 +56,32 @@ jobs:
 
           extract_route(){
             python3 - "$1" <<'PY'
-import sys,hashlib,re
-p=sys.argv[1]
-s=open(p,encoding='utf-8',errors='ignore').read()
-needle='location = /masterclass/ai-video {'
-a=s.find(needle)
-if a<0:
-    raise SystemExit(3)
-q=s.find('{',a); d=0; end=None
-for i in range(q,len(s)):
-    if s[i]=='{': d+=1
-    elif s[i]=='}':
-        d-=1
-        if d==0:
-            end=i+1; break
-if end is None: raise SystemExit(4)
-seg=s[a:end]
-print('ROUTE_SHA='+hashlib.sha256(seg.encode()).hexdigest())
-print('ROUTE_BYTES='+str(len(seg.encode())))
-for pat in [r'proxy_pass\s+http://127\.0\.0\.1:\d+', r'X-SD-[A-Za-z0-9_-]+[^;]*', r'/[A-Za-z0-9._/-]+\.(?:js|css)(?:\?[^"\' ]*)?']:
-    vals=sorted(set(re.findall(pat,seg,re.I)))
-    for v in vals: print('ASSET|'+v)
-print('---ROUTE-BEGIN---')
-print(seg)
-print('---ROUTE-END---')
-PY
+          import sys,hashlib,re
+          p=sys.argv[1]
+          s=open(p,encoding='utf-8',errors='ignore').read()
+          needle='location = /masterclass/ai-video {'
+          a=s.find(needle)
+          if a<0:
+              raise SystemExit(3)
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0:
+                      end=i+1; break
+          if end is None: raise SystemExit(4)
+          seg=s[a:end]
+          print('ROUTE_SHA='+hashlib.sha256(seg.encode()).hexdigest())
+          print('ROUTE_BYTES='+str(len(seg.encode())))
+          pats=[r'proxy_pass\s+http://127\.0\.0\.1:\d+', r'X-SD-[A-Za-z0-9_-]+[^;]*', r'/[A-Za-z0-9._/-]+\.(?:js|css)(?:\?[^" ]*)?']
+          for pat in pats:
+              vals=sorted(set(re.findall(pat,seg,re.I)))
+              for v in vals: print('ASSET|'+v)
+          print('---ROUTE-BEGIN---')
+          print(seg)
+          print('---ROUTE-END---')
+          PY
           }
 
           for d in "${dirs[@]}"; do
