@@ -45,23 +45,22 @@ jobs:
           base64 --decode "$payload_b64" | gzip -dc > "$patch_file"
           test "$(sha256sum "$patch_file" | awk '{print $1}')" = "$expected_patch_sha"
 
-          expected_files="$(cat <<'FILES'
-apps/whatsapp-agent-dashboard/app/api/analytics/overview/route.ts
-apps/whatsapp-agent-dashboard/app/api/conversations/route.ts
-apps/whatsapp-agent-dashboard/app/globals.css
-apps/whatsapp-agent-dashboard/app/inbox/page.tsx
-apps/whatsapp-agent-dashboard/app/layout.tsx
-apps/whatsapp-agent-dashboard/components/inbox/InboxDashboardV2.tsx
-apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
-FILES
-)"
+          expected_files=(
+            apps/whatsapp-agent-dashboard/app/api/analytics/overview/route.ts
+            apps/whatsapp-agent-dashboard/app/api/conversations/route.ts
+            apps/whatsapp-agent-dashboard/app/globals.css
+            apps/whatsapp-agent-dashboard/app/inbox/page.tsx
+            apps/whatsapp-agent-dashboard/app/layout.tsx
+            apps/whatsapp-agent-dashboard/components/inbox/InboxDashboardV2.tsx
+            apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+          )
 
           git apply --3way --index "$patch_file"
           git diff --cached --check
 
           actual_files="$(git diff --cached --name-only | LC_ALL=C sort)"
-          expected_files="$(printf '%s\n' "$expected_files" | LC_ALL=C sort)"
-          test "$actual_files" = "$expected_files"
+          expected_file_list="$(printf '%s\n' "${expected_files[@]}" | LC_ALL=C sort)"
+          test "$actual_files" = "$expected_file_list"
 
           grep -Fq 'ServiceWorkerRegistration' apps/whatsapp-agent-dashboard/app/layout.tsx
           grep -Fq 'Manrope' apps/whatsapp-agent-dashboard/app/layout.tsx
