@@ -1,6 +1,7 @@
 import { DashboardRole } from "@prisma/client";
 
 import IntegrationsManager from "../../components/integrations/IntegrationsManager";
+import VerifiedConnectionHealth from "../../components/integrations/VerifiedConnectionHealth";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
@@ -18,10 +19,11 @@ export default async function IntegrationsPage() {
       activeTitle="Integrations"
       eyebrow="Connected systems"
       title="Integrations & Developer API"
-      description="Register provider metadata, verify environment readiness and perform safe dry-run validation without storing secrets or sending external requests."
+      description="Register provider metadata, verify real read-only API connectivity and keep all external writes behind explicit production controls."
       userName={user.name}
       userRole={user.role}
     >
+      <VerifiedConnectionHealth />
       <IntegrationsManager />
     </DashboardModuleShell>
   );
