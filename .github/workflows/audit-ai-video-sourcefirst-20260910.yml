@@ -1,0 +1,80 @@
+name: Audit AI Video Source First Candidates 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-ai-video-sourcefirst-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read-only candidate inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== SOURCE-FIRST RELEASES ==='
+          for d in /var/www/sikhadenge.in/releases/production-ai-video-source-first-*; do
+            [[ -d "$d" ]] || continue
+            echo "RELEASE=$d"
+            stat -c 'DIR_MTIME=%y' "$d"
+            f="$d/.next/server/pages/masterclass/ai-video.html"
+            if [[ -f "$f" ]]; then
+              echo "HTML=$f"
+              echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
+              echo "STYLE_TAGS=$(grep -o '<style' "$f" | wc -l) SCRIPT_TAGS=$(grep -o '<script' "$f" | wc -l)"
+              for m in 'ai-video-hero-title' 'Create cinematic AI videos' '30 Crore' 'Six blocks' 'Understand the tools behind' 'Questions before you join live' 'Real learners' 'ai-video-audience-premium-v4-inline' 'ai-video-faq-premium-v3-inline'; do
+                grep -Fqi "$m" "$f" && echo "YES|$m" || echo "NO|$m"
+              done
+              grep -Eo '/ai-video-real-output-v77/[^" ]+/_next/static' "$f" | sort -u | head -5 || true
+            else
+              echo 'NO_HTML'
+            fi
+            echo
+          done
+
+          echo '=== ROOT GOLDEN ADS LIVE BACKUP ==='
+          if [[ -e /root/ai-video-GOLDEN-ADS-LIVE-20260903-125516 ]]; then
+            find /root/ai-video-GOLDEN-ADS-LIVE-20260903-125516 -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS|%s|%p\n' 2>/dev/null | sort | head -80
+            while IFS= read -r f; do
+              [[ -f "$f" ]] || continue
+              if grep -Fq 'Create cinematic AI videos' "$f" 2>/dev/null; then
+                echo "GOLDEN_CANDIDATE=$f"
+                echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
+              fi
+            done < <(find /root/ai-video-GOLDEN-ADS-LIVE-20260903-125516 -type f -size -5M 2>/dev/null)
+          else
+            echo 'ROOT_GOLDEN_BACKUP_MISSING'
+          fi
+
+          echo '=== CURRENT/OLD PM2 AI APPS ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist | python3 -c 'import json,sys; a=json.load(sys.stdin); [(print((x.get("name") or "")+"|"+str((x.get("pm2_env") or {}).get("status"))+"|cwd="+str((x.get("pm2_env") or {}).get("pm_cwd"))+"|exec="+str((x.get("pm2_env") or {}).get("pm_exec_path")))) for x in a if "ai-video" in (x.get("name") or "").lower() or "ai-workflow" in (x.get("name") or "").lower()]' || true
+          echo '=== DONE ==='
+          REMOTE
