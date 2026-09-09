@@ -1,14 +1,14 @@
-name: AI Video Sep4 V90.1 Main Recovery 20260910
+name: Restore AI Video Sep4 Golden 20260910
 
 on:
   push:
     branches: [main]
     paths:
+      - 'ops/restore-ai-video-sep4-golden-20260910.sh'
       - '.github/workflows/restore-ai-video-sep4-golden-20260910.yml'
 
 permissions:
   contents: read
-  actions: read
 
 env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
@@ -16,7 +16,6 @@ env:
   SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
   SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-  GH_TOKEN: ${{ github.token }}
 
 jobs:
   restore:
@@ -24,37 +23,23 @@ jobs:
     environment: whatsapp-agent-production
     timeout-minutes: 12
     steps:
-      - name: Recover exact Sep4 V90.1 HTML from retained production QA evidence
+      - uses: actions/checkout@v4
+
+      - name: Static safety checks
         shell: bash
         run: |
           set -Eeuo pipefail
-          ARTIFACT_ID='9925001353'
-          EXPECTED_PUBLIC_SHA='9382cfbdc3f85c033721eeb11302cc59044ca77c5331c936c9cc31f647654f41'
-          EXPECTED_UPSTREAM_SHA='ae19b380975a768a979377bfe411c38f67a686ce80f7d984f9a09bb25183660a'
-          API="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip"
-          curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "$API" -o /tmp/ai-v90-1-evidence.zip
-          unzip -p /tmp/ai-v90-1-evidence.zip tmp/ai-video-live.html > /tmp/ai-v90-1-public.html
-          test "$(sha256sum /tmp/ai-v90-1-public.html | awk '{print $1}')" = "$EXPECTED_PUBLIC_SHA"
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('/tmp/ai-v90-1-public.html')
-          s=p.read_text()
-          bridge='<script src="/funnel-attribution-bridge-v1.js?v=20260903-1"></script>'
-          proof='<script src="/api/social-proof/live?widget=1&amp;v=sitewide-live-proof-v1-20260902-224804"></script>'
-          assert s.count(bridge)==1, s.count(bridge)
-          assert s.count(proof)==1, s.count(proof)
-          upstream=s.replace(bridge,'').replace(proof,'')
-          Path('/tmp/ai-v90-1-upstream.html').write_text(upstream)
-          PY
-          test "$(sha256sum /tmp/ai-v90-1-upstream.html | awk '{print $1}')" = "$EXPECTED_UPSTREAM_SHA"
-          grep -Fq 'ai-video-hero-title' /tmp/ai-v90-1-upstream.html
-          grep -Fq '/ai-video-real-output-v77/v90-1-c216c8470d76-20260904-105133/_next/static' /tmp/ai-v90-1-upstream.html
-          grep -Fq '/gen-ai-masterclass/register-one-step?source=ai-video-masterclass' /tmp/ai-v90-1-upstream.html
-          ! grep -Fq 'ai-video-ui-v91-inline' /tmp/ai-v90-1-upstream.html
-          echo "✅ Exact historical public evidence SHA=$EXPECTED_PUBLIC_SHA"
-          echo "✅ Reconstructed exact historical upstream SHA=$EXPECTED_UPSTREAM_SHA"
+          S='ops/restore-ai-video-sep4-golden-20260910.sh'
+          bash -n "$S"
+          grep -Fq "APP='sikhadenge-ai-video-golden-faq-3940-20260904-130510'" "$S"
+          grep -Fq "SNAP='/var/backups/sikhadenge/ai-video-ui-v91-20260910-032700/ai-video.html.before'" "$S"
+          grep -Fq "EXPECTED_SNAPSHOT_SHA='9f7202ae3d3ee585d22f2ebf250ff0f0d1d43ebc58e5a3ae1f2381739c5e8434'" "$S"
+          grep -Fq 'Claude response changed during AI Video restore' "$S"
+          grep -Fq 'UNCHANGED=links,forms,scripts,tracking,checkout,API,Claude,Nginx' "$S"
+          ! grep -Eq 'nginx -s reload|systemctl (reload|restart) nginx|rm -rf|chattr|document\.write|MutationObserver' "$S"
+          echo '✅ Sep4 Golden restore safety guard passed'
 
-      - name: Configure pinned SSH
+      - name: Configure SSH
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -63,153 +48,11 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = 'ssh-ed25519'
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Transfer exact historical upstream HTML
+      - name: Restore exact Sep4 Golden AI Video page
         shell: bash
         run: |
           set -Eeuo pipefail
-          for attempt in 1 2 3; do
-            if cat /tmp/ai-v90-1-upstream.html | ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'cat > /tmp/ai-v90-1-sep4-main-upstream.html'; then
-              exit 0
-            fi
-            echo "SSH transfer attempt $attempt failed; retrying..."
-            sleep 3
-          done
-          exit 1
-
-      - name: Guarded production restore and exact public verification
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          export PM2_HOME=/root/.pm2
-          APP='sikhadenge-ai-video-golden-faq-3940-20260904-130510'
-          CWD='/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510'
-          PAGE="$CWD/.next/server/pages/masterclass/ai-video.html"
-          TARGET='/tmp/ai-v90-1-sep4-main-upstream.html'
-          EXPECTED_UPSTREAM_SHA='ae19b380975a768a979377bfe411c38f67a686ce80f7d984f9a09bb25183660a'
-          EXPECTED_PUBLIC_SHA='9382cfbdc3f85c033721eeb11302cc59044ca77c5331c936c9cc31f647654f41'
-          HIST_PREFIX='/ai-video-real-output-v77/v90-1-c216c8470d76-20260904-105133'
-          LIVE='https://sikhadenge.in/masterclass/ai-video'
-          CLAUDE='https://sikhadenge.in/masterclass/claude/free'
-          REGISTER='https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=ai-video-masterclass'
-          TS="$(date +%Y%m%d-%H%M%S)"
-          BACKUP="/var/backups/sikhadenge/pre-v90-1-main-restore-${TS}"
-          MUTATED=0
-
-          wait200(){ local url="$1"; local i code=''; for i in $(seq 1 45); do code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "$url" || true); [[ "$code" == 200 ]] && return 0; sleep 1; done; echo "HTTP wait failed: $url last=$code" >&2; return 1; }
-          rollback(){
-            set +e
-            echo '⚠️ Restore validation failed — rolling AI Video back'
-            if [[ "$MUTATED" == 1 && -f "$BACKUP/ai-video.html.before" ]]; then
-              cp -a "$BACKUP/ai-video.html.before" "$PAGE"
-              pm2 restart "$APP" >/dev/null 2>&1 || true
-              wait200 'http://127.0.0.1:3940/masterclass/ai-video' || true
-              wait200 "${LIVE}?rollback=${TS}" || true
-            fi
-            echo "ROLLBACK_BACKUP=$BACKUP"
-          }
-          onerr(){ rc=$?; line=$1; trap - ERR; echo "❌ Error at line $line rc=$rc" >&2; rollback; exit "$rc"; }
-          trap 'onerr $LINENO' ERR
-
-          echo '[1/8] Exact target + production identity'
-          [[ -f "$TARGET" && -f "$PAGE" ]]
-          [[ "$(sha256sum "$TARGET" | awk '{print $1}')" == "$EXPECTED_UPSTREAM_SHA" ]]
-          pm2 jlist >/tmp/pm2-v90-main-restore.json
-          python3 - "$APP" "$CWD" /tmp/pm2-v90-main-restore.json <<'PY'
-          import json,sys
-          app,cwd,p=sys.argv[1:]
-          data=json.load(open(p)); matches=[x for x in data if x.get('name')==app]
-          assert len(matches)==1, f'app matches={len(matches)}'
-          env=matches[0].get('pm2_env') or {}
-          assert env.get('status')=='online', env.get('status')
-          assert env.get('pm_cwd')==cwd, (env.get('pm_cwd'),cwd)
-          print('✅ Current 3940 app identity exact')
-          PY
-          wait200 'http://127.0.0.1:3940/masterclass/ai-video'
-          wait200 "$REGISTER"
-
-          echo '[2/8] Historical asset dependency verification'
-          python3 - "$TARGET" <<'PY' >/tmp/ai-v90-main-deps.txt
-          import re,sys
-          s=open(sys.argv[1],encoding='utf-8').read(); u=set()
-          for pat in (r'<script[^>]+src="([^"]+)"',r'<link[^>]+href="([^"]+)"',r'<img[^>]+src="([^"]+)"'):
-              for x in re.findall(pat,s,re.I):
-                  x=x.replace('&amp;','&')
-                  if x.startswith('/') and not x.startswith('/gen-ai-masterclass/'): u.add(x)
-          for x in sorted(u): print(x)
-          PY
-          bad=0; total=0
-          while IFS= read -r u; do
-            total=$((total+1)); code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; [[ "$code" == 200 || "$code" == 204 || "$code" == 304 ]] || bad=$((bad+1));
-          done </tmp/ai-v90-main-deps.txt
-          echo "DEPENDENCIES_TOTAL=$total BAD=$bad"
-          [[ "$bad" == 0 ]]
-          grep -Fq "$HIST_PREFIX/_next/static" "$TARGET"
-
-          echo '[3/8] Fresh rollback snapshot + Claude baseline'
-          install -d -m 0755 "$BACKUP"
-          cp -a "$PAGE" "$BACKUP/ai-video.html.before"
-          curl -fsSL --max-time 15 "$LIVE?before=${TS}" -o "$BACKUP/ai-video.public.before.html"
-          curl -fsSL --max-time 15 "$CLAUDE?before=${TS}" -o "$BACKUP/claude.public.before.html"
-          pm2 jlist > "$BACKUP/pm2.before.json"
-          CLAUDE_BEFORE=$(sha256sum "$BACKUP/claude.public.before.html" | awk '{print $1}')
-          echo "BACKUP=$BACKUP"
-          echo "CLAUDE_BEFORE=$CLAUDE_BEFORE"
-
-          echo '[4/8] Restore exact Sep4 10:51–11:00 IST V90.1 upstream HTML only'
-          install -m 0644 "$TARGET" "$PAGE"
-          MUTATED=1
-          [[ "$(sha256sum "$PAGE" | awk '{print $1}')" == "$EXPECTED_UPSTREAM_SHA" ]]
-          echo '✅ Historical source-first HTML installed'
-
-          echo '[5/8] Restart only AI Video 3940 app'
-          pm2 restart "$APP" >/dev/null
-          wait200 'http://127.0.0.1:3940/masterclass/ai-video'
-          DIRECT_SHA=$(curl -fsSL --max-time 15 'http://127.0.0.1:3940/masterclass/ai-video' | sha256sum | awk '{print $1}')
-          echo "DIRECT_SHA=$DIRECT_SHA"
-          [[ "$DIRECT_SHA" == "$EXPECTED_UPSTREAM_SHA" ]]
-
-          echo '[6/8] Exact public historical hash verification'
-          curl -fsSL --max-time 20 "$LIVE?sep4-main=${TS}" -o /tmp/ai-v90-main-public-after.html
-          PUBLIC_SHA=$(sha256sum /tmp/ai-v90-main-public-after.html | awk '{print $1}')
-          PUBLIC_BYTES=$(wc -c </tmp/ai-v90-main-public-after.html)
-          echo "PUBLIC_SHA=$PUBLIC_SHA PUBLIC_BYTES=$PUBLIC_BYTES"
-          [[ "$PUBLIC_SHA" == "$EXPECTED_PUBLIC_SHA" ]]
-          [[ "$PUBLIC_BYTES" == 39255 ]]
-          [[ "$(grep -o 'funnel-attribution-bridge-v1.js?v=20260903-1' /tmp/ai-v90-main-public-after.html | wc -l)" == 1 ]]
-          [[ "$(grep -o '/api/social-proof/live?widget=1&amp;v=sitewide-live-proof-v1-20260902-224804' /tmp/ai-v90-main-public-after.html | wc -l)" == 1 ]]
-          grep -Fq 'ai-video-hero-title' /tmp/ai-v90-main-public-after.html
-          grep -Fq 'Get My Free Seat' /tmp/ai-v90-main-public-after.html
-          grep -Fq 'Six blocks.' /tmp/ai-v90-main-public-after.html
-          ! grep -Fq '30 Crore' /tmp/ai-v90-main-public-after.html
-          ! grep -Fq 'Everyone says AI will replace' /tmp/ai-v90-main-public-after.html
-          ! grep -Fq 'ai-video-ui-v91-inline' /tmp/ai-v90-main-public-after.html
-          echo '✅ Public response is byte-for-byte the retained Sep4 production QA artifact'
-
-          echo '[7/8] Registration + Claude isolation proof'
-          wait200 "$REGISTER"
-          curl -fsSL --max-time 15 "$CLAUDE?after=${TS}" -o /tmp/claude-v90-main-after.html
-          CLAUDE_AFTER=$(sha256sum /tmp/claude-v90-main-after.html | awk '{print $1}')
-          echo "CLAUDE_AFTER=$CLAUDE_AFTER"
-          [[ "$CLAUDE_AFTER" == "$CLAUDE_BEFORE" ]]
-
-          echo '[8/8] Final state'
-          trap - ERR
-          pm2 save >/dev/null 2>&1 || true
-          echo '============================================================'
-          echo '✅ AI VIDEO SEP4 V90.1 SOURCE-FIRST MAIN PAGE RESTORED'
-          echo "HISTORICAL_PUBLIC_SHA=$EXPECTED_PUBLIC_SHA"
-          echo "UPSTREAM_SHA=$EXPECTED_UPSTREAM_SHA"
-          echo "PUBLIC_BYTES=$PUBLIC_BYTES"
-          echo 'AI_HTTP=200'
-          echo 'REGISTRATION_HTTP=200'
-          echo 'CLAUDE=BYTE_IDENTICAL'
-          echo "ROLLBACK_BACKUP=$BACKUP"
-          echo 'UNCHANGED=Nginx,registration,tracking,checkout,API,Claude'
-          echo '============================================================'
-          REMOTE
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/restore-ai-video-sep4-golden-20260910.sh
