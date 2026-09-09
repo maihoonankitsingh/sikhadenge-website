@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/audit-ai-video-fast-20260910.yml'
+      - 'ops/audit-ai-video-css-sync-20260910.sh'
 
 permissions:
   contents: read
@@ -22,6 +23,10 @@ jobs:
     environment: whatsapp-agent-production
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+      - name: Validate audit script
+        shell: bash
+        run: bash -n ops/audit-ai-video-css-sync-20260910.sh
       - name: Configure SSH
         shell: bash
         run: |
@@ -29,45 +34,12 @@ jobs:
           SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Deep read-only CSS and asset audit
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Run read-only CSS sync audit
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          LIVE='https://sikhadenge.in/masterclass/ai-video?css-audit=20260910c'
-          curl -fsSL --max-time 25 "$LIVE" -o /tmp/ai-css-audit.html
-          echo "PUBLIC_BYTES=$(wc -c </tmp/ai-css-audit.html) SHA=$(sha256sum /tmp/ai-css-audit.html | awk '{print $1}')"
-          echo '=== ASSET STATUS ==='
-          python3 - <<'PY' >/tmp/ai-assets.txt
-import re,html
-s=open('/tmp/ai-css-audit.html',errors='ignore').read(); out=[]
-for typ,pat in [('LINK',r'<link[^>]+href=["\']([^"\']+)'),('SCRIPT',r'<script[^>]+src=["\']([^"\']+)')]:
-  for u in re.findall(pat,s,re.I):
-    u=html.unescape(u)
-    if u.startswith('/') and (typ,u) not in out: out.append((typ,u))
-for typ,u in out: print(typ+'|'+u)
-PY
-          while IFS='|' read -r typ u; do code=$(curl -L -sS --max-time 15 -o /tmp/asset.out -w '%{http_code}' "https://sikhadenge.in$u" || true); echo "$typ|$code|$(wc -c </tmp/asset.out 2>/dev/null || echo 0)|$u"; done </tmp/ai-assets.txt
-          echo '=== AFFECTED SECTION DOM ==='
-          python3 - <<'PY'
-import re
-s=open('/tmp/ai-css-audit.html',errors='ignore').read()
-for needle in ['Learn the workflow behind','Six blocks.','Understand the tools behind']:
-  i=s.lower().find(needle.lower()); print('\n###',needle,'pos',i)
-  if i<0: continue
-  # show nearest IDs/classes in 12k around heading
-  chunk=s[max(0,i-5000):min(len(s),i+14000)]
-  print('IDS=',sorted(set(re.findall(r'id=["\']([^"\']+)',chunk,re.I)))[:100])
-  print('CLASSES=',sorted(set(c for x in re.findall(r'class=["\']([^"\']+)',chunk,re.I) for c in x.split()))[:160])
-  print('TEXT_SNIP=',re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',chunk))[:3000])
-print('\nCOUNTS style',s.lower().count('<style'),s.lower().count('</style>'),'script',s.lower().count('<script'),s.lower().count('</script>'))
-PY
-          echo '=== NEXT ASSET PREFIXES ==='
-          grep -Eo '/[^" ]*/_next/static/(css|chunks)/[^" ]+' /tmp/ai-css-audit.html | sed 's/&amp;/\&/g' | sort -u | head -100 || true
-          echo '=== CURRENT CWD CSS ==='
-          CWD='/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510'
-          find "$CWD/.next/static" -type f -name '*.css' -printf '%s|%p\n' 2>/dev/null | sort
-          echo '=== DONE ==='
-          REMOTE
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/audit-ai-video-css-sync-20260910.sh
