@@ -133,8 +133,8 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
 }
 
 /*
- * Narrow-phone dock polish: keep every destination readable and evenly
- * distributed without changing navigation markup or behavior.
+ * Narrow-phone dock polish: keep all five destination labels fully readable
+ * without changing navigation markup, ordering, routes, or touch behavior.
  */
 @media (max-width: 479px) {
   .sx-module .sx-mobile-dock {
@@ -146,14 +146,30 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     max-width: none !important;
-    padding-inline: 2px !important;
+    padding-inline: 1px !important;
     border-radius: 8px !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
-  .sx-module .sx-mobile-dock .sx-mobile-dock-link > span {
-    max-width: 100% !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+  /* The icon wrapper and text label are separate spans; never apply text
+     truncation rules to the icon wrapper. */
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link > .sx-navic {
+    width: auto !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link > .sx-navlabel {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.03em !important;
+    text-align: center !important;
   }
 }
