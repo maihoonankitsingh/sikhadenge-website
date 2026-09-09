@@ -15,6 +15,7 @@ import {
   getMessengerOutboundMode,
   sendMessengerTextMessage,
 } from "./api-client";
+import { assertMessengerControlledOutboundAllowed } from "./outbound-policy-gate";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -87,6 +88,11 @@ export async function sendMessengerConversationMessage(input: {
   if (!messengerScopedId) {
     throw new Error("Messenger recipient ID is missing from the contact record.");
   }
+
+  await assertMessengerControlledOutboundAllowed({
+    conversationId: conversation.id,
+    conversationPageId: stringValue(metadata.messengerPageId),
+  });
 
   const policy = evaluateOutboundPolicy({
     context: {

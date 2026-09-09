@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import SidebarNavigationBridge from "../components/navigation/SidebarNavigationBridge";
 import InboxTemplatePickerBridge from "../components/templates/InboxTemplatePickerBridge";
 import InboxComposerDockBridge from "../components/inbox/InboxComposerDockBridge";
+import ServiceWorkerRegistration from "../components/productivity/ServiceWorkerRegistration";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={inter.className}>
+        <ServiceWorkerRegistration />
         <SidebarNavigationBridge />
         <InboxTemplatePickerBridge />
         <InboxComposerDockBridge />

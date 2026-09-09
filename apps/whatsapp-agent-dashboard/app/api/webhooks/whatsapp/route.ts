@@ -6,17 +6,53 @@ import {
   getWhatsAppVerifyToken,
   getWhatsAppWebhookMaxBytes,
 } from "../../../../lib/meta/config";
+import {
+  assertEventRuntimeConfiguration,
+  engageOsEventRuntimeEnabled,
+  enqueueWhatsAppWebhookDurably,
+} from "../../../../lib/meta/durable-webhook-runtime";
 import { verifyMetaSignature } from "../../../../lib/meta/signature";
 import { processWhatsAppWebhook } from "../../../../lib/meta/webhook-processor";
 import {
   releasePersistedWebhookReplay,
   reservePersistedWebhookReplay,
 } from "@/modules/channels/core/security/prisma-webhook-replay";
+import { createPrismaEventRuntimePersistence } from "@/modules/events/infrastructure/prisma-event-runtime";
+import { RedisEventQueue } from "@/modules/events/infrastructure/redis-event-queue";
+import {
+  createNodeRedisTransportFromEnv,
+  type NodeRedisCommandTransport,
+} from "@/modules/events/infrastructure/node-redis-transport";
+import { recordMetaWebhookEvidence } from "@/modules/integrations/infrastructure/prisma-integration-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
+let eventRedis: NodeRedisCommandTransport | null = null;
+
+async function eventRuntimeDependencies() {
+  assertEventRuntimeConfiguration();
+  eventRedis ??= createNodeRedisTransportFromEnv();
+  if (!(await eventRedis.ping())) throw new Error("Redis event queue health check failed.");
+  const persistence = createPrismaEventRuntimePersistence();
+  return {
+    store: persistence.store,
+    queue: new RedisEventQueue(eventRedis),
+  };
+}
+
+async function recordSignedWebhookEvidence(): Promise<void> {
+  const externalAccountId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+    process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
+  if (!externalAccountId) return;
+  await recordMetaWebhookEvidence({
+    channel: "WHATSAPP",
+    externalAccountId,
+  }).catch(() => undefined);
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -92,6 +128,8 @@ export async function POST(request: Request) {
     );
   }
 
+  await recordSignedWebhookEvidence();
+
   let replay: Awaited<ReturnType<typeof reservePersistedWebhookReplay>>;
   try {
     replay = await reservePersistedWebhookReplay({
@@ -111,6 +149,33 @@ export async function POST(request: Request) {
       { received: true, duplicate: true },
       { status: 200, headers: NO_STORE_HEADERS },
     );
+  }
+
+  if (engageOsEventRuntimeEnabled()) {
+    try {
+      const dependencies = await eventRuntimeDependencies();
+      const accepted = await enqueueWhatsAppWebhookDurably({
+        payload,
+        rawBody,
+        ...dependencies,
+      });
+      return NextResponse.json(
+        {
+          received: true,
+          queued: true,
+          duplicate: accepted.duplicate,
+          eventId: accepted.event.id,
+          correlationId: accepted.event.correlationId,
+        },
+        { status: 200, headers: NO_STORE_HEADERS },
+      );
+    } catch {
+      await releasePersistedWebhookReplay(replay).catch(() => undefined);
+      return NextResponse.json(
+        { error: "Durable webhook queue is unavailable; the provider may retry." },
+        { status: 503, headers: NO_STORE_HEADERS },
+      );
+    }
   }
 
   try {

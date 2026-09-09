@@ -53,6 +53,10 @@ CHECK_HTTP_URL="$PUBLIC_URL" \
 VERIFY_PG_DUMP=1 \
 bash "$STAGE_APP/scripts/engageos-production-preflight.sh"
 
+printf '===== GATE: HIGH-RISK FLAGS FAIL-CLOSED =====\n'
+ENV_FILE="$ENV_FILE" \
+bash "$STAGE_APP/scripts/engageos-production-high-risk-flag-gate.sh"
+
 printf '===== TASK 1/5: VERIFIED DATABASE BACKUP =====\n'
 bash "$STAGE_APP/scripts/engageos-production-backup.sh"
 test -s "$BACKUP_DIR/database.dump"

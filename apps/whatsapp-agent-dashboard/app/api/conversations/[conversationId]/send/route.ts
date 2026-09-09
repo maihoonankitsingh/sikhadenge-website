@@ -5,15 +5,15 @@ import { getCurrentDashboardUser } from "../../../../../lib/auth/session";
 import { prisma } from "../../../../../lib/db/prisma";
 import { sendInstagramConversationMessage } from "../../../../../lib/instagram/outbound-service";
 import { sendMessengerConversationMessage } from "../../../../../lib/messenger/outbound-service";
-import {
-  dispatchOutboundMessage,
-  queueOutboundMessage,
-} from "../../../../../lib/outbound/outbound-service";
 import type {
   OutboundContent,
   OutboundMediaType,
 } from "../../../../../lib/outbound/types";
 import { assertManualSendOwnership } from "../../../../../lib/team/team-chat-service";
+import {
+  dispatchWhatsAppOutboundViaCore,
+  queueWhatsAppOutboundViaCore,
+} from "@/modules/channels/whatsapp/application/whatsapp-channel-adapter";
 import { resolveDashboardAuthorization } from "@/modules/auth/infrastructure/prisma-authorization";
 import {
   assertPersistedManualOutboundAllowed,
@@ -245,7 +245,7 @@ export async function POST(
       });
     }
 
-    const queued = await queueOutboundMessage({
+    const queued = await queueWhatsAppOutboundViaCore({
       conversationId: context.params.conversationId,
       actor: MessageActor.COUNSELOR,
       sentById: user.id,
@@ -257,7 +257,7 @@ export async function POST(
     let dispatchError: string | null = null;
     if (queued.message?.id && !queued.duplicate) {
       try {
-        dispatch = await dispatchOutboundMessage(queued.message.id);
+        dispatch = await dispatchWhatsAppOutboundViaCore(queued.message.id);
       } catch (error) {
         dispatchError = error instanceof Error ? error.message : "Meta delivery failed.";
       }
