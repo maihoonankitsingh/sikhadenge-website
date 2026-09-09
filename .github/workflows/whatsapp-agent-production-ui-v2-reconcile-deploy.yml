@@ -138,54 +138,54 @@ jobs:
 
           actual_dirty_paths="$(git -C "$REPO_ROOT" diff HEAD --name-only --no-renames | LC_ALL=C sort)"
           expected_dirty_list="$(printf '%s\n' "${expected_dirty_paths[@]}" | LC_ALL=C sort)"
-          if [[ "$actual_dirty_paths" != "$expected_dirty_list" ]]; then
+
+          if [[ -z "$actual_dirty_paths" ]]; then
+            printf 'PASS: LIVE_TRACKED_WORKTREE_ALREADY_CLEAN\n'
+            test -z "$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no)"
+          elif [[ "$actual_dirty_paths" == "$expected_dirty_list" ]]; then
+            install -d -m 700 "$BACKUP_DIR"
+            recovery_patch="$BACKUP_DIR/production-dirty-before-ui-v2.patch"
+            git -C "$REPO_ROOT" diff HEAD --binary -- "${expected_dirty_paths[@]}" > "$recovery_patch"
+            test -s "$recovery_patch"
+            chmod 600 "$recovery_patch"
+            patch_sha256="$(sha256sum "$recovery_patch" | awk '{print $1}')"
+            printf 'HASH_LOCK_PATCH_SHA256=%s\n' "$patch_sha256"
+            if [[ "$patch_sha256" != "$EXPECTED_PATCH_SHA256" ]]; then
+              printf 'FAIL: HASH_LOCK_PATCH_DIGEST_MISMATCH\n' >&2
+              exit 62
+            fi
+
+            untracked_before_sha="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard -z | sha256sum | awk '{print $1}')"
+            untracked_before_count="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
+            {
+              printf 'RUN_ID=%s\n' "$RUN_ID"
+              printf 'LIVE_SHA=%s\n' "$EXPECTED_LIVE_SHA"
+              printf 'TARGET_SHA=%s\n' "$TARGET_SHA"
+              printf 'PATCH_SHA256=%s\n' "$patch_sha256"
+              printf 'UNTRACKED_COUNT_BEFORE=%s\n' "$untracked_before_count"
+              printf 'UNTRACKED_SHA_BEFORE=%s\n' "$untracked_before_sha"
+            } > "$BACKUP_DIR/ui-v2-reconciliation-manifest.txt"
+            chmod 600 "$BACKUP_DIR/ui-v2-reconciliation-manifest.txt"
+
+            git -C "$REPO_ROOT" restore --source=HEAD --staged --worktree -- "${expected_dirty_paths[@]}"
+            test -z "$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no)"
+            untracked_after_sha="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard -z | sha256sum | awk '{print $1}')"
+            untracked_after_count="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
+            test "$untracked_after_sha" = "$untracked_before_sha"
+            test "$untracked_after_count" = "$untracked_before_count"
+            printf 'PASS: HASH_LOCK_RECONCILIATION_COMPLETE untracked_count=%s\n' "$untracked_after_count"
+          else
             printf 'HASH_LOCK_ACTUAL_DIRTY_PATHS_BEGIN\n'
             printf '%s\n' "$actual_dirty_paths"
             printf 'HASH_LOCK_ACTUAL_DIRTY_PATHS_END\n'
             printf 'HASH_LOCK_TRACKED_STATUS_BEGIN\n'
             git -C "$REPO_ROOT" status --porcelain --untracked-files=no
             printf 'HASH_LOCK_TRACKED_STATUS_END\n'
-            printf 'HASH_LOCK_DIFF_NUMSTAT_BEGIN\n'
-            git -C "$REPO_ROOT" diff HEAD --numstat --no-renames
-            printf 'HASH_LOCK_DIFF_NUMSTAT_END\n'
             printf 'FAIL: HASH_LOCK_DIRTY_PATH_SET_CHANGED\n' >&2
             exit 61
           fi
 
-          install -d -m 700 "$BACKUP_DIR"
-          recovery_patch="$BACKUP_DIR/production-dirty-before-ui-v2.patch"
-          git -C "$REPO_ROOT" diff HEAD --binary -- "${expected_dirty_paths[@]}" > "$recovery_patch"
-          test -s "$recovery_patch"
-          chmod 600 "$recovery_patch"
-          patch_sha256="$(sha256sum "$recovery_patch" | awk '{print $1}')"
-          printf 'HASH_LOCK_PATCH_SHA256=%s\n' "$patch_sha256"
-          if [[ "$patch_sha256" != "$EXPECTED_PATCH_SHA256" ]]; then
-            printf 'FAIL: HASH_LOCK_PATCH_DIGEST_MISMATCH\n' >&2
-            exit 62
-          fi
-
-          untracked_before_sha="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard -z | sha256sum | awk '{print $1}')"
-          untracked_before_count="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-
-          {
-            printf 'RUN_ID=%s\n' "$RUN_ID"
-            printf 'LIVE_SHA=%s\n' "$EXPECTED_LIVE_SHA"
-            printf 'TARGET_SHA=%s\n' "$TARGET_SHA"
-            printf 'PATCH_SHA256=%s\n' "$patch_sha256"
-            printf 'UNTRACKED_COUNT_BEFORE=%s\n' "$untracked_before_count"
-            printf 'UNTRACKED_SHA_BEFORE=%s\n' "$untracked_before_sha"
-          } > "$BACKUP_DIR/ui-v2-reconciliation-manifest.txt"
-          chmod 600 "$BACKUP_DIR/ui-v2-reconciliation-manifest.txt"
-
-          git -C "$REPO_ROOT" restore --source=HEAD --staged --worktree -- "${expected_dirty_paths[@]}"
           test -z "$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no)"
-
-          untracked_after_sha="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard -z | sha256sum | awk '{print $1}')"
-          untracked_after_count="$(git -C "$REPO_ROOT" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-          test "$untracked_after_sha" = "$untracked_before_sha"
-          test "$untracked_after_count" = "$untracked_before_count"
-          printf 'PASS: HASH_LOCK_RECONCILIATION_COMPLETE untracked_count=%s\n' "$untracked_after_count"
-
           git -C "$LIVE_APP" worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
           ln -s "$LIVE_APP/.env" "$STAGE_APP/.env"
           cd "$STAGE_APP"
