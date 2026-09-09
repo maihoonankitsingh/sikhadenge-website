@@ -2,6 +2,7 @@ name: Audit Last Best Funnel Backup 20260910
 
 on:
   push:
+    branches: [main]
     paths:
       - .github/workflows/audit-last-best-backup-20260910.yml
 
@@ -37,36 +38,64 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect backup and current route wiring read-only
+      - name: Inspect AI Video backups and runtimes read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          B='/var/backups/sikhadenge/ai-ecosystem-v315r-20260830-204006'
-          echo '=== BACKUP EXISTS ==='
-          test -d "$B"
-          stat -c '%n | %y | %s bytes' "$B"
-          echo '=== BACKUP TOP LEVEL ==='
-          find "$B" -maxdepth 2 -mindepth 1 -printf '%y %p %s bytes\n' | sort
-          echo '=== BACKUP TEXT MARKERS ==='
-          grep -RIlE 'masterclass/(ai-video|claude/free)|proxy_pass|3930|3942|3982|ai-video' "$B" 2>/dev/null | head -80 || true
-          echo '=== CURRENT NGINX ROUTES ==='
+          echo '=== CURRENT AI VIDEO EXACT ROUTE ==='
           nginx -T 2>/dev/null | awk '
-            /location = \/masterclass\/ai-video/ {show=1; n=0}
-            /location = \/masterclass\/claude\/free/ {show=1; n=0}
-            show {print; n++}
-            show && n>28 {show=0}
-          '
-          echo '=== CURRENT PM2 SUMMARY ==='
-          export PM2_HOME=/root/.pm2
-          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; x=json.load(sys.stdin); print("\n".join(f"{a.get(\"name\")} | {a.get(\"pm2_env\",{}).get(\"status\")} | pid={a.get(\"pid\")}" for a in x))' || true
-          echo '=== LIVE HEADINGS ==='
-          for u in 'https://sikhadenge.in/masterclass/ai-video?audit=backup-20260910' 'https://sikhadenge.in/masterclass/claude/free?audit=backup-20260910'; do
-            echo "URL=$u"
-            curl -fsSL --max-time 20 "$u" | tr '\n' ' ' | sed 's/<[^>]*>/ /g' | tr -s ' ' | cut -c1-700
+            /location = \/masterclass\/ai-video/ {show=1; d=0}
+            show {print}
+            show && /{/ {d++}
+            show && /}/ {d--; if(d<=0){exit}}
+          ' || true
+
+          echo '=== RECENT AI VIDEO RELATED BACKUPS ==='
+          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d \
+            \( -iname '*ai-video*' -o -iname '*golden*' -o -iname '*faq*' -o -iname '*mobile*' -o -iname '*responsive*' \) \
+            -printf '%T@|%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort -nr | head -80
+
+          echo '=== AI VIDEO RELATED POINTERS ==='
+          for f in /var/backups/sikhadenge/.*ai*video*last /var/backups/sikhadenge/.*golden*last /var/backups/sikhadenge/.*faq*last; do
+            [[ -e "$f" ]] || continue
+            printf '%s -> ' "$f"
+            cat "$f" || true
             echo
           done
+
+          echo '=== ACTIVE AI VIDEO / GOLDEN / HEADING PM2 ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); [print(x.get("name"),"|",x.get("pm2_env",{}).get("status"),"|",x.get("pm2_env",{}).get("pm_exec_path"),"| PORT=",x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["ai-video","golden","heading"])]' || true
+
+          echo '=== PORT CHECK 3930 3940 3942 3944 3955 ==='
+          for p in 3930 3940 3942 3944 3955; do
+            code="$(curl -sS --max-time 20 -o "/tmp/ai-$p.html" -w '%{http_code}' "http://127.0.0.1:$p/masterclass/ai-video" || true)"
+            bytes="$(wc -c < "/tmp/ai-$p.html" 2>/dev/null || echo 0)"
+            echo "PORT=$p HTTP=$code BYTES=$bytes"
+            if [[ "$code" = 200 ]]; then
+              python3 - "$p" "/tmp/ai-$p.html" <<'PY'
+          import sys,re
+          p=sys.argv[1]; s=open(sys.argv[2],errors='ignore').read()
+          text=re.sub(r'<[^>]+>',' ',s); text=re.sub(r'\s+',' ',text).strip()
+          print('PORT='+p+' TEXT='+text[:550])
+          for marker in ['Create cinematic AI videos','Six blocks. Zero filler.','FAQ','30 Crore','Master 25+ AI Tools']:
+              print('  '+marker+'='+str(marker.lower() in s.lower()))
+          PY
+            fi
+          done
+
+          echo '=== LIVE AI VIDEO ==='
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?audit=newer-20260910' -o /tmp/ai-live.html
+          echo "LIVE_BYTES=$(wc -c </tmp/ai-live.html)"
+          python3 - <<'PY'
+          import re
+          s=open('/tmp/ai-live.html',errors='ignore').read(); t=re.sub(r'<[^>]+>',' ',s); t=re.sub(r'\s+',' ',t).strip()
+          print(t[:800])
+          for marker in ['Create cinematic AI videos','Six blocks. Zero filler.','FAQ']:
+              print(marker, marker.lower() in s.lower())
+          PY
           REMOTE
 
-# rerun marker: 20260910-1
+# AI video newer audit marker: 20260910-2
