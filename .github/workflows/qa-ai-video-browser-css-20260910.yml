@@ -30,7 +30,7 @@ jobs:
           set -Eeuo pipefail
           node <<'NODE'
           const { chromium } = require('playwright');
-          const BASE='https://sikhadenge.in/masterclass/ai-video?browser-css-qa=20260910b';
+          const BASE='https://sikhadenge.in/masterclass/ai-video?browser-css-qa=20260910c';
           const selectors={
             workflow: '.ai-video-masterclass_outcomeGrid__1PlgA',
             modules: '.ai-video-masterclass_moduleGrid__LvmU9',
@@ -48,8 +48,8 @@ jobs:
               const page=await browser.newPage({viewport:{width:cfg.width,height:cfg.height}});
               const bad=[];
               page.on('response', r=>{
-                const u=r.url();
-                if ((u.includes('.css') || u.includes('.js')) && r.status()>=400) bad.push([r.status(),u]);
+                const p=new URL(r.url()).pathname;
+                if ((p.endsWith('.css') || p.endsWith('.js')) && r.status()>=400) bad.push([r.status(),r.url()]);
               });
               await page.goto(BASE+'&vp='+cfg.name,{waitUntil:'networkidle',timeout:90000});
               await page.waitForTimeout(1800);
