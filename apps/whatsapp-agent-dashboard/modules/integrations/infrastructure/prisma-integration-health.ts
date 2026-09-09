@@ -169,6 +169,18 @@ export async function recordMetaWebhookEvidence(input: {
   });
 }
 
+export async function recordMetaPermissionEvidence(input: {
+  channel: "WHATSAPP" | "INSTAGRAM" | "MESSENGER";
+  externalAccountId: string;
+  verifiedAt?: Date;
+}) {
+  return mergeEvidence({
+    channel: input.channel,
+    externalAccountId: input.externalAccountId,
+    permissionsVerified: true,
+  });
+}
+
 export async function listPersistedIntegrationHealth(): Promise<PersistedIntegrationHealth[]> {
   const wsId = await workspaceId();
   const rows = await prisma.engageChannelConnection.findMany({
