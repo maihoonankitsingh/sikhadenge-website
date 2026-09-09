@@ -33,47 +33,53 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read-only exact V90 candidates
+      - name: Deep validate preserved GOLDEN ADS LIVE backup
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          shopt -s nullglob
-          echo '=== CURRENT LIVE ==='
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?audit=v90candidates' -o /tmp/live-ai-v90audit.html
-          echo "LIVE_SHA=$(sha256sum /tmp/live-ai-v90audit.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai-v90audit.html)"
-          echo "LIVE_STYLE_TAGS=$(grep -o '<style' /tmp/live-ai-v90audit.html | wc -l) LIVE_SECTIONS=$(grep -o '<section' /tmp/live-ai-v90audit.html | wc -l)"
-
-          echo '=== SOURCE-FIRST RELEASES ==='
-          dirs=(/var/www/sikhadenge.in/releases/production-ai-video-source-first-*)
-          echo "SOURCE_FIRST_COUNT=${#dirs[@]}"
-          for d in "${dirs[@]}"; do
-            f="$d/.next/server/pages/masterclass/ai-video.html"
-            echo "RELEASE=$d"
-            [[ -f "$f" ]] || { echo NO_HTML; continue; }
-            echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
-            echo "STYLE_TAGS=$(grep -o '<style' "$f" | wc -l) SECTIONS=$(grep -o '<section' "$f" | wc -l) SCRIPTS=$(grep -o '<script' "$f" | wc -l)"
-            for m in 'ai-video-hero-title' 'Create cinematic AI videos' 'Get My Free Seat' '30 Crore' 'Everyone says AI will replace' 'Six blocks' 'Understand the tools behind' 'Questions before you join live' 'ai-video-audience-premium-v4-inline' 'ai-video-faq-premium-v3-inline'; do grep -Fqi "$m" "$f" && echo "YES|$m" || echo "NO|$m"; done
-            grep -Eo '/ai-video-real-output-v77/[^" ]+/_next/static' "$f" | sort -u | head -3 || true
-            echo '--'
-          done
-
-          echo '=== ORIGINAL GOLDEN ==='
-          gf='/var/www/sikhadenge.in/releases/production-ai-workflow-premium-zero-build-20260829-110420/.next/server/pages/masterclass/ai-video.html'
-          if [[ -f "$gf" ]]; then
-            echo "GOLDEN_SHA=$(sha256sum "$gf" | awk '{print $1}') BYTES=$(wc -c <"$gf") MTIME=$(stat -c '%y' "$gf")"
-            echo "STYLE_TAGS=$(grep -o '<style' "$gf" | wc -l) SECTIONS=$(grep -o '<section' "$gf" | wc -l)"
-          fi
-
-          echo '=== ROOT GOLDEN BACKUP ==='
           rb='/root/ai-video-GOLDEN-ADS-LIVE-20260903-125516'
-          if [[ -e "$rb" ]]; then
-            echo "EXISTS=$rb"
-            find "$rb" -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS|%s|%p\n' 2>/dev/null | sort | head -60
-          else echo MISSING; fi
-
-          echo '=== PM2 DUMP SOURCE-FIRST REFERENCES ==='
-          grep -nEi 'sikhadenge-ai-video-v90|production-ai-video-source-first|sikhadenge-ai-workflow-premium' /root/.pm2/dump.pm2 2>/dev/null | head -140 || true
-          echo '=== AUDIT COMPLETE ==='
+          g="$rb/ai-video.GOLDEN.html"
+          l="$rb/live-page.html"
+          sums="$rb/SHA256SUMS.txt"
+          lock="$rb/LOCK-STATE.txt"
+          [[ -f "$g" && -f "$l" && -f "$sums" && -f "$lock" ]]
+          echo '=== LOCK STATE ==='; cat "$lock"
+          echo '=== SAVED SHA256SUMS ==='; cat "$sums"
+          echo '=== CURRENT SHA / STRUCTURE ==='
+          for f in "$g" "$l"; do
+            echo "FILE=$f"
+            echo "SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c <"$f") MTIME=$(stat -c '%y' "$f")"
+            echo "STYLES=$(grep -o '<style' "$f" | wc -l) SCRIPTS=$(grep -o '<script' "$f" | wc -l) SECTIONS=$(grep -o '<section' "$f" | wc -l)"
+            for m in 'Create cinematic AI videos' 'Everyone says AI will replace' '30 Crore' 'Six blocks' 'Understand the tools behind' 'One workflow' 'Real learners' 'Built for people who want' 'Questions before you join live' 'Trusted checkout experience' 'ai-video-audience-premium-v4-inline' 'ai-video-faq-premium-v3-inline' 'ai-video-ui-v91-inline'; do grep -Fqi "$m" "$f" && echo "YES|$m" || echo "NO|$m"; done
+          done
+          echo '=== GOLDEN STYLE IDS ==='
+          grep -Eo 'id="[^"]*"' "$g" | grep -Ei 'ai-video|style|research|job|faq|audience|legibility|fluid|tablet' | sort -u | head -120 || true
+          echo '=== STATIC DEPENDENCIES ==='
+          python3 - "$g" <<'PY'
+          import re,sys
+          s=open(sys.argv[1],encoding='utf-8').read()
+          vals=[]
+          for pat in [r'<script[^>]+src="([^"]+)"',r'<link[^>]+href="([^"]+)"']:
+              vals += re.findall(pat,s,re.I)
+          for u in sorted(set(x for x in vals if x.startswith('/'))): print(u)
+          PY
+          echo '=== DEPENDENCY HTTP STATUS ==='
+          python3 - "$g" <<'PY' >/tmp/golden-deps.txt
+          import re,sys
+          s=open(sys.argv[1],encoding='utf-8').read(); vals=[]
+          for pat in [r'<script[^>]+src="([^"]+)"',r'<link[^>]+href="([^"]+)"']:
+              vals += re.findall(pat,s,re.I)
+          for u in sorted(set(x for x in vals if x.startswith('/'))): print(u)
+          PY
+          bad=0; total=0
+          while IFS= read -r u; do
+            total=$((total+1)); code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; [[ "$code" == 200 || "$code" == 204 || "$code" == 304 ]] || bad=$((bad+1));
+          done </tmp/golden-deps.txt
+          echo "DEPENDENCIES_TOTAL=$total BAD=$bad"
+          echo '=== LIVE VS GOLDEN ==='
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?audit=goldencompare' -o /tmp/live-current.html
+          echo "LIVE_SHA=$(sha256sum /tmp/live-current.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-current.html) STYLES=$(grep -o '<style' /tmp/live-current.html | wc -l) SECTIONS=$(grep -o '<section' /tmp/live-current.html | wc -l)"
+          echo '=== VALIDATION COMPLETE ==='
           REMOTE
