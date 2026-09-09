@@ -15,6 +15,9 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Install Playwright Chromium
         shell: bash
         run: |
@@ -27,7 +30,7 @@ jobs:
           set -Eeuo pipefail
           node <<'NODE'
           const { chromium } = require('playwright');
-          const URL='https://sikhadenge.in/masterclass/ai-video?browser-css-qa=20260910';
+          const BASE='https://sikhadenge.in/masterclass/ai-video?browser-css-qa=20260910b';
           const selectors={
             workflow: '.ai-video-masterclass_outcomeGrid__1PlgA',
             modules: '.ai-video-masterclass_moduleGrid__LvmU9',
@@ -48,24 +51,27 @@ jobs:
                 const u=r.url();
                 if ((u.includes('.css') || u.includes('.js')) && r.status()>=400) bad.push([r.status(),u]);
               });
-              await page.goto(URL+'&vp='+cfg.name,{waitUntil:'networkidle',timeout:90000});
+              await page.goto(BASE+'&vp='+cfg.name,{waitUntil:'networkidle',timeout:90000});
               await page.waitForTimeout(1800);
-              const result=await page.evaluate((sels)=>{
-                const one=(sel)=>{
-                  const e=document.querySelector(sel);
-                  if(!e) return {missing:true};
+              const result={};
+              for (const [key,sel] of Object.entries(selectors)) {
+                const count=await page.locator(sel).count();
+                if(!count){ result[key]={missing:true}; continue; }
+                result[key]=await page.locator(sel).first().evaluate(e=>{
                   const c=getComputedStyle(e), b=e.getBoundingClientRect();
                   return {
-                    missing:false, display:c.display,
+                    missing:false,
+                    display:c.display,
                     gridTemplateColumns:c.gridTemplateColumns,
-                    gap:c.gap, borderRadius:c.borderRadius,
+                    gap:c.gap,
+                    borderRadius:c.borderRadius,
                     backgroundColor:c.backgroundColor,
-                    width:Math.round(b.width), height:Math.round(b.height)
+                    width:Math.round(b.width),
+                    height:Math.round(b.height)
                   };
-                };
-                return Object.fromEntries(Object.entries(sels).map(([k,v])=>[k,one(v)]));
-              },selectors);
-              console.log('VIEWPORT='+cfg.name, JSON.stringify(result));
+                });
+              }
+              console.log('VIEWPORT='+cfg.name+' '+JSON.stringify(result));
               console.log('BAD_CSS_JS='+JSON.stringify(bad));
               for (const k of ['workflow','modules','tools']) {
                 if(result[k].missing) throw new Error(cfg.name+': missing '+k+' grid');
