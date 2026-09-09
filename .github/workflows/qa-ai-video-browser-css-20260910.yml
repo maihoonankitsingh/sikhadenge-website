@@ -1,0 +1,94 @@
+name: QA AI Video Browser CSS 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/qa-ai-video-browser-css-20260910.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install chromium
+      - name: Verify desktop and mobile computed styles
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const URL='https://sikhadenge.in/masterclass/ai-video?browser-css-qa=20260910';
+          const selectors={
+            workflow: '.ai-video-masterclass_outcomeGrid__1PlgA',
+            modules: '.ai-video-masterclass_moduleGrid__LvmU9',
+            tools: '.ai-video-masterclass_toolGrid__kIEhe',
+            outcomeCard: '.ai-video-masterclass_outcomeCard__uo9Xf',
+            moduleTop: '.ai-video-masterclass_moduleTop__3E7XB',
+            toolCard: '.ai-video-masterclass_toolCard__jnYNs'
+          };
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for (const cfg of [
+              {name:'desktop',width:1440,height:1000},
+              {name:'mobile',width:390,height:844}
+            ]) {
+              const page=await browser.newPage({viewport:{width:cfg.width,height:cfg.height}});
+              const bad=[];
+              page.on('response', r=>{
+                const u=r.url();
+                if ((u.includes('.css') || u.includes('.js')) && r.status()>=400) bad.push([r.status(),u]);
+              });
+              await page.goto(URL+'&vp='+cfg.name,{waitUntil:'networkidle',timeout:90000});
+              await page.waitForTimeout(1800);
+              const result=await page.evaluate((sels)=>{
+                const one=(sel)=>{
+                  const e=document.querySelector(sel);
+                  if(!e) return {missing:true};
+                  const c=getComputedStyle(e), b=e.getBoundingClientRect();
+                  return {
+                    missing:false, display:c.display,
+                    gridTemplateColumns:c.gridTemplateColumns,
+                    gap:c.gap, borderRadius:c.borderRadius,
+                    backgroundColor:c.backgroundColor,
+                    width:Math.round(b.width), height:Math.round(b.height)
+                  };
+                };
+                return Object.fromEntries(Object.entries(sels).map(([k,v])=>[k,one(v)]));
+              },selectors);
+              console.log('VIEWPORT='+cfg.name, JSON.stringify(result));
+              console.log('BAD_CSS_JS='+JSON.stringify(bad));
+              for (const k of ['workflow','modules','tools']) {
+                if(result[k].missing) throw new Error(cfg.name+': missing '+k+' grid');
+                if(result[k].display!=='grid') throw new Error(cfg.name+': '+k+' display='+result[k].display+' expected grid');
+                if(!result[k].gridTemplateColumns || result[k].gridTemplateColumns==='none') throw new Error(cfg.name+': '+k+' grid columns not applied');
+              }
+              for (const k of ['outcomeCard','moduleTop','toolCard']) {
+                if(result[k].missing) throw new Error(cfg.name+': missing '+k);
+              }
+              if(bad.length) throw new Error(cfg.name+': CSS/JS requests failed: '+JSON.stringify(bad));
+              await page.screenshot({path:'/tmp/ai-video-'+cfg.name+'.png',fullPage:true});
+              await page.close();
+            }
+            await browser.close();
+            console.log('✅ REAL_BROWSER_AI_VIDEO_CSS_QA_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Upload QA screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-video-css-qa-20260910
+          path: |
+            /tmp/ai-video-desktop.png
+            /tmp/ai-video-mobile.png
+          if-no-files-found: error
+          retention-days: 3
