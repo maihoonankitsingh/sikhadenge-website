@@ -13,7 +13,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Configure production SSH
         env:
@@ -28,29 +28,122 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect exact snapshot wiring
+      - name: Restore last best UI with automatic rollback
         env:
           SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
           SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
         run: |
+          set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '=== CLAUDE ASSET SNIPPET ==='
-          cat /etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf
-          echo '=== CLAUDE BEST BACKUP DIR ==='
-          find /var/backups/sikhadenge/claude-before-best-restore-20260831-234122 -maxdepth 2 -type f -printf '%p | %s\n' | sort
-          echo '=== CLAUDE 6PM RESTORE DIR ==='
-          find /var/backups/sikhadenge/claude-6pm-route-restore-20260831-214151 -maxdepth 2 -type f -printf '%p | %s\n' | sort
-          echo '=== SAVED HTML ASSET URLS ==='
-          python3 - <<'PY'
-          import re
-          p='/var/backups/sikhadenge/claude-before-best-restore-20260831-234122/free.html.current'
-          s=open(p,encoding='utf-8',errors='ignore').read()
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          AI_SNIP='/etc/nginx/snippets/sikhadenge-ai-video-3940.conf'
+          CLAUDE_ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'
+          CLAUDE_SRC='/var/backups/sikhadenge/claude-before-best-restore-20260831-234122/free.html.current'
+          CLAUDE_SHA='559f4b3deb2111f5bcb36ba9518481b1e72c462ea6707135a597ba4953303078'
+          CLAUDE_LIVE_DIR='/var/www/sikhadenge.in/rollback-live'
+          CLAUDE_LIVE="$CLAUDE_LIVE_DIR/claude-31aug-6pm-best-$CLAUDE_SHA.html"
+          TS=$(date +%Y%m%d-%H%M%S)
+          BK="/var/backups/sikhadenge/last-best-live-$TS"
+          mkdir -p "$BK" "$CLAUDE_LIVE_DIR"
+          chmod 755 "$CLAUDE_LIVE_DIR"
+          cp -a "$SITE" "$BK/sikhadenge.in-ssl.before"
+          cp -a "$AI_SNIP" "$BK/sikhadenge-ai-video-3940.conf.before"
+          cp -a "$CLAUDE_ASSETS" "$BK/sikhadenge-claude-31aug6pm-assets-final.conf.before"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?pre_restore=1' -o "$BK/ai-video.before.html"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?pre_restore=1' -o "$BK/claude.before.html"
+          printf '%s\n' "$BK" > "$BK/BACKUP_PATH.txt"
+
+          rollback(){
+            echo 'RESTORE FAILED — rolling nginx config back'
+            cp -a "$BK/sikhadenge.in-ssl.before" "$SITE"
+            nginx -t
+            systemctl reload nginx
+          }
+          trap rollback ERR
+
+          test -s "$CLAUDE_SRC"
+          test "$(sha256sum "$CLAUDE_SRC" | awk '{print $1}')" = "$CLAUDE_SHA"
+          install -m 0644 "$CLAUDE_SRC" "$CLAUDE_LIVE"
+
+          echo '=== PRECHECK AI GOLDEN ==='
+          grep -q 'proxy_pass http://127.0.0.1:3940;' "$AI_SNIP"
+          curl -fsSL --max-time 20 http://127.0.0.1:3940/masterclass/ai-video -o "$BK/ai-3940.direct.html"
+          grep -qi 'Create cinematic AI videos' "$BK/ai-3940.direct.html"
+          grep -qi 'Six blocks' "$BK/ai-3940.direct.html"
+          grep -qi 'Understand the tools' "$BK/ai-3940.direct.html"
+
+          echo '=== PRECHECK CLAUDE SNAPSHOT ASSETS ==='
+          python3 - "$CLAUDE_SRC" > "$BK/claude-assets.txt" <<'PY'
+          import re,sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
           urls=[]
           for pat in [r'<script[^>]+src=["\']([^"\']+)',r'<link[^>]+href=["\']([^"\']+)']:
-            urls += re.findall(pat,s,re.I)
-          for u in dict.fromkeys(urls): print(u)
+              urls += re.findall(pat,s,re.I)
+          for u in dict.fromkeys(urls):
+              if u.startswith('/') and not u.startswith('//'):
+                  print(u)
           PY
-          echo '=== AI 3940 RELEASE PAGE SOURCE HITS ==='
-          grep -RIl 'Create cinematic AI videos' /var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510/pages /var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510/app 2>/dev/null | head -20 || true
+          while IFS= read -r u; do
+            code=$(curl -L -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://sikhadenge.in${u}" || true)
+            case "$code" in 200|204|301|302|304) : ;; *) echo "BAD_ASSET $code $u"; exit 1;; esac
+          done < "$BK/claude-assets.txt"
+
+          echo '=== INSTALL EXACT CLAUDE BEST ROUTE ==='
+          python3 - "$SITE" "$CLAUDE_LIVE" <<'PY'
+          import sys
+          p,html=sys.argv[1],sys.argv[2]
+          s=open(p,encoding='utf-8').read()
+          needle='location = /masterclass/claude/free {'
+          start=s.find(needle)
+          if start < 0: raise SystemExit('Claude exact route not found')
+          i=start; depth=0; in_sq=in_dq=False; esc=False
+          end=None
+          while i < len(s):
+              c=s[i]
+              if esc: esc=False
+              elif c=='\\': esc=True
+              elif not in_dq and c=="'": in_sq=not in_sq
+              elif not in_sq and c=='"': in_dq=not in_dq
+              elif not in_sq and not in_dq:
+                  if c=='{': depth+=1
+                  elif c=='}':
+                      depth-=1
+                      if depth==0:
+                          end=i+1; break
+              i+=1
+          if end is None: raise SystemExit('Claude route closing brace not found')
+          block=f'''location = /masterclass/claude/free {{
+        alias {html};
+        default_type text/html;
+        charset utf-8;
+        add_header Cache-Control "private, no-store, no-cache, must-revalidate, max-age=0" always;
+        add_header X-SD-Claude-Snapshot "31aug-2026-6pm-best" always;
+    }}'''
+          out=s[:start]+block+s[end:]
+          open(p,'w',encoding='utf-8').write(out)
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          echo '=== POST DEPLOY PUBLIC QA ==='
+          AI_CODE=$(curl -L -sS --max-time 30 -o "$BK/ai-video.after.html" -w '%{http_code}' "https://sikhadenge.in/masterclass/ai-video?restore=$TS")
+          CL_CODE=$(curl -L -sS --max-time 30 -D "$BK/claude.after.headers" -o "$BK/claude.after.html" -w '%{http_code}' "https://sikhadenge.in/masterclass/claude/free?restore=$TS")
+          test "$AI_CODE" = 200
+          test "$CL_CODE" = 200
+          grep -qi 'Create cinematic AI videos' "$BK/ai-video.after.html"
+          grep -qi 'Six blocks' "$BK/ai-video.after.html"
+          grep -qi 'Master 25+ AI Tools' "$BK/claude.after.html"
+          grep -qi 'X-SD-Claude-Snapshot: 31aug-2026-6pm-best' "$BK/claude.after.headers"
+          AFTER_SHA=$(sha256sum "$BK/claude.after.html" | awk '{print $1}')
+          test "$AFTER_SHA" = "$CLAUDE_SHA"
+
+          echo '=== FINAL ROUTING ==='
+          echo "AI_VIDEO=production-ai-video-golden-faq-final-20260904-130510 via 3940"
+          echo "CLAUDE=31aug-2026-6pm-best sha256=$AFTER_SHA"
+          echo "ROLLBACK_BACKUP=$BK"
+          echo "AI_HTTP=$AI_CODE CLAUDE_HTTP=$CL_CODE"
+          trap - ERR
           REMOTE
