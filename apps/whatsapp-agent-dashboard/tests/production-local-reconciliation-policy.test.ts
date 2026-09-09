@@ -72,9 +72,12 @@ const repositorySource = readFileSync(
   "utf8",
 );
 
-assert.match(layoutSource, /import \{ Manrope \} from "next\/font\/google";/u);
+assert.match(layoutSource, /import \{ Inter \} from "next\/font\/google";/u);
 assert.match(layoutSource, /ServiceWorkerRegistration/u);
-assert.doesNotMatch(layoutSource, /import \{ Inter \} from "next\/font\/google";/u);
+assert.doesNotMatch(layoutSource, /import \{ Manrope \} from "next\/font\/google";/u);
+assert.match(layoutSource, /import "\.\/enterprise-ui-v2\.css";/u);
+assert.match(layoutSource, /import "\.\/enterprise-ui-v2-hardening\.css";/u);
+assert.match(layoutSource, /import "\.\/enterprise-product-polish\.css";/u);
 assert.match(inboxSource, /Last 24 Hours/u);
 assert.match(inboxSource, /"RECENT" \| "HISTORY"/u);
 assert.match(inboxSource, /startsWith\("image\/"\)/u);
