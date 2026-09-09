@@ -26,6 +26,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           SSH_PORT="${SSH_PORT:-22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"
           KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
@@ -37,9 +38,52 @@ jobs:
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Run final read-only audit
+      - name: Inspect target backup and current production routing
         env:
           SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
           SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
-          SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-        run: bash ops/funnel-final-readonly-audit-20260903.sh
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          B='/var/backups/sikhadenge/ai-ecosystem-v315r-20260830-204006'
+          echo '=== TARGET BACKUP ==='
+          test -d "$B"
+          stat -c '%n | %y' "$B"
+          echo '=== BACKUP TREE MAXDEPTH3 ==='
+          find "$B" -maxdepth 3 -mindepth 1 -printf '%y %p %s bytes\n' | sort | head -300
+          echo '=== BACKUP RELEVANT TEXT FILES ==='
+          grep -RIlE 'masterclass/(ai-video|claude/free)|ai-video|claude/free|proxy_pass|3930|3942|3982' "$B" 2>/dev/null | head -120 || true
+          echo '=== BACKUP SMALL TEXT CONTENT ==='
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            sz=$(stat -c %s "$f" 2>/dev/null || echo 99999999)
+            if [ "$sz" -lt 300000 ]; then
+              echo "--- $f ---"
+              grep -nE 'masterclass/(ai-video|claude/free)|ai-video|claude/free|proxy_pass|3930|3942|3982|location =' "$f" 2>/dev/null | head -120 || true
+            fi
+          done < <(find "$B" -maxdepth 3 -type f | sort)
+          echo '=== CURRENT NGINX EXACT ROUTES ==='
+          nginx -T 2>/dev/null | awk '
+            /location = \/masterclass\/ai-video/ {show=1; n=0; print "--- AI VIDEO ROUTE ---"}
+            /location = \/masterclass\/claude\/free/ {show=1; n=0; print "--- CLAUDE ROUTE ---"}
+            show {print; n++}
+            show && n>36 {show=0}
+          '
+          echo '=== CURRENT PM2 ==='
+          export PM2_HOME=/root/.pm2
+          pm2 jlist 2>/dev/null | python3 - <<'PY' || true
+          import json,sys
+          try: x=json.load(sys.stdin)
+          except Exception as e: print('pm2-json-error',e); raise SystemExit
+          for a in x:
+              env=a.get('pm2_env',{})
+              print(f"{a.get('name')} | {env.get('status')} | pid={a.get('pid')} | cwd={env.get('pm_cwd')} | args={env.get('args')}")
+          PY
+          echo '=== LIVE STATUS ==='
+          for p in '/masterclass/ai-video' '/masterclass/claude/free'; do
+            code=$(curl -o /tmp/live.html -sS -L -w '%{http_code}' --max-time 20 "https://sikhadenge.in${p}?backup-audit=20260910")
+            echo "$p HTTP=$code BYTES=$(wc -c </tmp/live.html)"
+            grep -o -m1 -E '<h1[^>]*>[^<]{1,200}' /tmp/live.html || true
+          done
+          REMOTE
