@@ -47,14 +47,14 @@ read_pm2_env_value() {
   if [[ -z "$PM2_JSON" ]]; then
     return 0
   fi
-  printf '%s' "$PM2_JSON" | node - "$PM2_PROCESS_NAME" "$key" <<'NODE'
-let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-  const [processName, key] = process.argv.slice(2);
+  printf '%s' "$PM2_JSON" | node -e '
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { input += chunk; });
+process.stdin.on("end", () => {
+  const [processName, key] = process.argv.slice(1);
   try {
-    const rows = JSON.parse(input || '[]');
+    const rows = JSON.parse(input || "[]");
     const row = rows.find((item) => item?.name === processName || item?.pm2_env?.name === processName);
     const value = row?.pm2_env?.[key];
     if (value !== undefined && value !== null) process.stdout.write(String(value));
@@ -62,7 +62,7 @@ process.stdin.on('end', () => {
     process.exit(0);
   }
 });
-NODE
+' "$PM2_PROCESS_NAME" "$key"
 }
 
 normalize() {
