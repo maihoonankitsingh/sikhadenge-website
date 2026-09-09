@@ -139,6 +139,15 @@ jobs:
           actual_dirty_paths="$(git -C "$REPO_ROOT" diff HEAD --name-only --no-renames | LC_ALL=C sort)"
           expected_dirty_list="$(printf '%s\n' "${expected_dirty_paths[@]}" | LC_ALL=C sort)"
           if [[ "$actual_dirty_paths" != "$expected_dirty_list" ]]; then
+            printf 'HASH_LOCK_ACTUAL_DIRTY_PATHS_BEGIN\n'
+            printf '%s\n' "$actual_dirty_paths"
+            printf 'HASH_LOCK_ACTUAL_DIRTY_PATHS_END\n'
+            printf 'HASH_LOCK_TRACKED_STATUS_BEGIN\n'
+            git -C "$REPO_ROOT" status --porcelain --untracked-files=no
+            printf 'HASH_LOCK_TRACKED_STATUS_END\n'
+            printf 'HASH_LOCK_DIFF_NUMSTAT_BEGIN\n'
+            git -C "$REPO_ROOT" diff HEAD --numstat --no-renames
+            printf 'HASH_LOCK_DIFF_NUMSTAT_END\n'
             printf 'FAIL: HASH_LOCK_DIRTY_PATH_SET_CHANGED\n' >&2
             exit 61
           fi
