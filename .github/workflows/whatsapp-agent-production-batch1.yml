@@ -158,9 +158,42 @@ jobs:
           git fetch origin \
             +refs/heads/release/whatsapp-instagram-agent-flow-20260731:refs/remotes/origin/release/whatsapp-instagram-agent-flow-20260731
 
+          live_sha="$(git rev-parse HEAD)"
+          release_ref_sha="$(git rev-parse "$RELEASE_REF")"
+          tracked_status="$(git status --porcelain --untracked-files=no)"
+          tracked_dirty_count="$(printf '%s\n' "$tracked_status" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+          printf 'PRESTAGE_LIVE_SHA=%s\n' "$live_sha"
+          printf 'PRESTAGE_RELEASE_REF_SHA=%s\n' "$release_ref_sha"
+          printf 'PRESTAGE_TRACKED_DIRTY_COUNT=%s\n' "$tracked_dirty_count"
+
+          if [[ "$release_ref_sha" != "$TARGET_SHA" ]]; then
+            printf 'FAIL: PRESTAGE_RELEASE_REF_MISMATCH\n' >&2
+            exit 31
+          fi
+          printf 'PASS: PRESTAGE_RELEASE_REF_MATCHES_TARGET\n'
           test "$(git rev-parse "$RELEASE_REF")" = "$TARGET_SHA"
+
+          if [[ -n "$tracked_status" ]]; then
+            printf 'FAIL: PRESTAGE_TRACKED_WORKTREE_DIRTY count=%s\n' "$tracked_dirty_count" >&2
+            exit 32
+          fi
+          printf 'PASS: PRESTAGE_TRACKED_WORKTREE_CLEAN\n'
           test -z "$(git status --porcelain --untracked-files=no)"
+
+          if [[ ! -d "$LIVE_APP/node_modules" ]]; then
+            printf 'FAIL: PRESTAGE_NODE_MODULES_MISSING\n' >&2
+            exit 33
+          fi
+          printf 'PASS: PRESTAGE_NODE_MODULES_PRESENT\n'
           test -d "$LIVE_APP/node_modules"
+
+          if git merge-base --is-ancestor HEAD "$TARGET_SHA"; then
+            printf 'PASS: PRESTAGE_LIVE_SHA_IS_ANCESTOR\n'
+          else
+            printf 'FAIL: PRESTAGE_LIVE_SHA_NOT_ANCESTOR live=%s target=%s\n' "$live_sha" "$TARGET_SHA" >&2
+            exit 34
+          fi
           git merge-base --is-ancestor HEAD "$TARGET_SHA"
 
           git worktree add --detach "$STAGE_ROOT" "$TARGET_SHA"
