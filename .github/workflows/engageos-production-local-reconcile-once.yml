@@ -1,0 +1,75 @@
+name: EngageOS production-local reconcile once
+
+on:
+  push:
+    branches:
+      - fix/engageos-production-local-reconciliation-20260910
+    paths:
+      - .github/workflows/engageos-production-local-reconcile-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engageos-production-local-reconcile-once
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reconciliation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply reviewed production-local patch exactly once
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          expected_base="4974b46b690561f3022fed5b726115c05cfce49c"
+          expected_patch_sha="c2b5cc150edd3fac2efd5d9c32928462737baca1b5b9bdb036acc1d183ed35b2"
+          workflow_path=".github/workflows/engageos-production-local-reconcile-once.yml"
+          patch_file="/tmp/engageos-production-local-reconcile.patch"
+
+          git merge-base --is-ancestor "$expected_base" HEAD
+
+          cat > /tmp/reconcile.patch.gz.b64 <<'PATCH_B64'
+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
+PATCH_B64
+
+          base64 --decode /tmp/reconcile.patch.gz.b64 | gzip -dc > "$patch_file"
+          test "$(sha256sum "$patch_file" | awk '{print $1}')" = "$expected_patch_sha"
+
+          expected_files="$(cat <<'FILES'
+apps/whatsapp-agent-dashboard/app/api/analytics/overview/route.ts
+apps/whatsapp-agent-dashboard/app/api/conversations/route.ts
+apps/whatsapp-agent-dashboard/app/globals.css
+apps/whatsapp-agent-dashboard/app/inbox/page.tsx
+apps/whatsapp-agent-dashboard/app/layout.tsx
+apps/whatsapp-agent-dashboard/components/inbox/InboxDashboardV2.tsx
+apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+FILES
+)"
+
+          git apply --3way --index "$patch_file"
+          git diff --cached --check
+
+          actual_files="$(git diff --cached --name-only | LC_ALL=C sort)"
+          expected_files="$(printf '%s\n' "$expected_files" | LC_ALL=C sort)"
+          test "$actual_files" = "$expected_files"
+
+          grep -Fq 'ServiceWorkerRegistration' apps/whatsapp-agent-dashboard/app/layout.tsx
+          grep -Fq 'Manrope' apps/whatsapp-agent-dashboard/app/layout.tsx
+          grep -Fq 'Last 24 Hours' apps/whatsapp-agent-dashboard/components/inbox/InboxDashboardV2.tsx
+          grep -Fq 'InboxConversationScope' apps/whatsapp-agent-dashboard/lib/inbox/conversation-repository.ts
+          grep -Fq 'WHATSAPP_ANALYTICS_TOKEN' apps/whatsapp-agent-dashboard/app/api/analytics/overview/route.ts
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git rm "$workflow_path"
+          git commit -m 'fix(inbox): reconcile reviewed production-local behavior'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
