@@ -72,6 +72,49 @@ for f in "$AI_SNIP" "$SITE" "$CL_ASSETS"; do
 done
 nginx -T 2>/dev/null | grep -nE 'masterclass/ai-video|masterclass/claude/free|0dc2b316d6c10c6c|ai-video-e4484da06cac6162|X-SD-Claude-Snapshot|127\.0\.0\.1:3940' | head -220 || true
 
+echo '=== EXACT LIVE LOCATION BLOCKS ==='
+python3 - "$SITE" "$AI_SNIP" <<'PY'
+import sys
+
+def block(path, needle):
+    s=open(path,encoding='utf-8',errors='ignore').read()
+    i=s.find(needle)
+    print(f'FILE={path} NEEDLE={needle} POS={i}')
+    if i < 0: return
+    start=s.rfind('location',0,i+1)
+    if start < 0: start=i
+    brace=s.find('{',start)
+    if brace < 0: return
+    depth=0; end=None
+    quote=None; esc=False
+    for j in range(brace,len(s)):
+        ch=s[j]
+        if esc: esc=False; continue
+        if ch=='\\': esc=True; continue
+        if quote:
+            if ch==quote: quote=None
+            continue
+        if ch in ('"',"'"): quote=ch; continue
+        if ch=='{': depth+=1
+        elif ch=='}':
+            depth-=1
+            if depth==0:
+                end=j+1; break
+    out=s[start:end] if end else s[start:start+5000]
+    print('---BEGIN_BLOCK---')
+    print(out)
+    print('---END_BLOCK---')
+    for line in out.splitlines():
+        if 'alias ' in line or 'proxy_pass ' in line or 'sub_filter ' in line or 'add_header ' in line:
+            print('KEYLINE='+line.strip())
+
+block(sys.argv[1], 'location = /masterclass/claude/free')
+block(sys.argv[2], 'location = /masterclass/ai-video')
+PY
+
+echo '=== FILE ATTRIBUTES ==='
+lsattr "$AI_SNIP" "$SITE" "$CL_ASSETS" 2>/dev/null || true
+
 echo '=== EXISTING PROTECTION SERVICES/TIMERS/CRON ==='
 systemctl list-unit-files --type=service --type=timer 2>/dev/null | grep -Ei 'sikhadenge|funnel|golden|claude|ai-video|watch|health|self' || true
 systemctl list-timers --all 2>/dev/null | grep -Ei 'sikhadenge|funnel|golden|claude|ai-video|watch|health|self' || true
