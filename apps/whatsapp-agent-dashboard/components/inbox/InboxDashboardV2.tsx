@@ -12,6 +12,7 @@ import MetaConnectionStatus from "../navigation/MetaConnectionStatus";
 import LogoutButton from "../auth/LogoutButton";
 
 type ConversationFilter = "ALL" | "UNREAD" | "HOT";
+type ConversationScope = "RECENT" | "HISTORY";
 type UserSettableMode = "AI" | "HUMAN" | "PAUSED";
 type MobileView = "LIST" | "CHAT";
 type UploadedMedia = {
@@ -450,23 +451,79 @@ function Ic({ name, size = 18 }: { name: string; size?: number }) {
 
 function MessageMedia({ message }: { message: InboxMessage }) {
   if (!message.mediaUrl) return null;
-  if (message.type === "IMAGE") {
+
+  const mimeType =
+    message.mimeType?.trim().toLowerCase() || "";
+
+  const isImage =
+    message.type === "IMAGE" ||
+    mimeType.startsWith("image/");
+
+  const isVideo =
+    message.type === "VIDEO" ||
+    mimeType.startsWith("video/");
+
+  const isAudio =
+    message.type === "AUDIO" ||
+    mimeType.startsWith("audio/");
+
+  if (isImage) {
     return (
-      <a className="sx-msg-media" href={message.mediaUrl} target="_blank" rel="noreferrer">
-        <img className="sx-msg-image" src={message.mediaUrl} alt={message.filename || "Shared image"} />
+      <a
+        className="sx-msg-media"
+        href={message.mediaUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <img
+          className="sx-msg-image"
+          src={message.mediaUrl}
+          alt={message.filename || "Shared image"}
+        />
       </a>
     );
   }
-  if (message.type === "VIDEO") {
-    return <video className="sx-msg-video" src={message.mediaUrl} controls preload="metadata" />;
+
+  if (isVideo) {
+    return (
+      <video
+        className="sx-msg-video"
+        src={message.mediaUrl}
+        controls
+        preload="metadata"
+      />
+    );
   }
-  if (message.type === "AUDIO") {
-    return <audio className="sx-msg-audio" src={message.mediaUrl} controls preload="metadata" />;
+
+  if (isAudio) {
+    return (
+      <audio
+        className="sx-msg-audio"
+        src={message.mediaUrl}
+        controls
+        preload="metadata"
+      />
+    );
   }
+
+  const fileLabel =
+    mimeType === "application/pdf"
+      ? "PDF"
+      : "FILE";
+
   return (
-    <a className="sx-msg-doc" href={message.mediaUrl} target="_blank" rel="noreferrer">
-      <span aria-hidden="true">PDF</span>
-      <strong>{message.filename || "Open document"}</strong>
+    <a
+      className="sx-msg-doc"
+      href={message.mediaUrl}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span aria-hidden="true">
+        {fileLabel}
+      </span>
+      <strong>
+        {message.filename || "Open attachment"}
+      </strong>
     </a>
   );
 }
@@ -485,6 +542,7 @@ export default function InboxDashboardV2({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ConversationFilter>("ALL");
   const [channelFilter, setChannelFilter] = useState<ChannelId>("whatsapp");
+  const [scope, setScope] = useState<ConversationScope>("RECENT");
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [modeUpdating, setModeUpdating] = useState(false);
   const [operationBusy, setOperationBusy] = useState(false);
@@ -515,7 +573,10 @@ export default function InboxDashboardV2({
       if (pollingRef.current || document.visibilityState === "hidden") return;
       pollingRef.current = true;
       try {
-        const response = await fetch("/api/conversations?limit=100", { cache: "no-store" });
+        const response = await fetch(
+          `/api/conversations?scope=${scope.toLowerCase()}&limit=all`,
+          { cache: "no-store" },
+        );
         if (response.status === 401) {
           window.location.assign("/login");
           return;
@@ -526,11 +587,30 @@ export default function InboxDashboardV2({
         if (!response.ok || !body.conversations || cancelled) return;
 
         setConversations(body.conversations);
-        const activeId = selectedIdRef.current ?? body.conversations[0]?.id ?? null;
-        if (!selectedIdRef.current && activeId) {
-          selectedIdRef.current = activeId;
+
+        const currentId =
+          selectedIdRef.current;
+
+        const currentStillVisible =
+          currentId
+            ? body.conversations.some(
+                (item) =>
+                  item.id === currentId,
+              )
+            : false;
+
+        const activeId =
+          currentStillVisible
+            ? currentId
+            : body.conversations[0]?.id
+              ?? null;
+
+        if (activeId !== currentId) {
+          selectedIdRef.current =
+            activeId;
           setSelectedId(activeId);
         }
+
         if (!activeId) {
           setSelected(null);
           return;
@@ -553,7 +633,16 @@ export default function InboxDashboardV2({
     }
 
     void poll();
-    const timer = window.setInterval(() => void poll(), 1_000);
+
+    const pollInterval =
+      scope === "RECENT"
+        ? 1_000
+        : 10_000;
+
+    const timer = window.setInterval(
+      () => void poll(),
+      pollInterval,
+    );
     const visibility = () => {
       if (document.visibilityState === "visible") void poll();
     };
@@ -563,7 +652,7 @@ export default function InboxDashboardV2({
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, []);
+  }, [scope]);
 
   useEffect(() => {
     messageAreaRef.current?.scrollTo({
@@ -611,6 +700,18 @@ export default function InboxDashboardV2({
 
   const selectedSummary =
     selected ?? conversations.find((item) => item.id === selectedId) ?? null;
+
+  function changeConversationScope(
+    nextScope: ConversationScope,
+  ) {
+    if (nextScope === scope) return;
+
+    selectedIdRef.current = null;
+    setSelectedId(null);
+    setSelected(null);
+    setMobileDetailsOpen(false);
+    setScope(nextScope);
+  }
 
   async function markRead(conversationId: string) {
     const response = await fetch(
@@ -964,7 +1065,12 @@ export default function InboxDashboardV2({
           <div className="sx-list-headtop">
             <div>
               <h1 className="sx-list-title">Messages</h1>
-              <p className="sx-list-sub">{filteredConversations.length} conversations · live sync</p>
+              <p className="sx-list-sub">
+                {conversations.length} conversations ·{" "}
+                {scope === "RECENT"
+                  ? "last 24 hours · live sync"
+                  : "history"}
+              </p>
             </div>
             <div className="sx-list-headactions">
               <span className="sx-live"><i />Live</span>
@@ -985,6 +1091,43 @@ export default function InboxDashboardV2({
         </header>
 
         {renderChannels("chips")}
+
+        <div
+          className="sx-tabs"
+          aria-label="Conversation history scope"
+        >
+          <button
+            type="button"
+            className={
+              scope === "RECENT"
+                ? "is-active"
+                : ""
+            }
+            onClick={() =>
+              changeConversationScope(
+                "RECENT",
+              )
+            }
+          >
+            Last 24 Hours
+          </button>
+
+          <button
+            type="button"
+            className={
+              scope === "HISTORY"
+                ? "is-active"
+                : ""
+            }
+            onClick={() =>
+              changeConversationScope(
+                "HISTORY",
+              )
+            }
+          >
+            History
+          </button>
+        </div>
 
         <label className="sx-search">
           <Ic name="search" size={17} />
