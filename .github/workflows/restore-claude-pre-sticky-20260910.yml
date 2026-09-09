@@ -150,7 +150,7 @@ jobs:
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
           export CHROME
-          cat > /tmp/check-claude-sep4.js <<'JS'
+          cat > check-claude-sep4.js <<'JS'
           const puppeteer=require('puppeteer-core');
           const compact=s=>(s||'').replace(/\s+/g,'');
           (async()=>{
@@ -181,7 +181,7 @@ jobs:
             console.log('CLAUDE_SEP4_3VIEW_QA_PASS');
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node /tmp/check-claude-sep4.js
+          node check-claude-sep4.js
 
       - name: Roll back if browser QA fails
         if: failure()
