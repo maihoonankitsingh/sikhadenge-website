@@ -115,3 +115,29 @@
     min-height: 44px !important;
   }
 }
+
+/*
+ * Narrow-phone dock polish: keep every destination readable and evenly
+ * distributed without changing navigation markup or behavior.
+ */
+@media (max-width: 479px) {
+  .sx-module .sx-mobile-dock {
+    gap: 2px !important;
+    padding-inline: 4px !important;
+  }
+
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding-inline: 2px !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link > span {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
