@@ -1,0 +1,99 @@
+/* Enterprise UI/UX V2 — layout hardening.
+   Loaded after enterprise-ui-v2.css. Presentation only; no product logic. */
+
+/* Keep the shell grid track and the visible sidebar on the same token. */
+.sx-module {
+  grid-template-columns: var(--sd-sidebar-w) minmax(0, 1fr) !important;
+}
+
+/* Use the same official SikhaDenge wordmark treatment in Inbox and modules. */
+.sx-module .sx-brand-logo,
+.sx-inbox .sx-brand-logo {
+  width: 160px !important;
+  max-width: 100% !important;
+  height: 40px !important;
+  display: block !important;
+  flex: 0 1 160px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sx-module .sx-brand-logo img,
+.sx-inbox .sx-brand-logo img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+}
+
+.sx-module .sx-brand-name,
+.sx-inbox .sx-brand-name {
+  display: none !important;
+}
+
+.sx-module .sx-brand,
+.sx-inbox .sx-brand {
+  overflow: hidden !important;
+}
+
+/* Stable scrollbar behavior for dense enterprise workspaces. */
+.sx-module .sx-side-scroll,
+.sx-inbox .sx-side-scroll,
+.sx-inbox .sx-list,
+.sx-inbox .sx-messages,
+.sx-inbox .sx-details {
+  scrollbar-gutter: stable;
+}
+
+/* Keep icon strokes visually consistent without altering the existing glyph set. */
+.sx-module svg,
+.sx-inbox svg {
+  shape-rendering: geometricPrecision;
+}
+
+@media (max-width: 1279px) {
+  .sx-module {
+    grid-template-columns: var(--sd-sidebar-w) minmax(0, 1fr) !important;
+  }
+
+  .sx-module .sx-brand-logo,
+  .sx-inbox .sx-brand-logo {
+    width: 148px !important;
+    flex-basis: 148px !important;
+    height: 38px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .sx-module {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .sx-module .sx-workspace {
+    grid-column: 1 !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Tables remain usable without squeezing columns into unreadable widths. */
+  .sx-module .sx-workspace-body :where(table) {
+    min-width: 680px;
+  }
+
+  .sx-module .sx-workspace-body :where(table):only-child,
+  .sx-module .sx-workspace-body :where([class*="table"], [class*="list"]) {
+    max-width: 100%;
+  }
+
+  /* Mobile menu controls need a reliable thumb-sized target. */
+  .sx-module .sx-mobile-nav > summary,
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link {
+    min-height: 44px !important;
+  }
+}
