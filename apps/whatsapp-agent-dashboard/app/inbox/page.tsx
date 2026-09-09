@@ -16,7 +16,11 @@ export default async function InboxPage({
   searchParams?: { conversation?: string; conversationId?: string };
 }) {
   const user = await requireDashboardUser();
-  const conversations = await listInboxConversations();
+  const conversations =
+    await listInboxConversations(
+      null,
+      "RECENT",
+    );
   const requestedId =
     searchParams?.conversation?.trim() ||
     searchParams?.conversationId?.trim() ||
