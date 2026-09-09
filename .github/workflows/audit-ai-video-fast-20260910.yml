@@ -31,42 +31,60 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inventory current live UI structure
+      - name: Map current live UI roots and styles
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          LIVE='https://sikhadenge.in/masterclass/ai-video?ui-inventory=20260910-v91'
-          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-v91-inventory.html
+          LIVE='https://sikhadenge.in/masterclass/ai-video?ui-map=20260910-v91b'
+          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-v91-map.html
           python3 - <<'PY'
-          import re, html
-          s=open('/tmp/ai-v91-inventory.html',errors='ignore').read()
-          print('=== SECTION STARTS ===')
-          for m in re.finditer(r'<section\b([^>]*)>',s,re.I):
-              attrs=m.group(1)
-              cid=re.search(r'id=["\']([^"\']+)',attrs,re.I)
-              cls=re.search(r'class=["\']([^"\']+)',attrs,re.I)
-              tail=s[m.end():m.end()+900]
-              txt=' '.join(re.sub(r'<[^>]+>',' ',tail).split())[:180]
-              print('id=',cid.group(1) if cid else '-', '| class=',cls.group(1) if cls else '-', '| text=',html.unescape(txt))
-          print('\n=== AI MASTERCLASS CLASSES ===')
-          classes=[]
-          for q in re.findall(r'class=["\']([^"\']+)["\']',s,re.I):
-              for c in q.split():
-                  if c.startswith('ai-video-masterclass_'): classes.append(c)
-          for c in sorted(set(classes)): print(c)
-          print('\n=== NON-MODULE V* / CUSTOM CLASSES ===')
-          custom=[]
-          for q in re.findall(r'class=["\']([^"\']+)["\']',s,re.I):
-              for c in q.split():
-                  if c.startswith(('v1','ai-','hero-','proof-','social-','faq-','trust-')) and not c.startswith('ai-video-masterclass_'): custom.append(c)
-          for c in sorted(set(custom))[:400]: print(c)
-          print('\n=== IMPORTANT TEXT -> NEAREST OPEN TAG ===')
-          for text in ['Everyone says AI will replace you','30 Crore','AI isn’t only changing jobs','Six blocks','Understand the tools behind','Real learners','Built for people who want','Questions before']:
-              i=s.lower().find(text.lower())
-              print('\nMARKER',text,'@',i)
-              if i>=0:
-                  j=s.rfind('<',0,i); print(s[j:i+250].replace('\n',' ')[:900])
+          from html.parser import HTMLParser
+          import re
+          s=open('/tmp/ai-v91-map.html',errors='ignore').read()
+          markers=[
+            'Learn the workflow behind real creative output',
+            'Everyone says AI will replace you',
+            'AI & automation are reshaping',
+            'AI isn’t only changing jobs',
+            'Six blocks. Zero filler',
+            'Understand the tools behind modern AI visuals',
+            'One workflow. Four ways to create better',
+            'Built for people who want better video output',
+            'Questions before you join live',
+            'Stop guessing prompts. Start directing the output'
+          ]
+          class P(HTMLParser):
+            def __init__(self): super().__init__(convert_charrefs=True); self.stack=[]; self.hits=set()
+            def handle_starttag(self,tag,attrs): self.stack.append((tag,dict(attrs)))
+            def handle_startendtag(self,tag,attrs): pass
+            def handle_endtag(self,tag):
+              for i in range(len(self.stack)-1,-1,-1):
+                if self.stack[i][0]==tag: self.stack=self.stack[:i]; return
+            def handle_data(self,data):
+              t=' '.join(data.split())
+              if not t:return
+              low=t.lower()
+              for m in markers:
+                needle=m.lower()
+                if needle in low or (len(needle)>25 and needle[:24] in low):
+                  key=(m,tuple((tag,a.get('id',''),a.get('class','')) for tag,a in self.stack[-8:]))
+                  if key not in self.hits:
+                    self.hits.add(key); print('\nMARKER:',m); [print(' ',x) for x in key[1]]
+          p=P(); p.feed(s)
+          print('\n=== STYLE IDS IN ORDER ===')
+          for x in re.findall(r'<style[^>]*id=["\']([^"\']+)',s,re.I): print(x)
+          print('\n=== SCRIPT IDS IN ORDER ===')
+          for x in re.findall(r'<script[^>]*id=["\']([^"\']+)',s,re.I): print(x)
+          print('\n=== ROOT IDS / CLASSES AROUND CUSTOM VISIBLE COPY ===')
+          for text in ['Everyone says AI will replace you','30 Crore','AI & automation','3x','One workflow.','Real learners.','Trusted checkout']:
+            i=s.lower().find(text.lower()); print('\nTEXT',text,'AT',i)
+            if i>=0:
+              left=s[max(0,i-5000):i]
+              tags=list(re.finditer(r'<(section|div|article)\b([^>]*)>',left,re.I))[-10:]
+              for z in tags:
+                attrs=z.group(2); ident=re.search(r'id=["\']([^"\']+)',attrs,re.I); cls=re.search(r'class=["\']([^"\']+)',attrs,re.I)
+                print(z.group(1), 'id='+((ident.group(1)) if ident else '-'), 'class='+((cls.group(1)) if cls else '-'))
           PY
           REMOTE
