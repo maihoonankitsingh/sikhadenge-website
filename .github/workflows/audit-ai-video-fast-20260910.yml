@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/audit-ai-video-fast-20260910.yml'
-      - 'ops/audit-ai-video-css-sync-20260910.sh'
 
 permissions:
   contents: read
@@ -21,12 +20,8 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 10
+    timeout-minutes: 7
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate audit script
-        shell: bash
-        run: bash -n ops/audit-ai-video-css-sync-20260910.sh
       - name: Configure SSH
         shell: bash
         run: |
@@ -34,12 +29,61 @@ jobs:
           SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Run read-only CSS sync audit
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect injected UI selectors and occurrences
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/audit-ai-video-css-sync-20260910.sh
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          LIVE='https://sikhadenge.in/masterclass/ai-video?selector-audit=20260910-v91c'
+          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-v91-selectors.html
+          python3 - <<'PY'
+          import re
+          s=open('/tmp/ai-v91-selectors.html',errors='ignore').read()
+          markers=[
+            'Everyone says AI will replace you',
+            '30 Crore',
+            '40 Crore',
+            '9.2 Crore',
+            'AI isn’t only changing jobs',
+            'PricewaterhouseCoopers',
+            'One workflow.',
+            'Real learners.',
+            'Trusted checkout',
+            'Razorpay'
+          ]
+          for marker in markers:
+            print('\n===',marker,'===')
+            hits=[m.start() for m in re.finditer(re.escape(marker),s,re.I)]
+            print('occurrences=',len(hits),hits[:20])
+            for n,i in enumerate(hits[:8],1):
+              a=max(0,i-1300); b=min(len(s),i+2200); chunk=s[a:b]
+              owner='plain'
+              pre=s[:i]
+              os=pre.rfind('<style'); oe=pre.rfind('</style>')
+              js=pre.rfind('<script'); je=pre.rfind('</script>')
+              if os>oe:
+                mm=re.search(r'<style[^>]*id=["\']([^"\']+)',s[os:i],re.I); owner='style:'+((mm.group(1)) if mm else '?')
+              elif js>je:
+                mm=re.search(r'<script[^>]*id=["\']([^"\']+)',s[js:i],re.I); owner='script:'+((mm.group(1)) if mm else '?')
+              print('--- hit',n,'owner',owner,'---')
+              ids=sorted(set(re.findall(r'id=["\']([^"\']+)["\']',chunk,re.I)))
+              classes=sorted(set(c for q in re.findall(r'class=["\']([^"\']+)["\']',chunk,re.I) for c in q.split()))
+              print('ids=',ids[:50])
+              print('classes=',classes[:120])
+              clean=' '.join(chunk.replace('\n',' ').split())
+              print(clean[:2400])
+          print('\n=== CUSTOM SELECTORS FROM INLINE STYLE BLOCKS ===')
+          for sm in re.finditer(r'<style[^>]*id=["\']([^"\']+)["\'][^>]*>(.*?)</style>',s,re.I|re.S):
+            sid,css=sm.group(1),sm.group(2)
+            if sid.startswith(('AI_VIDEO_PHASE','AI_VIDEO_V17','AI_VIDEO_V18','AI_VIDEO_NON','ai-video-faq','ai-video-audience')):
+              sels=[]
+              for q in re.findall(r'([^{}]+)\{',css):
+                q=' '.join(q.split())
+                if q and not q.startswith('@') and len(q)<260: sels.append(q)
+              print('\nSTYLE',sid,'selectors=',len(sels))
+              for q in sels[:80]: print(q)
+          PY
+          REMOTE
