@@ -8,8 +8,9 @@ This document is the operational gate between **repository implemented**, **prod
 
 - Pull request: `#158` — EngageOS Phases 3–17
 - Base branch: `release/whatsapp-instagram-agent-flow-20260731`
-- Final release-candidate head: `514f3011624e6e8a42bceb9c2b3342a86a15c24a`
-- CI evidence: WhatsApp Agent CI run `#800` passed behavioral tests, strict TypeScript, production build, migration regression and authenticated Inbox browser regression.
+- Final release-candidate head: `a7afc164344e6deb3ab20a1a7503561230c1a0f2`
+- CI evidence: WhatsApp Agent CI run `#801` passed behavioral tests, strict TypeScript, production build, migration regression and authenticated Inbox browser regression.
+- Previous safety-gate CI: run `#800` passed on `514f3011624e6e8a42bceb9c2b3342a86a15c24a`.
 - PR review evidence: no submitted reviews and no inline review threads were present at the final pre-merge check.
 - The guarded production batch includes a high-risk flag gate that checks the live env file, invoking shell environment and retained PM2 process environment before backup/migration/activation.
 
@@ -23,9 +24,9 @@ Do not merge, deploy, enable provider writes, enable billing, or call a phase li
 
 - [x] Phase 3–17 implementation exists on the feature branch.
 - [x] Fail-closed defaults remain in place for new runtimes and provider writes.
-- [x] CI for the final exact release candidate SHA is green (`#800`).
+- [x] CI for the final exact release candidate SHA is green (`#801`).
 - [x] No unresolved PR review threads were present at the final pre-merge check.
-- [x] Exact release candidate head is recorded: `514f3011624e6e8a42bceb9c2b3342a86a15c24a`.
+- [x] Exact release candidate head is recorded: `a7afc164344e6deb3ab20a1a7503561230c1a0f2`.
 
 ### Gate B — production transport and rollback
 
@@ -140,7 +141,7 @@ Stop rollout and do not promote if any of the following is true:
 
 **Repository implementation:** complete for Phases 3–17.
 
-**Repository release candidate:** CI-approved at head `514f3011624e6e8a42bceb9c2b3342a86a15c24a` via CI `#800`.
+**Repository release candidate:** CI-approved at head `a7afc164344e6deb3ab20a1a7503561230c1a0f2` via CI `#801`.
 
 **Production deployment of the EngageOS branch:** pending guarded production workflow evidence.
 
