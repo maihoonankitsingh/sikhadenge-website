@@ -84,8 +84,29 @@ async function validateModuleShell(page, viewport) {
   expect(titleSize).toBeLessThanOrEqual(25);
 
   if (viewport.width <= 767) {
-    await expect(page.locator(".sx-side")).toBeHidden();
     await expect(page.locator(".sx-mobile-dock")).toBeVisible();
+
+    const sidebarExposure = await page.evaluate(() => {
+      const sideNode = document.querySelector(".sx-module > .sx-side");
+      if (!(sideNode instanceof HTMLElement)) {
+        throw new Error("Module sidebar was not rendered.");
+      }
+      const style = getComputedStyle(sideNode);
+      const rect = sideNode.getBoundingClientRect();
+      const intersectsViewport =
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        Number.parseFloat(style.opacity || "1") > 0 &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.right > 0 &&
+        rect.left < window.innerWidth &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight;
+      return { intersectsViewport, left: rect.left, right: rect.right };
+    });
+
+    expect(sidebarExposure.intersectsViewport).toBe(false);
   } else {
     const side = page.locator(".sx-side");
     await expect(side).toBeVisible();
