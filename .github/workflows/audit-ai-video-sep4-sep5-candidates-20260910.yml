@@ -1,0 +1,67 @@
+name: Audit AI Video Sep4 Sep5 Candidates 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-ai-video-sep4-sep5-candidates-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Deep read-only Sep4-Sep5 candidate audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== LIVE IDENTITY NOW ==='
+          curl -fsSL --max-time 20 'https://sikhadenge.in/masterclass/ai-video?audit=sep45-deep' -o /tmp/live-ai.html
+          echo "LIVE_SHA=$(sha256sum /tmp/live-ai.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai.html)"
+          grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|Create cinematic AI videos|30 Crore|Six blocks[^<]{0,60}|Understand the tools behind[^<]{0,80}' /tmp/live-ai.html | head -30 || true
+
+          echo '=== RELEASE DIRECTORIES SEP3-SEP6 ==='
+          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
+
+          echo '=== BACKUP DIRECTORIES SEP3-SEP6 ==='
+          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
+
+          echo '=== FILES WITH AI VIDEO HERO IN SEP3-SEP6 BACKUPS ==='
+          find /var/backups/sikhadenge -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -120 | while read -r f; do
+            printf '%s|' "$f"; stat -c '%y|%s' "$f"; sha256sum "$f" | awk '{print "SHA=" $1}'
+            grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|30 Crore|Six blocks[^<]{0,60}|Understand the tools behind[^<]{0,80}|Real learners[^<]{0,80}' "$f" 2>/dev/null | head -12 || true
+          done
+
+          echo '=== RELEASE FILES WITH AI VIDEO HERO SEP3-SEP6 ==='
+          find /var/www/sikhadenge.in/releases -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -120 | while read -r f; do
+            printf '%s|' "$f"; stat -c '%y|%s' "$f"; sha256sum "$f" | awk '{print "SHA=" $1}'
+          done
+
+          echo '=== POINTER / LAST / MANIFEST FILES SEP3-SEP6 ==='
+          find /var/backups/sikhadenge -maxdepth 2 -type f \( -name '*last*' -o -name '*manifest*' -o -name '*meta*' -o -name '*sha*' \) -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -print 2>/dev/null | head -100 | while read -r f; do echo "--- $f"; head -40 "$f" 2>/dev/null || true; done
+          REMOTE
