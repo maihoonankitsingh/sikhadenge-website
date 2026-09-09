@@ -19,7 +19,7 @@ env:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     environment: whatsapp-agent-production
     steps:
       - name: Configure pinned SSH
@@ -29,73 +29,46 @@ jobs:
           test -n "$SSH_HOST"; test -n "$SSH_USER"; test -n "$SSH_PRIVATE_KEY"; test -n "$SSH_HOST_KEY"
           [[ -n "${SSH_PORT:-}" ]] || SSH_PORT=22
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"
-          KEY="$HOME/.ssh/prod"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Inspect AI Video backups and runtimes read-only
+      - name: Deep read-only Sep4-Sep5 AI Video candidate audit
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '=== CURRENT AI VIDEO EXACT ROUTE ==='
-          nginx -T 2>/dev/null | awk '
-            /location = \/masterclass\/ai-video/ {show=1; d=0}
-            show {print}
-            show && /{/ {d++}
-            show && /}/ {d--; if(d<=0){exit}}
-          ' || true
+          echo '=== LIVE NOW ==='
+          curl -fsSL --max-time 20 'https://sikhadenge.in/masterclass/ai-video?audit=sep45-main' -o /tmp/live-ai.html
+          echo "LIVE_SHA=$(sha256sum /tmp/live-ai.html | awk '{print $1}') LIVE_BYTES=$(wc -c </tmp/live-ai.html)"
+          grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|Create cinematic AI videos|30 Crore|Six blocks[^<]{0,80}|Understand the tools behind[^<]{0,100}|Real learners[^<]{0,100}' /tmp/live-ai.html | head -40 || true
 
-          echo '=== RECENT AI VIDEO RELATED BACKUPS ==='
-          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d \
-            \( -iname '*ai-video*' -o -iname '*golden*' -o -iname '*faq*' -o -iname '*mobile*' -o -iname '*responsive*' \) \
-            -printf '%T@|%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort -nr | head -80
+          echo '=== ALL RELEASE DIRS SEP3-SEP6 ==='
+          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
 
-          echo '=== AI VIDEO RELATED POINTERS ==='
-          for f in /var/backups/sikhadenge/.*ai*video*last /var/backups/sikhadenge/.*golden*last /var/backups/sikhadenge/.*faq*last; do
-            [[ -e "$f" ]] || continue
-            printf '%s -> ' "$f"
-            cat "$f" || true
-            echo
+          echo '=== ALL BACKUP DIRS SEP3-SEP6 ==='
+          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM:%TS|%p\n' 2>/dev/null | sort
+
+          echo '=== AI HERO FILES IN SEP3-SEP6 BACKUPS ==='
+          find /var/backups/sikhadenge -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -160 | while read -r f; do
+            echo "FILE=$f"
+            stat -c 'MTIME=%y BYTES=%s' "$f"
+            echo "SHA=$(sha256sum "$f" | awk '{print $1}')"
+            grep -Eo 'ai-video-ui-v[0-9]+[^"< ]*|Create cinematic AI videos|30 Crore|Six blocks[^<]{0,80}|Understand the tools behind[^<]{0,100}|Real learners[^<]{0,100}' "$f" 2>/dev/null | head -20 || true
           done
 
-          echo '=== ACTIVE AI VIDEO / GOLDEN / HEADING PM2 ==='
-          export PM2_HOME=/root/.pm2
-          pm2 jlist 2>/dev/null | python3 -c 'import json,sys; a=json.load(sys.stdin); [print(x.get("name"),"|",x.get("pm2_env",{}).get("status"),"|",x.get("pm2_env",{}).get("pm_exec_path"),"| PORT=",x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["ai-video","golden","heading"])]' || true
-
-          echo '=== PORT CHECK 3930 3940 3942 3944 3955 ==='
-          for p in 3930 3940 3942 3944 3955; do
-            code="$(curl -sS --max-time 20 -o "/tmp/ai-$p.html" -w '%{http_code}' "http://127.0.0.1:$p/masterclass/ai-video" || true)"
-            bytes="$(wc -c < "/tmp/ai-$p.html" 2>/dev/null || echo 0)"
-            echo "PORT=$p HTTP=$code BYTES=$bytes"
-            if [[ "$code" = 200 ]]; then
-              python3 - "$p" "/tmp/ai-$p.html" <<'PY'
-          import sys,re
-          p=sys.argv[1]; s=open(sys.argv[2],errors='ignore').read()
-          text=re.sub(r'<[^>]+>',' ',s); text=re.sub(r'\s+',' ',text).strip()
-          print('PORT='+p+' TEXT='+text[:550])
-          for marker in ['Create cinematic AI videos','Six blocks. Zero filler.','FAQ','30 Crore','Master 25+ AI Tools']:
-              print('  '+marker+'='+str(marker.lower() in s.lower()))
-          PY
-            fi
+          echo '=== AI HERO FILES IN SEP3-SEP6 RELEASES ==='
+          find /var/www/sikhadenge.in/releases -type f -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-07 00:00:00' -size -4M -print0 2>/dev/null | xargs -0 grep -Ilm1 'Create cinematic AI videos' 2>/dev/null | head -160 | while read -r f; do
+            echo "FILE=$f"
+            stat -c 'MTIME=%y BYTES=%s' "$f"
+            echo "SHA=$(sha256sum "$f" | awk '{print $1}')"
           done
 
-          echo '=== LIVE AI VIDEO ==='
-          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?audit=newer-20260910' -o /tmp/ai-live.html
-          echo "LIVE_BYTES=$(wc -c </tmp/ai-live.html)"
-          python3 - <<'PY'
-          import re
-          s=open('/tmp/ai-live.html',errors='ignore').read(); t=re.sub(r'<[^>]+>',' ',s); t=re.sub(r'\s+',' ',t).strip()
-          print(t[:800])
-          for marker in ['Create cinematic AI videos','Six blocks. Zero filler.','FAQ']:
-              print(marker, marker.lower() in s.lower())
-          PY
+          echo '=== NGINX AI ROUTE ==='
+          nginx -T 2>/dev/null | awk '/location = \/masterclass\/ai-video/ {show=1;d=0} show{print} show&&/{/{d++} show&&/}/{d--;if(d<=0)exit}' || true
           REMOTE
 
-# AI video newer audit marker: 20260910-2
+# sep4-sep5 main-page deep audit: 20260910-0340
