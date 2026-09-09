@@ -1,0 +1,56 @@
+name: Audit Two Route Blocks Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/audit-two-route-blocks-temp-20260910.yml']
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 5
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Print exact current page routes
+        shell: bash
+        run: |
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 - <<'"'"'PY'"'"'
+          from pathlib import Path
+          for path,needle in [("/etc/nginx/sites-enabled/sikhadenge.in-ssl","location = /masterclass/claude/free"),("/etc/nginx/snippets/sikhadenge-ai-video-3940.conf","location = /masterclass/ai-video")]:
+              s=Path(path).read_text(errors="ignore"); start=s.find(needle)
+              print("===",path,needle,"start",start,"===")
+              if start<0: continue
+              brace=s.find("{",start); depth=0; quote=None; esc=False; end=None
+              for j in range(brace,len(s)):
+                  ch=s[j]
+                  if esc: esc=False; continue
+                  if ch=="\\": esc=True; continue
+                  if quote:
+                      if ch==quote: quote=None
+                      continue
+                  if ch in ("\"","\'"): quote=ch; continue
+                  if ch=="{": depth+=1
+                  elif ch=="}":
+                      depth-=1
+                      if depth==0: end=j+1; break
+              print(s[start:end])
+          PY'
