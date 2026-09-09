@@ -30,23 +30,40 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Fast read-only audit
+      - name: Exact live versus 3940 audit
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo 'ROUTE:'
-          grep -A24 -F 'location = /masterclass/ai-video {' /etc/nginx/sites-enabled/sikhadenge.in-ssl | head -25 || true
-          echo 'BACKUPS:'
-          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -printf '%TY-%Tm-%Td %TH:%TM:%TS %p\n' | grep -Ei 'ai-video|golden|faq|mobile|responsive' | sort -r | head -40 || true
-          echo 'PM2:'
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          SNIP='/etc/nginx/snippets/sikhadenge-ai-video-3940.conf'
+          echo '=== SITE REFERENCES ==='
+          grep -n -B3 -A8 -E 'ai-video|3940|sikhadenge-ai-video-3940' "$SITE" | head -100 || true
+          echo '=== AI SNIPPET ==='
+          if [[ -f "$SNIP" ]]; then stat -c '%n | %y | %s bytes' "$SNIP"; cat "$SNIP"; else echo 'SNIPPET_MISSING'; fi
+          echo '=== NGINX EXPANDED AI ROUTE/3940 ==='
+          nginx -T 2>/dev/null | grep -n -B3 -A30 -E 'masterclass/ai-video|proxy_pass http://127\.0\.0\.1:3940' | head -160 || true
+          echo '=== PM2 ==='
           export PM2_HOME=/root/.pm2
           pm2 jlist | python3 -c 'import json,sys; a=json.load(sys.stdin); [print(x.get("name"),x.get("pm2_env",{}).get("status"),x.get("pm2_env",{}).get("pm_exec_path"),x.get("pm2_env",{}).get("env",{}).get("PORT")) for x in a if any(k in (x.get("name") or "").lower() for k in ["ai-video","golden"])]'
-          echo 'P3940:'
-          curl -sS --connect-timeout 2 --max-time 4 -o /tmp/3940.html -w 'HTTP=%{http_code} BYTES=%{size_download}\n' http://127.0.0.1:3940/masterclass/ai-video || true
-          grep -Eo 'Create cinematic AI videos|Six blocks\. Zero filler\.|Frequently Asked Questions' /tmp/3940.html 2>/dev/null | sort -u || true
-          echo 'P3930:'
-          curl -sS --connect-timeout 2 --max-time 4 -o /tmp/3930.html -w 'HTTP=%{http_code} BYTES=%{size_download}\n' http://127.0.0.1:3930/masterclass/ai-video || true
-          grep -Eo 'Create cinematic AI videos|Six blocks\. Zero filler\.|Frequently Asked Questions' /tmp/3930.html 2>/dev/null | sort -u || true
+          echo '=== FETCH DIRECT 3940 ==='
+          curl -fsS --connect-timeout 3 --max-time 15 'http://127.0.0.1:3940/masterclass/ai-video?cmp=3940' -o /tmp/3940.html
+          echo "P3940_BYTES=$(wc -c </tmp/3940.html) P3940_SHA=$(sha256sum /tmp/3940.html | awk '{print $1}')"
+          echo '=== FETCH LIVE ==='
+          curl -fsS --connect-timeout 3 --max-time 15 'https://sikhadenge.in/masterclass/ai-video?cmp=live' -o /tmp/live.html
+          echo "LIVE_BYTES=$(wc -c </tmp/live.html) LIVE_SHA=$(sha256sum /tmp/live.html | awk '{print $1}')"
+          echo '=== NORMALIZED HTML COMPARISON ==='
+          python3 - <<'PY'
+          import re,hashlib
+          for name,path in [('3940','/tmp/3940.html'),('live','/tmp/live.html')]:
+              s=open(path,errors='ignore').read()
+              s=re.sub(r'cmp=(3940|live)','cmp=X',s)
+              s=re.sub(r'(?i)(nonce|data-nonce)=["\'][^"\']+["\']','',s)
+              print(name, len(s), hashlib.sha256(s.encode()).hexdigest())
+              for m in ['Create cinematic AI videos','Six blocks','Understand the tools','Frequently Asked Questions']:
+                  print(' ',m, m.lower() in s.lower())
+          PY
           REMOTE
+
+# exact compare marker 20260910-3
