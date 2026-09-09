@@ -48,13 +48,12 @@ jobs:
           if [[ -d "$SOURCE_REPO/.git" ]]; then
             echo "ORIGIN=$(git -C "$SOURCE_REPO" remote get-url origin)"
             if git -C "$SOURCE_REPO" cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then echo 'TARGET_COMMIT=LOCAL_OK'; else echo 'TARGET_COMMIT=LOCAL_MISSING'; fi
-            git -C "$SOURCE_REPO" status --porcelain=v1 | head -20 || true
           fi
           echo '=== CURRENT APP ==='
-          pm2 jlist | python3 - <<'PY'
+          pm2 jlist >/tmp/pm2-recovery-preflight.json
+          python3 - /tmp/pm2-recovery-preflight.json <<'PY'
           import json,sys
-          try:a=json.load(sys.stdin)
-          except:a=[]
+          a=json.load(open(sys.argv[1]))
           for x in a:
             n=x.get('name') or ''
             if 'ai-video' in n.lower():
@@ -64,9 +63,11 @@ jobs:
           echo '=== PORTS 3940/3952/3953 ==='
           ss -lntp | grep -E ':(3940|3952|3953)\b' || true
           echo '=== NGINX VERSIONED ASSET ROUTE ==='
-          nginx -T 2>/dev/null | grep -n -A8 -B4 'ai-video-real-output-v77' | head -80 || true
+          nginx -T 2>/dev/null | grep -n -A8 -B4 'ai-video-real-output-v77' | head -100 || true
           echo '=== HISTORICAL SEP4 ASSETS PUBLIC STATUS ==='
           urls=(
+            "$HIST_PREFIX/_next/static/VBOoeOh6nGMStTgyiEDo3/_buildManifest.js"
+            "$HIST_PREFIX/_next/static/chunks/framework-a419983266e4b515.js"
             "$HIST_PREFIX/_next/static/chunks/pages/masterclass/ai-video-84c3c67d7d82b06e.js"
             "$HIST_PREFIX/_next/static/css/c0b52290734d33f1.css"
             "$HIST_PREFIX/_next/static/css/5058feadbe02664c.css"
@@ -74,9 +75,11 @@ jobs:
             "$HIST_PREFIX/ai-video-higgsfield-mark.svg"
           )
           for u in "${urls[@]}"; do code=$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://sikhadenge.in$u" || true); echo "$code|$u"; done
+          echo '=== ASSET FILESYSTEM SEARCH ==='
+          find /var/www/sikhadenge.in /var/backups/sikhadenge /root -type d -path '*v90-1-c216c8470d76-20260904-105133*' -print 2>/dev/null | head -30 || true
           echo '=== CURRENT LIVE + CLAUDE HASH ==='
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?recovery-preflight=1' -o /tmp/ai-current-preflight.html
-          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/claude/free?recovery-preflight=1' -o /tmp/claude-current-preflight.html
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/ai-video?recovery-preflight=2' -o /tmp/ai-current-preflight.html
+          curl -fsSL --max-time 15 'https://sikhadenge.in/masterclass/claude/free?recovery-preflight=2' -o /tmp/claude-current-preflight.html
           echo "AI_SHA=$(sha256sum /tmp/ai-current-preflight.html | awk '{print $1}') AI_BYTES=$(wc -c </tmp/ai-current-preflight.html)"
           echo "CLAUDE_SHA=$(sha256sum /tmp/claude-current-preflight.html | awk '{print $1}') CLAUDE_BYTES=$(wc -c </tmp/claude-current-preflight.html)"
           echo '=== PREFLIGHT COMPLETE ==='
