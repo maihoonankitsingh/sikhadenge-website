@@ -1,0 +1,58 @@
+name: Restore AI Video Sep4 Golden 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/restore-ai-video-sep4-golden-20260910.sh'
+      - '.github/workflows/restore-ai-video-sep4-golden-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          S='ops/restore-ai-video-sep4-golden-20260910.sh'
+          bash -n "$S"
+          grep -Fq "APP='sikhadenge-ai-video-golden-faq-3940-20260904-130510'" "$S"
+          grep -Fq "SNAP='/var/backups/sikhadenge/ai-video-ui-v91-20260910-032700/ai-video.html.before'" "$S"
+          grep -Fq "EXPECTED_SNAPSHOT_SHA='9f7202ae3d3ee585d22f2ebf250ff0f0d1d43ebc58e5a3ae1f2381739c5e8434'" "$S"
+          grep -Fq 'Claude response changed during AI Video restore' "$S"
+          grep -Fq 'UNCHANGED=links,forms,scripts,tracking,checkout,API,Claude,Nginx' "$S"
+          ! grep -Eq 'nginx -s reload|systemctl (reload|restart) nginx|rm -rf|chattr|document\.write|MutationObserver' "$S"
+          echo '✅ Sep4 Golden restore safety guard passed'
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Restore exact Sep4 Golden AI Video page
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' < ops/restore-ai-video-sep4-golden-20260910.sh
