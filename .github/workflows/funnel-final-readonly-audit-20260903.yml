@@ -51,4 +51,4 @@ jobs:
           scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes .github/scripts/restore-last-best-funnels-20260910.sh "$SSH_USER@$SSH_HOST:$REMOTE_SCRIPT"
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "chmod 700 '$REMOTE_SCRIPT' && bash '$REMOTE_SCRIPT'; rc=\$?; rm -f '$REMOTE_SCRIPT'; exit \$rc"
 
-# restore revision: historical asset recovery v2
+# restore revision: diagnostic QA v3
