@@ -65,3 +65,5 @@ jobs:
           echo '=== POINTER / LAST / MANIFEST FILES SEP3-SEP6 ==='
           find /var/backups/sikhadenge -maxdepth 2 -type f \( -name '*last*' -o -name '*manifest*' -o -name '*meta*' -o -name '*sha*' \) -newermt '2026-09-03 00:00:00' ! -newermt '2026-09-06 23:59:59' -print 2>/dev/null | head -100 | while read -r f; do echo "--- $f"; head -40 "$f" 2>/dev/null || true; done
           REMOTE
+
+# trigger: 20260910-0337
