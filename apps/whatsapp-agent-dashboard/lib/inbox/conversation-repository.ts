@@ -1,6 +1,11 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "../db/prisma";
+import {
+  inboxConversationTimeFilter,
+  renderWhatsAppTemplateText,
+  type InboxConversationScope,
+} from "./conversation-read-policy";
 import type {
   InboxConversationDetail,
   InboxConversationSummary,
@@ -136,26 +141,6 @@ function templateIdFromPayload(
     : null;
 }
 
-function renderTemplateText(
-  body: string,
-  parameters: string[],
-): string {
-  if (!body) return "";
-
-  return body.replace(
-    /\{\{(\d+)\}\}/g,
-    (match, rawIndex: string) => {
-      const index = Number(rawIndex) - 1;
-
-      return index >= 0 &&
-        index < parameters.length &&
-        parameters[index]
-        ? parameters[index]
-        : match;
-    },
-  );
-}
-
 function resolveTemplateMessageText(
   input: {
     text: string | null;
@@ -184,7 +169,7 @@ function resolveTemplateMessageText(
   const parameters =
     templateBodyParameters(input.rawPayload);
 
-  return renderTemplateText(
+  return renderWhatsAppTemplateText(
     body,
     parameters,
   ) || input.text;
@@ -267,11 +252,6 @@ function mapLead(lead: {
   };
 }
 
-export type InboxConversationScope =
-  | "ALL"
-  | "RECENT"
-  | "HISTORY";
-
 export async function listInboxConversations(
   limit: number | null = 50,
   scope: InboxConversationScope = "ALL",
@@ -284,26 +264,9 @@ export async function listInboxConversations(
           5_000,
         );
 
-  const cutoff = new Date(
-    Date.now() - 24 * 60 * 60 * 1000,
-  );
-
-  const where:
-    Prisma.WhatsAppConversationWhereInput
-    | undefined =
-    scope === "RECENT"
-      ? {
-          lastMessageAt: {
-            gte: cutoff,
-          },
-        }
-      : scope === "HISTORY"
-        ? {
-            lastMessageAt: {
-              lt: cutoff,
-            },
-          }
-        : undefined;
+  const timeFilter = inboxConversationTimeFilter(scope);
+  const where: Prisma.WhatsAppConversationWhereInput | undefined =
+    timeFilter ? { lastMessageAt: timeFilter } : undefined;
 
   const conversations = await prisma.whatsAppConversation.findMany({
     where,
