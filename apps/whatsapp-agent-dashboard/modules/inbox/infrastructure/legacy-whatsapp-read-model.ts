@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import type { ChannelType } from "@/modules/channels/core/contracts/channel";
 import type {
   UnifiedInboxConversationDetail,
   UnifiedInboxConversationSummary,
@@ -34,12 +35,29 @@ function messageActor(value: string): "CUSTOMER" | "AI" | "HUMAN" | "SYSTEM" {
   return "CUSTOMER";
 }
 
-export function legacyWhatsAppConnectionId(phoneNumberId?: string): string {
-  const normalized = phoneNumberId?.trim();
-  return normalized ? `whatsapp:${normalized}` : "whatsapp:legacy";
+export function legacyChannelFromSource(source?: string | null): ChannelType {
+  const normalized = source?.trim().toLowerCase();
+  if (normalized === "instagram") return "INSTAGRAM";
+  if (normalized === "messenger") return "MESSENGER";
+  return "WHATSAPP";
 }
 
-export function mapLegacyWhatsAppSummary(input: {
+export function legacyConnectionId(input: {
+  channel: ChannelType;
+  whatsappPhoneNumberId?: string;
+  instagramAccountId?: string;
+  messengerPageId?: string;
+}): string {
+  const externalId =
+    input.channel === "INSTAGRAM"
+      ? input.instagramAccountId?.trim()
+      : input.channel === "MESSENGER"
+        ? input.messengerPageId?.trim()
+        : input.whatsappPhoneNumberId?.trim();
+  return `${input.channel.toLowerCase()}:${externalId || "legacy"}`;
+}
+
+export function mapLegacyConversationSummary(input: {
   id: string;
   status: string;
   agentMode: string;
@@ -68,13 +86,18 @@ export function mapLegacyWhatsAppSummary(input: {
     direction: string;
     messageTimestamp: Date;
   }>;
-}, phoneNumberId?: string): UnifiedInboxConversationSummary {
+}, identifiers: {
+  whatsappPhoneNumberId?: string;
+  instagramAccountId?: string;
+  messengerPageId?: string;
+} = {}): UnifiedInboxConversationSummary {
+  const channel = legacyChannelFromSource(input.source);
   const latest = input.messages[0];
   return {
     id: input.id,
     workspaceId: WORKSPACE_ID,
-    connectionId: legacyWhatsAppConnectionId(phoneNumberId),
-    channel: "WHATSAPP",
+    connectionId: legacyConnectionId({ channel, ...identifiers }),
+    channel,
     externalConversationId: input.id,
     contact: {
       id: input.contact.id,
@@ -109,18 +132,39 @@ export function mapLegacyWhatsAppSummary(input: {
   };
 }
 
-export async function listLegacyWhatsAppUnifiedInbox(
+function runtimeIdentifiers() {
+  return {
+    whatsappPhoneNumberId:
+      process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+      process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim(),
+    instagramAccountId: process.env.INSTAGRAM_ACCOUNT_ID?.trim(),
+    messengerPageId: process.env.MESSENGER_PAGE_ID?.trim(),
+  };
+}
+
+function sourceWhere(channel: ChannelType | undefined) {
+  if (channel === "INSTAGRAM") return { source: { equals: "instagram", mode: "insensitive" as const } };
+  if (channel === "MESSENGER") return { source: { equals: "messenger", mode: "insensitive" as const } };
+  if (channel === "WHATSAPP") {
+    return {
+      OR: [
+        { source: null },
+        { source: { notIn: ["instagram", "messenger"] } },
+      ],
+    };
+  }
+  if (channel) return { id: "__engageos_no_legacy_rows_for_channel__" };
+  return {};
+}
+
+export async function listLegacyUnifiedInbox(
   filter: UnifiedInboxListFilter,
 ): Promise<UnifiedInboxConversationSummary[]> {
   assertUnifiedInboxFilter(filter);
-  if (filter.channel && filter.channel !== "WHATSAPP") return [];
-
-  const phoneNumberId =
-    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
-    process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
 
   const rows = await prisma.whatsAppConversation.findMany({
     where: {
+      ...sourceWhere(filter.channel),
       ...(filter.unreadOnly ? { unreadCount: { gt: 0 } } : {}),
       ...(filter.assignedActorId ? { assignedToId: filter.assignedActorId } : {}),
     },
@@ -151,12 +195,13 @@ export async function listLegacyWhatsAppUnifiedInbox(
     },
   });
 
+  const identifiers = runtimeIdentifiers();
   return rows
-    .map((row) => mapLegacyWhatsAppSummary(row, phoneNumberId))
+    .map((row) => mapLegacyConversationSummary(row, identifiers))
     .filter((row) => !filter.status || row.status === filter.status);
 }
 
-export async function getLegacyWhatsAppUnifiedInboxConversation(
+export async function getLegacyUnifiedInboxConversation(
   conversationId: string,
 ): Promise<UnifiedInboxConversationDetail | null> {
   const row = await prisma.whatsAppConversation.findUnique({
@@ -196,22 +241,20 @@ export async function getLegacyWhatsAppUnifiedInboxConversation(
   });
   if (!row) return null;
 
-  const phoneNumberId =
-    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
-    process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
-  const summary = mapLegacyWhatsAppSummary(
+  const latest = row.messages.at(-1);
+  const summary = mapLegacyConversationSummary(
     {
       ...row,
-      messages: row.messages.length
+      messages: latest
         ? [{
-            text: row.messages.at(-1)?.text ?? null,
-            type: row.messages.at(-1)?.type ?? "TEXT",
-            direction: row.messages.at(-1)?.direction ?? "INBOUND",
-            messageTimestamp: row.messages.at(-1)?.messageTimestamp ?? row.createdAt,
+            text: latest.text,
+            type: latest.type,
+            direction: latest.direction,
+            messageTimestamp: latest.messageTimestamp,
           }]
         : [],
     },
-    phoneNumberId,
+    runtimeIdentifiers(),
   );
 
   return {
@@ -224,7 +267,7 @@ export async function getLegacyWhatsAppUnifiedInboxConversation(
     serviceWindowExpiresAt: row.serviceWindowExpiresAt?.toISOString(),
     messages: row.messages.map((message) => ({
       id: message.id,
-      channel: "WHATSAPP",
+      channel: summary.channel,
       direction: message.direction === "OUTBOUND" ? "OUTBOUND" : "INBOUND",
       actor: messageActor(message.actor),
       kind: message.type,

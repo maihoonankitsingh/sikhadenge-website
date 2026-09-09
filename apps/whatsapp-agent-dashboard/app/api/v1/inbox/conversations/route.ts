@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentDashboardUser } from "@/lib/auth/session";
 import { isChannelType } from "@/modules/channels/core/contracts/channel";
 import type { UnifiedInboxStatus } from "@/modules/inbox/application/read-model";
-import { listLegacyWhatsAppUnifiedInbox } from "@/modules/inbox/infrastructure/legacy-whatsapp-read-model";
+import { listLegacyUnifiedInbox } from "@/modules/inbox/infrastructure/legacy-whatsapp-read-model";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const assignedActorId = url.searchParams.get("assignedActorId")?.trim() || undefined;
 
   try {
-    const conversations = await listLegacyWhatsAppUnifiedInbox({
+    const conversations = await listLegacyUnifiedInbox({
       channel: rawChannel && isChannelType(rawChannel) ? rawChannel : undefined,
       status: rawStatus,
       unreadOnly,
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         schemaVersion: 1,
-        source: "LEGACY_WHATSAPP_ADAPTER",
+        source: "LEGACY_OMNICHANNEL_ADAPTER",
         conversations,
       },
       { headers: { "Cache-Control": "no-store" } },
