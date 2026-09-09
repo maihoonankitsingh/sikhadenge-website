@@ -20,7 +20,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 7
+    timeout-minutes: 10
     steps:
       - name: Configure SSH
         shell: bash
@@ -30,60 +30,44 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Inspect injected UI selectors and occurrences
+      - name: Deep read-only CSS and asset audit
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          LIVE='https://sikhadenge.in/masterclass/ai-video?selector-audit=20260910-v91c'
-          curl -fsS --connect-timeout 5 --max-time 25 "$LIVE" -o /tmp/ai-v91-selectors.html
+          LIVE='https://sikhadenge.in/masterclass/ai-video?css-audit=20260910c'
+          curl -fsSL --max-time 25 "$LIVE" -o /tmp/ai-css-audit.html
+          echo "PUBLIC_BYTES=$(wc -c </tmp/ai-css-audit.html) SHA=$(sha256sum /tmp/ai-css-audit.html | awk '{print $1}')"
+          echo '=== ASSET STATUS ==='
+          python3 - <<'PY' >/tmp/ai-assets.txt
+import re,html
+s=open('/tmp/ai-css-audit.html',errors='ignore').read(); out=[]
+for typ,pat in [('LINK',r'<link[^>]+href=["\']([^"\']+)'),('SCRIPT',r'<script[^>]+src=["\']([^"\']+)')]:
+  for u in re.findall(pat,s,re.I):
+    u=html.unescape(u)
+    if u.startswith('/') and (typ,u) not in out: out.append((typ,u))
+for typ,u in out: print(typ+'|'+u)
+PY
+          while IFS='|' read -r typ u; do code=$(curl -L -sS --max-time 15 -o /tmp/asset.out -w '%{http_code}' "https://sikhadenge.in$u" || true); echo "$typ|$code|$(wc -c </tmp/asset.out 2>/dev/null || echo 0)|$u"; done </tmp/ai-assets.txt
+          echo '=== AFFECTED SECTION DOM ==='
           python3 - <<'PY'
-          import re
-          s=open('/tmp/ai-v91-selectors.html',errors='ignore').read()
-          markers=[
-            'Everyone says AI will replace you',
-            '30 Crore',
-            '40 Crore',
-            '9.2 Crore',
-            'AI isn’t only changing jobs',
-            'PricewaterhouseCoopers',
-            'One workflow.',
-            'Real learners.',
-            'Trusted checkout',
-            'Razorpay'
-          ]
-          for marker in markers:
-            print('\n===',marker,'===')
-            hits=[m.start() for m in re.finditer(re.escape(marker),s,re.I)]
-            print('occurrences=',len(hits),hits[:20])
-            for n,i in enumerate(hits[:8],1):
-              a=max(0,i-1300); b=min(len(s),i+2200); chunk=s[a:b]
-              owner='plain'
-              pre=s[:i]
-              os=pre.rfind('<style'); oe=pre.rfind('</style>')
-              js=pre.rfind('<script'); je=pre.rfind('</script>')
-              if os>oe:
-                mm=re.search(r'<style[^>]*id=["\']([^"\']+)',s[os:i],re.I); owner='style:'+((mm.group(1)) if mm else '?')
-              elif js>je:
-                mm=re.search(r'<script[^>]*id=["\']([^"\']+)',s[js:i],re.I); owner='script:'+((mm.group(1)) if mm else '?')
-              print('--- hit',n,'owner',owner,'---')
-              ids=sorted(set(re.findall(r'id=["\']([^"\']+)["\']',chunk,re.I)))
-              classes=sorted(set(c for q in re.findall(r'class=["\']([^"\']+)["\']',chunk,re.I) for c in q.split()))
-              print('ids=',ids[:50])
-              print('classes=',classes[:120])
-              clean=' '.join(chunk.replace('\n',' ').split())
-              print(clean[:2400])
-          print('\n=== CUSTOM SELECTORS FROM INLINE STYLE BLOCKS ===')
-          for sm in re.finditer(r'<style[^>]*id=["\']([^"\']+)["\'][^>]*>(.*?)</style>',s,re.I|re.S):
-            sid,css=sm.group(1),sm.group(2)
-            if sid.startswith(('AI_VIDEO_PHASE','AI_VIDEO_V17','AI_VIDEO_V18','AI_VIDEO_NON','ai-video-faq','ai-video-audience')):
-              sels=[]
-              for q in re.findall(r'([^{}]+)\{',css):
-                q=' '.join(q.split())
-                if q and not q.startswith('@') and len(q)<260: sels.append(q)
-              print('\nSTYLE',sid,'selectors=',len(sels))
-              for q in sels[:80]: print(q)
-          PY
+import re
+s=open('/tmp/ai-css-audit.html',errors='ignore').read()
+for needle in ['Learn the workflow behind','Six blocks.','Understand the tools behind']:
+  i=s.lower().find(needle.lower()); print('\n###',needle,'pos',i)
+  if i<0: continue
+  # show nearest IDs/classes in 12k around heading
+  chunk=s[max(0,i-5000):min(len(s),i+14000)]
+  print('IDS=',sorted(set(re.findall(r'id=["\']([^"\']+)',chunk,re.I)))[:100])
+  print('CLASSES=',sorted(set(c for x in re.findall(r'class=["\']([^"\']+)',chunk,re.I) for c in x.split()))[:160])
+  print('TEXT_SNIP=',re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',chunk))[:3000])
+print('\nCOUNTS style',s.lower().count('<style'),s.lower().count('</style>'),'script',s.lower().count('<script'),s.lower().count('</script>'))
+PY
+          echo '=== NEXT ASSET PREFIXES ==='
+          grep -Eo '/[^" ]*/_next/static/(css|chunks)/[^" ]+' /tmp/ai-css-audit.html | sed 's/&amp;/\&/g' | sort -u | head -100 || true
+          echo '=== CURRENT CWD CSS ==='
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510'
+          find "$CWD/.next/static" -type f -name '*.css' -printf '%s|%p\n' 2>/dev/null | sort
+          echo '=== DONE ==='
           REMOTE
