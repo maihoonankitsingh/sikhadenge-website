@@ -48,28 +48,21 @@ test -n "$NEW_BUILD_ID"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test "$(cat "$LIVE_APP/.next/BUILD_ID")" = "$NEW_BUILD_ID"
 
-pm2_json="$(pm2 jlist)"
-pm2_status="$(node - "$PM2_PROCESS_NAME" "$pm2_json" <<'NODE'
-const [name, raw] = process.argv.slice(2);
-const processEntry = JSON.parse(raw).find((entry) => entry.name === name);
+PM2_JSON_FILE="$(mktemp)"
+trap 'rm -f "$PM2_JSON_FILE"' EXIT
+pm2 jlist > "$PM2_JSON_FILE"
+IFS='|' read -r pm2_status pm2_unstable pm2_restarts < <(
+  node - "$PM2_PROCESS_NAME" "$PM2_JSON_FILE" <<'NODE'
+const fs = require('node:fs');
+const [name, file] = process.argv.slice(2);
+const processEntry = JSON.parse(fs.readFileSync(file, 'utf8')).find((entry) => entry.name === name);
 if (!processEntry) process.exit(1);
-process.stdout.write(String(processEntry.pm2_env?.status || ''));
+const status = String(processEntry.pm2_env?.status || '');
+const unstable = String(processEntry.pm2_env?.unstable_restarts ?? 0);
+const restarts = String(processEntry.pm2_env?.restart_time ?? 0);
+process.stdout.write(`${status}|${unstable}|${restarts}\n`);
 NODE
-)"
-pm2_unstable="$(node - "$PM2_PROCESS_NAME" "$pm2_json" <<'NODE'
-const [name, raw] = process.argv.slice(2);
-const processEntry = JSON.parse(raw).find((entry) => entry.name === name);
-if (!processEntry) process.exit(1);
-process.stdout.write(String(processEntry.pm2_env?.unstable_restarts ?? 0));
-NODE
-)"
-pm2_restarts="$(node - "$PM2_PROCESS_NAME" "$pm2_json" <<'NODE'
-const [name, raw] = process.argv.slice(2);
-const processEntry = JSON.parse(raw).find((entry) => entry.name === name);
-if (!processEntry) process.exit(1);
-process.stdout.write(String(processEntry.pm2_env?.restart_time ?? 0));
-NODE
-)"
+)
 
 test "$pm2_status" = "online"
 test "$pm2_unstable" = "0"
