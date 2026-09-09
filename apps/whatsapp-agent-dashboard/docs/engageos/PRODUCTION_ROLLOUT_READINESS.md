@@ -8,10 +8,10 @@ This document is the operational gate between **repository implemented**, **prod
 
 - Pull request: `#158` — EngageOS Phases 3–17
 - Base branch: `release/whatsapp-instagram-agent-flow-20260731`
-- Repository-complete implementation SHA before this documentation commit: `db31ee8f92366db76560f2cbffb848f566fe9131`
-- CI evidence: WhatsApp Agent CI run `#794` passed behavioral tests, strict TypeScript, production build, migration regression and authenticated Inbox browser regression.
-- PR remains draft and unmerged.
-- The release branch has not yet advanced from `7ffbfbbde125ad47f022cfad921139c33b00ba0f` to the EngageOS implementation.
+- Final release-candidate head: `514f3011624e6e8a42bceb9c2b3342a86a15c24a`
+- CI evidence: WhatsApp Agent CI run `#800` passed behavioral tests, strict TypeScript, production build, migration regression and authenticated Inbox browser regression.
+- PR review evidence: no submitted reviews and no inline review threads were present at the final pre-merge check.
+- The guarded production batch includes a high-risk flag gate that checks the live env file, invoking shell environment and retained PM2 process environment before backup/migration/activation.
 
 A green CI run does **not** mean the implementation is deployed or live.
 
@@ -23,10 +23,9 @@ Do not merge, deploy, enable provider writes, enable billing, or call a phase li
 
 - [x] Phase 3–17 implementation exists on the feature branch.
 - [x] Fail-closed defaults remain in place for new runtimes and provider writes.
-- [x] Latest implementation CI passed before this documentation-only commit.
-- [ ] CI for the final exact release candidate SHA is green.
-- [ ] No unresolved PR review threads.
-- [ ] Exact release candidate SHA is recorded before merge/deploy.
+- [x] CI for the final exact release candidate SHA is green (`#800`).
+- [x] No unresolved PR review threads were present at the final pre-merge check.
+- [x] Exact release candidate head is recorded: `514f3011624e6e8a42bceb9c2b3342a86a15c24a`.
 
 ### Gate B — production transport and rollback
 
@@ -113,11 +112,12 @@ Deployment and activation are separate operations.
 The production batch performs:
 
 1. read-only preflight
-2. verified database backup
-3. guarded migration
-4. isolated build and atomic application activation
-5. post-deploy verification
-6. rollback-readiness evidence capture
+2. high-risk production flag gate across `.env`, invoking shell env and retained PM2 env
+3. verified database backup
+4. guarded migration
+5. isolated build and atomic application activation
+6. post-deploy verification
+7. rollback-readiness evidence capture
 
 On an activation failure, the batch is designed to invoke automatic application rollback when deployment state exists.
 
@@ -140,8 +140,8 @@ Stop rollout and do not promote if any of the following is true:
 
 **Repository implementation:** complete for Phases 3–17.
 
-**Production release candidate:** not yet approved; final exact-SHA CI and operational evidence are still required.
+**Repository release candidate:** CI-approved at head `514f3011624e6e8a42bceb9c2b3342a86a15c24a` via CI `#800`.
 
-**Production deployment of the EngageOS branch:** not proven.
+**Production deployment of the EngageOS branch:** pending guarded production workflow evidence.
 
-**Live activation of new EngageOS capabilities:** not approved.
+**Live activation of new EngageOS capabilities:** not approved; provider evidence and staged rollout gates remain mandatory.
