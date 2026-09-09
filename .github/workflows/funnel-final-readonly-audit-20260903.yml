@@ -25,43 +25,60 @@ jobs:
           SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
         run: |
           set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"
-          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"
-          KEY="$HOME/.ssh/prod"
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
           read -r _ key_type key_material _ <<< "$SSH_HOST_KEY"
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$key_type" "$key_material" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inventory rollback candidates read only
+      - name: Compare live and rollback candidates read only
         env:
           SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
           SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
         run: |
           set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '=== BACKUP DIRS RELEVANT AUG29-SEP10 ==='
-          find /var/backups/sikhadenge -maxdepth 1 -mindepth 1 -type d -printf '%TY-%Tm-%Td %TH:%TM:%TS | %f\n' 2>/dev/null \
-            | sort \
-            | grep -Ei '2026-08-(29|30|31)|2026-09-(0[1-9]|10)|ai|claude|heading|ecosystem|restore|video|snapshot|rollback|funnel' \
-            | tail -260 || true
-          echo '=== BACKUP FILES RELEVANT ==='
-          find /var/backups/sikhadenge -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS | %p | %s\n' 2>/dev/null \
-            | grep -Ei 'ai-video|claude|nginx|site|html|source|manifest|route|conf|before' \
-            | sort | tail -320 || true
-          echo '=== RELEASE DIRS ==='
-          find /var/www/sikhadenge.in/releases -maxdepth 1 -mindepth 1 -type d -printf '%TY-%Tm-%Td %TH:%TM:%TS | %f\n' 2>/dev/null | sort | tail -160 || true
-          echo '=== CANDIDATE DIRS ==='
-          find /var/www/sikhadenge.in/candidates -maxdepth 1 -mindepth 1 -type d -printf '%TY-%Tm-%Td %TH:%TM:%TS | %f\n' 2>/dev/null | sort | tail -120 || true
-          echo '=== PM2 PROCESS NAMES ==='
-          export PM2_HOME=/root/.pm2
-          pm2 ls --no-color 2>/dev/null || true
-          echo '=== PORT LISTENERS 3900-3999 ==='
-          ss -ltnp 2>/dev/null | grep -E ':39[0-9][0-9][[:space:]]' || true
-          echo '=== NGINX SITE BACKUP POINTERS / COMMENTS ==='
-          grep -nEi 'masterclass/ai-video|masterclass/claude/free|snapshot|backup|31aug|ai-video|claude' /etc/nginx/sites-enabled/sikhadenge.in-ssl 2>/dev/null | head -240 || true
-          echo '=== EXISTING NGINX SNIPPETS RELEVANT ==='
-          find /etc/nginx/snippets -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | grep -Ei 'ai|claude|masterclass|registration' | sort || true
+          summarize_html(){
+            local label="$1" file="$2"
+            echo "=== $label ==="
+            if [ ! -s "$file" ]; then echo 'MISSING/EMPTY'; return; fi
+            printf 'BYTES='; wc -c <"$file"
+            printf 'SHA256='; sha256sum "$file" | awk '{print $1}'
+            python3 - "$file" <<'PY'
+          import re,sys,html
+          p=sys.argv[1]; s=open(p,'r',encoding='utf-8',errors='ignore').read()
+          t=re.sub(r'<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>',' ',s,flags=re.I|re.S)
+          t=re.sub(r'<[^>]+>',' ',t); t=html.unescape(re.sub(r'\s+',' ',t)).strip()
+          needles=['Create cinematic AI videos','Six blocks','Understand the tools','One workflow','Real learners','Built for people','Questions before you join','Master 25+ AI Tools','30 Crore','60 Crore','9.2 Crore','PARABRAHM','AI Tools']
+          print('TITLE=', re.search(r'<title[^>]*>(.*?)</title>',s,re.I|re.S).group(1).strip() if re.search(r'<title[^>]*>(.*?)</title>',s,re.I|re.S) else '')
+          for n in needles: print(f'MARKER[{n}]={n.lower() in t.lower()}')
+          print('TEXT=',t[:900])
+          PY
+          }
+          tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+          echo '=== AI NGINX SNIPPET ==='; sed -n '1,240p' /etc/nginx/snippets/sikhadenge-ai-video-3940.conf || true
+          echo '=== CLAUDE ROUTE ==='; sed -n '145,190p' /etc/nginx/sites-enabled/sikhadenge.in-ssl || true
+          for spec in \
+            'PUBLIC_AI|https://sikhadenge.in/masterclass/ai-video?bestcmp=20260910' \
+            'DIRECT_3940_AI|http://127.0.0.1:3940/masterclass/ai-video' \
+            'DIRECT_3930_AI|http://127.0.0.1:3930/masterclass/ai-video' \
+            'PUBLIC_CLAUDE|https://sikhadenge.in/masterclass/claude/free?bestcmp=20260910' \
+            'DIRECT_3930_CLAUDE|http://127.0.0.1:3930/masterclass/claude/free' \
+            'DIRECT_3971_CLAUDE|http://127.0.0.1:3971/masterclass/claude/free'; do
+              label=${spec%%|*}; url=${spec#*|}; f="$tmp/$label.html"
+              code=$(curl -L -sS --max-time 25 -o "$f" -w '%{http_code}' "$url" || true); echo "$label HTTP=$code URL=$url"; summarize_html "$label" "$f"
+          done
+          for spec in \
+            'CLAUDE_6PM_SERVED|/var/backups/sikhadenge/claude-6pm-route-restore-20260831-214151/3930-served.html' \
+            'CLAUDE_BEFORE_BEST|/var/backups/sikhadenge/claude-before-best-restore-20260831-234122/free.html.current' \
+            'CLAUDE_BEFORE_MORNING|/var/backups/sikhadenge/claude-before-morning-restore-20260831-234745/free.html.before'; do
+              label=${spec%%|*}; f=${spec#*|}; summarize_html "$label" "$f"
+          done
+          echo '=== AI RELEASE FILES ==='
+          for d in /var/www/sikhadenge.in/releases/production-ai-video-golden-faq-final-20260904-130510 /var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916; do
+            echo "--- $d ---"; find "$d" -maxdepth 2 -type f -printf '%p | %s\n' 2>/dev/null | head -100
+          done
+          echo '=== CLAUDE ASSET SNIPPET ==='; cat /etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf || true
           REMOTE
