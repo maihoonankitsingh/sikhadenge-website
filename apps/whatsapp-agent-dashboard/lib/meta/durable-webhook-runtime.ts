@@ -1,7 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { processWebhookAgentBridge } from "@/lib/agent/webhook-agent-bridge";
-import { processWhatsAppWebhook } from "@/lib/meta/webhook-processor";
+import {
+  processWhatsAppInboundViaCore,
+} from "@/modules/channels/whatsapp/application/whatsapp-channel-adapter";
 import {
   ingestDurableEvent,
   PermanentEventError,
@@ -100,7 +102,7 @@ export const processDurableWhatsAppEvent: EventProcessor = async (event) => {
   }
 
   try {
-    await processWhatsAppWebhook(providerPayload, rawBody);
+    await processWhatsAppInboundViaCore(providerPayload, rawBody);
     await processWebhookAgentBridge(providerPayload);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
