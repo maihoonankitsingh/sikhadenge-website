@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import SidebarNavigationBridge from "../components/navigation/SidebarNavigationBridge";
 import InboxTemplatePickerBridge from "../components/templates/InboxTemplatePickerBridge";
 import InboxComposerDockBridge from "../components/inbox/InboxComposerDockBridge";
+import ServiceWorkerRegistration from "../components/productivity/ServiceWorkerRegistration";
 import "./globals.css";
 import "./auth.css";
 import "./inbox.css";
@@ -46,8 +47,15 @@ import "./all-modules-advanced.css";
 import "./unified-sidebar.css";
 import "./module-content-redesign.css";
 import "./inbox-sx-composer-responsive.css";
+import "./enterprise-ui-v2.css";
+import "./enterprise-ui-v2-hardening.css";
+import "./enterprise-product-polish.css";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 const DASHBOARD_FAVICON = "/sikhadenge-live-favicon-aa30502f5ec9.png";
 
@@ -70,7 +78,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} ${inter.variable}`}>
+        <ServiceWorkerRegistration />
         <SidebarNavigationBridge />
         <InboxTemplatePickerBridge />
         <InboxComposerDockBridge />
