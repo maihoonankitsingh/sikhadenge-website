@@ -174,7 +174,7 @@ jobs:
             printf '%s\n' "$tracked_status"
             printf 'PRESTAGE_TRACKED_STATUS_END\n'
             printf 'PRESTAGE_DIFF_NUMSTAT_BEGIN\n'
-            git diff --numstat --no-renames
+            git diff HEAD --numstat --no-renames
             printf 'PRESTAGE_DIFF_NUMSTAT_END\n'
           fi
 
