@@ -70,11 +70,14 @@ async function login(page) {
 
 async function validateModuleShell(page, viewport) {
   const shell = page.locator(".sx-module");
-  await expect(shell).toBeVisible();
-  await expect(page.locator(".sx-workspace")).toBeVisible();
-  await expect(page.locator(".sx-workspace-copy h1")).toBeVisible();
+  const workspace = page.locator(".sx-workspace");
+  const heading = page.locator(".sx-workspace-copy h1");
 
-  const titleSize = await page.locator(".sx-workspace-copy h1").evaluate(
+  await expect(shell).toBeVisible();
+  await expect(workspace).toBeVisible();
+  await expect(heading).toBeVisible();
+
+  const titleSize = await heading.evaluate(
     (node) => Number.parseFloat(getComputedStyle(node).fontSize),
   );
   expect(titleSize).toBeGreaterThanOrEqual(18);
@@ -84,14 +87,71 @@ async function validateModuleShell(page, viewport) {
     await expect(page.locator(".sx-side")).toBeHidden();
     await expect(page.locator(".sx-mobile-dock")).toBeVisible();
   } else {
-    await expect(page.locator(".sx-side")).toBeVisible();
+    const side = page.locator(".sx-side");
+    await expect(side).toBeVisible();
+
+    const placement = await page.evaluate(() => {
+      const sideNode = document.querySelector(".sx-module > .sx-side");
+      const workspaceNode = document.querySelector(".sx-module > .sx-workspace");
+      if (!(sideNode instanceof HTMLElement) || !(workspaceNode instanceof HTMLElement)) {
+        throw new Error("Module sidebar or workspace was not rendered.");
+      }
+      const sideRect = sideNode.getBoundingClientRect();
+      const workspaceRect = workspaceNode.getBoundingClientRect();
+      return {
+        sideLeft: sideRect.left,
+        sideRight: sideRect.right,
+        workspaceLeft: workspaceRect.left,
+        workspaceRight: workspaceRect.right,
+      };
+    });
+
+    expect(placement.sideLeft).toBeLessThan(placement.workspaceLeft);
+    expect(placement.sideRight).toBeLessThanOrEqual(placement.workspaceLeft + 2);
+    expect(placement.workspaceRight).toBeGreaterThan(placement.workspaceLeft);
   }
 }
 
 async function validateInbox(page, viewport) {
   await expect(page.locator(".sx-inbox")).toBeVisible();
+
+  if (viewport.width <= 767) {
+    const list = page.locator(".sx-list");
+    const chat = page.locator(".sx-chat");
+
+    // The seeded Inbox may restore/open the selected conversation directly.
+    // Validate the real mobile List → Chat flow regardless of initial state.
+    if (await chat.isVisible()) {
+      const back = page.getByRole("button", { name: "Back to conversations" });
+      await expect(back).toBeVisible();
+      await back.click();
+    }
+
+    await expect(list).toBeVisible();
+    await expect(page.locator(".sx-list-title")).toBeVisible();
+
+    const listTitleSize = await page.locator(".sx-list-title").evaluate(
+      (node) => Number.parseFloat(getComputedStyle(node).fontSize),
+    );
+    expect(listTitleSize).toBeGreaterThanOrEqual(17);
+    expect(listTitleSize).toBeLessThanOrEqual(19);
+
+    const selected = page.locator(".conversation-item.selected");
+    await expect(selected).toHaveCount(1);
+    await selected.dispatchEvent("click");
+    await expect(chat).toBeVisible();
+    await expect(page.locator(".sx-composer")).toBeVisible();
+
+    const composerFontSize = await page
+      .locator(".sx-composer-row textarea")
+      .evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize));
+    expect(composerFontSize).toBeGreaterThanOrEqual(16);
+    return;
+  }
+
   await expect(page.locator(".sx-list")).toBeVisible();
   await expect(page.locator(".sx-list-title")).toBeVisible();
+  await expect(page.locator(".sx-chat")).toBeVisible();
 
   const listTitleSize = await page.locator(".sx-list-title").evaluate(
     (node) => Number.parseFloat(getComputedStyle(node).fontSize),
@@ -99,21 +159,7 @@ async function validateInbox(page, viewport) {
   expect(listTitleSize).toBeGreaterThanOrEqual(17);
   expect(listTitleSize).toBeLessThanOrEqual(19);
 
-  const selected = page.locator(".conversation-item.selected");
-  await expect(selected).toHaveCount(1);
-
-  if (viewport.width <= 767) {
-    await selected.dispatchEvent("click");
-    await expect(page.locator(".sx-chat")).toBeVisible();
-    await expect(page.locator(".sx-composer")).toBeVisible();
-
-    const composerFontSize = await page
-      .locator(".sx-composer-row textarea")
-      .evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize));
-    expect(composerFontSize).toBeGreaterThanOrEqual(16);
-  } else {
-    await expect(page.locator(".sx-chat")).toBeVisible();
-  }
+  await expect(page.locator(".conversation-item.selected")).toHaveCount(1);
 }
 
 for (const viewport of VIEWPORTS) {
