@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { sendFacebookPagePublicCommentReply } from "../lib/messenger/page-comment-api-client";
 import { verifyMessengerPageCapabilityReadOnly } from "../lib/messenger/page-capability-verifier";
+import { messengerPolicyEnforcementEnabled } from "../lib/messenger/outbound-policy-gate";
 
 async function main() {
   const calls: Array<{ method: string; url: string }> = [];
@@ -39,6 +40,8 @@ async function main() {
 
   const missing = await verifyMessengerPageCapabilityReadOnly({ env: {} });
   assert.equal(missing.verified, false);
+  assert.equal(messengerPolicyEnforcementEnabled({}), false);
+  assert.equal(messengerPolicyEnforcementEnabled({ ENGAGEOS_MESSENGER_POLICY_ENFORCED: "true" }), true);
 
   let writeCalled = false;
   await assert.rejects(

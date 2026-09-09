@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { processSocialWebhookAgentBridge } from "../../../../lib/agent/social-webhook-agent-bridge";
+import {
+  facebookPageCommentAutomationEnabled,
+  processFacebookPageCommentAutomation,
+} from "../../../../lib/messenger/page-comment-automation-runtime";
 import { processMessengerWebhook } from "../../../../lib/messenger/webhook-processor";
 import {
   getMessengerAppSecret,
@@ -12,11 +16,26 @@ import {
   releasePersistedWebhookReplay,
   reservePersistedWebhookReplay,
 } from "@/modules/channels/core/security/prisma-webhook-replay";
+import { recordMetaWebhookEvidence } from "@/modules/integrations/infrastructure/prisma-integration-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
+function messengerPageIds(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
+  const root = payload as Record<string, unknown>;
+  if (root.object !== "page") return [];
+  const entries = Array.isArray(root.entry) ? root.entry : [];
+  const ids = new Set<string>();
+  for (const value of entries) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const id = (value as Record<string, unknown>).id;
+    if (typeof id === "string" && id.trim()) ids.add(id.trim());
+  }
+  return [...ids];
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -115,7 +134,17 @@ export async function POST(request: Request) {
   }
 
   try {
+    for (const pageId of messengerPageIds(payload)) {
+      await recordMetaWebhookEvidence({
+        channel: "MESSENGER",
+        externalAccountId: pageId,
+      }).catch(() => undefined);
+    }
+
     const result = await processMessengerWebhook(payload, rawBody);
+    const pageCommentAutomation = facebookPageCommentAutomationEnabled()
+      ? await processFacebookPageCommentAutomation(payload)
+      : null;
 
     let agent: Awaited<ReturnType<typeof processSocialWebhookAgentBridge>> | null = null;
     try {
@@ -136,7 +165,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { received: true, ...result, agent },
+      { received: true, ...result, pageCommentAutomation, agent },
       { status: 200, headers: NO_STORE_HEADERS },
     );
   } catch {
