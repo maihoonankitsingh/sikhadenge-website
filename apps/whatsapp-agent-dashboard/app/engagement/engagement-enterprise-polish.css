@@ -312,9 +312,15 @@
     padding: 13px;
   }
 
-  .sx-module .sx-workspace-body > .suite-stack .suite-form-grid :where(input, select, textarea),
-  .sx-module .sx-workspace-body > .suite-stack .suite-field-row :where(input, select) {
-    font-size: 16px;
+  /* Mobile Safari/Chrome can zoom text controls below 16px. These explicit,
+     route-scoped selectors also beat the later shared 13px input rule. */
+  .sx-module .sx-workspace-body > .suite-stack .suite-form-grid input:not([type="checkbox"]),
+  .sx-module .sx-workspace-body > .suite-stack .suite-form-grid select,
+  .sx-module .sx-workspace-body > .suite-stack .suite-form-grid textarea,
+  .sx-module .sx-workspace-body > .suite-stack .suite-field-row input:not([type="checkbox"]),
+  .sx-module .sx-workspace-body > .suite-stack .suite-field-row select,
+  .sx-module .sx-workspace-body > .suite-stack .suite-list select {
+    font-size: 16px !important;
   }
 
   .sx-module .sx-workspace-body > .suite-stack .suite-field-list {
@@ -354,10 +360,6 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     padding: 10px 0;
-  }
-
-  .sx-module .sx-workspace-body > .suite-stack .suite-list > article select {
-    font-size: 16px;
   }
 }
 
