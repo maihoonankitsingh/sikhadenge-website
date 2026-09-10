@@ -1,0 +1,69 @@
+name: Audit Claude Bonus Kit Baseline 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-bonus-section-20260910.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect live bonus section in 3 viewports
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const sig=errs=>{const x={};for(const e of errs){const m=String(e).match(/Minified React error #(\d+)/);const k=m?`react-${m[1]}`:String(e);x[k]=(x[k]||0)+1;}return x;};
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const errs=[],bad=[];
+              p.on('pageerror',e=>errs.push(String(e)));
+              p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?bonus_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,5000));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const h2=[...document.querySelectorAll('h2')].find(e=>n(e.textContent).includes('FREE AI MASTERCLASS BONUS KIT'));
+                const section=h2?.closest('section');
+                const sections=[...document.querySelectorAll('main section')];
+                const idx=section?sections.indexOf(section):-1;
+                const prev=idx>0?sections[idx-1]:null,next=idx>=0?sections[idx+1]:null;
+                const children=section?[...section.querySelectorAll('article, [class*="card"], [class*="Card"]')]:[];
+                const cardCandidates=children.filter((e,i,a)=>!a.some((other,j)=>j!==i&&other.contains(e)));
+                const cards=cardCandidates.slice(0,10).map((e,i)=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {i,text:n(e.innerText),tag:e.tagName,cls:e.className||'',w:Math.round(r.width),h:Math.round(r.height),display:s.display,bg:s.backgroundColor,border:s.border,borderRadius:s.borderRadius,padding:s.padding};});
+                const rect=section?.getBoundingClientRect();
+                const st=section?getComputedStyle(section):null;
+                const ctas=section?[...section.querySelectorAll('a[href]')].map(a=>({text:n(a.textContent),href:new URL(a.href,location.href).pathname})):[];
+                return {
+                  found:!!section,idx,sectionCount:sections.length,
+                  heading:n(h2?.textContent),
+                  text:n(section?.innerText),
+                  html:section?.innerHTML.slice(0,12000)||'',
+                  rect:rect?[Math.round(rect.width),Math.round(rect.height)]:[0,0],
+                  style:st?{padding:st.padding,background:st.backgroundColor,color:st.color}:null,
+                  cards,ctas,
+                  prev:n(prev?.querySelector('h2')?.textContent||prev?.innerText?.slice(0,100)),
+                  next:n(next?.querySelector('h2')?.textContent||next?.innerText?.slice(0,100)),
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                  scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/bonus|value-anchor|cta-conversion/.test(s)),
+                };
+              });
+              console.log('BONUS_BASELINE',name,JSON.stringify(x),'ERRORS',JSON.stringify(sig(errs)),'BAD',JSON.stringify(bad));
+              if(!x.found||x.sectionCount!==18||x.overflow||bad.length) throw new Error(`baseline structural failure ${name}`);
+              await p.close();
+            }
+            await b.close(); console.log('CLAUDE_BONUS_BASELINE_3VIEW_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
