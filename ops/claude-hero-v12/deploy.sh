@@ -33,7 +33,6 @@ rollback() {
 }
 trap rollback ERR
 
-# Start from the currently approved sealed state.
 sikhadenge-funnel-lockctl lock
 sikhadenge-funnel-lockctl check
 sikhadenge-funnel-lockctl unlock 15
@@ -42,7 +41,6 @@ sikhadenge-funnel-lockctl assert-unlocked
 test -s "$SITE"
 test -s "$ASSET"
 
-# Strict preconditions: exactly the expected pre-v12 state.
 if grep -Fq "$MARKER" "$ASSET"; then
   echo 'REFUSE: Claude Hero v12 marker already exists; do not double-apply.' >&2
   exit 72
@@ -85,7 +83,7 @@ cat >> "$ASSET" <<'JS'
   window.__SIKHADENGE_CLAUDE_HERO_V12__ = true;
 
   const EXPECT = "Master Claude + 25+ AI Tools to Work Smarter, Create Faster & Get Better Results.";
-  const HTML = "Master <mark>Claude + 25+ AI Tools</mark> to Work Smarter,<br>Create Faster &amp; Get Better Results.";
+  const HTML = "Master <mark>Claude + 25+ AI Tools</mark> to Work Smarter,<br> Create Faster &amp; Get Better Results.";
 
   function applyHero() {
     const h1 = document.querySelector("h1.claude-masterclass-live_heroHeadline__3oLU3") ||
