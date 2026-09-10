@@ -135,6 +135,21 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     height: 38px !important;
   }
 
+  /*
+   * The manual composer is absolutely positioned with its own z-index. Give
+   * list/chat explicit low sibling stacking contexts so that child controls
+   * cannot paint above the fixed Lead drawer or its backdrop.
+   */
+  .sx-inbox > .sx-list,
+  .sx-inbox > .sx-chat {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .sx-inbox > .sx-chat {
+    z-index: 2 !important;
+  }
+
   .sx-inbox > .sx-details {
     position: fixed !important;
     z-index: 430 !important;
@@ -151,6 +166,7 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     opacity: 0 !important;
     transform: translate3d(104%, 0, 0) !important;
     pointer-events: none !important;
+    isolation: isolate !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain !important;
@@ -191,6 +207,11 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     opacity: 1 !important;
     pointer-events: auto !important;
     transition: opacity 150ms ease, visibility 0s !important;
+  }
+
+  .sx-inbox.sx-details-open > .sx-list,
+  .sx-inbox.sx-details-open > .sx-chat {
+    pointer-events: none !important;
   }
 
   .sx-inbox .sx-details-close {
