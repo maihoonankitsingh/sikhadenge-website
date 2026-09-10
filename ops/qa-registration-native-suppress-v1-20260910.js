@@ -65,7 +65,6 @@ const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
     ]);
     await new Promise((r) => setTimeout(r, 4500));
 
-    // Keep the consent surface intact, but dismiss it before keyboard-flow testing.
     await page.evaluate(() => {
       const n = (s) => String(s || '').replace(/\s+/g, ' ').trim();
       const reject = [...document.querySelectorAll('button')].find((b) => /Reject non-essential/i.test(n(b.textContent)));
@@ -173,8 +172,6 @@ const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
       continue;
     }
 
-    // Intercept the real lead endpoint so the browser executes the full client flow
-    // without creating a QA lead in production.
     const intercepted = [];
     await page.setRequestInterception(true);
     page.on('request', (req) => {
@@ -204,30 +201,46 @@ const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
       }, { selector, value });
     };
 
+    const activateChoice = async (selector, label) => {
+      const state = await page.evaluate(({ selector }) => {
+        const el = document.querySelector(selector);
+        if (!el) return { found: false, visible: false };
+        const c = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        const visible = c.display !== 'none' && c.visibility !== 'hidden' && Number(c.opacity) !== 0 && r.width > 0 && r.height > 0;
+        const out = { found: true, visible, tag: el.tagName, rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], value: el.getAttribute('data-role') || el.getAttribute('data-goal') || el.getAttribute('data-laptop') || '' };
+        if (visible) el.click();
+        return out;
+      }, { selector });
+      console.log('REG_DYNAMIC_CHOICE', name, label, JSON.stringify(state));
+      if (!state.found || !state.visible) throw new Error(`${name}: ${label} choice missing/not visible`);
+      await new Promise((r) => setTimeout(r, 300));
+    };
+
     await setField('#sd-reg-name', 'QA Section Twelve');
     await setField('#sd-reg-email', 'qa.section12@example.com');
     await setField('#sd-reg-phone', '9999999999');
     await page.click('#sdv2-root [data-action="details-next"]');
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const role = await page.$('#sdv2-root [data-role]');
-    if (!role) throw new Error(`${name}: role choices missing`);
-    await role.click();
+    await activateChoice('#sdv2-root [data-role]', 'role');
     await page.click('#sdv2-root [data-action="role-next"]');
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const goal = await page.$('#sdv2-root [data-goal]');
-    if (!goal) throw new Error(`${name}: goal choices missing`);
-    await goal.click();
-    const laptop = await page.$('#sdv2-root [data-laptop="true"]') || await page.$('#sdv2-root [data-laptop]');
-    if (!laptop) throw new Error(`${name}: laptop choices missing`);
-    await laptop.click();
+    await activateChoice('#sdv2-root [data-goal]', 'goal');
+    await activateChoice('#sdv2-root [data-laptop="true"]', 'laptop');
     await page.click('#sdv2-root [data-action="goal-next"]');
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const submit = await page.$('#sdv2-root [data-action="submit"]');
-    if (!submit) throw new Error(`${name}: submit action missing on bonus step`);
-    await submit.click();
+    const submitState = await page.evaluate(() => {
+      const el = document.querySelector('#sdv2-root [data-action="submit"]');
+      if (!el) return { found: false, visible: false };
+      const c = getComputedStyle(el), r = el.getBoundingClientRect();
+      return { found: true, visible: c.display !== 'none' && c.visibility !== 'hidden' && Number(c.opacity) !== 0 && r.width > 0 && r.height > 0, text: String(el.textContent || '').replace(/\s+/g, ' ').trim(), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] };
+    });
+    console.log('REG_SUBMIT_STATE', name, JSON.stringify(submitState));
+    if (!submitState.found || !submitState.visible) throw new Error(`${name}: submit action missing/not visible on bonus step`);
+    await page.evaluate(() => document.querySelector('#sdv2-root [data-action="submit"]').click());
 
     const deadline = Date.now() + 5000;
     while (intercepted.length === 0 && Date.now() < deadline) {
