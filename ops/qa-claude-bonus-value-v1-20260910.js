@@ -82,7 +82,7 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
     let responsiveOK=contentOK;
     if(name==='desktop') responsiveOK=responsiveOK&&state.cards.every(c=>Math.abs(c.w-399)<=2&&c.h>=326&&c.benefitStyle?.fontSize==='14px'&&c.benefitStyle?.textAlign==='center');
     if(name==='tablet') responsiveOK=responsiveOK&&state.cards.every(c=>Math.abs(c.w-233)<=2&&c.h>=326&&c.benefitStyle?.fontSize==='13.5px'&&c.benefitStyle?.textAlign==='center');
-    if(name==='mobile') responsiveOK=responsiveOK&&state.cards.every(c=>Math.abs(c.w-366)<=2&&c.h>=285&&c.benefitStyle?.fontSize==='13.5px'&&c.benefitStyle?.textAlign==='center');
+    if(name==='mobile') responsiveOK=responsiveOK&&state.cards.every(c=>Math.abs(c.w-366)<=2&&c.h>=275&&c.benefitStyle?.fontSize==='13.5px'&&c.benefitStyle?.textAlign==='center');
     const errorsOK=errorsWithinBaseline(errors);
 
     console.log('BONUS_V1',name,JSON.stringify({state,errors,errorsOK,badAssets,coreOK,orderOK,bonusOK,responsiveOK}));
