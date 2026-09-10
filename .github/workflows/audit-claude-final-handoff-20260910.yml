@@ -1,0 +1,51 @@
+name: Audit Claude Final Handoff 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-final-handoff-20260910.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Audit live final handoff section
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[],errs=[]; p.on('pageerror',e=>errs.push(String(e))); p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?handoff_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,5000));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim(); const reg='/gen-ai-masterclass/register-one-step';
+                const all=[...document.querySelectorAll('main section')]; const sec=all[17]||null; const idx=sec?all.indexOf(sec):-1;
+                const links=sec?[...sec.querySelectorAll('a[href]')].map(a=>{const r=a.getBoundingClientRect();let path='';try{path=new URL(a.href,location.href).pathname}catch{};const cs=getComputedStyle(a);return {text:n(a.textContent),path,aria:a.getAttribute('aria-label')||'',rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},display:cs.display,fontSize:cs.fontSize,fontWeight:cs.fontWeight,bg:cs.backgroundColor,color:cs.color}}):[];
+                const sr=sec?.getBoundingClientRect(); const h2=sec?.querySelector('h2'); const p=sec?.querySelector('p'); const h2cs=h2?getComputedStyle(h2):null; const pcs=p?getComputedStyle(p):null;
+                const body=n(document.body.innerText); const i=body.indexOf('NEXT LIVE BATCH');
+                return {sectionCount:all.length,idx,text:n(sec?.innerText),html:(sec?.outerHTML||'').slice(0,25000),rect:sr?{x:Math.round(sr.x),y:Math.round(sr.y),w:Math.round(sr.width),h:Math.round(sr.height)}:null,h2:n(h2?.textContent),p:n(p?.textContent),h2Style:h2cs?{fontSize:h2cs.fontSize,lineHeight:h2cs.lineHeight,fontWeight:h2cs.fontWeight,maxWidth:h2cs.maxWidth,textAlign:h2cs.textAlign}:null,pStyle:pcs?{fontSize:pcs.fontSize,lineHeight:pcs.lineHeight,fontWeight:pcs.fontWeight,maxWidth:pcs.maxWidth,textAlign:pcs.textAlign}:null,links,registerLinks:links.filter(x=>x.path===reg).length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,prev:idx>0?n(all[idx-1].innerText):'',bodyEvidence:i>=0?body.slice(Math.max(0,i-250),Math.min(body.length,i+850)):'',scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/claude|closing|faq|attribution/.test(s))};
+              });
+              console.log('FINAL_HANDOFF_AUDIT',name,JSON.stringify(x),'BAD',JSON.stringify(bad),'ERROR_COUNT',errs.length);
+              if(x.sectionCount!==18||x.idx!==17||x.registerLinks<1||x.overflow||bad.length) throw new Error(`final handoff audit fail ${name}`);
+              await p.close();
+            }
+            await b.close(); console.log('CLAUDE_FINAL_HANDOFF_3VIEW_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 45 'https://sikhadenge.in/masterclass/claude/free?sha_audit=1' -o /tmp/claude.html
+          echo "CLAUDE_PUBLIC_SHA=$(sha256sum /tmp/claude.html | awk '{print $1}')"
+          echo "CLAUDE_PUBLIC_BYTES=$(wc -c < /tmp/claude.html)"
