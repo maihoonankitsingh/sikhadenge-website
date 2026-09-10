@@ -1,4 +1,4 @@
-name: Inspect Claude Legacy Opportunity Strip 20260910
+name: Inspect Claude Proof V4 Render 20260910
 
 on:
   push:
@@ -31,26 +31,18 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read-only exact legacy strip trace
+      - name: Read-only proof render trace
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           sikhadenge-funnel-lockctl check
-          CHUNK='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
-          HIDE='/var/www/sikhadenge.in/claude-proof-hide-old-v2.js'
-          echo CHUNK_SHA=$(sha256sum "$CHUNK"|awk '{print $1}')
-          echo HIDE_SHA=$(sha256sum "$HIDE"|awk '{print $1}')
-          python3 - "$CHUNK" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          for n in ['AI Prompt Engineers Earn $300k Salaries','69 million jobs to emerge','AI-related roles saw unprecedented growth','Rise in AI-related opportunities','BUSINESS DAILY','CAREER INSIGHTS','FUTURE OF WORK']:
-              i=s.find(n)
-              print('COUNT',repr(n),s.count(n))
-              if i>=0: print('CONTEXT',repr(n),s[max(0,i-1000):i+2200])
-          PY
-          echo '=== HIDE SCRIPT ==='
-          cat "$HIDE"
-          echo LEGACY_STRIP_TRACE_PASS
+          F='/var/www/sikhadenge.in/claude-proof-static-v4.js'
+          echo SHA=$(sha256sum "$F"|awk '{print $1}')
+          echo '=== STRING LITERALS / RENDER CONTEXT ==='
+          grep -nE 'innerHTML|insertAdjacent|JOBS_ID|SKILLS_ID|AI SHIFT|WORKFORCE|OPPORTUNITY|heading|section|jobs\.map|skills\.map|Reserve My Free Seat' "$F" || true
+          echo '=== LINES 90-260 ==='
+          nl -ba "$F" | sed -n '90,260p'
+          echo PROOF_RENDER_TRACE_PASS
           REMOTE
