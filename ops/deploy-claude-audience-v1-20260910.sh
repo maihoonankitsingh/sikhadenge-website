@@ -8,13 +8,13 @@ CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-0
 DIR="$CWD/.next/static/chunks/pages/masterclass/claude"
 BASE_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
 CURRENT_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
-NEW_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-audience-v1-20260910.js'
+NEW_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-audience-v1b-20260910.js'
 CURRENT="$DIR/$CURRENT_NAME"
 NEW="$DIR/$NEW_NAME"
 BASE_URL="/_next/static/chunks/pages/masterclass/claude/$BASE_NAME"
 CURRENT_URL="/_next/static/chunks/pages/masterclass/claude/$CURRENT_NAME"
 NEW_URL="/_next/static/chunks/pages/masterclass/claude/$NEW_NAME"
-MARKER='/var/backups/sikhadenge/.claude-audience-v1-last'
+MARKER='/var/backups/sikhadenge/.claude-audience-v1b-last'
 
 rollback() {
   set +e
@@ -35,7 +35,7 @@ if [[ "$MODE" == rollback ]]; then rollback; exit 0; fi
 [[ "$MODE" == stage ]] || { echo "usage: $0 stage|rollback" >&2; exit 2; }
 
 TS="$(date +%Y%m%d-%H%M%S)"
-BK="/var/backups/sikhadenge/claude-audience-v1-$TS"
+BK="/var/backups/sikhadenge/claude-audience-v1b-$TS"
 mkdir -p "$BK"
 cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
 cp -L "$ASSETS" "$BK/claude-assets.before"
@@ -52,8 +52,8 @@ test "$(sha256sum "$CURRENT"|awk '{print $1}')" = 'ad12771c1d5d9b23d995afbf7d019
 sikhadenge-funnel-lockctl unlock 15
 sikhadenge-funnel-lockctl assert-unlocked
 
-# Audience V1 intentionally preserves the existing H2/highlight pipeline.
-# Only the eyebrow and the four persona cards are changed.
+# Audience V1 preserves the existing H2/highlight pipeline.
+# Only the eyebrow and the four persona cards change.
 cp -a "$CURRENT" "$NEW"
 python3 - "$NEW" <<'PY'
 import sys
@@ -79,15 +79,15 @@ node --check "$NEW"
 NEW_SHA="$(sha256sum "$NEW"|awk '{print $1}')"
 echo "NEW_CHUNK_SHA=$NEW_SHA"
 
-if ! grep -Fq 'SIKHADENGE_CLAUDE_AUDIENCE_V1_ASSET_20260910' "$ASSETS"; then
+if ! grep -Fq 'SIKHADENGE_CLAUDE_AUDIENCE_V1B_ASSET_20260910' "$ASSETS"; then
 cat >> "$ASSETS" <<EOF
 
-# SIKHADENGE_CLAUDE_AUDIENCE_V1_ASSET_20260910
+# SIKHADENGE_CLAUDE_AUDIENCE_V1B_ASSET_20260910
 location = $NEW_URL {
     alias $NEW;
     default_type application/javascript;
     add_header Cache-Control "public, max-age=31536000, immutable" always;
-    add_header X-SD-Claude-Asset "audience-v1-20260910" always;
+    add_header X-SD-Claude-Asset "audience-v1b-20260910" always;
 }
 EOF
 fi
@@ -112,12 +112,11 @@ for i in range(q,len(s)):
         if d==0: end=i+1; break
 if end is None: raise SystemExit('route parse failed')
 route=s[a:end]
-if '# SIKHADENGE_CLAUDE_AUDIENCE_V1_20260910' in route: raise SystemExit('unexpected Audience V1 marker')
+if '# SIKHADENGE_CLAUDE_AUDIENCE_V1B_20260910' in route: raise SystemExit('unexpected Audience V1B marker')
 old_line=f"        sub_filter '{baseurl}' '{currenturl}';"
 new_line=f"        sub_filter '{baseurl}' '{newurl}';"
 if route.count(old_line)!=1: raise SystemExit(f'current chunk route line count={route.count(old_line)}')
 route=route.replace(old_line,new_line,1)
-# Server response uses HTML-escaped ampersands. H2 is deliberately untouched.
 filters=[
  ('BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR'),
  ('Working professionals','Working professionals &amp; business owners'),
@@ -128,7 +127,7 @@ filters=[
  ('Business owners','Job seekers &amp; career switchers'),
  ('Use AI to improve planning, communication and decision support.','Use AI for LinkedIn, interviews, research and faster skill-building.'),
 ]
-block='\n        # SIKHADENGE_CLAUDE_AUDIENCE_V1_20260910\n'
+block='\n        # SIKHADENGE_CLAUDE_AUDIENCE_V1B_20260910\n'
 for old,new in filters:
     block += '        sub_filter '+repr(old)+' '+repr(new)+';\n'
 route=route.replace(new_line+'\n',new_line+'\n'+block,1)
@@ -140,9 +139,12 @@ nginx -t
 systemctl reload nginx
 sleep 2
 
-code="$(curl -L -sS --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 -o "$BK/new.public.js" -w '%{http_code}' "https://sikhadenge.in${NEW_URL}?first=$TS")"
-test "$code" = 200; echo "NEW_CHUNK_HTTP=$code"
-test "$(sha256sum "$BK/new.public.js"|awk '{print $1}')" = "$NEW_SHA"
+# Canonical immutable URL must itself carry the exact new bytes. No query-string
+# cache busting is used for this integrity check.
+code="$(curl -L -sS --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 -o "$BK/new.public.canonical.js" -w '%{http_code}' "https://sikhadenge.in${NEW_URL}")"
+test "$code" = 200; echo "NEW_CHUNK_CANONICAL_HTTP=$code"
+test "$(sha256sum "$BK/new.public.canonical.js"|awk '{print $1}')" = "$NEW_SHA"
+echo "NEW_CHUNK_CANONICAL_SHA=$NEW_SHA"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?audience_server=$TS" -o "$BK/claude.after.html"
 python3 - "$BK/claude.after.html" "$NEW_URL" <<'PY'
