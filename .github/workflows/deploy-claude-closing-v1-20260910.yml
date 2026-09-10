@@ -1,0 +1,124 @@
+name: Deploy Claude Closing V1 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-claude-closing-v1-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ops/deploy-claude-closing-v1-20260910.sh
+          node --check ops/qa-claude-closing-v1-20260910.js
+          grep -Fq "EXPECTED_CLAUDE_BEFORE='8969a803bf40da796f5da5a31e98170ac4f6b5f054b1512de5802873fbeb832a'" ops/deploy-claude-closing-v1-20260910.sh
+          grep -Fq "audience-v1b-closing-v1-20260910.js" ops/deploy-claude-closing-v1-20260910.sh
+          grep -Fq "no coding required" ops/qa-claude-closing-v1-20260910.js
+          echo CLOSING_V1_STATIC_VALIDATION=PASS
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Locked preflight
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          echo CLOSING_V1_PREFLIGHT=PASS
+          REMOTE
+
+      - name: Stage deployment file
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/deploy-claude-closing-v1-20260910.sh \
+            "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-closing-v1-20260910.sh"
+
+      - name: Controlled Closing V1 stage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-closing-v1-20260910.sh stage'
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          node ops/qa-claude-closing-v1-20260910.js
+
+      - name: Reseal and lock Golden baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl check
+          /usr/local/sbin/sikhadenge-funnel-golden-guard --deep
+          sleep 3
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          echo CLAUDE_CLOSING_V1_RESEALED_LOCKED=PASS
+          REMOTE
+
+      - name: Post-lock browser regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          node ops/qa-claude-closing-v1-20260910.js
+          echo CLOSING_V1_POST_LOCK_BROWSER=PASS
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-closing-v1-20260910.sh rollback'
