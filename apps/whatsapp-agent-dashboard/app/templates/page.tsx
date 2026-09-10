@@ -7,6 +7,7 @@ import "../dashboard-system.css";
 import "./template-studio.css";
 import "./template-studio-v3.css";
 import "./templates-enterprise-polish.css";
+import "./templates-enterprise-cascade.css";
 
 export const dynamic = "force-dynamic";
 
