@@ -6,6 +6,7 @@ import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
 import "./template-studio.css";
 import "./template-studio-v3.css";
+import "./templates-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
