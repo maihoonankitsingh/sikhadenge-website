@@ -33,50 +33,67 @@ jobs:
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Read-only current Claude section map
+      - name: Read-only current agenda source trace
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          echo '=== LOCK STATUS ==='
-          sikhadenge-funnel-lockctl status | sed -n '1,24p'
-          TMP="/tmp/claude-agenda-inspect-$$.html"
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?agenda_inspect=$(date +%s)" -o "$TMP"
-          python3 - "$TMP" <<'PY'
-          from html.parser import HTMLParser
-          import sys,re,html
-          class P(HTMLParser):
-              def __init__(self):
-                  super().__init__(); self.sections=[]; self.depth=0; self.cur=None; self.tagstack=[]
-              def handle_starttag(self,tag,attrs):
-                  attrs=dict(attrs)
-                  if tag=='section':
-                      if self.depth==0: self.cur={'attrs':attrs,'parts':[],'heads':[]}
-                      self.depth+=1
-                  self.tagstack.append(tag)
-              def handle_endtag(self,tag):
-                  if tag=='section' and self.depth:
-                      self.depth-=1
-                      if self.depth==0 and self.cur:
-                          self.sections.append(self.cur); self.cur=None
-                  if self.tagstack: self.tagstack.pop()
-              def handle_data(self,data):
-                  if self.cur and self.depth:
-                      t=' '.join(data.split())
-                      if t:
-                          self.cur['parts'].append(t)
-                          if self.tagstack and self.tagstack[-1] in ('h1','h2','h3','h4'): self.cur['heads'].append(t)
-          p=P(); p.feed(open(sys.argv[1],encoding='utf-8',errors='ignore').read())
-          print('SECTION_COUNT',len(p.sections))
-          for i,s in enumerate(p.sections,1):
-              text=' '.join(s['parts']); text=re.sub(r'\s+',' ',text).strip()
-              heads=' | '.join(s['heads'])
-              cls=s['attrs'].get('class','')
-              print(f'--- SECTION {i} class={cls!r}')
-              print('HEADS:',heads[:500])
-              print('TEXT:',text[:1800])
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          TMP="/tmp/claude-agenda-source-$$.html"
+          sikhadenge-funnel-lockctl check
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?agenda_source=$(date +%s)" -o "$TMP"
+          python3 - "$TMP" "$SITE" "$CWD" <<'PY'
+          import re,sys,html,hashlib,pathlib
+          hp,sitep,cwd=sys.argv[1:]
+          h=open(hp,encoding='utf-8',errors='ignore').read()
+          scripts=[html.unescape(x) for x in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',h,re.I)]
+          claude=[x for x in scripts if '/_next/static/chunks/pages/masterclass/claude/free-' in x]
+          print('CLAUDE_PAGE_SCRIPTS',claude)
+          if len(claude)!=1: raise SystemExit('expected exactly one Claude page chunk')
+          url=claude[0].split('?',1)[0]
+          p=pathlib.Path(cwd)/'.next'/url[len('/_next/'):]
+          print('CLIENT_PATH',p)
+          print('CLIENT_EXISTS',p.is_file())
+          if not p.is_file(): raise SystemExit('client chunk missing')
+          b=p.read_bytes(); s=b.decode('utf-8',errors='ignore')
+          print('CLIENT_SHA',hashlib.sha256(b).hexdigest())
+          targets=[
+            'LIVE MASTERCLASS ROADMAP',
+            'From first prompt to professional',
+            'A practical AI journey where you learn research, writing, analysis and reusable workflows step by step.',
+            'Choose the right AI tool',
+            'Research & deep work',
+            'Content & professional output',
+            'Coding, agents & automation',
+            'Build your AI workflow',
+            'Understand where ChatGPT, Claude, Gemini, Codex, Perplexity and specialist AI tools fit best.',
+            'Turn websites, PDFs, notes and long information into summaries, insights and useful action points.',
+            'Create stronger emails, reports, presentations, ideas and professional content with AI.',
+            'See how AI can assist with coding, repetitive digital work and modern workflow automation.',
+            'Combine multiple tools into one repeatable system instead of relying on one chatbot for every task.'
+          ]
+          for t in targets: print('COUNT',s.count(t),repr(t))
+          site=open(sitep,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=site.find(needle)
+          if a<0: raise SystemExit('route missing')
+          q=site.find('{',a); d=0; quote=None; esc=False; end=None
+          for i in range(q,len(site)):
+              ch=site[i]
+              if esc: esc=False; continue
+              if ch=='\\': esc=True; continue
+              if quote:
+                  if ch==quote: quote=None
+                  continue
+              if ch in ('"',"'"): quote=ch; continue
+              if ch=='{': d+=1
+              elif ch=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          route=site[a:end]
+          for line in route.splitlines():
+              if 'sub_filter' in line and ('free-' in line or 'ROADMAP' in line or 'prompt' in line or 'Coding' in line): print('ROUTE',line)
           PY
           rm -f "$TMP"
-          echo 'READ_ONLY_INSPECT=PASS'
+          echo 'AGENDA_SOURCE_TRACE=PASS'
           REMOTE
