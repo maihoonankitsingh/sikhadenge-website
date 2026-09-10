@@ -1,4 +1,4 @@
-name: Inspect Claude Job Impact Content Temp 20260910
+name: Deploy Claude Job Impact V1 Validated 20260910
 
 on:
   push:
@@ -17,11 +17,21 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  inspect:
+  deploy:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 6
+    timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ops/deploy-claude-job-impact-v1-20260910.sh
+          node --check ops/qa-claude-job-impact-v1-20260910.js
+          echo STATIC_VALIDATION=PASS
+
       - name: Configure pinned SSH
         shell: bash
         run: |
@@ -31,34 +41,48 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect exact current payloads
+
+      - name: Stage deployment utility
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/deploy-claude-job-impact-v1-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-job-impact-v1-20260910.sh"
+
+      - name: Controlled Job Impact V1 stage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-job-impact-v1-20260910.sh stage'
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          node ops/qa-claude-job-impact-v1-20260910.js
+
+      - name: Reseal and lock Golden baseline
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
           sikhadenge-funnel-lockctl check
-          ROOT='/var/www/sikhadenge.in/claude-proof-static-v4.js'
-          CHUNK='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
-          echo ROOT_SHA=$(sha256sum "$ROOT"|awk '{print $1}')
-          echo CHUNK_SHA=$(sha256sum "$CHUNK"|awk '{print $1}')
-          echo '=== ROOT SCRIPT CONTEXT ==='
-          python3 - "$ROOT" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          for n in ['full-time jobs exposed to AI automation','Jobs asking for AI skills are outpacing','workers could be displaced','current jobs projected','Goldman','McKinsey','World Economic Forum','India']:
-              i=s.find(n)
-              if i>=0: print('\nTARGET',repr(n),'\n',s[max(0,i-900):i+1800])
-          PY
-          echo '=== CHUNK CONTEXT ==='
-          python3 - "$CHUNK" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          for n in ['THE AI SHIFT','300M jobs globally exposed','75M–375M','AI Prompt Engineers Earn $300k','69 million jobs','Industry warnings']:
-              i=s.find(n)
-              if i>=0: print('\nTARGET',repr(n),'\n',s[max(0,i-1200):i+2800])
-          PY
-          echo '=== ROOT SCRIPT TAG ==='
-          grep -nF 'claude-proof-static-v4.js' /etc/nginx/sites-enabled/sikhadenge.in-ssl || true
-          echo CONTENT_TRACE_PASS
+          sikhadenge-funnel-lockctl status
+          echo CLAUDE_JOB_IMPACT_V1_RESEALED_LOCKED=PASS
           REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-job-impact-v1-20260910.sh rollback'
