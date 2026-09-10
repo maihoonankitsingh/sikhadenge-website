@@ -8,6 +8,12 @@ import type {
   InboxConversationSummary,
   InboxMessage,
 } from "../../lib/inbox/types";
+import {
+  clearLocalDraft,
+  getOrCreateDraftDeviceId,
+  persistLocalDraft,
+  restoreLocalDraft,
+} from "../../modules/productivity/application/local-draft-store";
 import MetaConnectionStatus from "../navigation/MetaConnectionStatus";
 import LogoutButton from "../auth/LogoutButton";
 
@@ -548,7 +554,23 @@ export default function InboxDashboardV2({
   const [operationBusy, setOperationBusy] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [draftState, setDraftState] = useState<{
+    conversationId: string | null;
+    body: string;
+    hydrated: boolean;
+  }>({
+    conversationId:
+      initialConversation?.id ??
+      initialConversations[0]?.id ??
+      null,
+    body: "",
+    hydrated: false,
+  });
+
+  const draft =
+    draftState.conversationId === selectedId
+      ? draftState.body
+      : "";
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -561,10 +583,131 @@ export default function InboxDashboardV2({
   const selectedIdRef = useRef(selectedId);
   const pollingRef = useRef(false);
   const messageAreaRef = useRef<HTMLDivElement>(null);
+  const draftRevisionRef = useRef(0);
+  const draftSavedAtRef = useRef<Date>(new Date(0));
+  const draftDeviceIdRef = useRef<string | null>(null);
+
+  function setDraft(
+    next:
+      | string
+      | ((current: string) => string),
+  ) {
+    const conversationId =
+      selectedIdRef.current;
+
+    if (!conversationId) {
+      return;
+    }
+
+    setDraftState((current) => {
+      const currentBody =
+        current.conversationId === conversationId
+          ? current.body
+          : "";
+
+      const nextBody =
+        typeof next === "function"
+          ? next(currentBody)
+          : next;
+
+      if (nextBody !== currentBody) {
+        draftRevisionRef.current += 1;
+        draftSavedAtRef.current = new Date();
+      }
+
+      return {
+        conversationId,
+        body: nextBody,
+        hydrated: true,
+      };
+    });
+  }
 
   useEffect(() => {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      draftRevisionRef.current = 0;
+      draftSavedAtRef.current = new Date(0);
+      draftDeviceIdRef.current = null;
+
+      setDraftState({
+        conversationId: null,
+        body: "",
+        hydrated: true,
+      });
+
+      return;
+    }
+
+    const recovered =
+      restoreLocalDraft(
+        window.localStorage,
+        selectedId,
+      );
+
+    draftRevisionRef.current =
+      recovered?.revision ?? 0;
+
+    draftSavedAtRef.current =
+      recovered?.savedAt ?? new Date();
+
+    draftDeviceIdRef.current =
+      recovered?.deviceId ??
+      getOrCreateDraftDeviceId(
+        window.localStorage,
+      );
+
+    setDraftState({
+      conversationId: selectedId,
+      body: recovered?.body ?? "",
+      hydrated: true,
+    });
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (
+      !selectedId ||
+      !draftState.hydrated ||
+      draftState.conversationId !== selectedId
+    ) {
+      return;
+    }
+
+    if (draftState.body.length === 0) {
+      clearLocalDraft(
+        window.localStorage,
+        selectedId,
+      );
+
+      return;
+    }
+
+    const deviceId =
+      draftDeviceIdRef.current ??
+      getOrCreateDraftDeviceId(
+        window.localStorage,
+      );
+
+    draftDeviceIdRef.current =
+      deviceId;
+
+    persistLocalDraft(
+      window.localStorage,
+      {
+        conversationId: selectedId,
+        body: draftState.body,
+        revision: draftRevisionRef.current,
+        savedAt: draftSavedAtRef.current,
+        deviceId,
+      },
+    );
+  }, [
+    selectedId,
+    draftState,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1335,10 +1478,11 @@ export default function InboxDashboardV2({
                 : "Messages are sent through Meta WhatsApp Cloud API."}
           </div>
           <div className="sx-composer-row">
-            <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false)} title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
+            <button className="sx-composer-tool" type="button" disabled={!selected || uploading || sending || (selectedSummary ? channelOf(selectedSummary) === "messenger" : false)} aria-label="Attach file" title="Attach image, PDF, document, video, or audio" onClick={() => fileInputRef.current?.click()}>
               {uploading ? <span className="sx-spin">…</span> : <Ic name="paperclip" />}
             </button>
             <textarea
+              aria-label="Message draft"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder={uploadedMedia ? "Add an optional caption…" : "Write a message…"}
@@ -1352,10 +1496,10 @@ export default function InboxDashboardV2({
               }}
             />
             <div className="sx-composer-tools">
-              <button className="sx-composer-tool" type="button" title="Open templates and targeted campaigns">
+              <button className="sx-composer-tool" type="button" aria-label="Open templates and targeted campaigns" title="Open templates and targeted campaigns">
                 <Ic name="grid" />
               </button>
-              <button className="sx-composer-tool" type="button" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>
+              <button className="sx-composer-tool" type="button" aria-label="Open Template Centre" title="Open Template Centre" onClick={() => window.location.assign("/templates")}>
                 <Ic name="sparkle" />
               </button>
             </div>
@@ -1363,6 +1507,7 @@ export default function InboxDashboardV2({
             <button
               className="sx-send"
               type="button"
+              aria-label="Send message"
               disabled={
                 !selected ||
                 sending ||

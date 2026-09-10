@@ -6,6 +6,11 @@ import { createJourneyEnrollment, evaluateNextJourneyStep, recordJourneyStepSent
 import { buildAnalyticsSnapshot } from "../modules/analytics/application/analytics-snapshot";
 import { evaluateOfficialConnectorActivation } from "../modules/channels/core/application/official-connector-control";
 import { evaluatePwaReadiness } from "../modules/productivity/application/pwa-readiness";
+import {
+  clearLocalDraft,
+  persistLocalDraft,
+  restoreLocalDraft,
+} from "../modules/productivity/application/local-draft-store";
 import { hashApiKey, authorizeEnterpriseRequest } from "../modules/saas/application/enterprise-access";
 import { buildRemainingPhaseReadiness } from "../modules/release/application/phase-readiness";
 import { evaluateReleaseExit } from "../modules/release/application/release-exit-gate";
@@ -141,6 +146,107 @@ function testPwa() {
   });
   assert.equal(readiness.offlineProductivityReady, true);
   assert.equal(readiness.pushReady, false);
+
+  const values =
+    new Map<string, string>();
+
+  const storage = {
+    getItem(key: string) {
+      return values.get(key) ?? null;
+    },
+    setItem(
+      key: string,
+      value: string,
+    ) {
+      values.set(key, value);
+    },
+    removeItem(key: string) {
+      values.delete(key);
+    },
+  };
+
+  const draft = {
+    conversationId:
+      "phase15-conversation",
+    body:
+      "Recovered unsent counselor draft.",
+    revision: 3,
+    savedAt:
+      new Date(
+        "2026-09-10T12:00:00.000Z",
+      ),
+    deviceId:
+      "phase15-browser-device",
+  };
+
+  assert.equal(
+    persistLocalDraft(
+      storage,
+      draft,
+    ),
+    true,
+  );
+
+  const recovered =
+    restoreLocalDraft(
+      storage,
+      draft.conversationId,
+      new Date(
+        "2026-09-10T12:05:00.000Z",
+      ).getTime(),
+    );
+
+  assert.equal(
+    recovered?.body,
+    draft.body,
+  );
+
+  assert.equal(
+    recovered?.revision,
+    draft.revision,
+  );
+
+  clearLocalDraft(
+    storage,
+    draft.conversationId,
+  );
+
+  assert.equal(
+    restoreLocalDraft(
+      storage,
+      draft.conversationId,
+    ),
+    undefined,
+  );
+
+  const staleDraft = {
+    ...draft,
+    conversationId:
+      "phase15-stale",
+    savedAt:
+      new Date(
+        "2026-09-01T00:00:00.000Z",
+      ),
+  };
+
+  assert.equal(
+    persistLocalDraft(
+      storage,
+      staleDraft,
+    ),
+    true,
+  );
+
+  assert.equal(
+    restoreLocalDraft(
+      storage,
+      staleDraft.conversationId,
+      new Date(
+        "2026-09-10T00:00:00.000Z",
+      ).getTime(),
+    ),
+    undefined,
+  );
 }
 
 function testEnterprise() {
