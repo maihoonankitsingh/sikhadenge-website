@@ -1,0 +1,119 @@
+name: Trace Registration V72 Duplicate 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/trace-registration-v72-duplicate-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Trace server-side V72 owners read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== GOLDEN ==='
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          echo '=== REG SNIPPET ==='
+          nl -ba /etc/nginx/snippets/sikhadenge-registration-v2-hot.conf | sed -n '1,130p'
+          echo '=== V72 PATH REFERENCES ==='
+          grep -RIn --exclude='*.bak*' --exclude='*backup*' -E 'registration-stable-(hot|page1)-v72\.js|SIKHADENGE.*V72' /etc/nginx /var/www/sikhadenge.in 2>/dev/null | head -160 || true
+          echo '=== RESOLVE ACTIVE FILES ==='
+          python3 - <<'PY'
+          import re, pathlib
+          p=pathlib.Path('/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf')
+          s=p.read_text(errors='ignore')
+          for name in ['registration-stable-hot-v72.js','registration-stable-page1-v72.js']:
+              print('OWNER',name)
+              for line in s.splitlines():
+                  if name in line: print(line)
+          PY
+          for f in $(find /var/www/sikhadenge.in -type f \( -name 'registration-stable-hot-v72.js' -o -name 'registration-stable-page1-v72.js' \) 2>/dev/null | head -20); do
+            echo "=== FILE $f ==="
+            sha256sum "$f"; wc -c "$f"
+            grep -nE 'Book free masterclass|Register for|Continue|sd-reg-|querySelector|closest\(|display|visibility|remove\(|style\.|source=|claude|ai-video|masterclass/lead|fetch\(' "$f" | head -220 || true
+          done
+          echo '=== TRACE SERVER DONE ==='
+          REMOTE
+
+      - name: Trace browser duplicate DOM read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+          function compact(el){
+            if(!el)return null;
+            const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
+            return {tag:el.tagName.toLowerCase(),id:el.id||'',cls:el.className||'',text:norm(el.innerText||el.textContent).slice(0,700),display:cs.display,visibility:cs.visibility,opacity:cs.opacity,position:cs.position,zIndex:cs.zIndex,rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},hidden:!!el.hidden,ariaHidden:el.getAttribute('aria-hidden')||'',style:el.getAttribute('style')||'',outer:el.outerHTML.slice(0,3500)};
+          }
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&trace_v72=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,4500));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const visible=el=>{if(!el)return false;const r=el.getBoundingClientRect(),c=getComputedStyle(el);return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity!==0&&r.width>0&&r.height>0};
+                const c=el=>{if(!el)return null;const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return {tag:el.tagName.toLowerCase(),id:el.id||'',cls:typeof el.className==='string'?el.className:'',text:n(el.innerText||el.textContent).slice(0,700),display:cs.display,visibility:cs.visibility,opacity:cs.opacity,position:cs.position,zIndex:cs.zIndex,rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},visible:visible(el),outer:el.outerHTML.slice(0,5000)}};
+                const all=[...document.querySelectorAll('*')];
+                const oldSubmit=[...document.querySelectorAll('button,input[type=submit]')].find(el=>/Register for\s*₹1999/i.test(n(el.textContent||el.value)));
+                const newContinue=[...document.querySelectorAll('button')].find(el=>/Continue\s*—\s*2 quick questions/i.test(n(el.textContent)));
+                const oldName=[...document.querySelectorAll('input')].find(el=>el.placeholder==='Enter name');
+                const newName=document.getElementById('sd-reg-name');
+                const oldHeading=all.find(el=>n(el.textContent)==='Book free masterclass');
+                const newHeading=all.find(el=>n(el.textContent)==='Free live registration');
+                const ancestors=el=>{const out=[];let x=el;for(let i=0;x&&i<8;i++,x=x.parentElement)out.push(c(x));return out};
+                const forms=[...document.querySelectorAll('form')].map(c);
+                return {
+                  url:location.href,body:n(document.body.innerText).slice(0,9000),
+                  oldSubmit:c(oldSubmit),newContinue:c(newContinue),oldName:c(oldName),newName:c(newName),oldHeading:c(oldHeading),newHeading:c(newHeading),
+                  oldSubmitAncestors:ancestors(oldSubmit),newContinueAncestors:ancestors(newContinue),forms,
+                  htmlFlags:{hot:document.documentElement.getAttribute('data-registration-stable-hot-v72')||document.documentElement.getAttribute('data-sd-registration-v72')||'',page1:document.documentElement.getAttribute('data-registration-stable-page1-v72')||''},
+                  scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/registration-stable|attribution/.test(s)),
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2
+                };
+              });
+              console.log('REG_DUP_TRACE',name,JSON.stringify(x));
+              if(!x.oldSubmit?.visible||!x.newContinue?.visible||!x.oldName?.visible||!x.newName?.visible) throw new Error(`duplicate visibility not reproduced ${name}`);
+              await p.close();
+            }
+            await b.close(); console.log('REGISTRATION_V72_DUPLICATE_TRACE_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
