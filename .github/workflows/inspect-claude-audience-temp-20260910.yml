@@ -1,4 +1,4 @@
-name: Deploy Claude Audience V1 SSR Fixed 20260910
+name: Inspect Claude Audience Failed SSR 20260910
 
 on:
   push:
@@ -17,19 +17,11 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  deploy:
+  inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 20
+    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
-      - name: Static validation
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          bash -n ops/deploy-claude-audience-v1-20260910.sh
-          node --check ops/qa-claude-audience-v1-20260910.js
-          echo STATIC_VALIDATION=PASS
       - name: Configure pinned SSH
         shell: bash
         run: |
@@ -39,39 +31,29 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Stage deployment utility
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ops/deploy-claude-audience-v1-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-audience-v1-20260910.sh"
-      - name: Controlled Audience V1 stage
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-audience-v1-20260910.sh stage'
-      - name: Browser QA desktop tablet mobile
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm init -y >/dev/null 2>&1
-          npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
-          node ops/qa-claude-audience-v1-20260910.js
-      - name: Reseal and lock Golden baseline
+      - name: Read failed SSR snapshot
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          sikhadenge-funnel-lockctl reseal
-          sikhadenge-funnel-lockctl lock
           sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-lockctl status
-          echo CLAUDE_AUDIENCE_V1_RESEALED_LOCKED=PASS
+          B='/var/backups/sikhadenge/claude-audience-v1-20260910-200105'
+          F="$B/claude.after.html"
+          test -s "$F"
+          python3 - "$F" <<'PY'
+          import re,sys,html
+          raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          for n in ['BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR','Use the right AI tool where speed, ','Built for beginners who want ','quality and structured output matter.','AI skills they can actually use.','Working professionals','Students &amp; job seekers','Business owners']:
+              print('RAW_COUNT',repr(n),raw.count(n))
+          text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',raw)))
+          for n in ['BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR','Use the right AI tool where speed, quality and structured output matter.','Built for beginners who want AI skills they can actually use.','Working professionals & business owners','Students & freshers','Job seekers & career switchers']:
+              print('TEXT_COUNT',repr(n),text.count(n))
+          for key in ['WHO THIS MASTERCLASS IS FOR','BUILT FOR PRACTICAL LEARNERS','Built for beginners','Use the right AI tool']:
+              i=raw.find(key)
+              if i>=0: print('RAW_CONTEXT',key,raw[max(0,i-800):i+1800])
+          PY
+          echo '=== FAILED ROUTE FILTERS ==='
+          grep -nE 'AUDIENCE_V1|BUILT FOR PRACTICAL|Working professionals|Students &amp;|Business owners|Built for beginners|AI skills they can' "$B/sikhadenge.in-ssl.before" | head -40 || true
+          echo AUDIENCE_FAILED_SSR_TRACE_PASS
           REMOTE
-      - name: Rollback on failure
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-audience-v1-20260910.sh rollback'
