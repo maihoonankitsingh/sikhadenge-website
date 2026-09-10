@@ -53,6 +53,20 @@ for (const viewport of VIEWPORTS) {
     await expect(page.locator(".contact-editor")).toBeVisible();
 
     await expect(page.getByText("Loading contacts...", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Search contacts")).toBeVisible();
+    await expect(page.getByLabel("Filter contacts by consent")).toBeVisible();
+    await expect(page.getByLabel("Filter contacts by lead stage")).toBeVisible();
+
+    // Loading a directory must not silently put the editor into an ambiguous
+    // create/edit state. Contacts remain unselected until the operator picks one.
+    const firstRow = page.locator(".contact-table tbody tr").first();
+    await expect(firstRow).toBeVisible();
+    await expect(page.locator(".contact-table tbody tr.selected")).toHaveCount(0);
+    await expect(page.locator(".contact-editor h3")).toHaveText("Add contact");
+    await expect(
+      page.locator(".contact-editor").getByRole("button", { name: "Open inbox" }),
+    ).toHaveCount(0);
+
     await expectNoRootOverflow(page);
 
     const directoryBox = await page.locator(".contact-directory").boundingBox();
@@ -117,6 +131,28 @@ for (const viewport of VIEWPORTS) {
       expect(metricBoxes[0].width).toBeGreaterThan(140);
     }
 
+    // Exercise the actual operator state transition on desktop where both the
+    // directory and editor are visible together: create → edit → create.
+    if (viewport.width >= 1180) {
+      await firstRow.click();
+      await expect(firstRow).toHaveClass(/selected/);
+      await expect(page.locator(".contact-editor h3")).toHaveText("CI Browser Learner");
+      await expect(
+        page.locator(".contact-editor").getByRole("button", { name: "Open inbox" }),
+      ).toBeVisible();
+
+      await page
+        .locator(".contact-toolbar-actions")
+        .getByRole("button", { name: "Add contact" })
+        .click();
+      await expect(firstRow).not.toHaveClass(/selected/);
+      await expect(page.locator(".contact-editor h3")).toHaveText("Add contact");
+      await expect(
+        page.locator(".contact-editor").getByRole("button", { name: "Open inbox" }),
+      ).toHaveCount(0);
+    }
+
+    await expectNoRootOverflow(page);
     await testInfo.attach(`contacts-${viewport.name}`, {
       body: await page.screenshot({ fullPage: false }),
       contentType: "image/png",
