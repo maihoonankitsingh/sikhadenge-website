@@ -4,10 +4,6 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/funnel-golden-health-monitor.yml'
 
 permissions:
   contents: read
@@ -101,23 +97,22 @@ jobs:
           detail=$(printf '%s' "$TEXT_B64" | base64 -d 2>/dev/null || true)
           stamp=$(date -u '+%Y-%m-%d %H:%M UTC')
           title="[Golden Lock] Funnel incident — $stamp"
-          body=$(cat <<EOF
-          The SikhaDenge Two-Funnel Golden Lock detected a new production incident or repair event.
-
-          **Affected protection scope**
-          - /masterclass/ai-video
-          - /masterclass/claude/free
-
-          **Guard health exit code:** $HEALTH_RC
-          **Incident epoch:** $INCIDENT_EPOCH
-          **Latest incident detail:**
-          \`\`\`
-          ${detail:-No detail was recorded; inspect the server Golden Lock log.}
-          \`\`\`
-
-          The server self-heal guard runs every 60 seconds and deep-checks the sealed CSS/JS set every 5 minutes. Review `/var/log/sikhadenge-funnel-golden-lock.log` before making any manual production change.
-          EOF
-          )
+          body=$(printf '%s\n' \
+            'The SikhaDenge Two-Funnel Golden Lock detected a new production incident or repair event.' \
+            '' \
+            '**Affected protection scope**' \
+            '- /masterclass/ai-video' \
+            '- /masterclass/claude/free' \
+            '' \
+            "**Guard health exit code:** $HEALTH_RC" \
+            "**Incident epoch:** $INCIDENT_EPOCH" \
+            '**Latest incident detail:**' \
+            '```' \
+            "${detail:-No detail was recorded; inspect the server Golden Lock log.}" \
+            '```' \
+            '' \
+            'The server self-heal guard runs every 60 seconds and deep-checks the sealed CSS/JS set every 5 minutes.' \
+            'Review /var/log/sikhadenge-funnel-golden-lock.log before making any manual production change.')
           url=$(gh issue create --repo "${GITHUB_REPOSITORY}" --title "$title" --body "$body")
           echo "INCIDENT_ISSUE=$url"
 
