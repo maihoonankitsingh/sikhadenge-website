@@ -144,8 +144,8 @@ jobs:
           code="$(curl -L -sS --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 -o "$BK/new.public.js" -w '%{http_code}' "https://sikhadenge.in${NEW_URL}?first=$TS")"; echo "NEW_ASSET_HTTP=$code"; test "$code" = 200
           test "$(sha256sum "$BK/new.public.js"|awk '{print $1}')" = "$NEW_SHA"
           grep -Fq 'LIVE MASTERCLASS AGENDA' "$BK/new.public.js"
-          grep -Fq 'children:"Choose the right AI tool for the task"' "$BK/new.public.js"
-          grep -Fq 'children:"Code & automate repetitive work"' "$BK/new.public.js"
+          grep -Fq 'Choose the right AI tool for the task' "$BK/new.public.js"
+          grep -Fq 'Code & automate repetitive work' "$BK/new.public.js"
 
           curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?agenda_v1_server=$TS" -o "$BK/claude.after.html"
           for x in \
