@@ -57,6 +57,7 @@
   .sx-module .sx-workspace-body .template-studio .template-form-buttons {
     display: flex !important;
     flex-direction: column !important;
+    flex-wrap: nowrap !important;
   }
 
   .sx-module .sx-workspace-body .template-studio .template-form-buttons > button,
@@ -65,6 +66,11 @@
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  .sx-module .sx-workspace-body .template-studio .template-form-buttons > button {
+    min-height: 44px !important;
+    flex: 0 0 auto !important;
   }
 
   .sx-module .sx-workspace-body .template-studio .template-button-row {
