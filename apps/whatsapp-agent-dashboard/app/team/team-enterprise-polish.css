@@ -105,7 +105,10 @@
   white-space: nowrap;
 }
 
-.sx-module .team-filter-tabs button.is-active {
+/* TeamChatManager currently emits `active`; shared dashboard CSS still expects
+   `is-active`. Support both so the selected queue filter remains visible. */
+.sx-module .team-filter-tabs button.is-active,
+.sx-module .team-filter-tabs button.active {
   background: #fff;
   color: #2f5fe6;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
