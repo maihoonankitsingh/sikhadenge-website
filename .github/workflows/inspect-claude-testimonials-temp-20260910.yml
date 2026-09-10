@@ -1,4 +1,4 @@
-name: Deploy Claude Testimonials V1 Retry 20260910
+name: Inspect Claude Testimonials Locked Baseline 20260910
 
 on:
   push:
@@ -9,92 +9,48 @@ on:
 permissions:
   contents: read
 
-env:
-  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
-  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
-  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
-  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
-  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-
 jobs:
-  deploy:
+  inspect:
     runs-on: ubuntu-latest
-    environment: whatsapp-agent-production
-    timeout-minutes: 25
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Static validation
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          bash -n ops/deploy-claude-testimonials-v1-20260910.sh
-          node --check ops/assets/claude-testimonials-conversion-v1-20260910.js
-          node --check ops/qa-claude-testimonials-v1-20260910.js
-          echo TESTIMONIALS_STATIC_VALIDATION=PASS
-
-      - name: Configure pinned SSH
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Stage deployment files
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            ops/deploy-claude-testimonials-v1-20260910.sh \
-            "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-testimonials-v1-20260910.sh"
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            ops/assets/claude-testimonials-conversion-v1-20260910.js \
-            "$SSH_USER@$SSH_HOST:/tmp/claude-testimonials-conversion-v1-20260910.js"
-
-      - name: Controlled Testimonials V1 stage
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh stage'
-
-      - name: Browser QA desktop tablet mobile
+      - name: Browser baseline hydration and CSS audit
         shell: bash
         run: |
           set -Eeuo pipefail
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          export CHROME
-          node ops/qa-claude-testimonials-v1-20260910.js
-
-      - name: Reseal and lock Golden baseline
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          sikhadenge-funnel-lockctl reseal
-          sikhadenge-funnel-lockctl lock
-          sikhadenge-funnel-lockctl check
-          sleep 3
-          sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-lockctl status
-          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
-          systemctl is-active sikhadenge-funnel-golden-guard.timer
-          echo CLAUDE_TESTIMONIALS_V1_RESEALED_LOCKED=PASS
-          REMOTE
-
-      - name: Rollback on failure
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh rollback'
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const errs=[]; p.on('pageerror',e=>errs.push(String(e)));
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?testimonial_baseline=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,5000));
+              const x=await p.evaluate(()=>{
+                const r=document.getElementById('sd-claude-testimonials-v305');
+                const v=r?.querySelector('.sd-v305-viewport'); const t=r?.querySelector('.sd-v305-track');
+                const vs=v?getComputedStyle(v):null, ts=t?getComputedStyle(t):null;
+                const rules=[];
+                function walk(list,scope){
+                  for(const rule of Array.from(list||[])){
+                    try{
+                      if(rule.cssRules){ walk(rule.cssRules,scope+' '+(rule.conditionText||rule.media?.mediaText||'')); continue; }
+                      const txt=rule.cssText||'';
+                      if(txt.includes('sd-v305-viewport')||txt.includes('sd-v305-track')) rules.push((scope+' '+txt).trim());
+                    }catch{}
+                  }
+                }
+                for(const sheet of Array.from(document.styleSheets)){ try{walk(sheet.cssRules,'')}catch{} }
+                return {hasV1:!!document.querySelector('script[src*="claude-testimonials-conversion-v1-20260910.js"]'),overflowX:vs?.overflowX||'',overflowY:vs?.overflowY||'',scrollSnap:vs?.scrollSnapType||'',animation:ts?[ts.animationName,ts.animationDuration,ts.animationPlayState]:[],rules:rules.slice(-30)};
+              });
+              const counts={}; for(const e of errs){const m=e.match(/Minified React error #(\d+)/);const k=m?`react-${m[1]}`:e;counts[k]=(counts[k]||0)+1;}
+              console.log('BASELINE',name,JSON.stringify(x),'PAGE_ERRORS',JSON.stringify(counts));
+              await p.close();
+            }
+            await b.close(); console.log('LOCKED_BASELINE_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
