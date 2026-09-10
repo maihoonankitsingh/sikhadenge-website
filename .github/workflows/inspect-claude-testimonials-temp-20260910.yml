@@ -1,4 +1,4 @@
-name: Inspect Claude Testimonials Owner Temp 20260910
+name: Inspect Claude Testimonials Active Owner Temp 20260910
 
 on:
   push:
@@ -13,51 +13,16 @@ env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
   SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
   SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
-  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_HOST_KEY: ${{ vars.WHATSAPP_PROD_SSH_HOST_KEY }}
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
   inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
-      - name: Configure pinned SSH
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Exact V305 owner trace
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          sikhadenge-funnel-lockctl check
-          echo '=== FILE OWNERS OF ACTIVE V305 TOKEN ==='
-          find /var/www/sikhadenge.in -maxdepth 6 -type f \( -name '*.js' -o -name '*.html' -o -name '*.conf' \) -size -8M -print0 2>/dev/null | xargs -0 -r grep -Il '__SD_CLAUDE_TESTIMONIALS_V305__' 2>/dev/null | while read -r f; do echo "V305_OWNER $(sha256sum "$f"|awk '{print $1}') $f"; done
-          echo '=== NGINX REFERENCES ==='
-          grep -RInE 'testimonial|v305|runtime-loader-v3' /etc/nginx/sites-enabled/sikhadenge.in-ssl /etc/nginx/snippets 2>/dev/null | head -120 || true
-          TMP="/tmp/claude-v305-owner-$$.html"
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?v305_owner=$(date +%s)" -o "$TMP"
-          python3 - "$TMP" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); token='__SD_CLAUDE_TESTIMONIALS_V305__'; i=s.find(token)
-          print('PUBLIC_TOKEN_COUNT',s.count(token))
-          if i<0: raise SystemExit('V305 token not in public HTML')
-          a=s.rfind('<script',0,i); b=s.find('</script>',i)
-          print('PUBLIC_SCRIPT_WRAPPER_START')
-          print(s[a:min(b+9,a+3000)])
-          print('PUBLIC_SCRIPT_WRAPPER_END')
-          PY
-          rm -f "$TMP"
-          echo OWNER_TRACE_PASS
-          REMOTE
-      - name: Active testimonial DOM specimen
+      - name: Browser active owner trace
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -66,5 +31,5 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
           const puppeteer=require('puppeteer-core');
-          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v305_dom=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));const x=await p.evaluate(()=>{const r=document.getElementById('sd-claude-testimonials-v305');const c=r?.querySelector('.sd-v305-set .sd-v305-card');const poster=c?.querySelector('.sd-v305-poster');return {root:r?.outerHTML.slice(0,6500)||'',card:c?.outerHTML||'',posterBg:poster?getComputedStyle(poster).backgroundImage:'',scripts:[...document.scripts].map(s=>({src:s.src,token:(s.textContent||'').includes('__SD_CLAUDE_TESTIMONIALS_V305__')})).filter(x=>x.token||/testimonial|runtime-loader/i.test(x.src))}});console.log(JSON.stringify(x));await b.close();console.log('DOM_SPECIMEN_PASS')})().catch(e=>{console.error(e);process.exit(1)});
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v305_active_owner=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));const x=await p.evaluate(()=>{const r=document.getElementById('sd-claude-testimonials-v305');const c=r?.querySelector('.sd-v305-set .sd-v305-card');const poster=c?.querySelector('.sd-v305-poster');return {rootVersion:r?.getAttribute('data-sd-testimonial-version')||'',rootLayout:r?.getAttribute('data-sd-testimonial-layout')||'',firstCard:c?.outerHTML||'',posterBg:poster?getComputedStyle(poster).backgroundImage:'',scripts:[...document.scripts].map((s,i)=>({i,src:s.src||'',hasV305:(s.textContent||'').includes('__SD_CLAUDE_TESTIMONIALS_V305__'),hasRuntime:(s.textContent||'').includes('data-claude-runtime-loader')})).filter(x=>x.hasV305||x.hasRuntime||/testimonial|runtime-loader/i.test(x.src))}});console.log('ACTIVE_OWNER',JSON.stringify(x));await b.close();console.log('ACTIVE_OWNER_TRACE_PASS')})().catch(e=>{console.error(e);process.exit(1)});
           NODE
