@@ -15,7 +15,7 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - shell: bash
         run: |
@@ -25,25 +25,20 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Locate matching SSR file read-only
+      - name: Locate public asset owner read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
-          echo '=== SSR CANDIDATES ==='
-          find "$CWD/.next/server" -type f \( -path '*masterclass*claude*free*' -o -name '*.js' \) 2>/dev/null | while read -r f; do
-            if grep -q 'faster execution & better results' "$f" 2>/dev/null; then
-              echo "SSR_MATCH=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c <"$f")"
-              python3 - "$f" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); p=s.find('faster execution & better results')
-          print('CONTEXT=',s[max(0,p-450):p+500])
-          PY
-            fi
-          done
-          echo '=== CLIENT EXACT ==='
-          F="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js"
-          echo "CLIENT=$F SHA=$(sha256sum "$F"|awk '{print $1}')"
+          NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
+          WANT='7646607dc0587c6e8081b92a9252f6c4982aae2da97480d44c4eff27c3a722e5'
+          echo '=== ALL EXACT FILENAME COPIES ==='
+          find /var/www /opt /srv -type f -name "$NAME" 2>/dev/null | while read -r f; do echo "FILE=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c <"$f")"; done
+          echo '=== NGINX STATIC ROUTES ==='
+          grep -RniE '_next/static|location.*_next|alias .*\.next|root .*sikhadenge' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null | head -160 || true
+          echo '=== PUBLIC RESPONSE HEADERS ==='
+          curl -sSIL --max-time 20 "https://sikhadenge.in/_next/static/chunks/pages/masterclass/claude/$NAME?owner_audit=1" | sed -n '1,80p'
+          echo '=== FIND SAME SHA AMONG EXACT-NAME COPIES ==='
+          find /var/www /opt /srv -type f -name "$NAME" 2>/dev/null | while read -r f; do h=$(sha256sum "$f"|awk '{print $1}'); [[ "$h" = "$WANT" ]] && echo "SHA_OWNER=$f"; done
           REMOTE
