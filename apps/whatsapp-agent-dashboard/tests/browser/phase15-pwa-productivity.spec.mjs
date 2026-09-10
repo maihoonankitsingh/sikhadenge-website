@@ -208,7 +208,7 @@ test(
       );
 
       await page.goto(
-        "/inbox?phase15-offline-probe=1",
+        "/offline?phase15-offline-probe=1",
         {
           waitUntil:
             "domcontentloaded",
