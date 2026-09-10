@@ -385,7 +385,7 @@
   .sx-module .sx-workspace-body > .suite-stack.analytics-manager .suite-grid.two > .suite-card:first-child > header button.secondary {
     width: auto !important;
     min-width: 74px;
-    min-height: 40px;
+    min-height: 44px !important;
   }
 
   .sx-module .sx-workspace-body > .suite-stack.analytics-manager .analytics-bars {
