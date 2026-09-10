@@ -31,18 +31,19 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Print current H1 markup only
+      - name: Inspect exact client hero script only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          T=$(mktemp); trap 'rm -f "$T"' EXIT
-          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/claude/free?hero_markup_audit=1' -o "$T"
-          python3 - "$T" <<'PY'
-          import re,sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          m=re.search(r'<h1[^>]*>.*?</h1>',s,re.S|re.I)
-          print('H1_OUTER_HTML='+(m.group(0) if m else 'NOT_FOUND'))
-          PY
+          F=/var/www/sikhadenge.in/sikhadenge-heading-claude-v308r-20260830-174053.js
+          if [[ ! -f "$F" ]]; then
+            F="$(find /var/www/sikhadenge.in -maxdepth 4 -type f -name 'sikhadenge-heading-claude-v308r-20260830-174053.js' -print -quit)"
+          fi
+          test -n "$F" -a -f "$F"
+          echo "FILE=$F SHA=$(sha256sum "$F" | awk '{print $1}') BYTES=$(wc -c < "$F")"
+          grep -nE 'Master 25\+ AI Tools|smarter work|faster execution|heroHeadline|querySelector.*h1|textContent|innerHTML' "$F" | head -120 || true
+          echo '=== SCRIPT HEAD ==='
+          sed -n '1,220p' "$F"
           REMOTE
