@@ -10,17 +10,18 @@ on:
 permissions:
   contents: read
 
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
 jobs:
   harden:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
     timeout-minutes: 15
-    env:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
     steps:
       - uses: actions/checkout@v4
 
