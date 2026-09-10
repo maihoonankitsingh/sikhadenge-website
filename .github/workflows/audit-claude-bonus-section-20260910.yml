@@ -35,22 +35,24 @@ jobs:
               await new Promise(r=>setTimeout(r,5000));
               const x=await p.evaluate(()=>{
                 const n=s=>(s||'').replace(/\s+/g,' ').trim();
-                const h2=[...document.querySelectorAll('h2')].find(e=>n(e.textContent).includes('FREE AI MASTERCLASS BONUS KIT'));
-                const section=h2?.closest('section');
                 const sections=[...document.querySelectorAll('main section')];
+                const section=sections.find(s=>n(s.innerText).includes('FREE AI MASTERCLASS BONUS KIT')) || sections.find(s=>n(s.innerText).includes('AI Workflow Playbook')&&n(s.innerText).includes('Prompt + Context Framework'));
                 const idx=section?sections.indexOf(section):-1;
                 const prev=idx>0?sections[idx-1]:null,next=idx>=0?sections[idx+1]:null;
-                const children=section?[...section.querySelectorAll('article, [class*="card"], [class*="Card"]')]:[];
-                const cardCandidates=children.filter((e,i,a)=>!a.some((other,j)=>j!==i&&other.contains(e)));
-                const cards=cardCandidates.slice(0,10).map((e,i)=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {i,text:n(e.innerText),tag:e.tagName,cls:e.className||'',w:Math.round(r.width),h:Math.round(r.height),display:s.display,bg:s.backgroundColor,border:s.border,borderRadius:s.borderRadius,padding:s.padding};});
+                const titleNode=section?[...section.querySelectorAll('h1,h2,h3,h4,h5,h6,p,span,div')].find(e=>n(e.textContent)==='FREE AI MASTERCLASS BONUS KIT'):null;
+                const nodes=section?[...section.querySelectorAll('article, [class*="card"], [class*="Card"]')]:[];
+                const leafCards=nodes.filter((e,i,a)=>!a.some((other,j)=>j!==i&&other.contains(e))).filter(e=>/Bonus\s*[123]|AI Workflow Playbook|Prompt \+ Context Framework|Workbook \+ Deep-Work Checklist/i.test(n(e.innerText)));
+                const cards=leafCards.slice(0,10).map((e,i)=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {i,text:n(e.innerText),tag:e.tagName,cls:String(e.className||''),w:Math.round(r.width),h:Math.round(r.height),display:s.display,bg:s.backgroundColor,border:s.border,borderRadius:s.borderRadius,padding:s.padding};});
                 const rect=section?.getBoundingClientRect();
                 const st=section?getComputedStyle(section):null;
                 const ctas=section?[...section.querySelectorAll('a[href]')].map(a=>({text:n(a.textContent),href:new URL(a.href,location.href).pathname})):[];
+                const allNodes=section?[...section.querySelectorAll('*')].map(e=>({tag:e.tagName,cls:String(e.className||''),text:n(e.innerText)})).filter(x=>x.text&&x.text.length<320).slice(0,80):[];
                 return {
                   found:!!section,idx,sectionCount:sections.length,
-                  heading:n(h2?.textContent),
+                  heading:n(titleNode?.textContent),
                   text:n(section?.innerText),
-                  html:section?.innerHTML.slice(0,12000)||'',
+                  html:section?.innerHTML.slice(0,16000)||'',
+                  nodes:allNodes,
                   rect:rect?[Math.round(rect.width),Math.round(rect.height)]:[0,0],
                   style:st?{padding:st.padding,background:st.backgroundColor,color:st.color}:null,
                   cards,ctas,
