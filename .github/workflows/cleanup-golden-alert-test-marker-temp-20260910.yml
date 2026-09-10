@@ -1,0 +1,49 @@
+name: Cleanup Golden Alert Test Marker Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-golden-alert-test-marker-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 5
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Clear only verified synthetic alert state
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=/var/lib/sikhadenge-funnel-golden-lock
+          [[ -f "$ROOT/last-incident.txt" ]] || { echo 'NO_TEST_INCIDENT_PRESENT'; exit 0; }
+          grep -Fq 'TEST_ALERT_PIPELINE' "$ROOT/last-incident.txt" || { echo 'REFUSE: latest incident is not synthetic test data' >&2; exit 1; }
+          incident=$(cat "$ROOT/last-incident.epoch" 2>/dev/null || echo 0)
+          alerted=$(cat "$ROOT/last-alerted-incident.epoch" 2>/dev/null || echo 0)
+          [[ "$incident" == "$alerted" ]] || { echo 'REFUSE: synthetic incident was not fully acknowledged' >&2; exit 1; }
+          rm -f "$ROOT/last-incident.txt" "$ROOT/last-incident.epoch" "$ROOT/last-alerted-incident.epoch"
+          /usr/local/sbin/sikhadenge-funnel-lockctl check
+          echo 'SYNTHETIC_ALERT_STATE_CLEANED=PASS'
+          REMOTE
