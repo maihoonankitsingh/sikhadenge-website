@@ -1,4 +1,4 @@
-name: Inspect Claude Job Impact Fast 20260910
+name: Inspect Claude Legacy Opportunity Strip 20260910
 
 on:
   push:
@@ -31,38 +31,26 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Fast read-only owner trace
+      - name: Read-only exact legacy strip trace
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|LOCK_STATE'
-          TMP="/tmp/claude-job-fast-$$.html"
-          curl -fsSL --retry 2 --retry-all-errors --connect-timeout 4 --max-time 25 "https://sikhadenge.in/masterclass/claude/free?jobfast=$(date +%s)" -o "$TMP"
-          python3 - "$TMP" <<'PY'
-          import re,sys,html,subprocess,tempfile,os
-          page=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          urls=[html.unescape(u) for u in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',page,re.I)]
-          needles=['THE AI SHIFT','300M jobs globally exposed','AI Prompt Engineers Earn $300k','full-time jobs exposed to AI automation','Jobs asking for AI skills are outpacing']
-          print('SCRIPT_COUNT',len(urls))
-          for u in urls:
-              if not u.startswith('/'): continue
-              try:
-                  out=subprocess.check_output(['curl','-fsSL','--connect-timeout','3','--max-time','12','https://sikhadenge.in'+u],stderr=subprocess.DEVNULL)
-              except Exception: continue
-              t=out.decode('utf-8','ignore'); hits=[x for x in needles if x in t]
-              if hits: print('PUBLIC_OWNER',u,'HITS',hits,'SHA256',__import__('hashlib').sha256(out).hexdigest())
-          print('PAGE_HAS',[(n,n in page) for n in needles])
+          sikhadenge-funnel-lockctl check
+          CHUNK='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
+          HIDE='/var/www/sikhadenge.in/claude-proof-hide-old-v2.js'
+          echo CHUNK_SHA=$(sha256sum "$CHUNK"|awk '{print $1}')
+          echo HIDE_SHA=$(sha256sum "$HIDE"|awk '{print $1}')
+          python3 - "$CHUNK" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          for n in ['AI Prompt Engineers Earn $300k Salaries','69 million jobs to emerge','AI-related roles saw unprecedented growth','Rise in AI-related opportunities','BUSINESS DAILY','CAREER INSIGHTS','FUTURE OF WORK']:
+              i=s.find(n)
+              print('COUNT',repr(n),s.count(n))
+              if i>=0: print('CONTEXT',repr(n),s[max(0,i-1000):i+2200])
           PY
-          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          echo 'ROOT_JS_CANDIDATES:'
-          for f in /var/www/sikhadenge.in/*.js; do
-            [ -f "$f" ] || continue
-            if grep -Eq '300M jobs globally exposed|AI Prompt Engineers Earn \$300k|full-time jobs exposed to AI automation|Jobs asking for AI skills are outpacing' "$f"; then sha256sum "$f"; fi
-          done
-          echo 'CLAUDE_ROUTE_FILTER_CANDIDATES:'
-          grep -nE '300M jobs globally exposed|AI Prompt Engineers|full-time jobs exposed|Jobs asking for AI skills|job-impact|opportunity-v' "$SITE" || true
-          rm -f "$TMP"
-          echo FAST_TRACE_PASS
+          echo '=== HIDE SCRIPT ==='
+          cat "$HIDE"
+          echo LEGACY_STRIP_TRACE_PASS
           REMOTE
