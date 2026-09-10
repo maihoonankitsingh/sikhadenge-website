@@ -1,4 +1,4 @@
-name: Inspect Claude Testimonial Injection Anchor 20260910
+name: Deploy Claude Testimonials V1 Temp 20260910
 
 on:
   push:
@@ -17,11 +17,22 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  inspect:
+  deploy:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 6
+    timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ops/deploy-claude-testimonials-v1-20260910.sh
+          node --check ops/assets/claude-testimonials-conversion-v1-20260910.js
+          node --check ops/qa-claude-testimonials-v1-20260910.js
+          echo TESTIMONIALS_STATIC_VALIDATION=PASS
+
       - name: Configure pinned SSH
         shell: bash
         run: |
@@ -29,56 +40,61 @@ jobs:
           SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read exact Claude route and HTML tail
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Stage deployment files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/deploy-claude-testimonials-v1-20260910.sh \
+            "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-testimonials-v1-20260910.sh"
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/assets/claude-testimonials-conversion-v1-20260910.js \
+            "$SSH_USER@$SSH_HOST:/tmp/claude-testimonials-conversion-v1-20260910.js"
+
+      - name: Controlled Testimonials V1 stage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh stage'
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          node ops/qa-claude-testimonials-v1-20260910.js
+
+      - name: Reseal and lock Golden baseline
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
           sikhadenge-funnel-lockctl check
-          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
-          python3 - "$SITE" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
-          if a<0: raise SystemExit('route missing')
-          q=s.find('{',a); d=0; quote=None; esc=False; end=None
-          for i in range(q,len(s)):
-              ch=s[i]
-              if esc: esc=False; continue
-              if ch=='\\': esc=True; continue
-              if quote:
-                  if ch==quote: quote=None
-                  continue
-              if ch in ('"',"'"): quote=ch; continue
-              if ch=='{': d+=1
-              elif ch=='}':
-                  d-=1
-                  if d==0: end=i+1; break
-          if end is None: raise SystemExit('parse failed')
-          route=s[a:end]
-          print('=== EXACT CLAUDE ROUTE ===')
-          print(route)
-          print('=== ROUTE SUB_FILTER LINES ===')
-          for line in route.splitlines():
-              if 'sub_filter' in line: print(line)
-          PY
-          TMP=/tmp/claude-testimonial-anchor-$$.html
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?anchor=$(date +%s)" -o "$TMP"
-          python3 - "$TMP" <<'PY'
-          import re,sys,html
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          print('=== LAST 25 SCRIPT TAGS ===')
-          tags=re.findall(r'<script\b[^>]*?(?:/>|>.*?</script>)',s,re.I|re.S)
-          for t in tags[-25:]:
-              src=re.search(r'src=["\']([^"\']+)["\']',t,re.I)
-              txt=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',t)).strip()
-              print('SCRIPT',html.unescape(src.group(1)) if src else 'INLINE',txt[:160])
-          print('BODY_CLOSE_COUNT',s.lower().count('</body>'))
-          for needle in ['/claude-cta-typography-v3.js','/claude-runtime-loader-v3.js','__SD_CLAUDE_TESTIMONIALS_V305__']:
-              print('ANCHOR_COUNT',needle,s.count(needle))
-          PY
-          rm -f "$TMP"
-          echo INJECTION_ANCHOR_TRACE_PASS
+          sleep 3
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          echo CLAUDE_TESTIMONIALS_V1_RESEALED_LOCKED=PASS
           REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh rollback'
