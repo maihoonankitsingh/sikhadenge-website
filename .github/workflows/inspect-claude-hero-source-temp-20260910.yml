@@ -34,42 +34,16 @@ jobs:
           test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Inspect current live hero source read-only
+      - name: Print exact heading script read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          URL='https://sikhadenge.in/masterclass/claude/free?hero_source_audit=1'
-          T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-          curl -fsSL --max-time 30 "$URL" -o "$T/page.html"
-          echo "LIVE_BYTES=$(wc -c < "$T/page.html")"
-          python3 - "$T/page.html" <<'PY'
-          import re,sys,html
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I)
-          text=re.sub('<[^>]+>',' ',m.group(1) if m else '')
-          print('SERVER_H1='+html.unescape(re.sub(r'\s+',' ',text)).strip())
-          scripts=re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I)
-          print('SCRIPTS_WITH_CLAUDE_OR_HEADING:')
-          for x in scripts:
-              if 'claude' in x.lower() or 'heading' in x.lower(): print(x)
-          PY
-          echo '=== LIVE CLAUDE ROUTE ==='
-          python3 - <<'PY'
-          p='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          s=open(p,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
-          if a<0: raise SystemExit('route missing')
-          q=s.find('{',a); d=0; end=None
-          for i in range(q,len(s)):
-              if s[i]=='{': d+=1
-              elif s[i]=='}':
-                  d-=1
-                  if d==0: end=i+1; break
-          print(s[a:end])
-          PY
-          echo '=== FIND HEADING ASSET ON DISK ==='
-          find /var/www /opt /usr/local/share -type f \( -name '*claude*heading*.js' -o -name '*heading*v11*.js' \) 2>/dev/null | head -40 | while read -r f; do echo "FILE=$f SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c < "$f")"; grep -nE 'Master 25\+ AI Tools|smarter work|better results|querySelector\(.?h1' "$f" | head -15 || true; done
-          echo '=== LOCK STATUS ==='
-          sikhadenge-funnel-lockctl status || true
+          F=/var/www/sikhadenge.in/claude-heading-v11-restore-current.js
+          test -s "$F"
+          echo "SHA=$(sha256sum "$F" | awk '{print $1}') BYTES=$(wc -c < "$F")"
+          grep -nE 'Master|AI Tools|smarter|better|h1|textContent|innerHTML' "$F" | head -120
+          echo '=== FULL SCRIPT ==='
+          sed -n '1,240p' "$F"
           REMOTE
