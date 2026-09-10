@@ -30,16 +30,19 @@ async function attachShot(page, testInfo, name) {
 async function panelGeometry(page) {
   return page.locator(".sx-details").evaluate((node) => {
     const rect = node.getBoundingClientRect();
+    const style = getComputedStyle(node);
     return {
       left: rect.left,
       right: rect.right,
       top: rect.top,
       bottom: rect.bottom,
+      width: rect.width,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
-      visibility: getComputedStyle(node).visibility,
-      pointerEvents: getComputedStyle(node).pointerEvents,
-      opacity: Number.parseFloat(getComputedStyle(node).opacity),
+      visibility: style.visibility,
+      pointerEvents: style.pointerEvents,
+      opacity: Number.parseFloat(style.opacity),
+      overflowY: style.overflowY,
     };
   });
 }
@@ -59,6 +62,24 @@ async function expectPanelSettledInsideViewport(page) {
   }, { timeout: 3000 }).toBe(true);
 }
 
+async function expectPanelScrollable(page) {
+  await expect.poll(async () => {
+    const { overflowY } = await panelGeometry(page);
+    return overflowY === "auto" || overflowY === "scroll";
+  }, { timeout: 3000 }).toBe(true);
+}
+
+async function expectMobilePanelSizing(page, viewportWidth) {
+  const expectedWidth = Math.min(380, viewportWidth);
+  await expect.poll(async () => {
+    const g = await panelGeometry(page);
+    return (
+      Math.abs(g.width - expectedWidth) <= 1 &&
+      Math.abs(g.right - g.viewportWidth) <= 1
+    );
+  }, { timeout: 3000 }).toBe(true);
+}
+
 async function expectPanelTopmostAtBottom(page) {
   await expect.poll(async () => page.locator(".sx-details").evaluate((panel) => {
     const rect = panel.getBoundingClientRect();
@@ -69,7 +90,7 @@ async function expectPanelTopmostAtBottom(page) {
   }), { timeout: 3000 }).toBe(true);
 }
 
-test("desktop keeps Lead Intelligence as a stable fourth rail", async ({ page }, testInfo) => {
+test("desktop keeps Lead Intelligence as a stable scrollable fourth rail", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page);
   await ensureConversationSelected(page);
@@ -80,14 +101,17 @@ test("desktop keeps Lead Intelligence as a stable fourth rail", async ({ page },
   await expect(page.locator(".sx-details-close")).toBeHidden();
   await expect(page.locator(".sx-lead-btn")).toBeHidden();
   await expectPanelSettledInsideViewport(page);
+  await expectPanelScrollable(page);
   await attachShot(page, testInfo, "inbox-right-panel-desktop-1440");
 });
 
 for (const viewport of [
+  { name: "laptop-drawer", width: 1200, height: 700 },
   { name: "tablet", width: 1024, height: 768 },
-  { name: "mobile", width: 390, height: 844 },
+  { name: "mobile-390", width: 390, height: 844 },
+  { name: "mobile-360", width: 360, height: 800 },
 ]) {
-  test(`${viewport.name} Lead button opens and closes the intelligence drawer`, async ({ page }, testInfo) => {
+  test(`${viewport.name} Lead button opens and closes the scrollable intelligence drawer`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await login(page);
     await ensureConversationSelected(page);
@@ -110,6 +134,10 @@ for (const viewport of [
     await expect(backdrop).toBeVisible();
     await expect(close).toBeVisible();
     await expectPanelSettledInsideViewport(page);
+    await expectPanelScrollable(page);
+    if (viewport.width <= 767) {
+      await expectMobilePanelSizing(page, viewport.width);
+    }
     await expectPanelTopmostAtBottom(page);
     await attachShot(page, testInfo, `inbox-right-panel-${viewport.name}-open`);
 
