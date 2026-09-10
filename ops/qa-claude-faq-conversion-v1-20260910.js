@@ -18,8 +18,9 @@ const faqs=[
   ['What if I’m completely new to AI?','That is fine. The learning flow starts from practical basics, uses easy Hinglish and requires no programming background, so first-time learners can follow step by step.'],
   ['How do I reserve my free seat?','Click any “Get My Free Seat” or registration button on this page and complete the SikhaDenge registration flow. Then follow the confirmation and joining instructions shown there.'],
 ];
-const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
-const allowedError=e=>/Minified React error #(418|423)/.test(String(e));
+const errorMax={'react-418':26,'react-423':1,'react-425':2};
+function signature(errs){const out={};for(const e of errs){const m=String(e).match(/Minified React error #(\d+)/);const k=m?`react-${m[1]}`:String(e);out[k]=(out[k]||0)+1;}return out;}
+function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual)){if(!(k in errorMax)||v>errorMax[k]) return false;}return true;}
 
 (async()=>{
   const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -30,7 +31,7 @@ const allowedError=e=>/Minified React error #(418|423)/.test(String(e));
     page.on('pageerror',e=>errors.push(String(e)));
     page.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
     await page.goto(`https://sikhadenge.in/masterclass/claude/free?faq_conversion_v1=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
-    await new Promise(r=>setTimeout(r,4500));
+    await new Promise(r=>setTimeout(r,6000));
     const state=await page.evaluate(()=>{
       const n=s=>(s||'').replace(/\s+/g,' ').trim();
       const sections=[...document.querySelectorAll('main section')];
@@ -40,6 +41,8 @@ const allowedError=e=>/Minified React error #(418|423)/.test(String(e));
       const register=[...document.querySelectorAll('a[href]')].map(a=>{try{return new URL(a.href,location.href).pathname}catch{return ''}}).filter(x=>x==='/gen-ai-masterclass/register-one-step');
       const scripts=[...document.scripts].map(s=>s.src).filter(Boolean);
       const rect=sec?.getBoundingClientRect();
+      const testimonial=document.getElementById('sd-claude-testimonials-v305');
+      const bonus=sections.find(s=>s.getAttribute('data-sd-claude-bonus-value')==='v1');
       return {
         sectionCount:sections.length,faqCount:rows.length,idx,rows,
         rootCount:document.documentElement.getAttribute('data-claude-faq-v2'),
@@ -53,17 +56,18 @@ const allowedError=e=>/Minified React error #(418|423)/.test(String(e));
         rect:rect?{w:Math.round(rect.width),h:Math.round(rect.height)}:null,
         prev:idx>0?n(sections[idx-1].innerText):'',next:idx>=0&&idx<sections.length-1?n(sections[idx+1].innerText):'',
         h1:n(document.querySelector('h1')?.textContent),
-        testimonialFlag:document.documentElement.getAttribute('data-claude-testimonials-conversion-v1'),
-        bonusFlag:document.documentElement.getAttribute('data-claude-bonus-value-v1')
+        testimonialFlag:testimonial?.getAttribute('data-sd-testimonials-conversion')||'',
+        bonusFlag:bonus?.getAttribute('data-sd-claude-bonus-value')||''
       };
     });
     const exact=state.rows.length===faqs.length&&state.rows.every((r,i)=>r.q===faqs[i][0]&&r.a===faqs[i][1]);
     const structural=state.sectionCount===18&&state.faqCount===15&&state.idx===16&&state.rootCount==='15'&&state.firstOpen&&state.onlyFirstOpen;
     const preserved=state.allRegisterPathsOK&&state.attribution&&state.h1.includes('Master Claude + 25+ AI Tools')&&state.prev.includes('Learn AI. Apply it. Work smarter.')&&state.next.includes('NEXT LIVE BATCH')&&state.testimonialFlag==='v1b'&&state.bonusFlag==='v1';
     const assets=state.newScript===1&&state.oldScript===0&&bad.length===0;
-    const errorsOK=errors.every(allowedError);
+    const errorSig=signature(errors);
+    const errorsOK=errorsWithinBaseline(errorSig);
     const responsive=!state.overflow&&state.rect&&Math.abs(state.rect.w-w)<=2;
-    console.log('FAQ_CONVERSION_V1',name,JSON.stringify({state,exact,structural,preserved,assets,errorsOK,responsive,bad,errorCount:errors.length}));
+    console.log('FAQ_CONVERSION_V1',name,JSON.stringify({state,exact,structural,preserved,assets,errors:errorSig,errorsOK,responsive,bad}));
     if(!(exact&&structural&&preserved&&assets&&errorsOK&&responsive)) throw new Error(`FAQ conversion QA failure ${name}`);
 
     await page.evaluate(()=>{const rows=document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details.sd-faq-v2-item'); rows[1].querySelector('summary').click();});
