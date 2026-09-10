@@ -64,13 +64,11 @@ reps=[
  ('Improve research, writing and everyday digital work.','Apply AI to research, writing, planning and everyday digital work.'),
  ('Students & job seekers','Students & freshers'),
  ('Build a practical AI workflow for projects and career preparation.','Use AI for projects, research and practical career preparation.'),
- ('Freelancers & creators','Freelancers & creators'),
  ('Structure client work, research and content more efficiently.','Research, create and deliver client work more efficiently with repeatable AI workflows.'),
  ('Business owners','Job seekers & career switchers'),
  ('Use AI to improve planning, communication and decision support.','Use AI for LinkedIn, interviews, research and faster skill-building.'),
 ]
 for old,new in reps:
-    if old==new: continue
     c=s.count(old); print('AUDIENCE_REPLACE_COUNT',repr(old),c)
     if c!=1: raise SystemExit(f'expected one occurrence of {old!r}, got {c}')
     s=s.replace(old,new,1)
@@ -119,16 +117,18 @@ old_line=f"        sub_filter '{baseurl}' '{currenturl}';"
 new_line=f"        sub_filter '{baseurl}' '{newurl}';"
 if route.count(old_line)!=1: raise SystemExit(f'current chunk route line count={route.count(old_line)}')
 route=route.replace(old_line,new_line,1)
+# SSR HTML encodes ampersands. Keep these filters HTML-aware so first paint and
+# hydrated client copy are identical without a flash of the old persona labels.
 filters=[
  ('BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR'),
  ('Use the right AI tool where speed, ','Built for beginners who want '),
  ('quality and structured output matter.','AI skills they can actually use.'),
- ('Working professionals','Working professionals & business owners'),
+ ('Working professionals','Working professionals &amp; business owners'),
  ('Improve research, writing and everyday digital work.','Apply AI to research, writing, planning and everyday digital work.'),
- ('Students & job seekers','Students & freshers'),
+ ('Students &amp; job seekers','Students &amp; freshers'),
  ('Build a practical AI workflow for projects and career preparation.','Use AI for projects, research and practical career preparation.'),
  ('Structure client work, research and content more efficiently.','Research, create and deliver client work more efficiently with repeatable AI workflows.'),
- ('Business owners','Job seekers & career switchers'),
+ ('Business owners','Job seekers &amp; career switchers'),
  ('Use AI to improve planning, communication and decision support.','Use AI for LinkedIn, interviews, research and faster skill-building.'),
 ]
 block='\n        # SIKHADENGE_CLAUDE_AUDIENCE_V1_20260910\n'
@@ -148,13 +148,29 @@ test "$code" = 200; echo "NEW_CHUNK_HTTP=$code"
 test "$(sha256sum "$BK/new.public.js"|awk '{print $1}')" = "$NEW_SHA"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?audience_server=$TS" -o "$BK/claude.after.html"
-grep -Fq "$NEW_URL" "$BK/claude.after.html"
-grep -Fq 'WHO THIS MASTERCLASS IS FOR' "$BK/claude.after.html"
-grep -Fq 'Built for beginners who want ' "$BK/claude.after.html"
-grep -Fq 'AI skills they can actually use.' "$BK/claude.after.html"
-grep -Fq 'Working professionals & business owners' "$BK/claude.after.html"
-grep -Fq 'Students & freshers' "$BK/claude.after.html"
-grep -Fq 'Job seekers & career switchers' "$BK/claude.after.html"
+python3 - "$BK/claude.after.html" "$NEW_URL" <<'PY'
+import html,re,sys
+raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); newurl=sys.argv[2]
+text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',raw)))
+required=[
+ 'WHO THIS MASTERCLASS IS FOR',
+ 'Built for beginners who want AI skills they can actually use.',
+ 'Working professionals & business owners',
+ 'Apply AI to research, writing, planning and everyday digital work.',
+ 'Students & freshers',
+ 'Use AI for projects, research and practical career preparation.',
+ 'Freelancers & creators',
+ 'Research, create and deliver client work more efficiently with repeatable AI workflows.',
+ 'Job seekers & career switchers',
+ 'Use AI for LinkedIn, interviews, research and faster skill-building.',
+]
+for x in required:
+    if x not in text: raise SystemExit('SSR_MISSING '+repr(x))
+if newurl not in raw: raise SystemExit('SSR_MISSING_NEW_CHUNK_URL')
+for x in ['BUILT FOR PRACTICAL LEARNERS','Students & job seekers','Use AI to improve planning, communication and decision support.']:
+    if x in text: raise SystemExit('SSR_OLD_AUDIENCE_VISIBLE '+repr(x))
+print('AUDIENCE_SSR_SEMANTIC_CHECK=PASS')
+PY
 grep -Fq '/claude-proof-static-v5.js?v=job-impact-evidence-v1-20260910' "$BK/claude.after.html"
 grep -Fq 'Master <mark>Claude + 25+ AI Tools</mark>' "$BK/claude.after.html"
 grep -Fq '<strong>150,000+ Learners</strong>' "$BK/claude.after.html"
