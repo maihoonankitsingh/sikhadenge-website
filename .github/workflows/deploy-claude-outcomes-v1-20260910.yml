@@ -1,0 +1,191 @@
+name: Deploy Claude Outcomes V1 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-claude-outcomes-v1-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 18
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Controlled Outcomes V1 deploy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          DIR="$CWD/.next/static/chunks/pages/masterclass/claude"
+          OLD_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
+          TRUST_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-20260910.js'
+          NEW_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-20260910.js'
+          TRUST="$DIR/$TRUST_NAME"; NEW="$DIR/$NEW_NAME"
+          OLD_URL="/_next/static/chunks/pages/masterclass/claude/$OLD_NAME"
+          TRUST_URL="/_next/static/chunks/pages/masterclass/claude/$TRUST_NAME"
+          NEW_URL="/_next/static/chunks/pages/masterclass/claude/$NEW_NAME"
+          TS="$(date +%Y%m%d-%H%M%S)"; BK="/var/backups/sikhadenge/claude-outcomes-v1-$TS"; mkdir -p "$BK"
+          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"; cp -L "$ASSETS" "$BK/claude-assets.before"; [[ -f "$NEW" ]] && cp -a "$NEW" "$BK/new-chunk.before" || true
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?outcomes_v1_before=1' -o "$BK/ai.before.html"; AI_BEFORE="$(sha256sum "$BK/ai.before.html"|awk '{print $1}')"
+          rollback(){ rc=$?; echo "ROLLBACK rc=$rc"; cat "$BK/sikhadenge.in-ssl.before" > "$SITE" || true; cat "$BK/claude-assets.before" > "$ASSETS" || true; if [[ -f "$BK/new-chunk.before" ]]; then cp -a "$BK/new-chunk.before" "$NEW"; else rm -f "$NEW"; fi; nginx -t && systemctl reload nginx || true; sikhadenge-funnel-lockctl reseal || true; sikhadenge-funnel-lockctl lock || true; exit "$rc"; }
+          trap rollback ERR
+
+          sikhadenge-funnel-lockctl check
+          test "$(sha256sum "$TRUST"|awk '{print $1}')" = '637aa994bbf9baab21921f2029d0402690fed1adb5d9e15a302315e7955cea95'
+          sikhadenge-funnel-lockctl unlock 15
+          sikhadenge-funnel-lockctl assert-unlocked
+
+          cp -a "$TRUST" "$NEW"
+          python3 - "$NEW" <<'PY'
+          import sys
+          p=sys.argv[1]; s=open(p,encoding='utf-8').read()
+          old_heading='children:["Why join this ",(0,r.jsx)("mark",{className:"sd-heading-highlight",children:"course?"})]'
+          new_heading='children:["What you can ",(0,r.jsx)("mark",{className:"sd-heading-highlight",children:"do with AI"})]'
+          if s.count(old_heading)!=1: raise SystemExit(f'heading count={s.count(old_heading)}')
+          s=s.replace(old_heading,new_heading,1)
+          reps=[
+            ('children:"Research for any presentation"','children:"Research a topic and turn it into presentation-ready insights"'),
+            ('children:"Complete research reports in around 20 minutes"','children:"Summarise long reports, PDFs & notes into clear action points"'),
+            ('children:"Create presentation-ready content in seconds"','children:"Create structured presentations, emails & professional content faster"'),
+            ('children:"AI-assisted coding with zero technical background"','children:"Understand and improve code with AI-assisted workflows"'),
+            ('children:"Use Excel formulas without memorising them"','children:"Work with Excel formulas & data using natural-language AI guidance"'),
+            ('children:"Smarter LinkedIn workflows for career growth"','children:"Improve LinkedIn research, profile content & outreach workflows"'),
+          ]
+          for old,new in reps:
+              c=s.count(old); print('REPLACE_COUNT',repr(old),c)
+              if c!=1: raise SystemExit(f'expected one occurrence of {old!r}, got {c}')
+              s=s.replace(old,new,1)
+          open(p,'w',encoding='utf-8').write(s)
+          print('OUTCOMES_CLIENT_PATCH=PASS')
+          PY
+          node --check "$NEW"
+          NEW_SHA="$(sha256sum "$NEW"|awk '{print $1}')"; echo "NEW_CHUNK_SHA=$NEW_SHA"
+
+          if ! grep -Fq 'SIKHADENGE_CLAUDE_OUTCOMES_V1_CHUNK_20260910' "$ASSETS"; then
+            printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
+              '# SIKHADENGE_CLAUDE_OUTCOMES_V1_CHUNK_20260910' \
+              "location = $NEW_URL {" \
+              "    alias $NEW;" \
+              '    default_type application/javascript;' \
+              '    add_header Cache-Control "public, max-age=31536000, immutable" always;' \
+              '    add_header X-SD-Claude-Asset "outcomes-v1-20260910" always;' \
+              '}' >> "$ASSETS"
+          fi
+
+          python3 - "$SITE" "$OLD_URL" "$TRUST_URL" "$NEW_URL" <<'PY'
+          import sys
+          p,oldurl,trusturl,newurl=sys.argv[1:]
+          s=open(p,encoding='utf-8').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('Claude route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('route parse failed')
+          route=s[a:end]
+          if '# SIKHADENGE_CLAUDE_OUTCOMES_V1_20260910' in route: raise SystemExit('unexpected Outcomes V1 marker')
+          old_line=f"        sub_filter '{oldurl}' '{trusturl}';"
+          new_line=f"        sub_filter '{oldurl}' '{newurl}';"
+          if route.count(old_line)!=1: raise SystemExit(f'Trust chunk route line count={route.count(old_line)}')
+          route=route.replace(old_line,new_line,1)
+          anchor=new_line+'\n'
+          filters=[
+            ('<h2 class="claude-whyjoin-minimal_title__yYqfl sd-final-heading-v8">Why <span class="sd-heading-highlight">join this course?</span></h2>','<h2 class="claude-whyjoin-minimal_title__yYqfl sd-final-heading-v8">What you can <span class="sd-heading-highlight">do with AI</span></h2>'),
+            ('Research for any presentation','Research a topic and turn it into presentation-ready insights'),
+            ('Complete research reports in around 20 minutes','Summarise long reports, PDFs &amp; notes into clear action points'),
+            ('Create presentation-ready content in seconds','Create structured presentations, emails &amp; professional content faster'),
+            ('AI-assisted coding with zero technical background','Understand and improve code with AI-assisted workflows'),
+            ('Use Excel formulas without memorising them','Work with Excel formulas &amp; data using natural-language AI guidance'),
+            ('Smarter LinkedIn workflows for career growth','Improve LinkedIn research, profile content &amp; outreach workflows'),
+          ]
+          block='\n        # SIKHADENGE_CLAUDE_OUTCOMES_V1_20260910\n'
+          for old,new in filters:
+              block += '        sub_filter '+repr(old)+' '+repr(new)+';\n'
+          route=route.replace(anchor,anchor+block,1)
+          open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
+          print('OUTCOMES_ROUTE_PATCH=PASS')
+          PY
+
+          nginx -t; systemctl reload nginx; sleep 2
+          code="$(curl -L -sS --max-time 20 -o "$BK/new.public.js" -w '%{http_code}' "https://sikhadenge.in${NEW_URL}?first=$TS")"; echo "NEW_ASSET_HTTP=$code"; test "$code" = 200
+          test "$(sha256sum "$BK/new.public.js"|awk '{print $1}')" = "$NEW_SHA"
+          grep -Fq 'children:"Research a topic and turn it into presentation-ready insights"' "$BK/new.public.js"
+          curl -fsSL --max-time 25 "https://sikhadenge.in/masterclass/claude/free?outcomes_v1_server=$TS" -o "$BK/claude.after.html"
+          grep -Fq '>What you can <span class="sd-heading-highlight">do with AI</span></h2>' "$BK/claude.after.html"
+          grep -Fq 'Research a topic and turn it into presentation-ready insights' "$BK/claude.after.html"
+          grep -Fq 'Summarise long reports, PDFs &amp; notes into clear action points' "$BK/claude.after.html"
+          grep -Fq 'Create structured presentations, emails &amp; professional content faster' "$BK/claude.after.html"
+          grep -Fq 'Understand and improve code with AI-assisted workflows' "$BK/claude.after.html"
+          grep -Fq 'Work with Excel formulas &amp; data using natural-language AI guidance' "$BK/claude.after.html"
+          grep -Fq 'Improve LinkedIn research, profile content &amp; outreach workflows' "$BK/claude.after.html"
+          grep -Fq 'Master <mark>Claude + 25+ AI Tools</mark>' "$BK/claude.after.html"
+          grep -Fq '<strong>150,000+ Learners</strong>' "$BK/claude.after.html"
+          grep -Fq '<strong>Live · Practical</strong>' "$BK/claude.after.html"
+          ! grep -Fq 'Complete research reports in around 20 minutes' "$BK/claude.after.html"
+          ! grep -Fq 'Create presentation-ready content in seconds' "$BK/claude.after.html"
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?outcomes_v1_after=1' -o "$BK/ai.after.html"; test "$AI_BEFORE" = "$(sha256sum "$BK/ai.after.html"|awk '{print $1}')"
+          echo "AI_UNCHANGED_SHA=$AI_BEFORE"; echo "$BK" > /var/backups/sikhadenge/.claude-outcomes-v1-last; trap - ERR; echo "SERVER_STAGE_PASS=$BK"
+          REMOTE
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1; npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core'); const norm=s=>(s||'').replace(/\s+/g,' ').replace(/,\s*/g,',').trim();
+          const wantH='Master Claude + 25+ AI Tools to work smarter,create faster & get better results.';
+          const wantItems=['Research a topic and turn it into presentation-ready insights','Summarise long reports, PDFs & notes into clear action points','Create structured presentations, emails & professional content faster','Understand and improve code with AI-assisted workflows','Work with Excel formulas & data using natural-language AI guidance','Improve LinkedIn research, profile content & outreach workflows'];
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const fail=[];
+          for(const [n,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){const p=await b.newPage();await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});const bad=[];p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)))bad.push(`${r.status()} ${u}`)});await p.goto(`https://sikhadenge.in/masterclass/claude/free?outcomes_v1_browser=${n}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3000));const x=await p.evaluate(()=>{const h1=document.querySelector('h1');const hero=h1?.closest('section')||h1?.parentElement?.parentElement;const proof=hero?[...hero.querySelectorAll('[class*="proofCard"]')].slice(0,3).map(c=>({small:(c.querySelector('small')?.textContent||'').trim(),strong:(c.querySelector('strong')?.textContent||'').trim()})):[];const hs=[...document.querySelectorAll('h2')];const oh=hs.find(h=>(h.textContent||'').replace(/\s+/g,' ').trim()==='What you can do with AI');const sec=oh?.closest('section');const items=sec?[...sec.querySelectorAll('[class*="itemText"]')].map(e=>(e.textContent||'').trim()):[];const reg='/gen-ai-masterclass/register-one-step';const ctas=[...document.querySelectorAll('a[href]')].filter(a=>{try{return new URL(a.href,location.href).pathname===reg}catch{return false}}).length;return{h1:h1?.textContent||'',proof,outcomeHeading:(oh?.textContent||'').replace(/\s+/g,' ').trim(),items,sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>s.includes('/masterclass/claude/free-'))}});console.log(n,JSON.stringify(x),'failedAssets',bad.length);const trust=x.proof.length===3&&x.proof[0].strong==='150,000+ Learners'&&x.proof[1].strong==='4.9/5 Rating'&&x.proof[2].strong==='Live · Practical';const out=x.outcomeHeading==='What you can do with AI'&&JSON.stringify(x.items.slice(0,6))===JSON.stringify(wantItems);if(norm(x.h1)!==wantH||!trust||!out||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!x.scripts.some(s=>s.includes('outcomes-v1-20260910.js')))fail.push(n+': '+JSON.stringify(x)+' bad='+bad.join(','));await p.close()}await b.close();if(fail.length)throw Error(fail.join('\n'));console.log('CLAUDE_OUTCOMES_V1_3VIEW_QA_PASS')})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa.js
+
+      - name: Reseal and lock Golden baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal; sikhadenge-funnel-lockctl lock; sikhadenge-funnel-lockctl check; sikhadenge-funnel-lockctl status
+          echo 'CLAUDE_OUTCOMES_V1_RESEALED_LOCKED=PASS'
+          REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          M='/var/backups/sikhadenge/.claude-outcomes-v1-last'; [[ -s "$M" ]] || { sikhadenge-funnel-lockctl lock || true; exit 0; }; B="$(cat "$M")"
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'; ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'; CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'; NEW="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-20260910.js"
+          sikhadenge-funnel-lockctl unlock 5 || true; [[ -s "$B/sikhadenge.in-ssl.before" ]] && cat "$B/sikhadenge.in-ssl.before" > "$SITE"; [[ -s "$B/claude-assets.before" ]] && cat "$B/claude-assets.before" > "$ASSETS"; if [[ -f "$B/new-chunk.before" ]]; then cp -a "$B/new-chunk.before" "$NEW"; else rm -f "$NEW"; fi; nginx -t && systemctl reload nginx; sikhadenge-funnel-lockctl reseal || true; sikhadenge-funnel-lockctl lock || true; echo "ROLLBACK_DONE=$B"
+          REMOTE
