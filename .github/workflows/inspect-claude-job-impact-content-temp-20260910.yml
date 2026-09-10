@@ -1,4 +1,4 @@
-name: Deploy Claude Job Impact V1 Final Rerun 20260910
+name: Deploy Claude Job Impact V1 Visibility QA 20260910
 
 on:
   push:
