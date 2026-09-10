@@ -1,0 +1,138 @@
+name: Inspect Claude Testimonials Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-testimonials-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 10
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Server source trace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|LOCK_STATE'
+          TMP="/tmp/claude-testimonials-$$.html"
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?testimonial_trace=$(date +%s)" -o "$TMP"
+          echo '=== RENDERED SERVER TEXT CONTEXT ==='
+          python3 - "$TMP" <<'PY'
+          import re,sys,html
+          raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',raw)))
+          needles=['testimonial','testimonials','learner stories','learners say','what our learners','hear it from','student','review','reviews','success stories','real learners','trusted by','rating','linkedin']
+          seen=[]
+          for n in needles:
+              start=0
+              while True:
+                  i=text.lower().find(n.lower(),start)
+                  if i<0: break
+                  key=(max(0,i-600),min(len(text),i+2400))
+                  if all(abs(key[0]-x[0])>500 for x in seen):
+                      seen.append(key); print('TERM',n,'CONTEXT',text[key[0]:key[1]])
+                  start=i+len(n)
+          print('=== SCRIPT URLS TESTIMONIAL/PROOF ===')
+          for u in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',raw,re.I):
+              u=html.unescape(u)
+              if any(k in u.lower() for k in ['testimonial','proof','review','social','claude']): print(u)
+          print('=== IMAGE URLS AROUND PROOF TERMS ===')
+          for m in re.finditer(r'<img\b[^>]*>',raw,re.I):
+              tag=m.group(0)
+              if any(k in tag.lower() for k in ['testimonial','learner','student','review','avatar','profile']): print(tag[:800])
+          PY
+          echo '=== ROOT OWNER FILES ==='
+          for f in /var/www/sikhadenge.in/*.js /var/www/sikhadenge.in/*.css; do
+            [ -f "$f" ] || continue
+            if grep -Eqi 'testimonial|learner stor|what.*learner|hear it from|review|linkedin|student stor|success stor' "$f"; then
+              echo "OWNER $(sha256sum "$f" | awk '{print $1}') $f"
+              grep -Ein 'testimonial|learner stor|what.*learner|hear it from|review|linkedin|student stor|success stor' "$f" | head -30 || true
+            fi
+          done
+          echo '=== CURRENT PAGE CHUNK PROOF CONTEXT ==='
+          CHUNK="$(python3 - "$TMP" <<'PY'
+          import re,sys,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          vals=[html.unescape(x) for x in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I)]
+          vals=[x for x in vals if '/_next/static/chunks/pages/masterclass/claude/free-' in x]
+          print(vals[0] if vals else '')
+          PY
+          )"
+          echo "CHUNK_URL=$CHUNK"
+          if [ -n "$CHUNK" ]; then
+            FILE="/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916${CHUNK%%\?*}"
+            echo "CHUNK_FILE=$FILE"
+            echo "CHUNK_SHA=$(sha256sum "$FILE"|awk '{print $1}')"
+            python3 - "$FILE" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          terms=['testimonial','review','learner','student','linkedin','success','story','stories']
+          printed=[]
+          for t in terms:
+              start=0
+              while True:
+                  i=s.lower().find(t,start)
+                  if i<0: break
+                  if all(abs(i-x)>1200 for x in printed):
+                      printed.append(i); print('CHUNK_CTX',t,s[max(0,i-1400):i+4200])
+                  start=i+len(t)
+          PY
+          fi
+          rm -f "$TMP"
+          echo SERVER_TESTIMONIAL_TRACE_PASS
+          REMOTE
+      - name: Browser DOM audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[]; p.on('response',r=>{if(r.status()>=400&&(/\.css(?:\?|$)/.test(r.url())||/\.js(?:\?|$)/.test(r.url())))bad.push(`${r.status()} ${r.url()}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?testimonial_dom=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000}); await new Promise(r=>setTimeout(r,3000));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const sections=[...document.querySelectorAll('main section')].map((s,i)=>({i,text:n(s.innerText).slice(0,1500),h:[...s.querySelectorAll('h2,h3')].map(e=>n(e.textContent)),articles:s.querySelectorAll('article').length,imgs:[...s.querySelectorAll('img')].map(im=>({src:im.currentSrc||im.src,alt:im.alt,w:im.naturalWidth,h:im.naturalHeight})),links:[...s.querySelectorAll('a[href]')].map(a=>({text:n(a.textContent),href:a.href})).slice(0,20),rect:s.getBoundingClientRect().toJSON()}));
+                const keys=/testimonial|learner|review|student|success stor|hear it from|what .* say|linkedin/i;
+                return {matches:sections.filter(s=>keys.test(s.text)||s.links.some(l=>keys.test(l.text)||/linkedin/i.test(l.href))),allHeadings:sections.map(s=>[s.i,s.h]),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,badVisible:[...document.querySelectorAll('body *')].filter(e=>{const cs=getComputedStyle(e);return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)!==0&&e.scrollWidth>e.clientWidth+4&&e.clientWidth>0}).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,sw:e.scrollWidth,cw:e.clientWidth,text:n(e.textContent).slice(0,160)}))};
+              });
+              console.log('VIEW',name,'MATCHES',JSON.stringify(x.matches));
+              console.log('VIEW',name,'HEADINGS',JSON.stringify(x.allHeadings));
+              console.log('VIEW',name,'OVERFLOW',x.overflow,'LOCAL_OVERFLOW',JSON.stringify(x.badVisible),'FAILED_ASSETS',bad.length,JSON.stringify(bad));
+              await p.close();
+            }
+            await b.close(); console.log('BROWSER_TESTIMONIAL_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
