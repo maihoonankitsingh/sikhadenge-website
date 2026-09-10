@@ -4,10 +4,10 @@ set -Eeuo pipefail
 MODE="${1:-stage}"
 SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
 ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'
-STAGED='/tmp/claude-testimonials-conversion-v1-20260910.js'
-TARGET='/var/www/sikhadenge.in/claude-testimonials-conversion-v1-20260910.js'
-PUBLIC='/claude-testimonials-conversion-v1-20260910.js'
-MARKER='/var/backups/sikhadenge/.claude-testimonials-v1-last'
+STAGED='/tmp/claude-testimonials-conversion-v1b-20260910.js'
+TARGET='/var/www/sikhadenge.in/claude-testimonials-conversion-v1b-20260910.js'
+PUBLIC='/claude-testimonials-conversion-v1b-20260910.js'
+MARKER='/var/backups/sikhadenge/.claude-testimonials-v1b-last'
 EXPECTED_AI='b03ab6b210bceed43573d2037816ae8f8208969ea73cecaba60e14eef10c12d2'
 EXPECTED_CLAUDE_BEFORE='06453cdded91aad388608d58124921a471dc6cdc5af8b1ab90fcfcdb2e372530'
 
@@ -41,7 +41,7 @@ fi
 [[ "$MODE" == 'stage' ]] || { echo "usage: $0 stage|rollback" >&2; exit 2; }
 
 TS="$(date +%Y%m%d-%H%M%S)"
-BK="/var/backups/sikhadenge/claude-testimonials-v1-$TS"
+BK="/var/backups/sikhadenge/claude-testimonials-v1b-$TS"
 mkdir -p "$BK"
 cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
 cp -L "$ASSETS" "$BK/claude-assets.before"
@@ -50,7 +50,7 @@ printf '%s\n' "$BK" > "$MARKER"
 
 onerr() {
   rc=$?
-  echo "TESTIMONIALS_STAGE_ERROR_RC=$rc"
+  echo "TESTIMONIALS_V1B_STAGE_ERROR_RC=$rc"
   rollback
   exit "$rc"
 }
@@ -60,12 +60,12 @@ test -s "$STAGED"
 node --check "$STAGED"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
-  "https://sikhadenge.in/masterclass/ai-video?testimonials_before=$TS" -o "$BK/ai.before.html"
+  "https://sikhadenge.in/masterclass/ai-video?testimonials_v1b_before=$TS" -o "$BK/ai.before.html"
 AI_BEFORE="$(sha256sum "$BK/ai.before.html" | awk '{print $1}')"
 test "$AI_BEFORE" = "$EXPECTED_AI"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
-  "https://sikhadenge.in/masterclass/claude/free?testimonials_before=$TS" -o "$BK/claude.before.html"
+  "https://sikhadenge.in/masterclass/claude/free?testimonials_v1b_before=$TS" -o "$BK/claude.before.html"
 CLAUDE_BEFORE="$(sha256sum "$BK/claude.before.html" | awk '{print $1}')"
 test "$CLAUDE_BEFORE" = "$EXPECTED_CLAUDE_BEFORE"
 
@@ -73,29 +73,29 @@ sikhadenge-funnel-lockctl check
 sikhadenge-funnel-lockctl unlock 15
 sikhadenge-funnel-lockctl assert-unlocked
 
-# This is a one-time immutable publication. Never overwrite an already-live version.
-if grep -Fq 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1_20260910' "$SITE"; then
-  echo 'Testimonials V1 route marker already exists' >&2
+# One-time immutable publication. Never overwrite an already-published URL with different bytes.
+if grep -Fq 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1B_20260910' "$SITE"; then
+  echo 'Testimonials V1B route marker already exists' >&2
   exit 31
 fi
-if grep -Fq 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1_ASSET_20260910' "$ASSETS"; then
-  echo 'Testimonials V1 asset marker already exists' >&2
+if grep -Fq 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1B_ASSET_20260910' "$ASSETS"; then
+  echo 'Testimonials V1B asset marker already exists' >&2
   exit 32
 fi
 
 install -m 0644 "$STAGED" "$TARGET"
 TARGET_SHA="$(sha256sum "$TARGET" | awk '{print $1}')"
-echo "TESTIMONIALS_TARGET_SHA=$TARGET_SHA"
+echo "TESTIMONIALS_V1B_TARGET_SHA=$TARGET_SHA"
 node --check "$TARGET"
 
 cat >> "$ASSETS" <<EOF
 
-# SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1_ASSET_20260910
+# SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1B_ASSET_20260910
 location = $PUBLIC {
     alias $TARGET;
     default_type application/javascript;
     add_header Cache-Control "public, max-age=31536000, immutable" always;
-    add_header X-SD-Claude-Asset "testimonials-conversion-v1-20260910" always;
+    add_header X-SD-Claude-Asset "testimonials-conversion-v1b-20260910" always;
 }
 EOF
 
@@ -125,8 +125,8 @@ for i in range(q,len(s)):
             end=i+1; break
 if end is None: raise SystemExit('Claude route parse failed')
 route=s[a:end]
-if 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1_20260910' in route:
-    raise SystemExit('Testimonials V1 marker unexpectedly present')
+if 'SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1B_20260910' in route:
+    raise SystemExit('Testimonials V1B marker unexpectedly present')
 body_line="        sub_filter '</body>'"
 if route.count(body_line)!=1:
     raise SystemExit(f'expected one body sub_filter, got {route.count(body_line)}')
@@ -135,31 +135,31 @@ if route.count(anchor)!=1:
     raise SystemExit(f'expected one CTA typography body anchor, got {route.count(anchor)}')
 replacement='<script defer src="/claude-cta-typography-v3.js?v=cta-type-v3b-20260904"></script><script defer src="'+public+'"></script></body>'
 route=route.replace(anchor,replacement,1)
-route=route.replace(body_line,"        # SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1_20260910\n"+body_line,1)
+route=route.replace(body_line,"        # SIKHADENGE_CLAUDE_TESTIMONIALS_CONVERSION_V1B_20260910\n"+body_line,1)
 open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
-print('TESTIMONIALS_ROUTE_PATCH=PASS')
+print('TESTIMONIALS_V1B_ROUTE_PATCH=PASS')
 PY
 
 nginx -t
 systemctl reload nginx
 sleep 2
 
-# Canonical immutable URL must expose exactly the bytes we just published.
+# Canonical immutable URL must expose exactly the bytes just published, without a cache-busting query.
 code="$(curl -L -sS --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
-  -o "$BK/testimonials.public.js" -w '%{http_code}' "https://sikhadenge.in${PUBLIC}")"
+  -o "$BK/testimonials-v1b.public.js" -w '%{http_code}' "https://sikhadenge.in${PUBLIC}")"
 test "$code" = '200'
-PUBLIC_SHA="$(sha256sum "$BK/testimonials.public.js" | awk '{print $1}')"
-echo "TESTIMONIALS_CANONICAL_HTTP=$code"
-echo "TESTIMONIALS_CANONICAL_SHA=$PUBLIC_SHA"
+PUBLIC_SHA="$(sha256sum "$BK/testimonials-v1b.public.js" | awk '{print $1}')"
+echo "TESTIMONIALS_V1B_CANONICAL_HTTP=$code"
+echo "TESTIMONIALS_V1B_CANONICAL_SHA=$PUBLIC_SHA"
 test "$PUBLIC_SHA" = "$TARGET_SHA"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
-  "https://sikhadenge.in/masterclass/claude/free?testimonials_after=$TS" -o "$BK/claude.after.html"
+  "https://sikhadenge.in/masterclass/claude/free?testimonials_v1b_after=$TS" -o "$BK/claude.after.html"
 python3 - "$BK/claude.after.html" "$PUBLIC" <<'PY'
-import sys,re,html
+import sys
 raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); public=sys.argv[2]
 if raw.count(f'<script defer src="{public}"></script>') != 1:
-    raise SystemExit('Testimonials V1 script tag missing or duplicated')
+    raise SystemExit('Testimonials V1B script tag missing or duplicated')
 required=[
  '/funnel-attribution-bridge-v1.js?v=20260903-1',
  '/claude-proof-static-v5.js?v=job-impact-evidence-v1-20260910',
@@ -174,16 +174,16 @@ required=[
 ]
 for x in required:
     if x not in raw: raise SystemExit('CLAUDE_AFTER_MISSING '+repr(x))
-print('TESTIMONIALS_SERVER_HTML_CHECK=PASS')
+print('TESTIMONIALS_V1B_SERVER_HTML_CHECK=PASS')
 PY
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
-  "https://sikhadenge.in/masterclass/ai-video?testimonials_after=$TS" -o "$BK/ai.after.html"
+  "https://sikhadenge.in/masterclass/ai-video?testimonials_v1b_after=$TS" -o "$BK/ai.after.html"
 AI_AFTER="$(sha256sum "$BK/ai.after.html" | awk '{print $1}')"
 test "$AI_AFTER" = "$AI_BEFORE"
 echo "AI_UNCHANGED_SHA=$AI_AFTER"
 
-# Protect against accidental testimonial media mutation.
+# Protect against accidental mutation of the six original testimonial posters/videos.
 declare -A J V
 J[01]='502d195b3237dc3fd068d8b209d2e4f5b77168d40b0951b02e6958f773054c4c'; V[01]='5d5f402a39e8f1a964b6812a7f10619521773becd3058f67c005ed45370812b7'
 J[02]='c273728d708b6e3e92cb806065c5b4174e8d704d3d24dd7c7d457a7a46c2db17'; V[02]='c16705591c52f2dfd1a699b8731a84fa09fa5fcf16badfad0a082a102525ac55'
@@ -198,4 +198,4 @@ done
 echo 'TESTIMONIAL_MEDIA_UNCHANGED=PASS'
 
 trap - ERR
-echo "TESTIMONIALS_STAGE_PASS=$BK"
+echo "TESTIMONIALS_V1B_STAGE_PASS=$BK"
