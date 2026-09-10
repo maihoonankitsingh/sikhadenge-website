@@ -38,7 +38,6 @@ cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
 cp -L "$ASSETS" "$BK/claude-assets.before"
 [[ -f "$NEW_PROOF" ]] && cp -a "$NEW_PROOF" "$BK/new-proof.before" || true
 printf '%s\n' "$BK" > "$MARKER"
-
 onerr(){ rc=$?; echo "STAGE_ERROR_RC=$rc"; rollback; exit "$rc"; }
 trap onerr ERR
 
@@ -51,9 +50,9 @@ test "$(sha256sum "$OLD_PROOF"|awk '{print $1}')" = '3ae0c4874f675c443f0607f85b0
 sikhadenge-funnel-lockctl unlock 15
 sikhadenge-funnel-lockctl assert-unlocked
 
-# Preserve the current Agenda V1 Next chunk exactly. The legacy AI-shift section
-# stays hidden by claude-proof-hide-old-v2; only its visible replacement evidence
-# layer is versioned from proof v4 to proof v5.
+# Keep the current Agenda V1 page chunk byte-identical. The legacy AI-shift
+# section remains hidden by claude-proof-hide-old-v2. Only the visible proof
+# layer is versioned from v4 to v5.
 cp -a "$OLD_PROOF" "$NEW_PROOF"
 python3 - "$NEW_PROOF" <<'PY'
 import sys,re
@@ -113,7 +112,7 @@ skills='''  const skills = [
 pat=r'  const jobs = \[.*?\n  \];\n\n  const skills = \[.*?\n  \];'
 out,n=re.subn(pat,jobs+'\n\n'+skills,s,count=1,flags=re.S)
 print('PROOF_ARRAY_REPLACE_COUNT',n)
-if n!=1: raise SystemExit('proof arrays pattern mismatch')
+if n != 1: raise SystemExit('proof arrays pattern mismatch')
 out=out.replace('window.__CLAUDE_PROOF_STATIC_V4__','window.__CLAUDE_PROOF_STATIC_V5__')
 open(p,'w',encoding='utf-8').write(out)
 print('JOB_IMPACT_PROOF_PATCH=PASS')
@@ -139,7 +138,7 @@ python3 - "$SITE" "$OLD_PROOF_URL" "$NEW_PROOF_URL" <<'PY'
 import sys
 p,oldproof,newproof=sys.argv[1:]
 s=open(p,encoding='utf-8').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
-if a<0: raise SystemExit('Claude route missing')
+if a < 0: raise SystemExit('Claude route missing')
 q=s.find('{',a); d=0; quote=None; esc=False; end=None
 for i in range(q,len(s)):
     ch=s[i]
@@ -155,12 +154,9 @@ for i in range(q,len(s)):
         if d==0: end=i+1; break
 if end is None: raise SystemExit('route parse failed')
 route=s[a:end]
-if '# SIKHADENGE_CLAUDE_JOB_IMPACT_V1_PROOF_20260910' in route: raise SystemExit('unexpected Job Impact marker')
-if route.count(oldproof)!=1: raise SystemExit(f'old proof URL count={route.count(oldproof)}')
+if route.count(oldproof) != 1: raise SystemExit(f'old proof URL count={route.count(oldproof)}')
+if newproof in route: raise SystemExit('new proof URL unexpectedly already present')
 route=route.replace(oldproof,newproof,1)
-anchor="        sub_filter_once off;\n"
-if route.count(anchor)!=1: raise SystemExit('sub_filter_once anchor mismatch')
-route=route.replace(anchor,anchor+'        # SIKHADENGE_CLAUDE_JOB_IMPACT_V1_PROOF_20260910\n',1)
 open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
 print('JOB_IMPACT_ROUTE_PATCH=PASS')
 PY
@@ -182,7 +178,6 @@ grep -Fq '<strong>150,000+ Learners</strong>' "$BK/claude.after.html"
 grep -Fq '>What you can <span class="sd-heading-highlight">do with AI</span></h2>' "$BK/claude.after.html"
 grep -Fq 'LIVE MASTERCLASS AGENDA' "$BK/claude.after.html"
 grep -Fq 'Why AI-skilled professionals are ' "$BK/claude.after.html"
-# Current immutable Agenda client chunk must remain in the HTML; no page-bundle swap.
 grep -Fq 'hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js' "$BK/claude.after.html"
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 'https://sikhadenge.in/masterclass/ai-video?jobimpact_after=1' -o "$BK/ai.after.html"
