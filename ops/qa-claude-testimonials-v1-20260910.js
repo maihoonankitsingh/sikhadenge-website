@@ -27,7 +27,6 @@ const audience = [
   ['Job seekers & career switchers','Use AI for LinkedIn, interviews, research and faster skill-building.'],
 ];
 const impactStats = ['1 in 4','+78M','70%','+69%','2×+','AI + Big Data'];
-const scriptNeedle = '/claude-testimonials-conversion-v1-20260910.js';
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -179,8 +178,13 @@ const scriptNeedle = '/claude-testimonials-conversion-v1-20260910.js';
       return ['Real Learner Stories', 'Hear directly from learners about their Sikhadenge learning experience.'].filter(value => text.includes(value));
     });
 
-    // Interaction check: the same six original MP4 files must still open inline.
-    await page.click('#sd-claude-testimonials-v305 .sd-v305-set:first-child .sd-v305-open');
+    // Dispatch through DOM instead of geometric Puppeteer click because the desktop/tablet rail is moving.
+    const clicked = await page.evaluate(() => {
+      const button = document.querySelector('#sd-claude-testimonials-v305 .sd-v305-set:first-child .sd-v305-open');
+      if (!button) return false;
+      button.click();
+      return true;
+    });
     await new Promise(resolve => setTimeout(resolve, 1200));
     const interaction = await page.evaluate(() => {
       const root = document.getElementById('sd-claude-testimonials-v305');
@@ -193,7 +197,7 @@ const scriptNeedle = '/claude-testimonials-conversion-v1-20260910.js';
         rootPlaying: root?.getAttribute('data-playing') || '',
       };
     });
-    const interactionOK = interaction.exists && interaction.src.includes('/ai-video-testimonials/01.mp4') && interaction.controls && interaction.playsInline && interaction.rootPlaying === '1';
+    const interactionOK = clicked && interaction.exists && interaction.src.includes('/ai-video-testimonials/01.mp4') && interaction.controls && interaction.playsInline && interaction.rootPlaying === '1';
 
     console.log(name, JSON.stringify({
       h1: state.h1,
