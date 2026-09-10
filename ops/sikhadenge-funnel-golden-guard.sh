@@ -11,6 +11,8 @@ CL_URL='https://sikhadenge.in/masterclass/claude/free'
 UNLOCK="$ROOT/unlocked-until"
 RUNLOCK='/run/lock/sikhadenge-funnel-golden-guard.lock'
 LOG='/var/log/sikhadenge-funnel-golden-lock.log'
+INCIDENT_EPOCH="$ROOT/last-incident.epoch"
+INCIDENT_TEXT="$ROOT/last-incident.txt"
 TS="$(date +%Y%m%d-%H%M%S)"
 TMP="/tmp/sd-funnel-guard-$TS-$$"
 FORCE_DEEP=0
@@ -18,7 +20,18 @@ FORCE_DEEP=0
 
 mkdir -p /run/lock "$ROOT"; touch "$LOG"; chmod 0600 "$LOG" || true
 exec 9>"$RUNLOCK"; flock -n 9 || exit 0
-log(){ printf '%s %s\n' "$(date -Is)" "$*" | tee -a "$LOG"; }
+log(){
+  local msg="$*" line
+  line="$(date -Is) $msg"
+  printf '%s\n' "$line" | tee -a "$LOG"
+  case "$msg" in
+    REPAIR*|CRITICAL*|PUBLIC_MISMATCH*|ASSET_MISMATCH*)
+      date +%s > "$INCIDENT_EPOCH"
+      printf '%s\n' "$line" > "$INCIDENT_TEXT"
+      chmod 0600 "$INCIDENT_EPOCH" "$INCIDENT_TEXT" || true
+      ;;
+  esac
+}
 
 [[ -L "$GOLD" && -r "$GOLD/state.env" ]] || { log 'CRITICAL no active Golden seal'; exit 1; }
 # shellcheck disable=SC1090
