@@ -1,0 +1,82 @@
+name: Inspect Claude Agenda Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-agenda-temp-20260910.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 10
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only current Claude section map
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== LOCK STATUS ==='
+          sikhadenge-funnel-lockctl status | sed -n '1,24p'
+          TMP="/tmp/claude-agenda-inspect-$$.html"
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?agenda_inspect=$(date +%s)" -o "$TMP"
+          python3 - "$TMP" <<'PY'
+          from html.parser import HTMLParser
+          import sys,re,html
+          class P(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.sections=[]; self.depth=0; self.cur=None; self.tagstack=[]
+              def handle_starttag(self,tag,attrs):
+                  attrs=dict(attrs)
+                  if tag=='section':
+                      if self.depth==0: self.cur={'attrs':attrs,'parts':[],'heads':[]}
+                      self.depth+=1
+                  self.tagstack.append(tag)
+              def handle_endtag(self,tag):
+                  if tag=='section' and self.depth:
+                      self.depth-=1
+                      if self.depth==0 and self.cur:
+                          self.sections.append(self.cur); self.cur=None
+                  if self.tagstack: self.tagstack.pop()
+              def handle_data(self,data):
+                  if self.cur and self.depth:
+                      t=' '.join(data.split())
+                      if t:
+                          self.cur['parts'].append(t)
+                          if self.tagstack and self.tagstack[-1] in ('h1','h2','h3','h4'): self.cur['heads'].append(t)
+          p=P(); p.feed(open(sys.argv[1],encoding='utf-8',errors='ignore').read())
+          print('SECTION_COUNT',len(p.sections))
+          for i,s in enumerate(p.sections,1):
+              text=' '.join(s['parts']); text=re.sub(r'\s+',' ',text).strip()
+              heads=' | '.join(s['heads'])
+              cls=s['attrs'].get('class','')
+              print(f'--- SECTION {i} class={cls!r}')
+              print('HEADS:',heads[:500])
+              print('TEXT:',text[:1800])
+          PY
+          rm -f "$TMP"
+          echo 'READ_ONLY_INSPECT=PASS'
+          REMOTE
