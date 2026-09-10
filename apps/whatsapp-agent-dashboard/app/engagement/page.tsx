@@ -4,6 +4,7 @@ import EngagementManager from "../../components/engagement/EngagementManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./engagement-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
