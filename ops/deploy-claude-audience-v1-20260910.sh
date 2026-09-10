@@ -52,14 +52,14 @@ test "$(sha256sum "$CURRENT"|awk '{print $1}')" = 'ad12771c1d5d9b23d995afbf7d019
 sikhadenge-funnel-lockctl unlock 15
 sikhadenge-funnel-lockctl assert-unlocked
 
+# Audience V1 intentionally preserves the existing H2/highlight pipeline.
+# Only the eyebrow and the four persona cards are changed.
 cp -a "$CURRENT" "$NEW"
 python3 - "$NEW" <<'PY'
 import sys
 p=sys.argv[1]; s=open(p,encoding='utf-8').read()
 reps=[
  ('BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR'),
- ('Use the right AI tool where speed, ','Built for beginners who want '),
- ('quality and structured output matter.','AI skills they can actually use.'),
  ('Working professionals','Working professionals & business owners'),
  ('Improve research, writing and everyday digital work.','Apply AI to research, writing, planning and everyday digital work.'),
  ('Students & job seekers','Students & freshers'),
@@ -117,12 +117,9 @@ old_line=f"        sub_filter '{baseurl}' '{currenturl}';"
 new_line=f"        sub_filter '{baseurl}' '{newurl}';"
 if route.count(old_line)!=1: raise SystemExit(f'current chunk route line count={route.count(old_line)}')
 route=route.replace(old_line,new_line,1)
-# SSR HTML encodes ampersands. Keep these filters HTML-aware so first paint and
-# hydrated client copy are identical without a flash of the old persona labels.
+# Server response uses HTML-escaped ampersands. H2 is deliberately untouched.
 filters=[
  ('BUILT FOR PRACTICAL LEARNERS','WHO THIS MASTERCLASS IS FOR'),
- ('Use the right AI tool where speed, ','Built for beginners who want '),
- ('quality and structured output matter.','AI skills they can actually use.'),
  ('Working professionals','Working professionals &amp; business owners'),
  ('Improve research, writing and everyday digital work.','Apply AI to research, writing, planning and everyday digital work.'),
  ('Students &amp; job seekers','Students &amp; freshers'),
@@ -154,7 +151,7 @@ raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); newurl=sys.argv[2
 text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',raw)))
 required=[
  'WHO THIS MASTERCLASS IS FOR',
- 'Built for beginners who want AI skills they can actually use.',
+ 'Use the right AI tool where speed, quality and structured output matter.',
  'Working professionals & business owners',
  'Apply AI to research, writing, planning and everyday digital work.',
  'Students & freshers',
