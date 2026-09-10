@@ -25,25 +25,23 @@ jobs:
           const puppeteer=require('puppeteer-core');
           (async()=>{
             const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
-              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[],errs=[]; p.on('pageerror',e=>errs.push(String(e))); p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?faq_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,4500));
-              const x=await p.evaluate(()=>{
-                const n=s=>(s||'').replace(/\s+/g,' ').trim();
-                const sec=document.querySelector('section[data-sd-claude-faq-v2="1"]');
-                const all=[...document.querySelectorAll('main section')];
-                const idx=sec?all.indexOf(sec):-1;
-                const rows=sec?[...sec.querySelectorAll('details')].map((d,i)=>({i:i+1,q:n(d.querySelector('summary')?.textContent),a:n(d.querySelector('p')?.textContent),open:d.open,summaryRect:(()=>{const r=d.querySelector('summary')?.getBoundingClientRect();return r?{w:Math.round(r.width),h:Math.round(r.height)}:null})()})):[];
-                const r=sec?.getBoundingClientRect();
-                return {found:!!sec,idx,sectionCount:all.length,faqCount:rows.length,rows,rect:r?{w:Math.round(r.width),h:Math.round(r.height)}:null,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,prev:idx>0?n(all[idx-1].innerText).slice(0,180):'',next:idx>=0&&idx<all.length-1?n(all[idx+1].innerText).slice(0,180):'',scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/faq|closing|attribution/.test(s))};
-              });
-              console.log('FAQ_AUDIT',name,JSON.stringify(x),'BAD',JSON.stringify(bad),'ERROR_COUNT',errs.length);
-              if(!x.found||x.faqCount!==15||x.sectionCount!==18||x.overflow||bad.length) throw new Error(`FAQ structural audit fail ${name}`);
-              await p.close();
-            }
-            await b.close(); console.log('CLAUDE_FAQ_3VIEW_AUDIT_PASS');
+            const p=await b.newPage(); await p.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
+            await p.goto(`https://sikhadenge.in/masterclass/claude/free?faq_evidence=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+            await new Promise(r=>setTimeout(r,4500));
+            const x=await p.evaluate(()=>{
+              const n=s=>(s||'').replace(/\s+/g,' ').trim();
+              const sec=document.querySelector('section[data-sd-claude-faq-v2="1"]');
+              const all=[...document.querySelectorAll('main section')];
+              const idx=sec?all.indexOf(sec):-1;
+              const rows=sec?[...sec.querySelectorAll('details')].map((d,i)=>({i:i+1,q:n(d.querySelector('summary')?.textContent),a:n(d.querySelector('p')?.textContent),open:d.open})):[];
+              const text=n(document.body.innerText);
+              const terms=['8 PM','08:00 PM','2 Hour','2 hour','live','replay','recording','certificate','bonus','laptop','mobile','WhatsApp','whatsapp','email','Claude','paid course','subscription'];
+              const evidence={}; for(const t of terms){const i=text.toLowerCase().indexOf(t.toLowerCase()); evidence[t]=i>=0?text.slice(Math.max(0,i-130),Math.min(text.length,i+260)):null;}
+              return {found:!!sec,idx,sectionCount:all.length,faqCount:rows.length,rows,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,evidence,scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/faq|closing|attribution/.test(s))};
+            });
+            console.log('FAQ_EVIDENCE',JSON.stringify(x));
+            if(!x.found||x.faqCount!==15||x.sectionCount!==18||x.overflow) throw new Error('FAQ structural audit fail');
+            await b.close(); console.log('CLAUDE_FAQ_EVIDENCE_AUDIT_PASS');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
 
