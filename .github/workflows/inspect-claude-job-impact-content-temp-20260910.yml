@@ -1,0 +1,64 @@
+name: Inspect Claude Job Impact Content Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-job-impact-content-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 6
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect exact current payloads
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          ROOT='/var/www/sikhadenge.in/claude-proof-static-v4.js'
+          CHUNK='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
+          echo ROOT_SHA=$(sha256sum "$ROOT"|awk '{print $1}')
+          echo CHUNK_SHA=$(sha256sum "$CHUNK"|awk '{print $1}')
+          echo '=== ROOT SCRIPT CONTEXT ==='
+          python3 - "$ROOT" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          for n in ['full-time jobs exposed to AI automation','Jobs asking for AI skills are outpacing','workers could be displaced','current jobs projected','Goldman','McKinsey','World Economic Forum','India']:
+              i=s.find(n)
+              if i>=0: print('\nTARGET',repr(n),'\n',s[max(0,i-900):i+1800])
+          PY
+          echo '=== CHUNK CONTEXT ==='
+          python3 - "$CHUNK" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          for n in ['THE AI SHIFT','300M jobs globally exposed','75M–375M','AI Prompt Engineers Earn $300k','69 million jobs','Industry warnings']:
+              i=s.find(n)
+              if i>=0: print('\nTARGET',repr(n),'\n',s[max(0,i-1200):i+2800])
+          PY
+          echo '=== ROOT SCRIPT TAG ==='
+          grep -nF 'claude-proof-static-v4.js' /etc/nginx/sites-enabled/sikhadenge.in-ssl || true
+          echo CONTENT_TRACE_PASS
+          REMOTE
