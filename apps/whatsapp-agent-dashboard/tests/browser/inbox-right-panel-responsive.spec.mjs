@@ -27,8 +27,8 @@ async function attachShot(page, testInfo, name) {
   await testInfo.attach(name, { body, contentType: "image/png" });
 }
 
-async function expectPanelInsideViewport(page) {
-  const geometry = await page.locator(".sx-details").evaluate((node) => {
+async function panelGeometry(page) {
+  return page.locator(".sx-details").evaluate((node) => {
     const rect = node.getBoundingClientRect();
     return {
       left: rect.left,
@@ -42,14 +42,31 @@ async function expectPanelInsideViewport(page) {
       opacity: Number.parseFloat(getComputedStyle(node).opacity),
     };
   });
+}
 
-  expect(geometry.left).toBeGreaterThanOrEqual(-1);
-  expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth + 1);
-  expect(geometry.top).toBeGreaterThanOrEqual(-1);
-  expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
-  expect(geometry.visibility).toBe("visible");
-  expect(geometry.pointerEvents).toBe("auto");
-  expect(geometry.opacity).toBeGreaterThan(0.99);
+async function expectPanelSettledInsideViewport(page) {
+  await expect.poll(async () => {
+    const g = await panelGeometry(page);
+    return (
+      g.left >= -1 &&
+      g.right <= g.viewportWidth + 1 &&
+      g.top >= -1 &&
+      g.bottom <= g.viewportHeight + 1 &&
+      g.visibility === "visible" &&
+      g.pointerEvents === "auto" &&
+      g.opacity > 0.99
+    );
+  }, { timeout: 3000 }).toBe(true);
+}
+
+async function expectPanelTopmostAtBottom(page) {
+  await expect.poll(async () => page.locator(".sx-details").evaluate((panel) => {
+    const rect = panel.getBoundingClientRect();
+    const x = Math.max(rect.left + 12, Math.min(rect.right - 12, window.innerWidth - 12));
+    const y = Math.max(rect.top + 12, Math.min(rect.bottom - 18, window.innerHeight - 18));
+    const top = document.elementFromPoint(x, y);
+    return Boolean(top && (top === panel || panel.contains(top)));
+  }), { timeout: 3000 }).toBe(true);
 }
 
 test("desktop keeps Lead Intelligence as a stable fourth rail", async ({ page }, testInfo) => {
@@ -62,7 +79,7 @@ test("desktop keeps Lead Intelligence as a stable fourth rail", async ({ page },
   await expect(page.locator(".sx-details-backdrop")).toBeHidden();
   await expect(page.locator(".sx-details-close")).toBeHidden();
   await expect(page.locator(".sx-lead-btn")).toBeHidden();
-  await expectPanelInsideViewport(page);
+  await expectPanelSettledInsideViewport(page);
   await attachShot(page, testInfo, "inbox-right-panel-desktop-1440");
 });
 
@@ -92,7 +109,8 @@ for (const viewport of [
     await expect(panel).toBeVisible();
     await expect(backdrop).toBeVisible();
     await expect(close).toBeVisible();
-    await expectPanelInsideViewport(page);
+    await expectPanelSettledInsideViewport(page);
+    await expectPanelTopmostAtBottom(page);
     await attachShot(page, testInfo, `inbox-right-panel-${viewport.name}-open`);
 
     await close.click();
