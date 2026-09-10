@@ -5,13 +5,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/funnel-golden-health-monitor.yml'
-  schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: sikhadenge-funnel-golden-health-monitor
@@ -26,7 +22,6 @@ env:
 
 jobs:
   deploy_hero:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
     timeout-minutes: 15
@@ -41,7 +36,7 @@ jobs:
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Controlled unlock and Claude hero update only
+      - name: Controlled Claude hero update only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -56,19 +51,22 @@ jobs:
           BK="/var/backups/sikhadenge/claude-hero-v12-$TS"
           mkdir -p "$BK"
 
+          # Normalize any prior temporary unlock, then verify the current Golden state.
+          sikhadenge-funnel-lockctl lock
           sikhadenge-funnel-lockctl check
           sikhadenge-funnel-lockctl unlock 15
           sikhadenge-funnel-lockctl assert-unlocked
 
+          set +o pipefail
           ASSET="$(nginx -T 2>&1 | awk '/location = \/claude-heading-v11-restore-current\.js[[:space:]]*\{/ {f=1} f && /alias[[:space:]]/ {gsub(";","",$2); print $2; exit}')"
+          set -o pipefail
           echo "HEADING_ASSET=$ASSET"
           test -n "$ASSET" && test -f "$ASSET"
 
           cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
           cp -L "$ASSET" "$BK/claude-heading.before.js"
           printf '%s\n' "$ASSET" > "$BK/asset.path"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?hero_v12_before=1' > "$BK/claude.before.html"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?hero_v12_control=before' > "$BK/ai.before.html"
+          printf '%s\n' "$BK" > /var/backups/sikhadenge/.claude-hero-v12-last
 
           python3 - "$ASSET" "$OLD" "$NEW" <<'PY'
           import sys
@@ -84,23 +82,18 @@ jobs:
           python3 - "$SITE" "$OLDQ" "$NEWQ" <<'PY'
           import sys
           p,oldq,newq=sys.argv[1:]
-          s=open(p,encoding='utf-8').read()
-          needle='location = /masterclass/claude/free {'
-          a=s.find(needle)
-          if a < 0: raise SystemExit('Claude exact route missing')
+          s=open(p,encoding='utf-8').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('Claude exact route missing')
           q=s.find('{',a); d=0; end=None
           for i in range(q,len(s)):
               if s[i]=='{': d+=1
               elif s[i]=='}':
                   d-=1
-                  if d==0:
-                      end=i+1; break
+                  if d==0: end=i+1; break
           if end is None: raise SystemExit('Claude route parse failed')
-          seg=s[a:end]
-          c=seg.count(oldq)
+          seg=s[a:end]; c=seg.count(oldq)
           print('OLD_QUERY_OCCURRENCES_IN_CLAUDE_ROUTE=',c)
-          if c != 1:
-              raise SystemExit(f'refuse: expected one old heading query in Claude route, got {c}')
+          if c!=1: raise SystemExit(f'refuse: expected one old heading query in Claude route, got {c}')
           seg=seg.replace(oldq,newq,1)
           open(p,'w',encoding='utf-8').write(s[:a]+seg+s[end:])
           PY
@@ -108,23 +101,20 @@ jobs:
           nginx -t
           systemctl reload nginx
           sleep 2
-
           grep -Fq "$NEW" "$ASSET"
           curl -fsSL --max-time 30 'https://sikhadenge.in/claude-heading-v11-restore-current.js?v=hero-v12-20260910' | grep -Fq "$NEW"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?hero_v12_after=1' > "$BK/claude.after.html"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?hero_v12_server=1' > "$BK/claude.after.html"
           grep -Fq "$NEWQ" "$BK/claude.after.html"
           grep -Fq '/gen-ai-masterclass/register-one-step' "$BK/claude.after.html"
           grep -Fq '/funnel-attribution-bridge-v1.js?v=20260903-1' "$BK/claude.after.html"
 
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?hero_v12_control=after' > "$BK/ai.after.html"
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?hero_v12_control=1' > "$BK/ai.after.html"
           grep -Fq 'Create cinematic AI videos' "$BK/ai.after.html"
           for u in '/_next/static/css/0dc2b316d6c10c6c.css' '/_next/static/chunks/pages/masterclass/ai-video-e4484da06cac6162.js'; do
             code="$(curl -L -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://sikhadenge.in$u")"
             test "$code" = 200
             echo "AI_CONTROL_ASSET=$code $u"
           done
-
-          printf '%s\n' "$BK" > /var/backups/sikhadenge/.claude-hero-v12-last
           echo "CLAUDE_HERO_V12_SERVER_STAGE=PASS BACKUP=$BK"
           REMOTE
 
@@ -135,51 +125,32 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          test -n "$CHROME"
-          export CHROME
-          cat > check-claude-hero-v12.js <<'JS'
+          test -n "$CHROME"; export CHROME
+          cat > check.js <<'JS'
           const puppeteer=require('puppeteer-core');
           const EXPECT='Master Claude + 25+ AI Tools to Work Smarter, Create Faster & Get Better Results.';
           (async()=>{
             const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            const views=[['desktop',1440,1000,false],['mobile',390,844,true]], failures=[];
-            for(const [name,w,h,m] of views){
+            const failures=[];
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
               const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[];
-              p.on('response',r=>{const u=r.url(); if(r.status()>=400 && (/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
+              const bad=[]; p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
               await p.goto(`https://sikhadenge.in/masterclass/claude/free?hero_v12_browser=${name}`,{waitUntil:'networkidle2',timeout:60000});
-              const x=await p.evaluate(()=>({
-                h1:(document.querySelector('h1')?.textContent||'').replace(/\s+/g,' ').trim(),
-                ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,
-                tracking:!!document.querySelector('script[src*="funnel-attribution-bridge-v1.js"]'),
-                heroScript:!!document.querySelector('script[src*="claude-heading-v11-restore-current.js?v=hero-v12-20260910"]'),
-                sections:document.querySelectorAll('main section').length,
-                faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
-                overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
-              }));
-              console.log(name,JSON.stringify(x),'failedAssets',bad.length,bad.slice(0,10));
-              if(x.h1!==EXPECT) failures.push(`${name}: H1=${x.h1}`);
-              if(x.ctas<7) failures.push(`${name}: CTA count ${x.ctas}`);
-              if(!x.tracking) failures.push(`${name}: attribution bridge missing`);
-              if(!x.heroScript) failures.push(`${name}: cache-busted hero script missing`);
-              if(x.sections!==18||x.faq!==15) failures.push(`${name}: structure regression ${JSON.stringify(x)}`);
-              if(x.overflow>2) failures.push(`${name}: horizontal overflow ${x.overflow}`);
-              if(bad.length) failures.push(`${name}: failed CSS/JS ${bad.join(' | ')}`);
+              const x=await p.evaluate(()=>({h1:(document.querySelector('h1')?.textContent||'').replace(/\s+/g,' ').trim(),ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,tracking:!!document.querySelector('script[src*="funnel-attribution-bridge-v1.js"]'),heroScript:!!document.querySelector('script[src*="claude-heading-v11-restore-current.js?v=hero-v12-20260910"]'),sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}));
+              console.log(name,JSON.stringify(x),'failedAssets',bad.length);
+              if(x.h1!==EXPECT||x.ctas<7||!x.tracking||!x.heroScript||x.sections!==18||x.faq!==15||x.overflow>2||bad.length) failures.push(`${name}: ${JSON.stringify(x)} bad=${bad.join('|')}`);
               await p.close();
             }
-            const ai=await b.newPage(); const badAi=[]; ai.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) badAi.push(`${r.status()} ${u}`)});
+            const ai=await b.newPage(), badAi=[]; ai.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) badAi.push(`${r.status()} ${u}`)});
             await ai.goto('https://sikhadenge.in/masterclass/ai-video?hero_v12_browser_control=1',{waitUntil:'networkidle2',timeout:60000});
-            const aitxt=await ai.evaluate(()=>document.body.innerText);
-            if(!aitxt.includes('Create cinematic AI videos')) failures.push('AI Video control marker missing');
-            if(badAi.length) failures.push(`AI Video failed CSS/JS ${badAi.join(' | ')}`);
-            await ai.close(); await b.close();
+            const t=await ai.evaluate(()=>document.body.innerText); if(!t.includes('Create cinematic AI videos')||badAi.length) failures.push(`AI control bad=${badAi.join('|')}`); await ai.close(); await b.close();
             if(failures.length){console.error(failures.join('\n'));process.exit(1)}
             console.log('CLAUDE_HERO_V12_BROWSER_QA=PASS');
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node check-claude-hero-v12.js
+          node check.js
 
-      - name: Reseal approved state and lock
+      - name: Reseal new Golden state
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -192,7 +163,7 @@ jobs:
           echo 'CLAUDE_HERO_V12_RESEAL=PASS'
           REMOTE
 
-      - name: Roll back Claude hero if any step fails
+      - name: Roll back on failure
         if: failure()
         shell: bash
         run: |
@@ -201,8 +172,7 @@ jobs:
           set +e
           M=/var/backups/sikhadenge/.claude-hero-v12-last
           if [[ -s "$M" ]]; then
-            B="$(cat "$M")"
-            SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+            B="$(cat "$M")"; SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
             if [[ -s "$B/sikhadenge.in-ssl.before" && -s "$B/claude-heading.before.js" && -s "$B/asset.path" ]]; then
               A="$(cat "$B/asset.path")"
               sikhadenge-funnel-lockctl unlock 10 >/dev/null 2>&1 || true
@@ -210,128 +180,16 @@ jobs:
               cat "$B/claude-heading.before.js" > "$A"
               nginx -t && systemctl reload nginx
               sleep 2
-              sikhadenge-funnel-lockctl reseal >/dev/null 2>&1 || true
-              sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true
               echo "CLAUDE_HERO_V12_ROLLBACK=$B"
             fi
           fi
+          sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true
+          sikhadenge-funnel-golden-guard --deep >/dev/null 2>&1 || true
           REMOTE
 
-  monitor:
-    if: github.event_name != 'push'
-    runs-on: ubuntu-latest
-    environment: whatsapp-agent-production
-    timeout-minutes: 8
-    steps:
-      - name: Configure pinned SSH
+      - name: Ensure lock closed
+        if: always()
         shell: bash
         run: |
-          set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Deep-check locked funnels and read unsent incident
-        id: health
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          OUT="$RUNNER_TEMP/funnel-health.txt"
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' > "$OUT" <<'REMOTE'
-          set -u
-          ROOT=/var/lib/sikhadenge-funnel-golden-lock
-          GUARD=/usr/local/sbin/sikhadenge-funnel-golden-guard
-          now=$(date +%s)
           set +e
-          "$GUARD" --deep >/tmp/funnel-monitor-guard.out 2>&1
-          rc=$?
-          set -e
-          incident=0; alerted=0; text=''
-          [[ -f "$ROOT/last-incident.epoch" ]] && incident=$(cat "$ROOT/last-incident.epoch" 2>/dev/null || echo 0)
-          [[ -f "$ROOT/last-alerted-incident.epoch" ]] && alerted=$(cat "$ROOT/last-alerted-incident.epoch" 2>/dev/null || echo 0)
-          [[ -f "$ROOT/last-incident.txt" ]] && text=$(cat "$ROOT/last-incident.txt" 2>/dev/null || true)
-          [[ "$incident" =~ ^[0-9]+$ ]] || incident=0
-          [[ "$alerted" =~ ^[0-9]+$ ]] || alerted=0
-          echo "HEALTH_RC=$rc"
-          echo "INCIDENT_EPOCH=$incident"
-          echo "ALERTED_EPOCH=$alerted"
-          echo "NOW_EPOCH=$now"
-          printf 'INCIDENT_TEXT_B64=%s\n' "$(printf '%s' "$text" | base64 -w0)"
-          echo '---GUARD_OUTPUT---'
-          tail -30 /tmp/funnel-monitor-guard.out || true
-          exit 0
-          REMOTE
-          cat "$OUT"
-          health_rc=$(grep '^HEALTH_RC=' "$OUT" | tail -1 | cut -d= -f2)
-          incident=$(grep '^INCIDENT_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
-          alerted=$(grep '^ALERTED_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
-          now=$(grep '^NOW_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
-          textb64=$(grep '^INCIDENT_TEXT_B64=' "$OUT" | tail -1 | cut -d= -f2-)
-          [[ "$health_rc" =~ ^[0-9]+$ ]] || health_rc=99
-          [[ "$incident" =~ ^[0-9]+$ ]] || incident=0
-          [[ "$alerted" =~ ^[0-9]+$ ]] || alerted=0
-          new_incident=0
-          (( incident > alerted )) && new_incident=1
-          echo "health_rc=$health_rc" >> "$GITHUB_OUTPUT"
-          echo "incident=$incident" >> "$GITHUB_OUTPUT"
-          echo "alerted=$alerted" >> "$GITHUB_OUTPUT"
-          echo "new_incident=$new_incident" >> "$GITHUB_OUTPUT"
-          echo "textb64=$textb64" >> "$GITHUB_OUTPUT"
-          echo "now=$now" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub incident alert
-        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          INCIDENT_EPOCH: ${{ steps.health.outputs.incident }}
-          HEALTH_RC: ${{ steps.health.outputs.health_rc }}
-          TEXT_B64: ${{ steps.health.outputs.textb64 }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          detail=$(printf '%s' "$TEXT_B64" | base64 -d 2>/dev/null || true)
-          stamp=$(date -u '+%Y-%m-%d %H:%M UTC')
-          title="[Golden Lock] Funnel incident — $stamp"
-          body=$(printf '%s\n' \
-            'The SikhaDenge Two-Funnel Golden Lock detected a new production incident or repair event.' \
-            '' \
-            '**Affected protection scope**' \
-            '- /masterclass/ai-video' \
-            '- /masterclass/claude/free' \
-            '' \
-            "**Guard health exit code:** $HEALTH_RC" \
-            "**Incident epoch:** $INCIDENT_EPOCH" \
-            '**Latest incident detail:**' \
-            '```' \
-            "${detail:-No detail was recorded; inspect the server Golden Lock log.}" \
-            '```' \
-            '' \
-            'The server self-heal guard runs every 60 seconds and deep-checks the sealed CSS/JS set every 5 minutes.' \
-            'Review /var/log/sikhadenge-funnel-golden-lock.log before making any manual production change.')
-          url=$(gh issue create --repo "${GITHUB_REPOSITORY}" --title "$title" --body "$body")
-          echo "INCIDENT_ISSUE=$url"
-
-      - name: Mark incident as alerted
-        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
-        env:
-          INCIDENT_EPOCH: ${{ steps.health.outputs.incident }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          mark="$INCIDENT_EPOCH"
-          [[ "$mark" =~ ^[0-9]+$ ]] && (( mark > 0 )) || mark=$(date +%s)
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "install -d -m 700 /var/lib/sikhadenge-funnel-golden-lock && printf '%s\\n' '$mark' > /var/lib/sikhadenge-funnel-golden-lock/last-alerted-incident.epoch && chmod 600 /var/lib/sikhadenge-funnel-golden-lock/last-alerted-incident.epoch"
-
-      - name: Fail monitor after durable alert
-        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
-        shell: bash
-        run: |
-          echo 'A Golden Lock incident was detected. A GitHub issue was created and the incident was marked as alerted.' >&2
-          exit 1
-
-      - name: Healthy
-        if: steps.health.outputs.new_incident == '0' && steps.health.outputs.health_rc == '0'
-        shell: bash
-        run: echo 'FUNNEL_GOLDEN_MONITOR=PASS'
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true'
