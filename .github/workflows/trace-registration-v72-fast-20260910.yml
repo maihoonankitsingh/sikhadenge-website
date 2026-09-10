@@ -1,0 +1,68 @@
+name: Trace Registration V72 Fast 20260910
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/trace-registration-v72-fast-20260910.yml'
+permissions:
+  contents: read
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+      - name: Active registration assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SNIP=/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf
+          sikhadenge-funnel-lockctl check
+          echo '=== SNIPPET ==='; nl -ba "$SNIP" | sed -n '1,120p'
+          echo '=== V72 LOCATION BLOCKS ==='
+          python3 - <<'PY'
+          import re,pathlib
+          s=pathlib.Path('/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf').read_text(errors='ignore')
+          for name in ('registration-stable-hot-v72.js','registration-stable-page1-v72.js'):
+              i=s.find(name); print('\nNAME',name,'INDEX',i)
+              if i>=0: print(s[max(0,i-300):i+500])
+          PY
+          echo '=== DIRECT PUBLIC V72 ==='
+          for u in '/registration-stable-hot-v72.js?v=20260903-131023' '/registration-stable-page1-v72.js?v=20260903-131023'; do
+            f="/tmp/$(basename "${u%%\?*}")"; curl -fsSL --retry 2 --retry-all-errors --connect-timeout 5 --max-time 20 "https://sikhadenge.in$u" -o "$f"; echo "$u SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c < "$f")";
+            grep -nE 'Book free masterclass|Register for|Continue|sd-reg-|querySelector|closest\(|display|visibility|remove\(|style\.|masterclass/lead|fetch\(|occupation|goal|laptop' "$f" | head -220 || true
+          done
+          REMOTE
+      - name: Browser DOM ownership
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1; npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v chromium)"; export CHROME
+          node <<'NODE'
+          const pptr=require('puppeteer-core');
+          (async()=>{const b=await pptr.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+          for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){const p=await b.newPage();await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});await p.goto('https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&fasttrace='+Date.now(),{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,4000));
+          const x=await p.evaluate(()=>{const n=s=>(s||'').replace(/\s+/g,' ').trim(),vis=e=>{if(!e)return false;const c=getComputedStyle(e),r=e.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity!==0&&r.width>0&&r.height>0},info=e=>{if(!e)return null;const c=getComputedStyle(e),r=e.getBoundingClientRect();return {tag:e.tagName,id:e.id||'',cls:typeof e.className==='string'?e.className:'',text:n(e.innerText||e.textContent).slice(0,500),visible:vis(e),display:c.display,position:c.position,rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],outer:e.outerHTML.slice(0,2500)}};
+          const btns=[...document.querySelectorAll('button,input[type=submit]')],old=btns.find(e=>/Register for\s*₹1999/i.test(n(e.textContent||e.value))),neu=btns.find(e=>/Continue\s*—\s*2 quick questions/i.test(n(e.textContent||e.value))),oldName=[...document.querySelectorAll('input')].find(e=>e.placeholder==='Enter name'),newName=document.querySelector('#sd-reg-name');
+          const chain=e=>{let a=[],q=e;for(let i=0;q&&i<7;i++,q=q.parentElement)a.push(info(q));return a};
+          return {old:info(old),neu:info(neu),oldName:info(oldName),newName:info(newName),oldChain:chain(old),newChain:chain(neu),forms:[...document.forms].map(info),body:n(document.body.innerText).slice(0,6000),scripts:[...document.scripts].map(s=>s.src).filter(s=>/registration-stable/.test(s.src)),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};});console.log('FAST_DOM',name,JSON.stringify(x));if(!x.old?.visible||!x.neu?.visible)throw new Error('duplicate not visible '+name);await p.close();}await b.close();console.log('V72_FAST_TRACE_PASS')})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
