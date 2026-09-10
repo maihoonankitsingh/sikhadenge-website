@@ -1,0 +1,401 @@
+/*
+ * Inbox Enterprise Completion V4
+ * Presentation-only final pass for the unified Inbox. This file is imported
+ * after the existing Inbox rebuild/refinement layers so it can lock responsive
+ * geometry without changing data, APIs, messaging, auth, provider or worker logic.
+ */
+
+.sx-inbox {
+  --inbox-shell-line: #e6eaf0;
+  --inbox-soft-blue: #f4f7ff;
+  --inbox-canvas: #f8fafc;
+}
+
+/* ---------- desktop density / hierarchy ---------- */
+.sx-inbox .sx-list-head,
+.sx-inbox .sx-chat-head {
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.sx-inbox .sx-list {
+  border-right-color: var(--inbox-shell-line);
+}
+
+.sx-inbox .sx-chat {
+  background: #ffffff;
+}
+
+.sx-inbox .sx-messages {
+  background:
+    radial-gradient(circle at 50% 0, rgba(59, 109, 246, 0.035), transparent 32%),
+    linear-gradient(180deg, #fbfcfe 0%, #f8fafc 100%);
+}
+
+.sx-inbox .sx-bubble {
+  max-width: min(72%, 620px);
+  overflow-wrap: anywhere;
+}
+
+.sx-inbox .sx-msgrow.inbound .sx-bubble {
+  border: 1px solid #e8ebf0;
+  background: #ffffff;
+}
+
+.sx-inbox .sx-agentnote {
+  width: min(92%, 720px);
+  max-width: 720px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.sx-inbox .sx-convo.conversation-item.is-selected {
+  border-color: #d3defd;
+  background: #f1f5ff;
+  box-shadow: 0 1px 2px rgba(53, 104, 244, 0.04);
+}
+
+.sx-inbox .sx-details {
+  border-left-color: var(--inbox-shell-line);
+}
+
+.sx-inbox .sx-detail-list dd {
+  max-width: 64%;
+  overflow-wrap: anywhere;
+}
+
+.sx-inbox .sx-context {
+  scrollbar-width: none;
+}
+
+.sx-inbox .sx-context::-webkit-scrollbar,
+.sx-inbox .sx-channels-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- tablet: keep identity readable, move actions to a clean row ---------- */
+@media (min-width: 768px) and (max-width: 1179px) {
+  .sx-inbox {
+    grid-template-columns: 72px minmax(286px, 320px) minmax(0, 1fr) !important;
+  }
+
+  .sx-inbox .sx-chat-head {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 9px;
+    padding: 12px 14px;
+  }
+
+  .sx-inbox .sx-chat-person {
+    min-width: 220px;
+  }
+
+  .sx-inbox .sx-chat-actions {
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    gap: 7px;
+    padding-left: 52px;
+  }
+
+  .sx-inbox .sx-context {
+    padding: 9px 14px;
+  }
+
+  .sx-inbox .sx-messages {
+    padding: 18px 18px;
+  }
+
+  .sx-inbox .sx-composer {
+    padding: 11px 14px 14px;
+  }
+}
+
+/* ---------- mobile: deterministic chat viewport + complete bottom navigation ---------- */
+@media (max-width: 767px) {
+  .sx-inbox {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  .sx-inbox .sx-list,
+  .sx-inbox .sx-chat {
+    height: 100dvh !important;
+    min-height: 0 !important;
+    padding-bottom: 64px !important;
+  }
+
+  .sx-inbox .sx-chat {
+    position: relative !important;
+  }
+
+  .sx-inbox .sx-chat-head {
+    position: relative;
+    z-index: 22;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 10px 10px 9px;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .sx-inbox .sx-chat-back {
+    width: 36px;
+    height: 36px;
+  }
+
+  .sx-inbox .sx-chat-person {
+    gap: 9px;
+  }
+
+  .sx-inbox .sx-avatar-lg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sx-inbox .sx-chat-ident h2 {
+    font-size: 15px;
+  }
+
+  .sx-inbox .sx-chat-ident p {
+    gap: 6px;
+    font-size: 11.5px;
+  }
+
+  .sx-inbox .sx-chat-actions {
+    flex-basis: 100%;
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .sx-inbox .sx-chat-actions :where(button, .sx-switch) {
+    min-height: 40px;
+  }
+
+  .sx-inbox .sx-lead-btn,
+  .sx-inbox .sx-btn-outline {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .sx-inbox .sx-context {
+    position: relative;
+    z-index: 18;
+    gap: 6px;
+    padding: 7px 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .sx-inbox .sx-context span {
+    padding: 3px 8px;
+    font-size: 10.5px;
+  }
+
+  .sx-inbox .sx-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 14px 10px calc(104px + env(safe-area-inset-bottom));
+    gap: 5px;
+  }
+
+  .sx-inbox .sx-daydivider {
+    margin: 4px 0 10px;
+  }
+
+  .sx-inbox .sx-bubble {
+    max-width: 88%;
+    padding: 9px 11px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+
+  .sx-inbox .sx-agentnote {
+    width: 100%;
+    max-width: none;
+    margin: 10px 0 0;
+    padding: 10px 11px;
+    gap: 8px;
+  }
+
+  .sx-inbox .sx-agentnote p {
+    font-size: 11.75px;
+    line-height: 1.45;
+  }
+
+  .sx-inbox .sx-agentnote button {
+    min-width: 58px;
+    min-height: 36px;
+    padding: 5px 9px;
+  }
+
+  /* Absolute docking is intentional here: the original sticky footer could be
+     rendered below the visual viewport while still satisfying DOM visibility.
+     Keep the composer above the 64px Inbox navigation bar and reserve its
+     footprint in the message scroller. */
+  .sx-inbox .sx-composer {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 64px !important;
+    z-index: 34 !important;
+    margin: 0 !important;
+    padding: 8px 9px 9px !important;
+    border-top: 1px solid #e6eaf0 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(12px);
+  }
+
+  .sx-inbox .sx-composer-channel-note {
+    display: none !important;
+  }
+
+  .sx-inbox .sx-composer-note {
+    margin: 0 2px 6px;
+    font-size: 11px;
+  }
+
+  .sx-inbox .sx-composer-row {
+    gap: 3px !important;
+    min-height: 52px;
+    padding: 4px 5px 4px 6px !important;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  }
+
+  .sx-inbox .sx-composer-row textarea {
+    min-height: 42px !important;
+    padding: 10px 3px !important;
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+
+  .sx-inbox .sx-composer-tool {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .sx-inbox .sx-send {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 12px;
+  }
+
+  /* The Inbox owns its own mobile rail (separate from module-shell .sx-mobile-dock).
+     Distribute all primary destinations plus Settings inside the viewport so no
+     label starts or ends off-screen. */
+  .sx-inbox > .sx-side {
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+
+  .sx-inbox .sx-side-scroll {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  .sx-inbox .sx-side-scroll > .sx-nav {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: stretch !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .sx-inbox .sx-side-scroll > .sx-nav > .rail-button {
+    flex: 1 1 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 4px 1px !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+  }
+
+  .sx-inbox .sx-side .rail-button .sx-navic svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .sx-inbox .sx-side .rail-button .sx-navlabel,
+  .sx-inbox .sx-side-foot .sx-navitem .sx-navlabel {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    font-size: 7.6px !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .sx-inbox .sx-side .rail-button .sx-navbadge {
+    top: 0 !important;
+    right: 3px !important;
+    min-width: 13px !important;
+    height: 13px !important;
+    padding: 0 3px !important;
+    font-size: 8px !important;
+  }
+
+  .sx-inbox .sx-side-foot {
+    flex: 0 0 46px !important;
+    width: 46px !important;
+    min-width: 46px !important;
+    height: 100% !important;
+    padding: 0 0 0 2px !important;
+    margin: 0 !important;
+  }
+
+  .sx-inbox .sx-side-foot > .sx-navitem {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 4px 1px !important;
+    gap: 2px !important;
+  }
+
+  .sx-inbox .sx-details {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .sx-inbox .sx-details-close {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .sx-inbox .sx-detail-list > div {
+    gap: 10px;
+  }
+
+  .sx-inbox .sx-detail-list dd {
+    max-width: 66%;
+  }
+}
+
+@media (max-width: 420px) {
+  .sx-inbox .sx-chat-phone {
+    max-width: 116px;
+  }
+
+  .sx-inbox .sx-switch i {
+    width: 36px;
+  }
+
+  .sx-inbox .sx-composer-tools {
+    gap: 0;
+  }
+}
