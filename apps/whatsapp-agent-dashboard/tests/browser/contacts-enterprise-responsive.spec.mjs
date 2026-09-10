@@ -52,7 +52,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page.locator(".contact-directory")).toBeVisible();
     await expect(page.locator(".contact-editor")).toBeVisible();
 
-    await expect(page.locator(".contact-empty")).not.toContainText("Loading contacts...");
+    await expect(page.getByText("Loading contacts...", { exact: true })).toHaveCount(0);
     await expectNoRootOverflow(page);
 
     const directoryBox = await page.locator(".contact-directory").boundingBox();
