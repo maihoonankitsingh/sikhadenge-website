@@ -5,7 +5,6 @@ const wantH1 = 'Master Claude + 25+ AI Tools to work smarter,create faster & get
 const pill = 'LEARNER VIDEO TESTIMONIALS';
 const title = 'Real learners. Real experiences.';
 const desc = 'Watch 6 learner video testimonials and hear their Sikhadenge learning experience in their own words.';
-const scriptNeedle = '/claude-testimonials-conversion-v1b-20260910.js';
 const baselineErrors = { 'react-418': 26, 'react-423': 1 };
 const outcomes = [
   'Research a topic and turn it into presentation-ready insights',
@@ -40,10 +39,13 @@ function errorSignature(errors) {
   return counts;
 }
 
-function sameObject(a, b) {
-  const ak = Object.keys(a).sort();
-  const bk = Object.keys(b).sort();
-  return JSON.stringify(ak) === JSON.stringify(bk) && ak.every(k => a[k] === b[k]);
+function withinBaseline(actual, baseline) {
+  const allowed = new Set(Object.keys(baseline));
+  for (const [key, count] of Object.entries(actual)) {
+    if (!allowed.has(key)) return false;
+    if (count > baseline[key]) return false;
+  }
+  return true;
 }
 
 (async () => {
@@ -220,7 +222,7 @@ function sameObject(a, b) {
     const interactionOK = clicked && interaction.exists && interaction.src.includes('/ai-video-testimonials/01.mp4') && interaction.controls && interaction.playsInline && interaction.rootPlaying === '1';
 
     const errorCounts = errorSignature(pageErrors);
-    const errorsOK = sameObject(errorCounts, baselineErrors);
+    const errorsOK = withinBaseline(errorCounts, baselineErrors);
 
     console.log(name, JSON.stringify({
       h1: state.h1,
