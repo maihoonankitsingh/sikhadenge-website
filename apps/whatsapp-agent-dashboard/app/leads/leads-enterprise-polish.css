@@ -75,6 +75,15 @@
     width: 100%;
   }
 
+  /* The API can return up to 250 leads. Core responsive CSS removes the
+     directory height cap on phones, which can put the editor thousands of
+     pixels below the selected row. Keep the table as an internal scroll
+     region so the directory stays bounded while Y overscroll still chains
+     naturally to the page at its edges. */
+  .sx-module .lead-table-wrap {
+    max-height: min(56vh, 520px);
+  }
+
   .sx-module .lead-table-wrap,
   .sx-module .lead-kanban {
     -webkit-overflow-scrolling: touch;
