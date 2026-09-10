@@ -2,6 +2,8 @@ name: Footer Social Audit 20260904
 
 on:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/footer-social-audit-20260904.yml
 
@@ -17,6 +19,7 @@ env:
 
 jobs:
   audit:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: whatsapp-agent-production

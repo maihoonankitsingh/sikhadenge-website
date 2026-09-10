@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 export const COOKIE_NAME = "sd_admin";
 const ONE_DAY_SEC = 60 * 60 * 24;
+const MIN_SECRET_LENGTH = 24;
 
 function base64url(input: Buffer | string) {
   const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
@@ -25,17 +26,33 @@ function timingSafeEqual(a: string, b: string) {
 }
 
 export type AdminSession = {
-  sub: string; // admin username
+  sub: string;
   iat: number;
   exp: number;
 };
+
+function isAdminSession(value: unknown): value is AdminSession {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const session = value as Partial<AdminSession>;
+  return (
+    typeof session.sub === "string" &&
+    session.sub.length > 0 &&
+    Number.isInteger(session.iat) &&
+    Number.isInteger(session.exp) &&
+    typeof session.iat === "number" &&
+    typeof session.exp === "number" &&
+    session.exp > session.iat
+  );
+}
 
 export function signSession(
   payload: Omit<AdminSession, "iat" | "exp">,
   ttlSec = ONE_DAY_SEC
 ) {
   const secret = process.env.ADMIN_COOKIE_SECRET || "";
-  if (!secret || secret.length < 24) throw new Error("ADMIN_COOKIE_SECRET missing/too short");
+  if (!secret || secret.length < MIN_SECRET_LENGTH) {
+    throw new Error("ADMIN_COOKIE_SECRET missing/too short");
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const session: AdminSession = { ...payload, iat: now, exp: now + ttlSec };
@@ -48,7 +65,7 @@ export function signSession(
 export function verifySession(token: string | undefined | null): AdminSession | null {
   if (!token) return null;
   const secret = process.env.ADMIN_COOKIE_SECRET || "";
-  if (!secret) return null;
+  if (!secret || secret.length < MIN_SECRET_LENGTH) return null;
 
   const parts = token.split(".");
   if (parts.length !== 2) return null;
@@ -58,14 +75,18 @@ export function verifySession(token: string | undefined | null): AdminSession | 
   if (!timingSafeEqual(sig, expected)) return null;
 
   try {
-    const json = Buffer.from(body.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
-    const session = JSON.parse(json) as AdminSession;
+    const json = Buffer.from(
+      body.replace(/-/g, "+").replace(/_/g, "/"),
+      "base64"
+    ).toString("utf8");
+    const parsed: unknown = JSON.parse(json);
+    if (!isAdminSession(parsed)) return null;
 
     const now = Math.floor(Date.now() / 1000);
-    if (!session?.sub || !session?.exp) return null;
-    if (session.exp <= now) return null;
+    if (parsed.iat > now + 60) return null;
+    if (parsed.exp <= now) return null;
 
-    return session;
+    return parsed;
   } catch {
     return null;
   }
@@ -116,6 +137,7 @@ export function getAdminSession(req: NextApiRequest): AdminSession | null {
 }
 
 export function requireAdmin(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
   const session = getAdminSession(req);
   if (!session) {
     res.status(401).json({ ok: false, error: "Unauthorized" });

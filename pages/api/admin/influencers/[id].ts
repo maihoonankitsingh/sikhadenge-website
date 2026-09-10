@@ -1,5 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../lib/prisma";
 import { requireAdmin } from "../../../../lib/auth";
 
@@ -19,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "PATCH") {
     const { name, email, promoCode, isActive, newPassword } = req.body || {};
 
-    const data: any = {};
+    const data: Prisma.InfluencerUpdateInput = {};
 
     if (typeof name === "string") data.name = name.trim();
     if (typeof email === "string") data.email = email.trim() ? email.trim() : null;
@@ -27,28 +28,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (typeof isActive === "boolean") data.isActive = isActive;
 
     if (typeof newPassword === "string" && newPassword.length > 0) {
-      if (newPassword.length < 6) return res.status(400).json({ ok: false, error: "Password min 6 chars" });
+      if (newPassword.length < 6) {
+        return res.status(400).json({ ok: false, error: "Password min 6 chars" });
+      }
       data.passwordHash = await bcrypt.hash(newPassword, 10);
+    }
+
+    if (!Object.keys(data).length) {
+      return res.status(400).json({ ok: false, error: "Nothing to update" });
     }
 
     try {
       const updated = await prisma.influencer.update({
         where: { id },
         data,
-        select: { id: true, name: true, email: true, promoCode: true, isActive: true, updatedAt: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          promoCode: true,
+          isActive: true,
+          updatedAt: true,
+        },
       });
       return res.json({ ok: true, item: updated });
-    } catch (e: any) {
-      const msg = String(e?.message || "");
-      if (msg.includes("Record to update not found")) {
-        return res.status(404).json({ ok: false, error: "Not found" });
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res.status(404).json({ ok: false, error: "Not found" });
+        }
+        if (error.code === "P2002") {
+          return res.status(409).json({ ok: false, error: "Promo code or email already exists" });
+        }
       }
-      if (msg.includes("Unique constraint") || msg.includes("unique")) {
-        return res.status(409).json({ ok: false, error: "Promo code or email already exists" });
-      }
+      console.error("Admin influencer update failed:", error);
       return res.status(500).json({ ok: false, error: "Server error" });
     }
   }
 
+  res.setHeader("Allow", "PATCH");
   return res.status(405).json({ ok: false });
 }
