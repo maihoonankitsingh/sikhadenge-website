@@ -1,0 +1,163 @@
+name: Deploy Claude Final Handoff V1 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-claude-final-handoff-v1-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ops/deploy-claude-final-handoff-v1-20260910.sh
+          node --check ops/assets/claude-final-handoff-v1-20260910.js
+          node --check ops/qa-claude-final-handoff-v1-20260910.js
+          grep -Fq "EXPECTED_CLAUDE='7c27c30a3d042e65eabb28d91d0a668e9f373f46df514d7d083e6f3d9ba41b85'" ops/deploy-claude-final-handoff-v1-20260910.sh
+          grep -Fq 'Ready to build your first practical' ops/assets/claude-final-handoff-v1-20260910.js
+          grep -Fq 'Joining details follow after registration.' ops/qa-claude-final-handoff-v1-20260910.js
+          echo FINAL_HANDOFF_V1_STATIC_VALIDATION=PASS
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Locked preflight
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          PUBLIC='/claude-final-handoff-v1-20260910.js'
+          sikhadenge-funnel-lockctl check
+          STATUS="$(sikhadenge-funnel-lockctl status)"
+          printf '%s\n' "$STATUS" | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^CLAUDE_PUBLIC_SHA=/{print $2}')" = '7c27c30a3d042e65eabb28d91d0a668e9f373f46df514d7d083e6f3d9ba41b85'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^AI_PUBLIC_SHA=/{print $2}')" = 'b03ab6b210bceed43573d2037816ae8f8208969ea73cecaba60e14eef10c12d2'
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          python3 - "$SITE" "$PUBLIC" <<'PY'
+          import sys
+          p,public=sys.argv[1:]
+          s=open(p,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('Claude exact route missing')
+          q=s.find('{',a); d=0; quote=None; esc=False; end=None
+          for i in range(q,len(s)):
+              ch=s[i]
+              if esc: esc=False; continue
+              if ch=='\\': esc=True; continue
+              if quote:
+                  if ch==quote: quote=None
+                  continue
+              if ch in ('"',"'"): quote=ch; continue
+              if ch=='{': d+=1
+              elif ch=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('route parse failed')
+          route=s[a:end]
+          anchor='<script defer src="/claude-bonus-value-v1-20260910.js"></script></body>'
+          print('PREFLIGHT_FINAL_HANDOFF_COUNTS',route.count(anchor),route.count(public))
+          if route.count(anchor)!=1 or route.count(public)!=0: raise SystemExit('unexpected final handoff route state')
+          PY
+          echo FINAL_HANDOFF_V1_PREFLIGHT=PASS
+          REMOTE
+
+      - name: Stage deployment files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/deploy-claude-final-handoff-v1-20260910.sh \
+            "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-final-handoff-v1-20260910.sh"
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/assets/claude-final-handoff-v1-20260910.js \
+            "$SSH_USER@$SSH_HOST:/tmp/claude-final-handoff-v1-20260910.js"
+
+      - name: Controlled final handoff V1 stage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-final-handoff-v1-20260910.sh stage'
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node ops/qa-claude-final-handoff-v1-20260910.js
+
+      - name: Reseal and lock Golden baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl check
+          /usr/local/sbin/sikhadenge-funnel-golden-guard --deep
+          sleep 3
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          echo CLAUDE_FINAL_HANDOFF_V1_RESEALED_LOCKED=PASS
+          REMOTE
+
+      - name: Post-lock browser regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node ops/qa-claude-final-handoff-v1-20260910.js
+          echo FINAL_HANDOFF_V1_POST_LOCK_BROWSER=PASS
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'if [ -f /tmp/deploy-claude-final-handoff-v1-20260910.sh ]; then bash /tmp/deploy-claude-final-handoff-v1-20260910.sh rollback; else sikhadenge-funnel-lockctl lock || true; fi'
+
+      - name: Clean temporary server files
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            'rm -f /tmp/deploy-claude-final-handoff-v1-20260910.sh /tmp/claude-final-handoff-v1-20260910.js'
