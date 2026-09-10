@@ -90,9 +90,25 @@ for (const viewport of VIEWPORTS) {
 
       const tableWrap = page.locator(".lead-table-wrap");
       await expectInsideViewport(tableWrap, viewport.width);
+
+      // Emulate a production-sized result set without changing the isolated
+      // browser database. The mobile directory must remain bounded even when
+      // many lead rows are present so the selected editor is still reachable.
+      await tableWrap.evaluate((node) => {
+        const tbody = node.querySelector("tbody");
+        const row = tbody?.querySelector("tr");
+        if (!tbody || !row) return;
+        for (let index = 0; index < 60; index += 1) {
+          tbody.appendChild(row.cloneNode(true));
+        }
+      });
+
       const tableGeometry = await tableWrap.evaluate((node) => ({
         clientWidth: node.clientWidth,
         scrollWidth: node.scrollWidth,
+        clientHeight: node.clientHeight,
+        scrollHeight: node.scrollHeight,
+        maxHeight: getComputedStyle(node).maxHeight,
         overflowX: getComputedStyle(node).overflowX,
         overscrollX: getComputedStyle(node).overscrollBehaviorX,
         overscrollY: getComputedStyle(node).overscrollBehaviorY,
@@ -101,6 +117,11 @@ for (const viewport of VIEWPORTS) {
       expect(tableGeometry.scrollWidth).toBeGreaterThan(tableGeometry.clientWidth);
       expect(tableGeometry.overscrollX).toBe("contain");
       expect(tableGeometry.overscrollY).toBe("auto");
+      expect(tableGeometry.maxHeight).not.toBe("none");
+      expect(tableGeometry.scrollHeight).toBeGreaterThan(tableGeometry.clientHeight);
+      expect(tableGeometry.clientHeight).toBeLessThanOrEqual(
+        Math.min(viewport.height * 0.56 + 2, 522),
+      );
 
       const horizontalTableScroll = await tableWrap.evaluate((node) => {
         node.scrollLeft = node.scrollWidth;
