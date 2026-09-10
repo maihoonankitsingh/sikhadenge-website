@@ -65,17 +65,18 @@ function clientIp(req: NextApiRequest) {
 
 function pruneRateMap(now: number) {
   if (hits.size < MAX_RATE_KEYS) return;
-  for (const [key, row] of hits) {
-    if (now - row.startedAt >= WINDOW_MS) hits.delete(key);
-  }
+
+  const expired: string[] = [];
+  hits.forEach((row, key) => {
+    if (now - row.startedAt >= WINDOW_MS) expired.push(key);
+  });
+  expired.forEach((key) => hits.delete(key));
+
   if (hits.size >= MAX_RATE_KEYS) {
     const overflow = hits.size - MAX_RATE_KEYS + 250;
-    let removed = 0;
-    for (const key of hits.keys()) {
-      hits.delete(key);
-      removed += 1;
-      if (removed >= overflow) break;
-    }
+    Array.from(hits.keys())
+      .slice(0, overflow)
+      .forEach((key) => hits.delete(key));
   }
 }
 
