@@ -25,35 +25,25 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Locate exact hero hydration source read-only
+      - name: Locate matching SSR file read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
-          URL='/_next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
-          echo '=== PUBLIC BUNDLE ==='
-          curl -fsSL --max-time 20 "https://sikhadenge.in${URL}" -o /tmp/claude-bundle.js
-          echo "PUBLIC_SHA=$(sha256sum /tmp/claude-bundle.js|awk '{print $1}') BYTES=$(wc -c </tmp/claude-bundle.js)"
-          python3 - /tmp/claude-bundle.js <<'PY'
+          echo '=== SSR CANDIDATES ==='
+          find "$CWD/.next/server" -type f \( -path '*masterclass*claude*free*' -o -name '*.js' \) 2>/dev/null | while read -r f; do
+            if grep -q 'faster execution & better results' "$f" 2>/dev/null; then
+              echo "SSR_MATCH=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c <"$f")"
+              python3 - "$f" <<'PY'
           import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          needles=['Master 25+ AI Tools','smarter work','faster execution','better results','25+ AI Tools']
-          for n in needles:
-              print(n, s.count(n))
-              pos=s.find(n)
-              if pos>=0: print('CONTEXT=',s[max(0,pos-300):pos+700])
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); p=s.find('faster execution & better results')
+          print('CONTEXT=',s[max(0,p-450):p+500])
           PY
-          echo '=== LOCAL CANDIDATES ==='
-          find "$CWD" -type f \( -name '*free-802d96fd*.js' -o -name '*claude*free*.js' \) -print | head -20 | while read -r f; do
-            echo "FILE=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c <"$f")"
-            python3 - "$f" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); n='Master 25+ AI Tools'; p=s.find(n)
-          print('EXACT_COUNT=',s.count(n),'SMARTER_COUNT=',s.count('smarter work'))
-          if p>=0: print('LOCAL_CONTEXT=',s[max(0,p-250):p+650])
-          PY
+            fi
           done
-          rm -f /tmp/claude-bundle.js
+          echo '=== CLIENT EXACT ==='
+          F="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js"
+          echo "CLIENT=$F SHA=$(sha256sum "$F"|awk '{print $1}')"
           REMOTE
