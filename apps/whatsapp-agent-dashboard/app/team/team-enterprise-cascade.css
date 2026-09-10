@@ -1,0 +1,29 @@
+/* Team route cascade gate.
+   Later global responsive layers still reverse the Team workspace at <=1280px.
+   Keep conversation ownership first and reserve the two-column operator view
+   through compact desktop without changing any Team behavior. */
+
+@media (min-width: 1181px) {
+  .sx-module .sx-workspace-body .team-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(310px, 360px) !important;
+  }
+}
+
+.sx-module .sx-workspace-body .team-queue-card,
+.sx-module .sx-workspace-body .team-agents-card {
+  order: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .sx-module .sx-workspace-body .team-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .sx-module .sx-workspace-body .team-queue-card {
+    order: 0 !important;
+  }
+
+  .sx-module .sx-workspace-body .team-agents-card {
+    order: 1 !important;
+  }
+}
