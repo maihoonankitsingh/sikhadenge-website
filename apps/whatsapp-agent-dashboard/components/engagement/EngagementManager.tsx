@@ -248,7 +248,7 @@ export default function EngagementManager() {
   }
 
   return (
-    <div className="suite-stack">
+    <div className="suite-stack engagement-manager">
       <section className="suite-metrics">
         <article><span>Active forms</span><strong>{overview.metrics.activeForms}</strong></article>
         <article><span>Submissions</span><strong>{overview.metrics.submissions}</strong></article>
