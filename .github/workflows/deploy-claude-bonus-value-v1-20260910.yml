@@ -1,4 +1,4 @@
-name: Deploy Claude Bonus Value V1 20260910
+name: Deploy Claude Bonus Value V1 Final 20260910
 
 on:
   push:
@@ -34,6 +34,7 @@ jobs:
           grep -Fq "PUBLIC='/claude-bonus-value-v1-20260910.js'" ops/deploy-claude-bonus-value-v1-20260910.sh
           grep -Fq "data-sd-claude-bonus-value','v1'" ops/assets/claude-bonus-value-v1-20260910.js
           grep -Fq "'react-425':2" ops/qa-claude-bonus-value-v1-20260910.js
+          grep -Fq "c.h>=275" ops/qa-claude-bonus-value-v1-20260910.js
           echo BONUS_VALUE_V1_STATIC_VALIDATION=PASS
 
       - name: Configure pinned SSH
