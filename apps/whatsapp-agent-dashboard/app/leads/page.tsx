@@ -3,6 +3,7 @@ import DashboardModuleShell from "../../components/navigation/DashboardModuleShe
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
 import "../core-workflows-refinement.css";
+import "./leads-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 

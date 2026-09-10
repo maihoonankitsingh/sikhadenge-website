@@ -4,6 +4,8 @@ import CampaignControlCenter from "../../components/campaigns/CampaignControlCen
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./campaigns-enterprise-polish.css";
+import "./campaigns-mobile-cascade-guard.css";
 
 export const dynamic = "force-dynamic";
 

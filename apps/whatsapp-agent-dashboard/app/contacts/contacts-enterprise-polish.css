@@ -1,0 +1,76 @@
+/* Contacts — screen-specific Enterprise UI hardening.
+   Presentation only: no API, auth, data, messaging or CRM behavior changes. */
+
+.sx-module .contact-search-group,
+.sx-module .contact-toolbar-actions {
+  min-width: 0;
+}
+
+.sx-module .contact-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sx-module .contact-table-wrap {
+  max-width: 100%;
+  /* A legacy shorthand in core-workflows-refinement.css contains both axes.
+     Re-state both longhands here so horizontal table gestures stay isolated
+     without trapping vertical page navigation at the table boundary. */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+}
+
+@media (max-width: 767px) {
+  .sx-module .contact-toolbar {
+    align-items: stretch;
+  }
+
+  .sx-module .contact-search-group,
+  .sx-module .contact-toolbar-actions {
+    width: 100%;
+  }
+
+  .sx-module .contact-search-group > :where(input, select) {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .sx-module .contact-toolbar-actions > :where(button, a) {
+    flex: 1 1 0;
+    min-width: 100px;
+  }
+
+  .sx-module .contact-directory > header,
+  .sx-module .contact-editor > header {
+    flex-wrap: wrap;
+  }
+
+  .sx-module .contact-table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* At the locked 390px QA viewport, four KPI cards in a single horizontal
+   scroller consume most of the first screen and hide three values off-canvas.
+   Force this route back to a compact 2×2 grid without shrinking type or
+   touch targets. */
+@media (max-width: 479px) {
+  .sx-module .contact-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+    scroll-snap-type: none !important;
+  }
+
+  .sx-module .contact-metrics > article {
+    min-width: 0 !important;
+  }
+
+  .sx-module .contact-toolbar-actions > :where(button, a) {
+    min-width: 0;
+  }
+}
