@@ -1,4 +1,5 @@
 name: Deploy Registration Native Suppress V1 20260910
+# Retry 2: render-safe dynamic choice activation in E2E QA.
 
 on:
   push:
