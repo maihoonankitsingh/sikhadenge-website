@@ -1,0 +1,57 @@
+name: Trace Claude Closing Source 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/trace-claude-closing-source-20260910.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trace current closing text owner across linked scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PAGE="/tmp/claude.html"
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 45 \
+            "https://sikhadenge.in/masterclass/claude/free?closing_source_trace=$(date +%s)" -o "$PAGE"
+          python3 - "$PAGE" <<'PY'
+          import re,sys,html,urllib.request,urllib.parse
+          raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          targets=[
+            'Reserve your free seat and learn practical workflows across today',
+            'Learn AI. Apply it.',
+          ]
+          srcs=[]
+          for s in re.findall(r'<script[^>]+src=["\']([^"\']+)',raw,re.I):
+            u=urllib.parse.urljoin('https://sikhadenge.in/masterclass/claude/free',html.unescape(s))
+            if u not in srcs: srcs.append(u)
+          print('SCRIPT_COUNT',len(srcs))
+          hits=[]
+          for u in srcs:
+            try:
+              req=urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                data=r.read().decode('utf-8','ignore')
+            except Exception as e:
+              print('FETCH_FAIL',u,repr(e)); continue
+            for t in targets:
+              if t in data:
+                print('OWNER_HIT',t,'URL',u,'BYTES',len(data))
+                pos=data.find(t)
+                print('SNIP',data[max(0,pos-500):pos+1200].replace('\n',' '))
+                hits.append((t,u))
+          # server HTML itself may own the SSR copy
+          text=html.unescape(raw)
+          for t in targets:
+            if t in text:
+              print('SSR_HIT',t)
+          if not hits:
+            print('NO_LINKED_SCRIPT_OWNER_HIT')
+          PY
