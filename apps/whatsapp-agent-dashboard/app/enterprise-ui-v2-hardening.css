@@ -156,4 +156,19 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
+
+  /* Legacy rail styles can paint decorative active-state pseudo elements over
+     the compact dock label. The dock has its own explicit active background,
+     so those decorations are presentation-only and must not obscure content. */
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link::before,
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .sx-module .sx-mobile-dock .sx-mobile-dock-link.is-active {
+    background: var(--sd-primary-soft) !important;
+    color: var(--sd-primary) !important;
+    box-shadow: none !important;
+  }
 }
