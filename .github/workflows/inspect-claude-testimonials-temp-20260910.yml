@@ -20,7 +20,7 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Configure pinned SSH
         shell: bash
@@ -31,7 +31,7 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Server source trace
+      - name: Server owner and media audit
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -39,74 +39,23 @@ jobs:
           set -Eeuo pipefail
           sikhadenge-funnel-lockctl check
           sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|LOCK_STATE'
-          TMP="/tmp/claude-testimonials-$$.html"
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?testimonial_trace=$(date +%s)" -o "$TMP"
-          echo '=== RENDERED SERVER TEXT CONTEXT ==='
-          python3 - "$TMP" <<'PY'
-          import re,sys,html
-          raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',raw)))
-          needles=['testimonial','testimonials','learner stories','learners say','what our learners','hear it from','student','review','reviews','success stories','real learners','trusted by','rating','linkedin']
-          seen=[]
-          for n in needles:
-              start=0
-              while True:
-                  i=text.lower().find(n.lower(),start)
-                  if i<0: break
-                  key=(max(0,i-600),min(len(text),i+2400))
-                  if all(abs(key[0]-x[0])>500 for x in seen):
-                      seen.append(key); print('TERM',n,'CONTEXT',text[key[0]:key[1]])
-                  start=i+len(n)
-          print('=== SCRIPT URLS TESTIMONIAL/PROOF ===')
-          for u in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',raw,re.I):
-              u=html.unescape(u)
-              if any(k in u.lower() for k in ['testimonial','proof','review','social','claude']): print(u)
-          print('=== IMAGE URLS AROUND PROOF TERMS ===')
-          for m in re.finditer(r'<img\b[^>]*>',raw,re.I):
-              tag=m.group(0)
-              if any(k in tag.lower() for k in ['testimonial','learner','student','review','avatar','profile']): print(tag[:800])
-          PY
-          echo '=== ROOT OWNER FILES ==='
-          for f in /var/www/sikhadenge.in/*.js /var/www/sikhadenge.in/*.css; do
-            [ -f "$f" ] || continue
-            if grep -Eqi 'testimonial|learner stor|what.*learner|hear it from|review|linkedin|student stor|success stor' "$f"; then
-              echo "OWNER $(sha256sum "$f" | awk '{print $1}') $f"
-              grep -Ein 'testimonial|learner stor|what.*learner|hear it from|review|linkedin|student stor|success stor' "$f" | head -30 || true
-            fi
+          L=/var/www/sikhadenge.in/claude-runtime-loader-v3.js
+          test -s "$L"
+          echo LOADER_SHA=$(sha256sum "$L"|awk '{print $1}')
+          echo '=== TESTIMONIAL LOADER CORE ==='
+          sed -n '40,115p' "$L"
+          echo '=== PUBLIC LOADER TAG ==='
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?testimonial_owner=$(date +%s)" | grep -oE '<script[^>]+src="[^"]*claude-runtime-loader-v3[^>]*>' || true
+          echo '=== MEDIA FILES ==='
+          for n in 01 02 03 04 05 06; do
+            J="/var/www/sikhadenge.in/ai-video-testimonials/$n.jpg"; V="/var/www/sikhadenge.in/ai-video-testimonials/$n.mp4"
+            test -s "$J"; test -s "$V"
+            printf 'MEDIA %s JPG_BYTES=%s JPG_SHA=%s MP4_BYTES=%s MP4_SHA=%s\n' "$n" "$(stat -c%s "$J")" "$(sha256sum "$J"|awk '{print $1}')" "$(stat -c%s "$V")" "$(sha256sum "$V"|awk '{print $1}')"
+            file "$J" "$V" | sed 's#^#FILE #'
           done
-          echo '=== CURRENT PAGE CHUNK PROOF CONTEXT ==='
-          CHUNK="$(python3 - "$TMP" <<'PY'
-          import re,sys,html
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          vals=[html.unescape(x) for x in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I)]
-          vals=[x for x in vals if '/_next/static/chunks/pages/masterclass/claude/free-' in x]
-          print(vals[0] if vals else '')
-          PY
-          )"
-          echo "CHUNK_URL=$CHUNK"
-          if [ -n "$CHUNK" ]; then
-            FILE="/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916${CHUNK%%\?*}"
-            echo "CHUNK_FILE=$FILE"
-            echo "CHUNK_SHA=$(sha256sum "$FILE"|awk '{print $1}')"
-            python3 - "$FILE" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          terms=['testimonial','review','learner','student','linkedin','success','story','stories']
-          printed=[]
-          for t in terms:
-              start=0
-              while True:
-                  i=s.lower().find(t,start)
-                  if i<0: break
-                  if all(abs(i-x)>1200 for x in printed):
-                      printed.append(i); print('CHUNK_CTX',t,s[max(0,i-1400):i+4200])
-                  start=i+len(t)
-          PY
-          fi
-          rm -f "$TMP"
-          echo SERVER_TESTIMONIAL_TRACE_PASS
+          echo SERVER_TESTIMONIAL_OWNER_AUDIT_PASS
           REMOTE
-      - name: Browser DOM audit
+      - name: Browser DOM and interaction audit
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -115,22 +64,45 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
           const puppeteer=require('puppeteer-core');
-          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          const n=s=>(s||'').replace(/\s+/g,' ').trim();
           (async()=>{
             const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
             for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
               const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[]; p.on('response',r=>{if(r.status()>=400&&(/\.css(?:\?|$)/.test(r.url())||/\.js(?:\?|$)/.test(r.url())))bad.push(`${r.status()} ${r.url()}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?testimonial_dom=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000}); await new Promise(r=>setTimeout(r,3000));
+              const bad=[]; p.on('response',r=>{if(r.status()>=400&&(/\.css(?:\?|$)/.test(r.url())||/\.js(?:\?|$)/.test(r.url())||/ai-video-testimonials\//.test(r.url())))bad.push(`${r.status()} ${r.url()}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?testimonial_dom=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000}); await new Promise(r=>setTimeout(r,3200));
               const x=await p.evaluate(()=>{
-                const n=s=>(s||'').replace(/\s+/g,' ').trim();
-                const sections=[...document.querySelectorAll('main section')].map((s,i)=>({i,text:n(s.innerText).slice(0,1500),h:[...s.querySelectorAll('h2,h3')].map(e=>n(e.textContent)),articles:s.querySelectorAll('article').length,imgs:[...s.querySelectorAll('img')].map(im=>({src:im.currentSrc||im.src,alt:im.alt,w:im.naturalWidth,h:im.naturalHeight})),links:[...s.querySelectorAll('a[href]')].map(a=>({text:n(a.textContent),href:a.href})).slice(0,20),rect:s.getBoundingClientRect().toJSON()}));
-                const keys=/testimonial|learner|review|student|success stor|hear it from|what .* say|linkedin/i;
-                return {matches:sections.filter(s=>keys.test(s.text)||s.links.some(l=>keys.test(l.text)||/linkedin/i.test(l.href))),allHeadings:sections.map(s=>[s.i,s.h]),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,badVisible:[...document.querySelectorAll('body *')].filter(e=>{const cs=getComputedStyle(e);return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)!==0&&e.scrollWidth>e.clientWidth+4&&e.clientWidth>0}).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,sw:e.scrollWidth,cw:e.clientWidth,text:n(e.textContent).slice(0,160)}))};
+                const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+                const r=document.getElementById('sd-claude-testimonials-v305');
+                if(!r)return {missing:true};
+                const cards=[...r.querySelectorAll('.sd-v305-card')];
+                const firstSet=r.querySelector('.sd-v305-set');
+                const uniqueCards=firstSet?[...firstSet.querySelectorAll('.sd-v305-card')]:[];
+                const all=[...document.querySelectorAll('main section')]; const idx=all.indexOf(r);
+                const prev=all[idx-1],next=all[idx+1];
+                const track=r.querySelector('.sd-v305-track'); const cs=track?getComputedStyle(track):null;
+                return {
+                  missing:false,index:idx,
+                  pill:norm(r.querySelector('.sd-v305-pill')?.textContent),title:norm(r.querySelector('.sd-v305-title')?.textContent),desc:norm(r.querySelector('.sd-v305-desc')?.textContent),
+                  totalCards:cards.length,uniqueCards:uniqueCards.length,
+                  posters:uniqueCards.map(c=>c.querySelector('img')?.currentSrc||''),videos:uniqueCards.map(c=>c.dataset.video||''),alts:uniqueCards.map(c=>c.querySelector('img')?.alt||''),arias:uniqueCards.map(c=>c.querySelector('button')?.getAttribute('aria-label')||''),
+                  cardRects:uniqueCards.slice(0,2).map(c=>{const q=c.getBoundingClientRect();return [Math.round(q.width),Math.round(q.height)]}),
+                  sectionRect:(()=>{const q=r.getBoundingClientRect();return [Math.round(q.width),Math.round(q.height)]})(),
+                  animation:cs?[cs.animationName,cs.animationDuration,cs.animationPlayState]:[],
+                  prevHeading:norm(prev?.querySelector('h2')?.textContent||prev?.innerText?.slice(0,120)),nextHeading:norm(next?.querySelector('h2')?.textContent||next?.innerText?.slice(0,120)),
+                  overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                  hasHeadingStyle:r.querySelector('.sd-v305-title')?.getAttribute('data-sd-testimonial-heading-v309')||'',layout:r.getAttribute('data-sd-testimonial-layout')||'',version:r.getAttribute('data-sd-testimonial-version')||''
+                };
               });
-              console.log('VIEW',name,'MATCHES',JSON.stringify(x.matches));
-              console.log('VIEW',name,'HEADINGS',JSON.stringify(x.allHeadings));
-              console.log('VIEW',name,'OVERFLOW',x.overflow,'LOCAL_OVERFLOW',JSON.stringify(x.badVisible),'FAILED_ASSETS',bad.length,JSON.stringify(bad));
+              console.log('VIEW',name,JSON.stringify(x),'FAILED_ASSETS',JSON.stringify(bad));
+              if(x.missing)throw Error(`${name}: testimonial root missing`);
+              if(name==='desktop'){
+                await p.click('#sd-claude-testimonials-v305 .sd-v305-open'); await new Promise(r=>setTimeout(r,1500));
+                const play=await p.evaluate(()=>{const r=document.getElementById('sd-claude-testimonials-v305');const v=r?.querySelector('video');return {playing:!!v,src:v?.currentSrc||v?.querySelector('source')?.src||'',controls:!!v?.controls,paused:v?.paused,ready:v?.readyState||0,rootPlaying:r?.getAttribute('data-playing')||''}});
+                console.log('DESKTOP_FIRST_VIDEO',JSON.stringify(play));
+                if(!play.playing||!play.src.includes('/ai-video-testimonials/01.mp4'))throw Error('first testimonial video did not open');
+              }
+              if(bad.length||x.overflow||x.uniqueCards!==6||x.totalCards!==12)throw Error(`${name}: structural QA failed`);
               await p.close();
             }
             await b.close(); console.log('BROWSER_TESTIMONIAL_AUDIT_PASS');
