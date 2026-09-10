@@ -29,21 +29,25 @@ jobs:
           SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Print exact heading script read-only
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Trace H1 owner read-only
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          F=/var/www/sikhadenge.in/claude-heading-v11-restore-current.js
-          test -s "$F"
-          echo "SHA=$(sha256sum "$F" | awk '{print $1}') BYTES=$(wc -c < "$F")"
-          grep -nE 'Master|AI Tools|smarter|better|h1|textContent|innerHTML' "$F" | head -120
-          echo '=== FULL SCRIPT ==='
-          sed -n '1,240p' "$F"
+          echo '=== CANDIDATE PUBLIC SCRIPT ==='
+          for f in /var/www/sikhadenge.in/sikhadenge-heading-claude-v308r-20260830-174053.js $(find /var/www /opt -type f -name 'sikhadenge-heading-claude-v308r-20260830-174053.js' 2>/dev/null | head -10); do
+            [[ -f "$f" ]] || continue
+            echo "FILE=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c < "$f")"
+            grep -nE 'Master 25\+|smarter work|better results|querySelector.*h1|document.querySelector.*h1|textContent|innerHTML' "$f" | head -80 || true
+          done
+          echo '=== SEARCH ALL LIVE-OWNED FILES FOR EXACT H1 ==='
+          grep -RIl --exclude='*.map' --exclude-dir=node_modules 'Master 25+ AI Tools for smarter work' /var/www/sikhadenge.in /var/www/sikhadenge.in/releases 2>/dev/null | head -40 | while read -r f; do
+            echo "MATCH=$f SHA=$(sha256sum "$f"|awk '{print $1}') BYTES=$(wc -c < "$f")"
+            grep -nF 'Master 25+ AI Tools for smarter work' "$f" | head -10 || true
+          done
+          echo '=== ORIGIN H1 ==='
+          curl -fsSL --max-time 20 'http://127.0.0.1:3930/masterclass/claude/free' | python3 -c "import sys,re,html; s=sys.stdin.read(); m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I); t=re.sub('<[^>]+>',' ',m.group(1) if m else ''); print(html.unescape(re.sub(r'\\s+',' ',t)).strip())"
           REMOTE
