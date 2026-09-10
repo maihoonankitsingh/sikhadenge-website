@@ -64,7 +64,7 @@ const impactStats = ['1 in 4','+78M','70%','+69%','2×+','AI + Big Data'];
     const impactOK=JSON.stringify(x.impact)===JSON.stringify(impactStats);
     const legacy=['BUILT FOR PRACTICAL LEARNERS','Students & job seekers','Use AI to improve planning, communication and decision support.','AI Prompt Engineers Earn $300k','30 Crore','40 Crore','9.2 Crore'];
     const oldVisible=legacy.filter(t=>x.visible.includes(t));
-    const scriptOK=x.scripts.some(s=>s.includes('agenda-v1-audience-v1-20260910.js'))&&x.scripts.some(s=>s.includes('claude-proof-static-v5.js'));
+    const scriptOK=x.scripts.some(s=>s.includes('agenda-v1-audience-v1b-20260910.js'))&&x.scripts.some(s=>s.includes('claude-proof-static-v5.js'))&&!x.scripts.some(s=>s.includes('agenda-v1-audience-v1-20260910.js'));
     console.log(name,JSON.stringify({h1:x.h1,proof:x.proof,eyebrow:x.eyebrow,audienceH2:x.audienceH2,audience:x.audienceCards,impact:x.impact,sections:x.sections,faq:x.faq,ctas:x.ctas,overflow:x.overflow}), 'oldVisible',oldVisible,'failedAssets',bad.length);
     if(norm(x.h1)!==wantH||!trust||!audienceOK||!outcomesOK||!agendaOK||!impactOK||oldVisible.length||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!scriptOK) fails.push(`${name}: audienceH2=${x.audienceH2} audience=${JSON.stringify(x.audienceCards)} old=${oldVisible.join(',')} bad=${bad.join(',')}`);
     await p.close();
