@@ -2,6 +2,7 @@
 # Retry marker: dedicated GitHub Actions SSH port 2222 configured on 2026-08-03
 # CI marker: validate canonical pinned host entry workflow fix on 2026-08-03
 # Retry marker: keep release branch stable during production execution on 2026-08-03
+# Production rollout marker: validated EngageOS + Enterprise UI release on 2026-09-10
 set -Eeuo pipefail
 
 : "${LIVE_APP:?LIVE_APP is required}"
