@@ -99,9 +99,7 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
 }
 
 @media (min-width: 1280px) {
-  /* Match the legacy body-qualified overflow lock so this later hardening
-     layer deterministically restores vertical scrolling on the desktop rail. */
-  body .sx-inbox > .sx-details {
+  .sx-inbox > .sx-details {
     position: relative !important;
     inset: auto !important;
     display: block !important;
@@ -117,6 +115,12 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     overflow-x: hidden !important;
     overflow-y: auto !important;
     box-shadow: none !important;
+  }
+
+  /* Match only the legacy body-qualified overflow lock. Keeping the rest of
+     the responsive rule unqualified preserves downstream mobile sizing wins. */
+  body .sx-inbox > .sx-details {
+    overflow-y: auto !important;
   }
 
   .sx-inbox .sx-details-close,
@@ -152,9 +156,7 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     z-index: 2 !important;
   }
 
-  /* Body qualification intentionally matches the legacy !important overflow
-     selector at 1200–1279px, where the older <=1199px recovery does not apply. */
-  body .sx-inbox > .sx-details {
+  .sx-inbox > .sx-details {
     position: fixed !important;
     z-index: 430 !important;
     top: 0 !important;
@@ -178,6 +180,13 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     background: #ffffff !important;
     box-shadow: -20px 0 52px rgba(16, 24, 40, 0.18) !important;
     transition: transform 180ms ease, opacity 150ms ease, visibility 0s linear 180ms !important;
+  }
+
+  /* At 1200–1279px the legacy <=1199px recovery does not apply. Override
+     only vertical overflow at matching specificity; do not outrank the later
+     <=767px width contract. */
+  body .sx-inbox > .sx-details {
+    overflow-y: auto !important;
   }
 
   .sx-inbox.sx-details-open > .sx-details {
