@@ -6,6 +6,7 @@ import { requireDashboardUser } from "../../lib/auth/session";
 import { listTeamOverview } from "../../lib/team/team-chat-service";
 import "../dashboard-system.css";
 import "./team-enterprise-polish.css";
+import "./team-enterprise-cascade.css";
 
 export const dynamic = "force-dynamic";
 
