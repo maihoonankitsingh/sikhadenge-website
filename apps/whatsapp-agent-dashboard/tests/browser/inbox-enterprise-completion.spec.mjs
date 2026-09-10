@@ -36,7 +36,7 @@ async function shot(page, testInfo, name) {
   await testInfo.attach(name, { body, contentType: "image/png" });
 }
 
-test("mobile Inbox keeps composer and every bottom destination inside the viewport", async ({ page }, testInfo) => {
+test("mobile Inbox keeps composer and standard five-tab dock inside the viewport", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await ensureChat(page);
@@ -55,17 +55,10 @@ test("mobile Inbox keeps composer and every bottom destination inside the viewpo
   await expect.poll(async () => composer.evaluate((node) => {
     const rect = node.getBoundingClientRect();
     return {
-      top: rect.top,
-      bottom: rect.bottom,
-      left: rect.left,
-      right: rect.right,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
+      left: Math.round(rect.left),
+      right: Math.round(rect.right),
     };
-  })).toMatchObject({
-    left: 0,
-    right: 390,
-  });
+  })).toEqual({ left: 0, right: 390 });
 
   const geometry = await page.evaluate(() => {
     const composerNode = document.querySelector(".sx-composer");
@@ -129,25 +122,36 @@ test("mobile Inbox keeps composer and every bottom destination inside the viewpo
   expect(geometry.context.right).toBeLessThanOrEqual(geometry.viewportWidth + 1);
 
   const destinations = await page.locator(
-    ".sx-side-scroll > .sx-nav > .rail-button, .sx-side-foot > .sx-navitem",
-  ).evaluateAll((nodes) => nodes.map((node) => {
+    ".sx-side-scroll .rail-button, .sx-side-foot > .sx-navitem",
+  ).evaluateAll((nodes) => nodes.flatMap((node) => {
     const rect = node.getBoundingClientRect();
+    const style = getComputedStyle(node);
+    if (style.display === "none" || rect.width < 1 || rect.height < 1) return [];
     const label = node.querySelector(".sx-navlabel");
-    return {
+    return [{
       title: node.getAttribute("aria-label") || node.textContent?.trim() || "unknown",
       left: rect.left,
       right: rect.right,
       width: rect.width,
+      height: rect.height,
       labelClientWidth: label instanceof HTMLElement ? label.clientWidth : 0,
       labelScrollWidth: label instanceof HTMLElement ? label.scrollWidth : 0,
-    };
+    }];
   }));
 
-  expect(destinations.length).toBeGreaterThanOrEqual(8);
+  expect(destinations.map((item) => item.title)).toEqual([
+    "Inbox",
+    "Contacts",
+    "Leads",
+    "Campaigns",
+    "Settings",
+  ]);
+
   for (const item of destinations) {
     expect(item.left, `${item.title} starts outside viewport`).toBeGreaterThanOrEqual(-1);
     expect(item.right, `${item.title} ends outside viewport`).toBeLessThanOrEqual(391);
-    expect(item.width, `${item.title} touch lane is too narrow`).toBeGreaterThanOrEqual(40);
+    expect(item.width, `${item.title} touch lane is too narrow`).toBeGreaterThanOrEqual(60);
+    expect(item.height, `${item.title} touch lane is too short`).toBeGreaterThanOrEqual(48);
     expect(item.labelScrollWidth, `${item.title} label is clipped`).toBeLessThanOrEqual(item.labelClientWidth + 1);
   }
 
