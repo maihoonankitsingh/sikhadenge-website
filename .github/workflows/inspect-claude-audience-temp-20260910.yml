@@ -1,4 +1,4 @@
-name: Deploy Claude Audience V1 Final 20260910
+name: Deploy Claude Audience V1B Final 20260910
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ops/deploy-claude-audience-v1-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-audience-v1-20260910.sh"
-      - name: Controlled Audience V1 stage
+      - name: Controlled Audience V1B stage
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -67,7 +67,7 @@ jobs:
           sikhadenge-funnel-lockctl lock
           sikhadenge-funnel-lockctl check
           sikhadenge-funnel-lockctl status
-          echo CLAUDE_AUDIENCE_V1_RESEALED_LOCKED=PASS
+          echo CLAUDE_AUDIENCE_V1B_RESEALED_LOCKED=PASS
           REMOTE
       - name: Rollback on failure
         if: failure()
