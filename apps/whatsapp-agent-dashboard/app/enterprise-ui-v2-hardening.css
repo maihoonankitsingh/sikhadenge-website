@@ -99,7 +99,9 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
 }
 
 @media (min-width: 1280px) {
-  .sx-inbox > .sx-details {
+  /* Match the legacy body-qualified overflow lock so this later hardening
+     layer deterministically restores vertical scrolling on the desktop rail. */
+  body .sx-inbox > .sx-details {
     position: relative !important;
     inset: auto !important;
     display: block !important;
@@ -150,7 +152,9 @@ body :where(h1, h2, h3, h4, h5, h6, button, input, textarea, select) {
     z-index: 2 !important;
   }
 
-  .sx-inbox > .sx-details {
+  /* Body qualification intentionally matches the legacy !important overflow
+     selector at 1200–1279px, where the older <=1199px recovery does not apply. */
+  body .sx-inbox > .sx-details {
     position: fixed !important;
     z-index: 430 !important;
     top: 0 !important;
