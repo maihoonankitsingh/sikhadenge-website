@@ -1,0 +1,142 @@
+name: Funnel Golden Health Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: sikhadenge-funnel-golden-health-monitor
+  cancel-in-progress: false
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 8
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deep-check locked funnels and read unsent incident
+        id: health
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          OUT="$RUNNER_TEMP/funnel-health.txt"
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' > "$OUT" <<'REMOTE'
+          set -u
+          ROOT=/var/lib/sikhadenge-funnel-golden-lock
+          GUARD=/usr/local/sbin/sikhadenge-funnel-golden-guard
+          now=$(date +%s)
+          set +e
+          "$GUARD" --deep >/tmp/funnel-monitor-guard.out 2>&1
+          rc=$?
+          set -e
+          incident=0; alerted=0; text=''
+          [[ -f "$ROOT/last-incident.epoch" ]] && incident=$(cat "$ROOT/last-incident.epoch" 2>/dev/null || echo 0)
+          [[ -f "$ROOT/last-alerted-incident.epoch" ]] && alerted=$(cat "$ROOT/last-alerted-incident.epoch" 2>/dev/null || echo 0)
+          [[ -f "$ROOT/last-incident.txt" ]] && text=$(cat "$ROOT/last-incident.txt" 2>/dev/null || true)
+          [[ "$incident" =~ ^[0-9]+$ ]] || incident=0
+          [[ "$alerted" =~ ^[0-9]+$ ]] || alerted=0
+          echo "HEALTH_RC=$rc"
+          echo "INCIDENT_EPOCH=$incident"
+          echo "ALERTED_EPOCH=$alerted"
+          echo "NOW_EPOCH=$now"
+          printf 'INCIDENT_TEXT_B64=%s\n' "$(printf '%s' "$text" | base64 -w0)"
+          echo '---GUARD_OUTPUT---'
+          tail -30 /tmp/funnel-monitor-guard.out || true
+          # Return success to runner so it can create a durable alert first.
+          exit 0
+          REMOTE
+          cat "$OUT"
+          health_rc=$(grep '^HEALTH_RC=' "$OUT" | tail -1 | cut -d= -f2)
+          incident=$(grep '^INCIDENT_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
+          alerted=$(grep '^ALERTED_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
+          now=$(grep '^NOW_EPOCH=' "$OUT" | tail -1 | cut -d= -f2)
+          textb64=$(grep '^INCIDENT_TEXT_B64=' "$OUT" | tail -1 | cut -d= -f2-)
+          [[ "$health_rc" =~ ^[0-9]+$ ]] || health_rc=99
+          [[ "$incident" =~ ^[0-9]+$ ]] || incident=0
+          [[ "$alerted" =~ ^[0-9]+$ ]] || alerted=0
+          new_incident=0
+          (( incident > alerted )) && new_incident=1
+          echo "health_rc=$health_rc" >> "$GITHUB_OUTPUT"
+          echo "incident=$incident" >> "$GITHUB_OUTPUT"
+          echo "alerted=$alerted" >> "$GITHUB_OUTPUT"
+          echo "new_incident=$new_incident" >> "$GITHUB_OUTPUT"
+          echo "textb64=$textb64" >> "$GITHUB_OUTPUT"
+          echo "now=$now" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub incident alert
+        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INCIDENT_EPOCH: ${{ steps.health.outputs.incident }}
+          HEALTH_RC: ${{ steps.health.outputs.health_rc }}
+          TEXT_B64: ${{ steps.health.outputs.textb64 }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          detail=$(printf '%s' "$TEXT_B64" | base64 -d 2>/dev/null || true)
+          stamp=$(date -u '+%Y-%m-%d %H:%M UTC')
+          title="[Golden Lock] Funnel incident — $stamp"
+          body=$(cat <<EOF
+          The SikhaDenge Two-Funnel Golden Lock detected a new production incident or repair event.
+
+          **Affected protection scope**
+          - /masterclass/ai-video
+          - /masterclass/claude/free
+
+          **Guard health exit code:** $HEALTH_RC
+          **Incident epoch:** $INCIDENT_EPOCH
+          **Latest incident detail:**
+          \`\`\`
+          ${detail:-No detail was recorded; inspect the server Golden Lock log.}
+          \`\`\`
+
+          The server self-heal guard runs every 60 seconds and deep-checks the sealed CSS/JS set every 5 minutes. Review `/var/log/sikhadenge-funnel-golden-lock.log` before making any manual production change.
+          EOF
+          )
+          url=$(gh issue create --repo "${GITHUB_REPOSITORY}" --title "$title" --body "$body")
+          echo "INCIDENT_ISSUE=$url"
+
+      - name: Mark incident as alerted
+        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
+        env:
+          INCIDENT_EPOCH: ${{ steps.health.outputs.incident }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mark="$INCIDENT_EPOCH"
+          [[ "$mark" =~ ^[0-9]+$ ]] && (( mark > 0 )) || mark=$(date +%s)
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "install -d -m 700 /var/lib/sikhadenge-funnel-golden-lock && printf '%s\\n' '$mark' > /var/lib/sikhadenge-funnel-golden-lock/last-alerted-incident.epoch && chmod 600 /var/lib/sikhadenge-funnel-golden-lock/last-alerted-incident.epoch"
+
+      - name: Fail monitor after durable alert
+        if: steps.health.outputs.new_incident == '1' || steps.health.outputs.health_rc != '0'
+        shell: bash
+        run: |
+          echo 'A Golden Lock incident was detected. A GitHub issue was created and the incident was marked as alerted.' >&2
+          exit 1
+
+      - name: Healthy
+        if: steps.health.outputs.new_incident == '0' && steps.health.outputs.health_rc == '0'
+        shell: bash
+        run: echo 'FUNNEL_GOLDEN_MONITOR=PASS'
