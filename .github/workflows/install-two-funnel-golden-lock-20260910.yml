@@ -20,7 +20,7 @@ jobs:
   install-lock:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - name: Static safety validation
@@ -31,17 +31,20 @@ jobs:
             ops/sikhadenge-funnel-seal-current.sh \
             ops/sikhadenge-funnel-golden-guard.sh \
             ops/sikhadenge-funnel-lockctl.sh \
-            ops/install-two-funnel-golden-lock-20260910.sh; do
+            ops/install-two-funnel-golden-lock-20260910.sh \
+            ops/harden-funnel-golden-network-checks-20260910.sh; do
             bash -n "$s"
           done
           # No filesystem immutable flag and no broad /_next namespace interception.
           ! grep -R -E 'chattr[[:space:]]+\+i|location[[:space:]]+\^~[[:space:]]+/_next|location[[:space:]]+/_next' \
-            ops/sikhadenge-funnel-* ops/install-two-funnel-golden-lock-20260910.sh
+            ops/sikhadenge-funnel-* ops/install-two-funnel-golden-lock-20260910.sh ops/harden-funnel-golden-network-checks-20260910.sh
           # Whole website Nginx must never be overwritten by the guard.
           ! grep -F 'cp -a "$GOLD/config/site' ops/sikhadenge-funnel-golden-guard.sh
           grep -Fq 'replace_claude_route' ops/sikhadenge-funnel-golden-guard.sh
           grep -Fq 'OnUnitActiveSec=60s' ops/install-two-funnel-golden-lock-20260910.sh
           grep -Fq 'minute % 5' ops/sikhadenge-funnel-golden-guard.sh
+          grep -Fq 'HTTP_000_LOCAL_HTTPS_FALLBACK=ENABLED' ops/harden-funnel-golden-network-checks-20260910.sh
+          grep -Fq 'WRONG_HTTP_OR_SHA_STILL_FAILS=YES' ops/harden-funnel-golden-network-checks-20260910.sh
           echo 'SAFETY_VALIDATION=PASS'
       - name: Configure pinned SSH
         shell: bash
@@ -63,12 +66,13 @@ jobs:
           "${SCP[@]}" ops/sikhadenge-funnel-golden-guard.sh "$SSH_USER@$SSH_HOST:/tmp/sikhadenge-funnel-golden-guard.sh"
           "${SCP[@]}" ops/sikhadenge-funnel-lockctl.sh "$SSH_USER@$SSH_HOST:/tmp/sikhadenge-funnel-lockctl.sh"
           "${SCP[@]}" ops/install-two-funnel-golden-lock-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/install-two-funnel-golden-lock-20260910.sh"
-      - name: Install and verify production Golden lock
+          "${SCP[@]}" ops/harden-funnel-golden-network-checks-20260910.sh "$SSH_USER@$SSH_HOST:/tmp/harden-funnel-golden-network-checks-20260910.sh"
+      - name: Install and harden production Golden lock
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/install-two-funnel-golden-lock-20260910.sh'
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/install-two-funnel-golden-lock-20260910.sh && bash /tmp/harden-funnel-golden-network-checks-20260910.sh && rm -f /tmp/harden-funnel-golden-network-checks-20260910.sh'
       - name: Read final lock status
         shell: bash
         run: |
