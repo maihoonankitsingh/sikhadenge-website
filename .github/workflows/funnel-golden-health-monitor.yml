@@ -9,10 +9,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: sikhadenge-funnel-golden-health-monitor
-  cancel-in-progress: false
-
 env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
   SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
@@ -21,10 +17,10 @@ env:
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
-  deploy_hero:
+  inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
       - name: Configure pinned SSH
         shell: bash
@@ -35,161 +31,45 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Controlled Claude hero update only
+      - name: Inspect live heading runtime source
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          OLD='Master 25+ AI Tools for smarter work, faster execution & better results.'
-          NEW='Master Claude + 25+ AI Tools to Work Smarter, Create Faster & Get Better Results.'
-          OLDQ='/claude-heading-v11-restore-current.js?v=old-v11-current-20260903b'
-          NEWQ='/claude-heading-v11-restore-current.js?v=hero-v12-20260910'
-          TS="$(date +%Y%m%d-%H%M%S)"
-          BK="/var/backups/sikhadenge/claude-hero-v12-$TS"
-          mkdir -p "$BK"
-
-          # Normalize any prior temporary unlock, then verify the current Golden state.
-          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true
           sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-lockctl unlock 15
-          sikhadenge-funnel-lockctl assert-unlocked
-
-          set +o pipefail
-          ASSET="$(nginx -T 2>&1 | awk '/location = \/claude-heading-v11-restore-current\.js[[:space:]]*\{/ {f=1} f && /alias[[:space:]]/ {gsub(";","",$2); print $2; exit}')"
-          set -o pipefail
-          echo "HEADING_ASSET=$ASSET"
-          test -n "$ASSET" && test -f "$ASSET"
-
-          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
-          cp -L "$ASSET" "$BK/claude-heading.before.js"
-          printf '%s\n' "$ASSET" > "$BK/asset.path"
-          printf '%s\n' "$BK" > /var/backups/sikhadenge/.claude-hero-v12-last
-
-          python3 - "$ASSET" "$OLD" "$NEW" <<'PY'
-          import sys
-          p,old,new=sys.argv[1:]
-          s=open(p,encoding='utf-8').read()
-          c=s.count(old)
-          print('OLD_HEADING_OCCURRENCES=',c)
-          if c != 1:
-              raise SystemExit(f'refuse: expected exactly one old heading in {p}, got {c}')
-          open(p,'w',encoding='utf-8').write(s.replace(old,new,1))
-          PY
-
-          python3 - "$SITE" "$OLDQ" "$NEWQ" <<'PY'
-          import sys
-          p,oldq,newq=sys.argv[1:]
+          ASSET='/var/www/sikhadenge.in/claude-heading-v11-restore-current.js'
+          test -f "$ASSET"
+          echo "ASSET_SHA=$(sha256sum "$ASSET" | awk '{print $1}') ASSET_BYTES=$(wc -c < "$ASSET")"
+          echo '=== ASSET SOURCE ==='
+          nl -ba "$ASSET" | sed -n '1,260p'
+          echo '=== CLAUDE ROUTE HEADING REFERENCES ==='
+          python3 - <<'PY'
+          p='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
           s=open(p,encoding='utf-8').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
-          if a<0: raise SystemExit('Claude exact route missing')
+          if a<0: raise SystemExit('route missing')
           q=s.find('{',a); d=0; end=None
           for i in range(q,len(s)):
               if s[i]=='{': d+=1
               elif s[i]=='}':
                   d-=1
                   if d==0: end=i+1; break
-          if end is None: raise SystemExit('Claude route parse failed')
-          seg=s[a:end]; c=seg.count(oldq)
-          print('OLD_QUERY_OCCURRENCES_IN_CLAUDE_ROUTE=',c)
-          if c!=1: raise SystemExit(f'refuse: expected one old heading query in Claude route, got {c}')
-          seg=seg.replace(oldq,newq,1)
-          open(p,'w',encoding='utf-8').write(s[:a]+seg+s[end:])
+          seg=s[a:end]
+          for n,line in enumerate(seg.splitlines(),1):
+              if 'heading' in line.lower() or 'claude-' in line or 'sub_filter' in line:
+                  print(f'{n:03d}: {line}')
           PY
-
-          nginx -t
-          systemctl reload nginx
-          sleep 2
-          grep -Fq "$NEW" "$ASSET"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/claude-heading-v11-restore-current.js?v=hero-v12-20260910' | grep -Fq "$NEW"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?hero_v12_server=1' > "$BK/claude.after.html"
-          grep -Fq "$NEWQ" "$BK/claude.after.html"
-          grep -Fq '/gen-ai-masterclass/register-one-step' "$BK/claude.after.html"
-          grep -Fq '/funnel-attribution-bridge-v1.js?v=20260903-1' "$BK/claude.after.html"
-
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?hero_v12_control=1' > "$BK/ai.after.html"
-          grep -Fq 'Create cinematic AI videos' "$BK/ai.after.html"
-          for u in '/_next/static/css/0dc2b316d6c10c6c.css' '/_next/static/chunks/pages/masterclass/ai-video-e4484da06cac6162.js'; do
-            code="$(curl -L -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://sikhadenge.in$u")"
-            test "$code" = 200
-            echo "AI_CONTROL_ASSET=$code $u"
-          done
-          echo "CLAUDE_HERO_V12_SERVER_STAGE=PASS BACKUP=$BK"
           REMOTE
-
-      - name: Browser QA desktop and mobile
+      - name: Browser inspect final hero DOM
         shell: bash
         run: |
           set -Eeuo pipefail
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          test -n "$CHROME"; export CHROME
-          cat > check.js <<'JS'
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; test -n "$CHROME"; export CHROME
+          cat > inspect.js <<'JS'
           const puppeteer=require('puppeteer-core');
-          const EXPECT='Master Claude + 25+ AI Tools to Work Smarter, Create Faster & Get Better Results.';
-          (async()=>{
-            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            const failures=[];
-            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
-              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[]; p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?hero_v12_browser=${name}`,{waitUntil:'networkidle2',timeout:60000});
-              const x=await p.evaluate(()=>({h1:(document.querySelector('h1')?.textContent||'').replace(/\s+/g,' ').trim(),ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,tracking:!!document.querySelector('script[src*="funnel-attribution-bridge-v1.js"]'),heroScript:!!document.querySelector('script[src*="claude-heading-v11-restore-current.js?v=hero-v12-20260910"]'),sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}));
-              console.log(name,JSON.stringify(x),'failedAssets',bad.length);
-              if(x.h1!==EXPECT||x.ctas<7||!x.tracking||!x.heroScript||x.sections!==18||x.faq!==15||x.overflow>2||bad.length) failures.push(`${name}: ${JSON.stringify(x)} bad=${bad.join('|')}`);
-              await p.close();
-            }
-            const ai=await b.newPage(), badAi=[]; ai.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) badAi.push(`${r.status()} ${u}`)});
-            await ai.goto('https://sikhadenge.in/masterclass/ai-video?hero_v12_browser_control=1',{waitUntil:'networkidle2',timeout:60000});
-            const t=await ai.evaluate(()=>document.body.innerText); if(!t.includes('Create cinematic AI videos')||badAi.length) failures.push(`AI control bad=${badAi.join('|')}`); await ai.close(); await b.close();
-            if(failures.length){console.error(failures.join('\n'));process.exit(1)}
-            console.log('CLAUDE_HERO_V12_BROWSER_QA=PASS');
-          })().catch(e=>{console.error(e);process.exit(1)});
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']}); const p=await b.newPage(); await p.setViewport({width:1440,height:1000}); await p.goto('https://sikhadenge.in/masterclass/claude/free?hero_dom_inspect=1',{waitUntil:'networkidle2',timeout:60000}); const x=await p.evaluate(()=>({h1Text:document.querySelector('h1')?.textContent||'',h1HTML:document.querySelector('h1')?.outerHTML||'',headingScripts:[...document.scripts].map(s=>s.src).filter(x=>x.includes('claude-heading')),heroParent:document.querySelector('h1')?.parentElement?.outerHTML?.slice(0,2500)||''})); console.log(JSON.stringify(x,null,2)); await b.close();})().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node check.js
-
-      - name: Reseal new Golden state
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          sikhadenge-funnel-lockctl reseal
-          sikhadenge-funnel-lockctl lock
-          sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-golden-guard --deep
-          echo 'CLAUDE_HERO_V12_RESEAL=PASS'
-          REMOTE
-
-      - name: Roll back on failure
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set +e
-          M=/var/backups/sikhadenge/.claude-hero-v12-last
-          if [[ -s "$M" ]]; then
-            B="$(cat "$M")"; SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-            if [[ -s "$B/sikhadenge.in-ssl.before" && -s "$B/claude-heading.before.js" && -s "$B/asset.path" ]]; then
-              A="$(cat "$B/asset.path")"
-              sikhadenge-funnel-lockctl unlock 10 >/dev/null 2>&1 || true
-              cat "$B/sikhadenge.in-ssl.before" > "$SITE"
-              cat "$B/claude-heading.before.js" > "$A"
-              nginx -t && systemctl reload nginx
-              sleep 2
-              echo "CLAUDE_HERO_V12_ROLLBACK=$B"
-            fi
-          fi
-          sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true
-          sikhadenge-funnel-golden-guard --deep >/dev/null 2>&1 || true
-          REMOTE
-
-      - name: Ensure lock closed
-        if: always()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'sikhadenge-funnel-lockctl lock >/dev/null 2>&1 || true'
+          node inspect.js
