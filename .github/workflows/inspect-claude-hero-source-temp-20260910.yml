@@ -1,0 +1,75 @@
+name: Inspect Claude Hero Source Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-hero-source-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 8
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect current live hero source read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          URL='https://sikhadenge.in/masterclass/claude/free?hero_source_audit=1'
+          T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+          curl -fsSL --max-time 30 "$URL" -o "$T/page.html"
+          echo "LIVE_BYTES=$(wc -c < "$T/page.html")"
+          python3 - "$T/page.html" <<'PY'
+          import re,sys,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I)
+          text=re.sub('<[^>]+>',' ',m.group(1) if m else '')
+          print('SERVER_H1='+html.unescape(re.sub(r'\s+',' ',text)).strip())
+          scripts=re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I)
+          print('SCRIPTS_WITH_CLAUDE_OR_HEADING:')
+          for x in scripts:
+              if 'claude' in x.lower() or 'heading' in x.lower(): print(x)
+          PY
+          echo '=== LIVE CLAUDE ROUTE ==='
+          python3 - <<'PY'
+          p='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          s=open(p,encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          print(s[a:end])
+          PY
+          echo '=== FIND HEADING ASSET ON DISK ==='
+          find /var/www /opt /usr/local/share -type f \( -name '*claude*heading*.js' -o -name '*heading*v11*.js' \) 2>/dev/null | head -40 | while read -r f; do echo "FILE=$f SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c < "$f")"; grep -nE 'Master 25\+ AI Tools|smarter work|better results|querySelector\(.?h1' "$f" | head -15 || true; done
+          echo '=== LOCK STATUS ==='
+          sikhadenge-funnel-lockctl status || true
+          REMOTE
