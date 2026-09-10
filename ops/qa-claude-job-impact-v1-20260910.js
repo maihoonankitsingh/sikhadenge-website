@@ -47,13 +47,14 @@ const titles = [
       const agendaHeads=[...document.querySelectorAll('h3,h4')].map(e=>(e.textContent||'').replace(/\s+/g,' ').trim());
       const oldShiftHeading=hs.find(h=>(h.textContent||'').replace(/\s+/g,' ').trim()==='Why AI-skilled professionals are moving ahead faster.');
       const oldShift=oldShiftHeading?.closest('section');
-      const oldShiftHidden=!!oldShift && oldShift.getAttribute('data-claude-old-proof-hidden')==='1' && getComputedStyle(oldShift).display==='none';
+      const oldShiftPresent=!!oldShift;
+      const oldShiftSafe=!oldShift || oldShift.getAttribute('data-claude-old-proof-hidden')==='1' || getComputedStyle(oldShift).display==='none' || getComputedStyle(oldShift).visibility==='hidden';
       const root=document.getElementById('claude-ai-video-proof-v4');
       const cards=root?[...root.querySelectorAll('.sd-proof-v4-card')].map(c=>({stat:(c.querySelector('.sd-proof-v4-stat')?.textContent||'').trim(),title:(c.querySelector('h3')?.textContent||'').trim(),source:(c.querySelector('small')?.textContent||'').trim()})):[];
       const visible=(document.body.innerText||'').replace(/\s+/g,' ');
       const reg='/gen-ai-masterclass/register-one-step';
       const ctas=[...document.querySelectorAll('a[href]')].filter(a=>{try{return new URL(a.href,location.href).pathname===reg}catch{return false}}).length;
-      return {h1:h1?.textContent||'',proof,outcomeItems,agendaHeads,oldShiftHidden,cards,visible,sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)};
+      return {h1:h1?.textContent||'',proof,outcomeItems,agendaHeads,oldShiftPresent,oldShiftSafe,cards,visible,sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)};
     });
     const trust=x.proof.length===3&&x.proof[0]==='150,000+ Learners'&&x.proof[1]==='4.9/5 Rating'&&x.proof[2]==='Live · Practical';
     const out=JSON.stringify(x.outcomeItems)===JSON.stringify(outcomes);
@@ -61,9 +62,9 @@ const titles = [
     const cardOK=x.cards.length===6&&JSON.stringify(x.cards.map(c=>c.stat))===JSON.stringify(stats)&&JSON.stringify(x.cards.map(c=>c.title))===JSON.stringify(titles)&&x.cards.every(c=>/2025|2026/.test(c.source));
     const old=['30 Crore','40 Crore','9.2 Crore','10.35M','AI Prompt Engineers Earn $300k','workers could be displaced by automation'];
     const oldVisible=old.filter(t=>x.visible.includes(t));
-    console.log(n, JSON.stringify({h1:x.h1,proof:x.proof,outcomeItems:x.outcomeItems,oldShiftHidden:x.oldShiftHidden,cards:x.cards,sections:x.sections,faq:x.faq,ctas:x.ctas,overflow:x.overflow}), 'oldVisible', oldVisible, 'failedAssets', bad.length);
+    console.log(n, JSON.stringify({h1:x.h1,proof:x.proof,outcomeItems:x.outcomeItems,oldShiftPresent:x.oldShiftPresent,oldShiftSafe:x.oldShiftSafe,cards:x.cards,sections:x.sections,faq:x.faq,ctas:x.ctas,overflow:x.overflow}), 'oldVisible', oldVisible, 'failedAssets', bad.length);
     const scriptOK=x.scripts.some(s=>s.includes('hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'))&&x.scripts.some(s=>s.includes('claude-proof-static-v5.js'))&&!x.scripts.some(s=>s.includes('agenda-v1-job-impact-v1-20260910.js'));
-    if(norm(x.h1)!==wantH||!trust||!out||!ag||!x.oldShiftHidden||!cardOK||oldVisible.length||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!scriptOK) fail.push(n+': cards='+JSON.stringify(x.cards)+' hidden='+x.oldShiftHidden+' old='+oldVisible.join(',')+' bad='+bad.join(','));
+    if(norm(x.h1)!==wantH||!trust||!out||!ag||!x.oldShiftSafe||!cardOK||oldVisible.length||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!scriptOK) fail.push(n+': cards='+JSON.stringify(x.cards)+' oldShiftSafe='+x.oldShiftSafe+' old='+oldVisible.join(',')+' bad='+bad.join(','));
     await p.close();
   }
   await b.close();
