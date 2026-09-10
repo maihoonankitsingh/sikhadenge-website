@@ -7,6 +7,7 @@ import {
 } from "../../lib/inbox/conversation-repository";
 import "../inbox-rebuild.css";
 import "../core-workflows-refinement.css";
+import "../inbox-enterprise-final.css";
 
 export const dynamic = "force-dynamic";
 
