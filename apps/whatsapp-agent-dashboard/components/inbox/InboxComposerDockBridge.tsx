@@ -32,6 +32,7 @@ export default function InboxComposerDockBridge() {
     let currentChannelNote: HTMLElement | null = null;
     let currentTools: HTMLElement | null = null;
     let currentDivider: HTMLElement | null = null;
+    let currentMobileNav: HTMLElement | null = null;
     let chatOriginalStyle: string | null = null;
     let composerOriginalStyle: string | null = null;
     let messagesOriginalStyle: string | null = null;
@@ -58,6 +59,7 @@ export default function InboxComposerDockBridge() {
       restoreInlineStyle(currentInbox, inboxOriginalStyle);
 
       currentComposer?.removeAttribute("data-runtime-docked");
+      currentComposer?.removeAttribute("data-runtime-bottom-inset");
 
       currentChat = null;
       currentComposer = null;
@@ -68,6 +70,7 @@ export default function InboxComposerDockBridge() {
       currentChannelNote = null;
       currentTools = null;
       currentDivider = null;
+      currentMobileNav = null;
       chatOriginalStyle = null;
       composerOriginalStyle = null;
       messagesOriginalStyle = null;
@@ -89,6 +92,7 @@ export default function InboxComposerDockBridge() {
       channelNote: HTMLElement | null,
       tools: HTMLElement | null,
       divider: HTMLElement | null,
+      mobileNav: HTMLElement | null,
     ): void {
       if (
         currentInbox === inbox &&
@@ -99,7 +103,8 @@ export default function InboxComposerDockBridge() {
         currentTextarea === textarea &&
         currentChannelNote === channelNote &&
         currentTools === tools &&
-        currentDivider === divider
+        currentDivider === divider &&
+        currentMobileNav === mobileNav
       ) {
         return;
       }
@@ -114,6 +119,7 @@ export default function InboxComposerDockBridge() {
       currentChannelNote = channelNote;
       currentTools = tools;
       currentDivider = divider;
+      currentMobileNav = mobileNav;
       inboxOriginalStyle = inbox.getAttribute("style");
       chatOriginalStyle = chat.getAttribute("style");
       composerOriginalStyle = composer.getAttribute("style");
@@ -125,12 +131,47 @@ export default function InboxComposerDockBridge() {
       dividerOriginalStyle = divider?.getAttribute("style") ?? null;
       resizeObserver.observe(chat);
       resizeObserver.observe(composer);
+      if (mobileNav) resizeObserver.observe(mobileNav);
     }
 
     function shouldDock(): boolean {
       const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
       const touchDevice = navigator.maxTouchPoints > 0;
       return coarsePointer || touchDevice || window.innerWidth <= 1199;
+    }
+
+    function getVisibleMobileNavInset(
+      inbox: HTMLElement,
+      viewportTop: number,
+      viewportHeight: number,
+    ): { element: HTMLElement | null; inset: number } {
+      if (window.innerWidth > 767) {
+        return { element: null, inset: 0 };
+      }
+
+      const mobileNav = inbox.querySelector<HTMLElement>(":scope > .sx-side");
+      if (!mobileNav) return { element: null, inset: 0 };
+
+      const style = window.getComputedStyle(mobileNav);
+      if (style.display === "none" || style.visibility === "hidden") {
+        return { element: mobileNav, inset: 0 };
+      }
+
+      const navRect = mobileNav.getBoundingClientRect();
+      const viewportBottom = viewportTop + viewportHeight;
+      const overlapsVisibleBottom =
+        navRect.width > 1 &&
+        navRect.height > 1 &&
+        navRect.top < viewportBottom &&
+        navRect.bottom > viewportTop &&
+        navRect.bottom >= viewportBottom - 2;
+
+      return {
+        element: mobileNav,
+        inset: overlapsVisibleBottom
+          ? Math.max(0, Math.min(navRect.height, viewportBottom - navRect.top))
+          : 0,
+      };
     }
 
     function applyDock(): void {
@@ -153,6 +194,17 @@ export default function InboxComposerDockBridge() {
         return;
       }
 
+      const chatStyle = window.getComputedStyle(chat);
+      const rect = chat.getBoundingClientRect();
+      const visualViewport = window.visualViewport;
+      const viewportWidth = visualViewport?.width ?? window.innerWidth;
+      const viewportHeight = visualViewport?.height ?? window.innerHeight;
+      const viewportTop = visualViewport?.offsetTop ?? 0;
+      const viewportLeft = visualViewport?.offsetLeft ?? 0;
+      const viewportRight = viewportLeft + viewportWidth;
+      const { element: mobileNav, inset: mobileNavInset } =
+        getVisibleMobileNavInset(inbox, viewportTop, viewportHeight);
+
       rememberNodes(
         inbox,
         chat,
@@ -163,16 +215,8 @@ export default function InboxComposerDockBridge() {
         channelNote,
         tools,
         divider,
+        mobileNav,
       );
-
-      const chatStyle = window.getComputedStyle(chat);
-      const rect = chat.getBoundingClientRect();
-      const visualViewport = window.visualViewport;
-      const viewportWidth = visualViewport?.width ?? window.innerWidth;
-      const viewportHeight = visualViewport?.height ?? window.innerHeight;
-      const viewportTop = visualViewport?.offsetTop ?? 0;
-      const viewportLeft = visualViewport?.offsetLeft ?? 0;
-      const viewportRight = viewportLeft + viewportWidth;
 
       if (
         chatStyle.display === "none" ||
@@ -192,6 +236,7 @@ export default function InboxComposerDockBridge() {
         0,
         window.innerHeight - (viewportTop + viewportHeight),
       );
+      const effectiveBottomInset = browserBottomInset + mobileNavInset;
       const layout = getInboxComposerDockLayout(visibleWidth);
 
       restoreInlineStyle(row, rowOriginalStyle);
@@ -212,7 +257,7 @@ export default function InboxComposerDockBridge() {
       setImportant(composer, "position", "fixed");
       setImportant(composer, "left", `${visibleLeft}px`);
       setImportant(composer, "right", "auto");
-      setImportant(composer, "bottom", `${browserBottomInset}px`);
+      setImportant(composer, "bottom", `${effectiveBottomInset}px`);
       setImportant(composer, "top", "auto");
       setImportant(composer, "width", `${visibleWidth}px`);
       setImportant(composer, "max-width", `${visibleWidth}px`);
@@ -237,6 +282,10 @@ export default function InboxComposerDockBridge() {
         "0 -10px 28px rgba(15, 23, 42, 0.16)",
       );
       composer.setAttribute("data-runtime-docked", "true");
+      composer.setAttribute(
+        "data-runtime-bottom-inset",
+        String(Math.round(effectiveBottomInset)),
+      );
 
       if (row) {
         setImportant(row, "display", "grid");
@@ -264,7 +313,11 @@ export default function InboxComposerDockBridge() {
         64,
         composer.getBoundingClientRect().height,
       );
-      setImportant(chat, "padding-bottom", `${composerHeight}px`);
+      setImportant(
+        chat,
+        "padding-bottom",
+        `${composerHeight + mobileNavInset}px`,
+      );
       if (messages) {
         setImportant(messages, "padding-bottom", "16px");
         setImportant(messages, "overflow-y", "auto");
