@@ -1,4 +1,5 @@
 name: Deploy Claude FAQ Conversion V1 20260910
+# Retry 2: QA marker assertions corrected; deployment logic unchanged.
 
 on:
   push:
