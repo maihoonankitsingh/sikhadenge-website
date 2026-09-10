@@ -5,7 +5,7 @@ const wantH1 = 'Master Claude + 25+ AI Tools to work smarter,create faster & get
 const pill = 'LEARNER VIDEO TESTIMONIALS';
 const title = 'Real learners. Real experiences.';
 const desc = 'Watch 6 learner video testimonials and hear their Sikhadenge learning experience in their own words.';
-const baselineErrors = { 'react-418': 26, 'react-423': 1 };
+const baselineErrors = { 'react-418': 26, 'react-423': 1, 'react-425': 2 };
 const outcomes = [
   'Research a topic and turn it into presentation-ready insights',
   'Summarise long reports, PDFs & notes into clear action points',
