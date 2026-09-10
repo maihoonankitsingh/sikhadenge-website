@@ -1,4 +1,4 @@
-name: Deploy Claude Testimonials V1B Final 20260910
+name: Audit Claude Locked Hydration Jitter 20260910
 
 on:
   push:
@@ -9,122 +9,43 @@ on:
 permissions:
   contents: read
 
-env:
-  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
-  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
-  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
-  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
-  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-
 jobs:
-  deploy:
+  audit:
     runs-on: ubuntu-latest
-    environment: whatsapp-agent-production
-    timeout-minutes: 25
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Static validation
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          bash -n ops/deploy-claude-testimonials-v1-20260910.sh
-          node --check ops/assets/claude-testimonials-conversion-v1b-20260910.js
-          node --check ops/qa-claude-testimonials-v1b-20260910.js
-          grep -Fq "PUBLIC='/claude-testimonials-conversion-v1b-20260910.js'" ops/deploy-claude-testimonials-v1-20260910.sh
-          grep -Fq "data-sd-testimonials-conversion', 'v1b'" ops/assets/claude-testimonials-conversion-v1b-20260910.js
-          echo TESTIMONIALS_V1B_STATIC_VALIDATION=PASS
-
-      - name: Configure pinned SSH
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Locked preflight
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE'
-          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
-          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
-          systemctl is-active sikhadenge-funnel-golden-guard.timer
-          echo TESTIMONIALS_V1B_PREFLIGHT=PASS
-          REMOTE
-
-      - name: Stage deployment files
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            ops/deploy-claude-testimonials-v1-20260910.sh \
-            "$SSH_USER@$SSH_HOST:/tmp/deploy-claude-testimonials-v1-20260910.sh"
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            ops/assets/claude-testimonials-conversion-v1b-20260910.js \
-            "$SSH_USER@$SSH_HOST:/tmp/claude-testimonials-conversion-v1b-20260910.js"
-
-      - name: Controlled Testimonials V1B stage
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh stage'
-
-      - name: Browser QA desktop tablet mobile
+      - name: Repeated locked baseline browser sampling
         shell: bash
         run: |
           set -Eeuo pipefail
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          export CHROME
-          node ops/qa-claude-testimonials-v1b-20260910.js
-
-      - name: Reseal and lock Golden baseline
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          sikhadenge-funnel-lockctl reseal
-          sikhadenge-funnel-lockctl lock
-          sikhadenge-funnel-lockctl check
-          /usr/local/sbin/sikhadenge-funnel-golden-guard --deep
-          sleep 3
-          sikhadenge-funnel-lockctl check
-          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
-          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
-          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
-          systemctl is-active sikhadenge-funnel-golden-guard.timer
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 https://sikhadenge.in/claude-testimonials-conversion-v1b-20260910.js -o /tmp/testimonials-v1b-final.js
-          test "$(sha256sum /tmp/testimonials-v1b-final.js | awk '{print $1}')" = "$(sha256sum /var/www/sikhadenge.in/claude-testimonials-conversion-v1b-20260910.js | awk '{print $1}')"
-          rm -f /tmp/testimonials-v1b-final.js
-          echo CLAUDE_TESTIMONIALS_V1B_RESEALED_LOCKED=PASS
-          REMOTE
-
-      - name: Post-lock browser regression
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          export CHROME
-          node ops/qa-claude-testimonials-v1b-20260910.js
-          echo TESTIMONIALS_V1B_POST_LOCK_BROWSER=PASS
-
-      - name: Rollback on failure
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-claude-testimonials-v1-20260910.sh rollback'
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const sig=errs=>{const x={};for(const e of errs){const m=String(e).match(/Minified React error #(\d+)/);const k=m?`react-${m[1]}`:String(e);x[k]=(x[k]||0)+1;}return x;};
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const samples=[];
+            for(let i=1;i<=8;i++){
+              const p=await b.newPage(); await p.setViewport({width:1440,height:1000});
+              const errs=[]; const bad=[]; p.on('pageerror',e=>errs.push(String(e))); p.on('response',r=>{if(r.status()>=400&&(/\.css(?:\?|$)/.test(r.url())||/\.js(?:\?|$)/.test(r.url())))bad.push(`${r.status()} ${r.url()}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?locked_jitter_desktop=${i}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,5000));
+              const state=await p.evaluate(()=>({
+                hasV1b:[...document.scripts].some(s=>(s.src||'').includes('/claude-testimonials-conversion-v1b-20260910.js')),
+                h1:(document.querySelector('h1')?.textContent||'').replace(/\s+/g,' ').trim(),
+                sections:document.querySelectorAll('main section').length,
+                faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+              }));
+              const s=sig(errs); samples.push(s); console.log('LOCKED_DESKTOP_SAMPLE',i,JSON.stringify(state),'ERRORS',JSON.stringify(s),'BAD',JSON.stringify(bad));
+              if(state.hasV1b) throw Error('locked baseline unexpectedly has V1B');
+              if(state.sections!==18||state.faq!==15||state.overflow||bad.length) throw Error(`baseline structural failure sample ${i}`);
+              await p.close();
+            }
+            const aggregate={}; for(const s of samples) for(const [k,v] of Object.entries(s)){aggregate[k]=aggregate[k]||{min:v,max:v,seen:0};aggregate[k].min=Math.min(aggregate[k].min,v);aggregate[k].max=Math.max(aggregate[k].max,v);aggregate[k].seen++;}
+            console.log('LOCKED_DESKTOP_ERROR_AGGREGATE',JSON.stringify(aggregate));
+            await b.close(); console.log('LOCKED_HYDRATION_JITTER_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
