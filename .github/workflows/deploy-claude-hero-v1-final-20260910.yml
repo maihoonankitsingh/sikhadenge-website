@@ -1,0 +1,270 @@
+name: Deploy Claude Hero V1 Final 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-claude-hero-v1-final-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 18
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Controlled versioned Hero deploy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          DIR="$CWD/.next/static/chunks/pages/masterclass/claude"
+          OLD_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
+          NEW_NAME='free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-20260910.js'
+          OLD="$DIR/$OLD_NAME"
+          NEW="$DIR/$NEW_NAME"
+          OLD_URL="/_next/static/chunks/pages/masterclass/claude/$OLD_NAME"
+          NEW_URL="/_next/static/chunks/pages/masterclass/claude/$NEW_NAME"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="/var/backups/sikhadenge/claude-hero-v1-versioned-$TS"
+          mkdir -p "$BK"
+          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
+          cp -L "$ASSETS" "$BK/claude-assets.before"
+          [[ -f "$NEW" ]] && cp -a "$NEW" "$BK/new-chunk.before" || true
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?claude_hero_before=final' -o "$BK/ai.before.html"
+          AI_BEFORE="$(sha256sum "$BK/ai.before.html" | awk '{print $1}')"
+
+          rollback() {
+            rc=$?
+            echo "ROLLBACK rc=$rc"
+            cat "$BK/sikhadenge.in-ssl.before" > "$SITE" || true
+            cat "$BK/claude-assets.before" > "$ASSETS" || true
+            if [[ -f "$BK/new-chunk.before" ]]; then cp -a "$BK/new-chunk.before" "$NEW"; else rm -f "$NEW"; fi
+            nginx -t && systemctl reload nginx || true
+            sikhadenge-funnel-lockctl reseal || true
+            sikhadenge-funnel-lockctl lock || true
+            exit "$rc"
+          }
+          trap rollback ERR
+
+          test "$(sha256sum "$OLD" | awk '{print $1}')" = '7646607dc0587c6e8081b92a9252f6c4982aae2da97480d44c4eff27c3a722e5'
+          sikhadenge-funnel-lockctl unlock 15
+          sikhadenge-funnel-lockctl assert-unlocked
+
+          cp -a "$OLD" "$NEW"
+          python3 - "$NEW" <<'PY'
+          import sys
+          p=sys.argv[1]
+          s=open(p,encoding='utf-8').read()
+          reps=[
+              ('children:"25+ AI Tools"','children:"Claude + 25+ AI Tools"'),
+              ('" for smarter work,"','" to work smarter,"'),
+              ('"faster execution & better results."','"create faster & get better results."'),
+          ]
+          for old,new in reps:
+              c=s.count(old)
+              print('REPLACE_COUNT',repr(old),c)
+              if c != 1:
+                  raise SystemExit(f'expected one occurrence of {old!r}, got {c}')
+              s=s.replace(old,new,1)
+          open(p,'w',encoding='utf-8').write(s)
+          print('VERSIONED_CLIENT_PATCH=PASS')
+          PY
+          node --check "$NEW"
+          NEW_SHA="$(sha256sum "$NEW" | awk '{print $1}')"
+          echo "NEW_CHUNK_SHA=$NEW_SHA"
+
+          if ! grep -Fq 'SIKHADENGE_CLAUDE_HERO_V1_CHUNK_20260910' "$ASSETS"; then
+            printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
+              '# SIKHADENGE_CLAUDE_HERO_V1_CHUNK_20260910' \
+              "location = $NEW_URL {" \
+              "    alias $NEW;" \
+              '    default_type application/javascript;' \
+              '    add_header Cache-Control "public, max-age=31536000, immutable" always;' \
+              '    add_header X-SD-Claude-Asset "hero-v1-20260910" always;' \
+              '}' >> "$ASSETS"
+          else
+            echo 'VERSIONED_ASSET_LOCATION_ALREADY_PRESENT'
+          fi
+
+          python3 - "$SITE" "$OLD_URL" "$NEW_URL" <<'PY'
+          import sys
+          p,oldurl,newurl=sys.argv[1:]
+          s=open(p,encoding='utf-8').read()
+          needle='location = /masterclass/claude/free {'
+          a=s.find(needle)
+          if a < 0: raise SystemExit('Claude route missing')
+          q=s.find('{',a); d=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': d+=1
+              elif s[i]=='}':
+                  d-=1
+                  if d==0:
+                      end=i+1
+                      break
+          if end is None: raise SystemExit('Claude route parse failed')
+          route=s[a:end]
+          marker='# SIKHADENGE_CLAUDE_HERO_V1_20260910'
+          if marker in route:
+              raise SystemExit('unexpected existing Hero V1 marker')
+          anchor='        proxy_set_header Accept-Encoding "";\n'
+          if anchor not in route: raise SystemExit('route anchor missing')
+          oldh='Master <mark>25+ AI Tools</mark> for smarter work,<br/>faster execution &amp; better results.'
+          newh='Master <mark>Claude + 25+ AI Tools</mark> to work smarter,<br/>create faster &amp; get better results.'
+          rules=(anchor+'\n        '+marker+'\n'
+                 '        sub_filter \''+oldh+'\' \''+newh+'\';\n'
+                 '        sub_filter \''+oldurl+'\' \''+newurl+'\';\n')
+          route=route.replace(anchor,rules,1)
+          open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
+          print('CLAUDE_ROUTE_HERO_V1=PASS')
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          code="$(curl -L -sS --max-time 20 -o "$BK/new.public.js" -w '%{http_code}' "https://sikhadenge.in${NEW_URL}?first=$TS")"
+          echo "NEW_ASSET_HTTP=$code"
+          test "$code" = 200
+          test "$(sha256sum "$BK/new.public.js" | awk '{print $1}')" = "$NEW_SHA"
+          grep -Fq 'children:"Claude + 25+ AI Tools"' "$BK/new.public.js"
+
+          curl -fsSL --max-time 25 "https://sikhadenge.in/masterclass/claude/free?hero_v1_server=$TS" -o "$BK/claude.after.html"
+          python3 - "$BK/claude.after.html" "$NEW_URL" <<'PY'
+          import sys,re,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          newurl=sys.argv[2]
+          m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I)
+          if not m: raise SystemExit('H1 missing')
+          inner=m.group(1)
+          text=html.unescape(re.sub('<[^>]+>',' ',inner))
+          text=re.sub(r'\s+',' ',text).strip()
+          want='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.'
+          print('SERVER_H1='+text)
+          print('NEW_CHUNK_IN_HTML='+str(newurl in s))
+          if text != want: raise SystemExit('server H1 mismatch')
+          if '<mark>Claude + 25+ AI Tools</mark>' not in inner: raise SystemExit('server mark mismatch')
+          if newurl not in s: raise SystemExit('versioned client chunk missing from HTML')
+          print('SERVER_HERO_QA=PASS')
+          PY
+
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?claude_hero_after=final' -o "$BK/ai.after.html"
+          test "$AI_BEFORE" = "$(sha256sum "$BK/ai.after.html" | awk '{print $1}')"
+          echo "AI_UNCHANGED_SHA=$AI_BEFORE"
+          echo "$BK" > /var/backups/sikhadenge/.claude-hero-v1-last
+          trap - ERR
+          echo "SERVER_STAGE_PASS=$BK"
+          REMOTE
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          const want='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.';
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]];
+            const fail=[];
+            for(const [n,w,h,m] of views){
+              const p=await b.newPage();
+              await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[];
+              p.on('response',r=>{const u=r.url(); if(r.status()>=400 && (/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?hero_v1_browser=${n}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,3000));
+              const x=await p.evaluate(()=>({
+                h1:document.querySelector('h1')?.textContent||'',
+                mark:document.querySelector('h1 mark')?.textContent||'',
+                sections:document.querySelectorAll('main section').length,
+                faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
+                ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,
+                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
+                scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>s.includes('/masterclass/claude/free-'))
+              }));
+              console.log(n,JSON.stringify(x),'failedAssets',bad.length);
+              if(norm(x.h1)!==want || norm(x.mark)!=='Claude + 25+ AI Tools' || x.sections!==18 || x.faq!==15 || x.ctas<7 || x.overflow || bad.length || !x.scripts.some(s=>s.includes('hero-v1-20260910.js'))){
+                fail.push(`${n}: ${JSON.stringify(x)} bad=${bad.join(',')}`);
+              }
+              await p.close();
+            }
+            await b.close();
+            if(fail.length) throw Error(fail.join('\n'));
+            console.log('CLAUDE_HERO_V1_3VIEW_QA_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa.js
+
+      - name: Reseal and lock Golden baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status
+          echo 'CLAUDE_HERO_V1_RESEALED_LOCKED=PASS'
+          REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          M='/var/backups/sikhadenge/.claude-hero-v1-last'
+          if [[ ! -s "$M" ]]; then sikhadenge-funnel-lockctl lock || true; exit 0; fi
+          B="$(cat "$M")"
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          ASSETS='/etc/nginx/snippets/sikhadenge-claude-31aug6pm-assets-final.conf'
+          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
+          NEW="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-20260910.js"
+          sikhadenge-funnel-lockctl unlock 5 || true
+          [[ -s "$B/sikhadenge.in-ssl.before" ]] && cat "$B/sikhadenge.in-ssl.before" > "$SITE"
+          [[ -s "$B/claude-assets.before" ]] && cat "$B/claude-assets.before" > "$ASSETS"
+          if [[ -f "$B/new-chunk.before" ]]; then cp -a "$B/new-chunk.before" "$NEW"; else rm -f "$NEW"; fi
+          nginx -t && systemctl reload nginx
+          sikhadenge-funnel-lockctl reseal || true
+          sikhadenge-funnel-lockctl lock || true
+          echo "ROLLBACK_DONE=$B"
+          REMOTE
