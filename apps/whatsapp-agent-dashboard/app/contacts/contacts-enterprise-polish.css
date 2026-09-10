@@ -15,7 +15,11 @@
 
 .sx-module .contact-table-wrap {
   max-width: 100%;
+  /* A legacy shorthand in core-workflows-refinement.css contains both axes.
+     Re-state both longhands here so horizontal table gestures stay isolated
+     without trapping vertical page navigation at the table boundary. */
   overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
 }
 
 @media (max-width: 767px) {
