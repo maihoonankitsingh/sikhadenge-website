@@ -20,7 +20,7 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - name: Configure pinned SSH
         shell: bash
@@ -31,59 +31,17 @@ jobs:
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read-only outcomes inspection
+      - name: Read-only guard inspection
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          CWD='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916'
-          CHUNK="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-20260910.js"
-          TMP=$(mktemp); curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?outcomes_audit=20260910' -o "$TMP"
-          echo '=== GOLDEN STATUS ==='; sikhadenge-funnel-lockctl status | sed -n '1,40p'
-          echo '=== PUBLIC SECTION TEXT ==='
-          python3 - "$TMP" <<'PY'
-          import sys,re,html
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          # Print compact visible text around likely outcomes/agenda anchors.
-          text=html.unescape(re.sub(r'<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>',' ',s,flags=re.S|re.I))
-          text=re.sub(r'<[^>]+>',' ',text); text=re.sub(r'\s+',' ',text)
-          keys=['PRACTICAL AI WORKFLOWS','Is this workshop for you?','What you’ll learn','What You’ll Learn','workflows','LinkedIn','Excel','presentation','research','content','automation','Productivity','Career']
-          seen=set()
-          for key in keys:
-              i=text.lower().find(key.lower())
-              if i>=0:
-                  a=max(0,i-300); b=min(len(text),i+1800); seg=text[a:b]
-                  if seg not in seen:
-                      seen.add(seg); print('\nKEY=',key,'\n',seg)
-          PY
-          echo '=== SECTION IDS / MARKERS ==='
-          grep -oE 'id="[^"]+"|data-sd-[A-Za-z0-9_-]+="[^"]*"' "$TMP" | grep -Ei 'learn|workflow|audience|agenda|skill|outcome|practical|use|tool' | head -160 || true
-          echo '=== CURRENT CLIENT CHUNK CONTEXT ==='
-          test -f "$CHUNK"
-          python3 - "$CHUNK" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          keys=['Is this workshop for you?','PRACTICAL AI WORKFLOWS','LinkedIn','Excel','presentation','Research','research','Automate Repetitive Work','Write Better','Create','Productivity']
-          for k in keys:
-              pos=[]; start=0
-              while True:
-                  i=s.find(k,start)
-                  if i<0: break
-                  pos.append(i); start=i+1
-              if pos:
-                  print('\nTERM',repr(k),'COUNT',len(pos))
-                  for i in pos[:5]: print(s[max(0,i-700):i+1300])
-          PY
-          echo '=== SERVER HTML OWNER CONTEXT ==='
-          HTML="$CWD/.next/server/pages/masterclass/claude/free.html"
-          test -f "$HTML"
-          python3 - "$HTML" <<'PY'
-          import sys
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          for k in ['Is this workshop for you?','PRACTICAL AI WORKFLOWS','LinkedIn','Excel','presentation','Automate Repetitive Work']:
-              i=s.find(k)
-              if i>=0: print('\nTERM',repr(k),'\n',s[max(0,i-700):i+1600])
-          PY
-          rm -f "$TMP"
+          echo '=== CURRENT SAFE STATUS ==='; sikhadenge-funnel-lockctl status | sed -n '1,45p'
+          echo '=== COMMAND OWNERS ==='; command -v sikhadenge-funnel-lockctl; readlink -f "$(command -v sikhadenge-funnel-lockctl)" || true
+          echo '=== SYSTEMD UNIT ==='; systemctl cat sikhadenge-funnel-golden-guard.service || true; systemctl cat sikhadenge-funnel-golden-guard.timer || true
+          echo '=== GOLDEN FILES ==='; find /usr/local/bin /usr/local/lib /opt /var/lib/sikhadenge-funnel-golden-lock -maxdepth 3 -type f \( -iname '*funnel*golden*' -o -iname '*funnel*lock*' -o -iname '*golden*guard*' \) -print 2>/dev/null | head -100
+          echo '=== DEEP CHECK OWNER ==='; grep -Rnl 'DEEP_ASSET_CHECK\|ASSET_MISMATCH\|manual review required' /usr/local/bin /usr/local/lib /opt 2>/dev/null | head -30 || true
+          echo '=== CURL / DEEP CHECK CONTEXT ==='
+          for f in $(grep -RIl 'DEEP_ASSET_CHECK\|ASSET_MISMATCH' /usr/local/bin /usr/local/lib /opt 2>/dev/null | head -20); do echo "FILE=$f SHA=$(sha256sum "$f"|awk '{print $1}')"; grep -n -B8 -A20 -E 'DEEP_ASSET_CHECK|ASSET_MISMATCH|curl ' "$f" | head -220 || true; done
           REMOTE
