@@ -1,0 +1,17 @@
+/* Final Templates route cascade gate.
+   Later global responsive layers target generic *-metrics selectors with
+   !important. Keep the Template Studio KPI grid at its intended 2x2 compact
+   density without changing any template behavior. */
+
+@media (max-width: 1180px) {
+  .sx-module .sx-workspace-body .template-studio .template-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+  }
+
+  .sx-module .sx-workspace-body .template-studio .template-metrics > article {
+    min-width: 0 !important;
+    flex: initial !important;
+  }
+}
