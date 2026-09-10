@@ -12,13 +12,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect public V72 hide logic
+      - name: Inspect public V72 hide and submit logic
         shell: bash
         run: |
           set -Eeuo pipefail
           curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 30 'https://sikhadenge.in/registration-stable-page1-v72.js?v=20260903-131023' -o /tmp/p.js
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 30 'https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023' -o /tmp/h.js
           echo "PAGE1_SHA=$(sha256sum /tmp/p.js|awk '{print $1}')"
-          for r in '7160,7340' '7525,7835' '8170,8500' '9250,9565'; do echo "=== RANGE $r ==="; nl -ba /tmp/p.js | sed -n "${r}p"; done
+          echo "HOT_SHA=$(sha256sum /tmp/h.js|awk '{print $1}')"
+          for r in '7160,7340' '7525,7835' '8170,8500' '9250,9565'; do echo "=== PAGE1 RANGE $r ==="; nl -ba /tmp/p.js | sed -n "${r}p"; done
+          for r in '1860,2035' '2140,2265' '2260,2395' '2440,2515'; do echo "=== HOT RANGE $r ==="; nl -ba /tmp/h.js | sed -n "${r}p"; done
       - name: Browser hit-test and keyboard audit
         shell: bash
         run: |
