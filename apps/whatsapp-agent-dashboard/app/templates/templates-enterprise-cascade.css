@@ -73,8 +73,13 @@
     box-sizing: border-box !important;
   }
 
-  .sx-module .sx-workspace-body .template-studio .template-form-buttons > button {
+  .sx-module .sx-workspace-body .template-studio .template-button-builder-heading > button,
+  .sx-module .sx-workspace-body .template-studio .template-form-buttons > button,
+  .sx-module .sx-workspace-body .template-studio .template-library-actions > button {
     min-height: 44px !important;
+  }
+
+  .sx-module .sx-workspace-body .template-studio .template-form-buttons > button {
     flex: 0 0 auto !important;
   }
 
@@ -83,5 +88,12 @@
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  .sx-module .sx-workspace-body .template-studio .template-button-row > .template-remove-button {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
 }
