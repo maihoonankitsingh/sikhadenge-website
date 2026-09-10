@@ -81,7 +81,7 @@ export default function AnalyticsManager() {
   const maxDaily = Math.max(1, ...data.daily.map((item) => item.inbound + item.outbound));
 
   return (
-    <div className="suite-stack">
+    <div className="suite-stack analytics-manager">
       {error ? <div className="suite-alert error">{error}</div> : null}
       <section className="suite-metrics">
         <article><span>Contacts</span><strong>{data.totals.contacts}</strong><small>{data.totals.optedIn} opted in · {data.totals.optedOut} opted out</small></article>
