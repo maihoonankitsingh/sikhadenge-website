@@ -24,10 +24,15 @@ jobs:
           python3 - "$PAGE" <<'PY'
           import re,sys,html,urllib.request,urllib.parse
           raw=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          targets=[
-            'Reserve your free seat and learn practical workflows across today',
-            'Learn AI. Apply it.',
-          ]
+          decoded=html.unescape(raw)
+          target='Reserve your free seat and learn practical workflows across today'
+          dpos=decoded.find(target)
+          print('SSR_DECODED_POS',dpos)
+          if dpos>=0: print('SSR_DECODED_SNIP',repr(decoded[dpos:dpos+180]))
+          rpos=raw.find('Reserve your free seat')
+          print('SSR_RAW_POS',rpos)
+          if rpos>=0: print('SSR_RAW_SNIP',repr(raw[rpos:rpos+240]))
+          targets=[target,'Learn AI. Apply it.']
           srcs=[]
           for s in re.findall(r'<script[^>]+src=["\']([^"\']+)',raw,re.I):
             u=urllib.parse.urljoin('https://sikhadenge.in/masterclass/claude/free',html.unescape(s))
@@ -44,14 +49,6 @@ jobs:
             for t in targets:
               if t in data:
                 print('OWNER_HIT',t,'URL',u,'BYTES',len(data))
-                pos=data.find(t)
-                print('SNIP',data[max(0,pos-500):pos+1200].replace('\n',' '))
                 hits.append((t,u))
-          # server HTML itself may own the SSR copy
-          text=html.unescape(raw)
-          for t in targets:
-            if t in text:
-              print('SSR_HIT',t)
-          if not hits:
-            print('NO_LINKED_SCRIPT_OWNER_HIT')
+          if not hits: print('NO_LINKED_SCRIPT_OWNER_HIT')
           PY
