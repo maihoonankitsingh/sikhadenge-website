@@ -3,6 +3,11 @@
    !important. Preserve the intended Template Studio compact geometry without
    changing template creation, Meta submission, upload or sync behavior. */
 
+.sx-module .sx-workspace-body .template-studio :where(button, input, select, textarea):focus-visible {
+  outline: 3px solid #3448d8 !important;
+  outline-offset: 2px;
+}
+
 @media (max-width: 1180px) {
   .sx-module .sx-workspace-body .template-studio .template-metrics {
     display: grid !important;
