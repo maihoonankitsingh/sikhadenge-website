@@ -1,0 +1,59 @@
+name: Inspect Claude Hero Live Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-hero-live-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 5
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect Claude hero source only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== LOCK STATUS ==='
+          sikhadenge-funnel-lockctl status || true
+          echo '=== PUBLIC H1 MARKERS ==='
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?hero_inspect=1' | grep -o -E '<h1[^>]*>[^<]{0,300}' | head -3 || true
+          echo '=== HEADING ASSET LOCATION ==='
+          nginx -T 2>&1 | grep -n -A5 -B2 'claude-heading-v11-restore-current.js' | head -40 || true
+          ASSET="$(find /var/www /opt -type f -name 'claude-heading-v11-restore-current.js' 2>/dev/null | head -1 || true)"
+          echo "ASSET=$ASSET"
+          test -n "$ASSET" && test -f "$ASSET"
+          echo "SHA=$(sha256sum "$ASSET" | awk '{print $1}') BYTES=$(wc -c < "$ASSET")"
+          echo '=== RELEVANT SOURCE LINES ==='
+          grep -n -E 'Master 25\+ AI Tools|smarter work|better results|querySelector.*h1|textContent|innerHTML' "$ASSET" | head -80 || true
+          echo '=== AI VIDEO CONTROL SHA ==='
+          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?hero_control=1' | sha256sum
+          REMOTE
