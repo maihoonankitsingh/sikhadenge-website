@@ -1,0 +1,78 @@
+name: Inspect Claude Audience Temp 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-claude-audience-temp-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 8
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read-only audience trace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|LOCK_STATE'
+          TMP="/tmp/claude-audience-$$.html"
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?audience_trace=$(date +%s)" -o "$TMP"
+          echo '=== SERVER HTML AUDIENCE TERMS ==='
+          python3 - "$TMP" <<'PY'
+          import re,sys,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          text=html.unescape(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',s)))
+          for needle in ['Who is this','Students','Freelancers','Professionals','Creators','Job Seekers','Business Owners','No coding','beginners','For you']:
+              i=text.lower().find(needle.lower())
+              if i>=0: print('TERM',needle,'CONTEXT',text[max(0,i-500):i+1800])
+          print('=== SCRIPT URLS WITH AUDIENCE-LIKE NAMES ===')
+          for u in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',s,re.I):
+              u=html.unescape(u)
+              if any(k in u.lower() for k in ['audience','claude','proof','heading']): print(u)
+          PY
+          echo '=== ROOT OWNERS ==='
+          for f in /var/www/sikhadenge.in/*.js /var/www/sikhadenge.in/*.css; do
+            [ -f "$f" ] || continue
+            if grep -Eqi 'students|freelancers|professionals|creators|job seekers|who is this|who should join|business owners' "$f"; then
+              echo "OWNER $(sha256sum "$f" | awk '{print $1}') $f"
+              grep -Ein 'students|freelancers|professionals|creators|job seekers|who is this|who should join|business owners' "$f" | head -12 || true
+            fi
+          done
+          echo '=== PAGE CHUNK AUDIENCE CONTEXT ==='
+          CHUNK='/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806-hero-v1-trust-v1-outcomes-v1-agenda-v1-20260910.js'
+          echo CHUNK_SHA=$(sha256sum "$CHUNK"|awk '{print $1}')
+          python3 - "$CHUNK" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          for n in ['Students','Freelancers','Professionals','Creators','Job Seekers','Business Owners','Who is this','Who should join','This is for']:
+              print('COUNT',repr(n),s.lower().count(n.lower()))
+              i=s.lower().find(n.lower())
+              if i>=0: print('CTX',repr(n),s[max(0,i-900):i+2200])
+          PY
+          rm -f "$TMP"
+          echo AUDIENCE_TRACE_PASS
+          REMOTE
