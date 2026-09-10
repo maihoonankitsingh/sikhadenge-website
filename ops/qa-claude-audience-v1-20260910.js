@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer-core');
 const norm = s => (s || '').replace(/\s+/g, ' ').replace(/,\s*/g, ',').trim();
 const wantH = 'Master Claude + 25+ AI Tools to work smarter,create faster & get better results.';
+const wantAudienceH2 = 'Use the right AI tool where speed, quality and structured output matter.';
 const audience = [
   ['Working professionals & business owners','Apply AI to research, writing, planning and everyday digital work.'],
   ['Students & freshers','Use AI for projects, research and practical career preparation.'],
@@ -40,9 +41,10 @@ const impactStats = ['1 in 4','+78M','70%','+69%','2×+','AI + Big Data'];
       const hero=h1?.closest('section')||h1?.parentElement?.parentElement;
       const proof=hero?[...hero.querySelectorAll('[class*="proofCard"]')].slice(0,3).map(c=>(c.querySelector('strong')?.textContent||'').trim()):[];
       const h2s=[...document.querySelectorAll('h2')];
-      const ah=h2s.find(h=>n(h.textContent)==='Built for beginners who want AI skills they can actually use.');
-      const as=ah?.closest('section');
-      const eyebrow=as?[...as.querySelectorAll('span')].map(e=>n(e.textContent)).find(t=>t==='WHO THIS MASTERCLASS IS FOR')||'':'';
+      const eyebrowEl=[...document.querySelectorAll('span')].find(e=>n(e.textContent)==='WHO THIS MASTERCLASS IS FOR');
+      const as=eyebrowEl?.closest('section');
+      const audienceH2=n(as?.querySelector('h2')?.textContent||'');
+      const eyebrow=eyebrowEl?n(eyebrowEl.textContent):'';
       const audienceCards=as?[...as.querySelectorAll('article')].map(a=>[(a.querySelector('strong')?.textContent||'').trim(),(a.querySelector('p')?.textContent||'').trim()]):[];
       const oh=h2s.find(h=>n(h.textContent)==='What you can do with AI');
       const os=oh?.closest('section');
@@ -53,18 +55,18 @@ const impactStats = ['1 in 4','+78M','70%','+69%','2×+','AI + Big Data'];
       const visible=n(document.body.innerText||'');
       const reg='/gen-ai-masterclass/register-one-step';
       const ctas=[...document.querySelectorAll('a[href]')].filter(a=>{try{return new URL(a.href,location.href).pathname===reg}catch{return false}}).length;
-      return {h1:h1?.textContent||'',proof,eyebrow,audienceCards,outcomeItems,agendaHeads,impact,visible,sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)};
+      return {h1:h1?.textContent||'',proof,eyebrow,audienceH2,audienceCards,outcomeItems,agendaHeads,impact,visible,sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)};
     });
     const trust=x.proof.length===3&&x.proof[0]==='150,000+ Learners'&&x.proof[1]==='4.9/5 Rating'&&x.proof[2]==='Live · Practical';
-    const audienceOK=x.eyebrow==='WHO THIS MASTERCLASS IS FOR'&&JSON.stringify(x.audienceCards)===JSON.stringify(audience);
+    const audienceOK=x.eyebrow==='WHO THIS MASTERCLASS IS FOR'&&x.audienceH2===wantAudienceH2&&JSON.stringify(x.audienceCards)===JSON.stringify(audience);
     const outcomesOK=JSON.stringify(x.outcomeItems)===JSON.stringify(outcomes);
     const agendaOK=agenda.every(t=>x.agendaHeads.includes(t));
     const impactOK=JSON.stringify(x.impact)===JSON.stringify(impactStats);
     const legacy=['BUILT FOR PRACTICAL LEARNERS','Students & job seekers','Use AI to improve planning, communication and decision support.','AI Prompt Engineers Earn $300k','30 Crore','40 Crore','9.2 Crore'];
     const oldVisible=legacy.filter(t=>x.visible.includes(t));
     const scriptOK=x.scripts.some(s=>s.includes('agenda-v1-audience-v1-20260910.js'))&&x.scripts.some(s=>s.includes('claude-proof-static-v5.js'));
-    console.log(name,JSON.stringify({h1:x.h1,proof:x.proof,eyebrow:x.eyebrow,audience:x.audienceCards,impact:x.impact,sections:x.sections,faq:x.faq,ctas:x.ctas,overflow:x.overflow}), 'oldVisible',oldVisible,'failedAssets',bad.length);
-    if(norm(x.h1)!==wantH||!trust||!audienceOK||!outcomesOK||!agendaOK||!impactOK||oldVisible.length||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!scriptOK) fails.push(`${name}: audience=${JSON.stringify(x.audienceCards)} old=${oldVisible.join(',')} bad=${bad.join(',')}`);
+    console.log(name,JSON.stringify({h1:x.h1,proof:x.proof,eyebrow:x.eyebrow,audienceH2:x.audienceH2,audience:x.audienceCards,impact:x.impact,sections:x.sections,faq:x.faq,ctas:x.ctas,overflow:x.overflow}), 'oldVisible',oldVisible,'failedAssets',bad.length);
+    if(norm(x.h1)!==wantH||!trust||!audienceOK||!outcomesOK||!agendaOK||!impactOK||oldVisible.length||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length||!scriptOK) fails.push(`${name}: audienceH2=${x.audienceH2} audience=${JSON.stringify(x.audienceCards)} old=${oldVisible.join(',')} bad=${bad.join(',')}`);
     await p.close();
   }
   await b.close();
