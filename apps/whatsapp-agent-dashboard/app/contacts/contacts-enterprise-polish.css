@@ -49,12 +49,17 @@
   }
 }
 
-/* At the locked 390px QA viewport, four KPI cards in a single column consume
-   most of the first screen before the directory. A compact 2×2 strip keeps
-   the same information visible without shrinking type or touch targets. */
+/* At the locked 390px QA viewport, four KPI cards in a single horizontal
+   scroller consume most of the first screen and hide three values off-canvas.
+   Force this route back to a compact 2×2 grid without shrinking type or
+   touch targets. */
 @media (max-width: 479px) {
   .sx-module .contact-metrics {
+    display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+    scroll-snap-type: none !important;
   }
 
   .sx-module .contact-metrics > article {
