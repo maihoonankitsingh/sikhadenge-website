@@ -156,10 +156,14 @@ for (const viewport of VIEWPORTS) {
     }
 
     if (viewport.width <= 767) {
-      await expectInsideViewport(primaryCards.nth(0).getByRole("button", { name: "Refresh" }), viewport.width);
+      const refreshButton = primaryCards.nth(0).getByRole("button", { name: "Refresh" });
+      await expectInsideViewport(refreshButton, viewport.width);
       await expectInsideViewport(primaryCards.nth(0), viewport.width);
       await expectInsideViewport(primaryCards.nth(1), viewport.width);
       await expectInsideViewport(retargeting, viewport.width);
+
+      const refreshHeight = await refreshButton.evaluate((node) => node.getBoundingClientRect().height);
+      expect(refreshHeight).toBeGreaterThanOrEqual(44);
 
       const chartGeometry = await primaryCards.nth(0).locator(".analytics-bars").evaluate((node) => ({
         clientWidth: node.clientWidth,
