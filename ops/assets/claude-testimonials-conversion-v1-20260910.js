@@ -9,6 +9,11 @@
   const META_CLASS = 'sd-testimonial-meta-v1';
   const PILL = 'LEARNER VIDEO TESTIMONIALS';
   const DESC = 'Watch 6 learner video testimonials and hear their Sikhadenge learning experience in their own words.';
+  const clean = value => (value || '').replace(/\s+/g, ' ').trim();
+
+  function setAttr(node, name, value) {
+    if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+  }
 
   function installStyle() {
     if (document.getElementById(STYLE_ID)) return;
@@ -58,7 +63,6 @@
           overscroll-behavior-x:contain !important;
           -webkit-overflow-scrolling:touch !important;
           scrollbar-width:none !important;
-          touch-action:pan-x !important;
         }
         #${ROOT_ID} .sd-v305-viewport::-webkit-scrollbar{display:none !important;}
         #${ROOT_ID} .sd-v305-track{
@@ -91,15 +95,28 @@
       const cards = Array.from(set.querySelectorAll('.sd-v305-card'));
       cards.forEach((card, index) => {
         const number = (index % 6) + 1;
-        card.setAttribute('role', 'group');
-        card.setAttribute('aria-label', `Learner video testimonial ${number} of 6`);
+        setAttr(card, 'role', 'group');
+        setAttr(card, 'aria-label', `Learner video testimonial ${number} of 6`);
         const button = card.querySelector('.sd-v305-open');
         if (button) {
-          button.setAttribute('aria-label', `Watch learner video testimonial ${number} of 6`);
-          if (setIndex > 0) button.setAttribute('tabindex', '-1');
+          setAttr(button, 'aria-label', `Watch learner video testimonial ${number} of 6`);
+          if (setIndex > 0) setAttr(button, 'tabindex', '-1');
         }
       });
     });
+  }
+
+  function updatePill(pill) {
+    if (clean(pill.textContent) === PILL) return;
+    const dot = pill.querySelector('.sd-v305-pill-dot');
+    if (!dot) {
+      pill.textContent = PILL;
+      return;
+    }
+    Array.from(pill.childNodes).forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) node.remove();
+    });
+    pill.appendChild(document.createTextNode(PILL));
   }
 
   function apply() {
@@ -111,17 +128,8 @@
     const desc = root.querySelector('.sd-v305-desc');
     if (!pill || !desc) return false;
 
-    const dot = pill.querySelector('.sd-v305-pill-dot');
-    if (dot) {
-      Array.from(pill.childNodes).forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE) node.remove();
-      });
-      pill.appendChild(document.createTextNode(PILL));
-    } else {
-      pill.textContent = PILL;
-    }
-
-    desc.textContent = DESC;
+    updatePill(pill);
+    if (clean(desc.textContent) !== DESC) desc.textContent = DESC;
 
     let meta = root.querySelector(`.${META_CLASS}`);
     if (!meta) {
@@ -130,8 +138,8 @@
     }
 
     labelCards(root);
-    root.setAttribute('data-sd-testimonials-conversion', 'v1');
-    root.setAttribute('data-sd-testimonial-count', '6');
+    setAttr(root, 'data-sd-testimonials-conversion', 'v1');
+    setAttr(root, 'data-sd-testimonial-count', '6');
     return true;
   }
 
