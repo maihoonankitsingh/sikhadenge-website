@@ -1,4 +1,4 @@
-name: Inspect Claude Testimonials Active Owner Temp 20260910
+name: Inspect Claude Testimonial Injection Anchor 20260910
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
   SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
   SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
-  SSH_HOST_KEY: ${{ vars.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
 
 jobs:
@@ -22,14 +22,63 @@ jobs:
     environment: whatsapp-agent-production
     timeout-minutes: 6
     steps:
-      - name: Browser active owner trace
+      - name: Configure pinned SSH
         shell: bash
         run: |
           set -Eeuo pipefail
-          npm init -y >/dev/null 2>&1
-          npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
-          node <<'NODE'
-          const puppeteer=require('puppeteer-core');
-          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox']});const p=await b.newPage();await p.setViewport({width:1440,height:1000});await p.goto(`https://sikhadenge.in/masterclass/claude/free?v305_active_owner=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));const x=await p.evaluate(()=>{const r=document.getElementById('sd-claude-testimonials-v305');const c=r?.querySelector('.sd-v305-set .sd-v305-card');const poster=c?.querySelector('.sd-v305-poster');return {rootVersion:r?.getAttribute('data-sd-testimonial-version')||'',rootLayout:r?.getAttribute('data-sd-testimonial-layout')||'',firstCard:c?.outerHTML||'',posterBg:poster?getComputedStyle(poster).backgroundImage:'',scripts:[...document.scripts].map((s,i)=>({i,src:s.src||'',hasV305:(s.textContent||'').includes('__SD_CLAUDE_TESTIMONIALS_V305__'),hasRuntime:(s.textContent||'').includes('data-claude-runtime-loader')})).filter(x=>x.hasV305||x.hasRuntime||/testimonial|runtime-loader/i.test(x.src))}});console.log('ACTIVE_OWNER',JSON.stringify(x));await b.close();console.log('ACTIVE_OWNER_TRACE_PASS')})().catch(e=>{console.error(e);process.exit(1)});
-          NODE
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read exact Claude route and HTML tail
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          python3 - "$SITE" <<'PY'
+          import sys
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
+          if a<0: raise SystemExit('route missing')
+          q=s.find('{',a); d=0; quote=None; esc=False; end=None
+          for i in range(q,len(s)):
+              ch=s[i]
+              if esc: esc=False; continue
+              if ch=='\\': esc=True; continue
+              if quote:
+                  if ch==quote: quote=None
+                  continue
+              if ch in ('"',"'"): quote=ch; continue
+              if ch=='{': d+=1
+              elif ch=='}':
+                  d-=1
+                  if d==0: end=i+1; break
+          if end is None: raise SystemExit('parse failed')
+          route=s[a:end]
+          print('=== EXACT CLAUDE ROUTE ===')
+          print(route)
+          print('=== ROUTE SUB_FILTER LINES ===')
+          for line in route.splitlines():
+              if 'sub_filter' in line: print(line)
+          PY
+          TMP=/tmp/claude-testimonial-anchor-$$.html
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?anchor=$(date +%s)" -o "$TMP"
+          python3 - "$TMP" <<'PY'
+          import re,sys,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
+          print('=== LAST 25 SCRIPT TAGS ===')
+          tags=re.findall(r'<script\b[^>]*?(?:/>|>.*?</script>)',s,re.I|re.S)
+          for t in tags[-25:]:
+              src=re.search(r'src=["\']([^"\']+)["\']',t,re.I)
+              txt=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',t)).strip()
+              print('SCRIPT',html.unescape(src.group(1)) if src else 'INLINE',txt[:160])
+          print('BODY_CLOSE_COUNT',s.lower().count('</body>'))
+          for needle in ['/claude-cta-typography-v3.js','/claude-runtime-loader-v3.js','__SD_CLAUDE_TESTIMONIALS_V305__']:
+              print('ANCHOR_COUNT',needle,s.count(needle))
+          PY
+          rm -f "$TMP"
+          echo INJECTION_ANCHOR_TRACE_PASS
+          REMOTE
