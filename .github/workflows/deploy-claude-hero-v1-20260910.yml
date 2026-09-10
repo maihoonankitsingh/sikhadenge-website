@@ -1,21 +1,16 @@
 name: Deploy Claude Hero V1 20260910
-
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/deploy-claude-hero-v1-20260910.yml'
-
+    paths: ['.github/workflows/deploy-claude-hero-v1-20260910.yml']
 permissions:
   contents: read
-
 env:
   SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
   SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
   SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
   SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
   SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -29,96 +24,63 @@ jobs:
           SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          chmod 600 "$KEY"; read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Controlled unlock and deploy hydration-safe Claude Hero H1
+      - name: Controlled Claude Hero V1 deploy
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
-          HERO_JS='/var/www/sikhadenge.in/claude-hero-message-match-v1.js'
-          TS="$(date +%Y%m%d-%H%M%S)"
-          BK="/var/backups/sikhadenge/claude-hero-v1-$TS"
+          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          CWD=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916
+          CLIENT="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js"
+          TS=$(date +%Y%m%d-%H%M%S)
+          BK="/var/backups/sikhadenge/claude-hero-v1-final-$TS"
           mkdir -p "$BK"
           cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
-          [[ -f "$HERO_JS" ]] && cp -a "$HERO_JS" "$BK/claude-hero-message-match-v1.js.before" || true
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?before_hero_v1=2' -o "$BK/claude.before.html"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?before_hero_v1=2' -o "$BK/ai.before.html"
-          AI_BEFORE_SHA="$(sha256sum "$BK/ai.before.html" | awk '{print $1}')"
+          cp -a "$CLIENT" "$BK/client.before.js"
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?claude_hero_before=1' -o "$BK/ai.before.html"
+          AI_BEFORE=$(sha256sum "$BK/ai.before.html"|awk '{print $1}')
 
           rollback(){
             rc=$?
             echo "ROLLBACK rc=$rc"
-            cat "$BK/sikhadenge.in-ssl.before" > "$SITE"
-            if [[ -f "$BK/claude-hero-message-match-v1.js.before" ]]; then cp -a "$BK/claude-hero-message-match-v1.js.before" "$HERO_JS"; else rm -f "$HERO_JS"; fi
-            nginx -t && systemctl reload nginx
+            cp -a "$BK/client.before.js" "$CLIENT" || true
+            cat "$BK/sikhadenge.in-ssl.before" > "$SITE" || true
+            nginx -t && systemctl reload nginx || true
+            sikhadenge-funnel-lockctl reseal || true
             sikhadenge-funnel-lockctl lock || true
             exit "$rc"
           }
           trap rollback ERR
 
+          test "$(sha256sum "$CLIENT"|awk '{print $1}')" = '7646607dc0587c6e8081b92a9252f6c4982aae2da97480d44c4eff27c3a722e5'
           sikhadenge-funnel-lockctl unlock 15
           sikhadenge-funnel-lockctl assert-unlocked
 
-          cat > "$HERO_JS" <<'JS'
-          (() => {
-            "use strict";
-            if (location.pathname !== "/masterclass/claude/free") return;
-            if (window.__SD_CLAUDE_HERO_MESSAGE_MATCH_V1__) return;
-            window.__SD_CLAUDE_HERO_MESSAGE_MATCH_V1__ = true;
-
-            const OLD = "Master 25+ AI Tools for smarter work, faster execution & better results.";
-            const NEXT = "Master Claude + 25+ AI Tools to work smarter, create faster & get better results.";
-            const normalize = value => String(value || "").replace(/\s+/g, " ").trim();
-
-            const render = h1 => {
-              const mark = document.createElement("mark");
-              mark.textContent = "Claude + 25+ AI Tools";
-              h1.replaceChildren(
-                document.createTextNode("Master "),
-                mark,
-                document.createTextNode(" to work smarter,"),
-                document.createElement("br"),
-                document.createTextNode("create faster & get better results.")
-              );
-              h1.setAttribute("data-sd-claude-hero-v1", "1");
-            };
-
-            const apply = () => {
-              const h1 = document.querySelector("h1");
-              if (!h1) return false;
-              const text = normalize(h1.textContent);
-              if (text === OLD) render(h1);
-              else if (text === NEXT) h1.setAttribute("data-sd-claude-hero-v1", "1");
-              return normalize(h1.textContent) === NEXT;
-            };
-
-            const start = () => {
-              apply();
-              const h1 = document.querySelector("h1");
-              if (!h1) return;
-              const observer = new MutationObserver(() => apply());
-              observer.observe(h1, { childList: true, subtree: true, characterData: true });
-              [50, 200, 500, 900, 1500, 2500, 4000, 6000].forEach(ms => setTimeout(apply, ms));
-              setTimeout(() => observer.disconnect(), 8000);
-            };
-
-            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
-            else start();
-          })();
-          JS
-          node --check "$HERO_JS"
+          python3 - "$CLIENT" <<'PY'
+          import sys
+          p=sys.argv[1]; s=open(p,encoding='utf-8').read()
+          replacements=[
+            ('children:"25+ AI Tools"','children:"Claude + 25+ AI Tools"'),
+            ('" for smarter work,"','" to work smarter,"'),
+            ('"faster execution & better results."','"create faster & get better results."'),
+          ]
+          for old,new in replacements:
+              c=s.count(old)
+              print('REPLACE_COUNT',repr(old),c)
+              if c!=1: raise SystemExit(f'expected exactly one occurrence of {old!r}, got {c}')
+              s=s.replace(old,new,1)
+          open(p,'w',encoding='utf-8').write(s)
+          print('CLIENT_PATCH=PASS')
+          PY
+          node --check "$CLIENT"
 
           python3 - "$SITE" <<'PY'
           import sys
-          p=sys.argv[1]
-          s=open(p,encoding='utf-8').read()
-          needle='location = /masterclass/claude/free {'
-          a=s.find(needle)
+          p=sys.argv[1]; s=open(p,encoding='utf-8').read(); needle='location = /masterclass/claude/free {'; a=s.find(needle)
           if a<0: raise SystemExit('Claude route missing')
           q=s.find('{',a); d=0; end=None
           for i in range(q,len(s)):
@@ -126,101 +88,65 @@ jobs:
               elif s[i]=='}':
                   d-=1
                   if d==0: end=i+1; break
-          if end is None: raise SystemExit('Claude route parse failed')
+          if end is None: raise SystemExit('route parse failed')
           route=s[a:end]
           marker='# SIKHADENGE_CLAUDE_HERO_V1_20260910'
-          if marker in route: raise SystemExit('Unexpected pre-existing Hero V1 marker after prior rollback')
+          if marker in route: raise SystemExit('unexpected existing hero marker')
           anchor='        proxy_set_header Accept-Encoding "";\n'
-          if anchor not in route: raise SystemExit('Expected route anchor missing')
+          if anchor not in route: raise SystemExit('route anchor missing')
           old='Master <mark>25+ AI Tools</mark> for smarter work,<br/>faster execution &amp; better results.'
           new='Master <mark>Claude + 25+ AI Tools</mark> to work smarter,<br/>create faster &amp; get better results.'
-          inject=(anchor+'\n        '+marker+'\n'
-                  '        sub_filter \''+old+'\' \''+new+'\';\n')
-          route=route.replace(anchor,inject,1)
-          body_needle='</script></body>\';'
-          body_repl='</script><script src="/claude-hero-message-match-v1.js?v=20260910-2"></script></body>\';'
-          if body_needle not in route: raise SystemExit('Claude body injection anchor missing')
-          route=route.replace(body_needle,body_repl,1)
+          route=route.replace(anchor,anchor+'\n        '+marker+'\n        sub_filter \''+old+'\' \''+new+'\';\n',1)
           open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
-          print('CLAUDE_HERO_V1_DUAL_LAYER_PATCHED=1')
+          print('SERVER_FIRST_PAINT_PATCH=PASS')
           PY
 
           nginx -t
           systemctl reload nginx
           sleep 2
 
-          test "$(curl -L -sS --max-time 20 -o /dev/null -w '%{http_code}' 'https://sikhadenge.in/claude-hero-message-match-v1.js?v=20260910-2')" = 200
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/claude/free?after_hero_v1=2' -o "$BK/claude.after.html"
-          curl -fsSL --max-time 30 'https://sikhadenge.in/masterclass/ai-video?after_hero_v1=2' -o "$BK/ai.after.html"
-          AI_AFTER_SHA="$(sha256sum "$BK/ai.after.html" | awk '{print $1}')"
+          PUBLIC_BUNDLE='https://sikhadenge.in/_next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js'
+          curl -fsSL --max-time 20 "$PUBLIC_BUNDLE?hero_v1=$TS" -o "$BK/client.public.js"
+          grep -Fq 'children:"Claude + 25+ AI Tools"' "$BK/client.public.js"
+          grep -Fq '" to work smarter,"' "$BK/client.public.js"
+          grep -Fq '"create faster & get better results."' "$BK/client.public.js"
 
+          curl -fsSL --max-time 25 "https://sikhadenge.in/masterclass/claude/free?hero_v1=$TS" -o "$BK/claude.after.html"
           python3 - "$BK/claude.after.html" <<'PY'
-          import re,sys,html
-          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I)
-          if not m: raise SystemExit('H1 missing after deploy')
-          inner=m.group(1)
-          text=html.unescape(re.sub(r'<[^>]+>',' ',inner)); text=re.sub(r'\s+',' ',text).strip()
-          expected='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.'
+          import sys,re,html
+          s=open(sys.argv[1],encoding='utf-8',errors='ignore').read(); m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.S|re.I)
+          if not m: raise SystemExit('H1 missing')
+          inner=m.group(1); text=html.unescape(re.sub('<[^>]+>',' ',inner)); text=re.sub(r'\s+',' ',text).strip()
+          want='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.'
           print('SERVER_H1='+text)
-          if text != expected: raise SystemExit('Unexpected server H1: '+repr(text))
-          if '<mark>Claude + 25+ AI Tools</mark>' not in inner: raise SystemExit('Highlight markup missing')
-          if '/claude-hero-message-match-v1.js?v=20260910-2' not in s: raise SystemExit('Hero guard script injection missing')
-          print('SERVER_HERO_QA=PASS')
+          if text!=want: raise SystemExit('server H1 mismatch')
+          if '<mark>Claude + 25+ AI Tools</mark>' not in inner: raise SystemExit('mark mismatch')
+          print('SERVER_HERO=PASS')
           PY
-
-          test "$AI_BEFORE_SHA" = "$AI_AFTER_SHA"
-          echo "AI_UNCHANGED_SHA=$AI_AFTER_SHA"
+          curl -fsSL --max-time 25 'https://sikhadenge.in/masterclass/ai-video?claude_hero_after=1' -o "$BK/ai.after.html"
+          test "$AI_BEFORE" = "$(sha256sum "$BK/ai.after.html"|awk '{print $1}')"
+          echo "AI_UNCHANGED_SHA=$AI_BEFORE"
           echo "$BK" > /var/backups/sikhadenge/.claude-hero-v1-last
           trap - ERR
-          echo "SERVER_DEPLOY_PASS BACKUP=$BK"
+          echo "SERVER_STAGE_PASS BACKUP=$BK"
           REMOTE
 
-      - name: Browser QA desktop tablet mobile after hydration
+      - name: Browser QA desktop tablet mobile
         shell: bash
         run: |
           set -Eeuo pipefail
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
-          export CHROME
-          cat > check-claude-hero-v1.js <<'JS'
-          const puppeteer=require('puppeteer-core');
-          const expected='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.';
-          const compact=s=>(s||'').replace(/\s+/g,' ').trim();
-          (async()=>{
-            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]], fail=[];
-            for(const [name,w,h,m] of views){
-              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[]; p.on('response',r=>{const u=r.url(); if(r.status()>=400 && (/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?hero_v1_browser2=${name}`,{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,2500));
-              const x=await p.evaluate(()=>({
-                h1:document.querySelector('h1')?.textContent||'',
-                mark:document.querySelector('h1 mark')?.textContent||'',
-                heroMarker:document.querySelector('h1')?.getAttribute('data-sd-claude-hero-v1')||'',
-                sections:document.querySelectorAll('main section').length,
-                faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
-                ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,
-                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
-                guardLoaded:!!document.querySelector('script[src*="claude-hero-message-match-v1.js"]')
-              }));
-              console.log(name,JSON.stringify(x),'failedAssets',bad.length);
-              if(compact(x.h1)!==expected) fail.push(`${name}: h1 ${x.h1}`);
-              if(compact(x.mark)!=='Claude + 25+ AI Tools') fail.push(`${name}: mark ${x.mark}`);
-              if(x.heroMarker!=='1'||!x.guardLoaded||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length) fail.push(`${name}: regression ${JSON.stringify(x)} bad=${bad.join(',')}`);
-              await p.close();
-            }
-            await b.close();
-            if(fail.length){console.error(fail.join('\n'));process.exit(1)}
-            console.log('CLAUDE_HERO_V1_3VIEW_HYDRATION_QA_PASS');
-          })().catch(e=>{console.error(e);process.exit(1)});
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core'); const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          const want='Master Claude + 25+ AI Tools to work smarter, create faster & get better results.';
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});let fail=[];
+          for(const [n,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){const p=await b.newPage();await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});const bad=[];p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)))bad.push(`${r.status()} ${u}`)});await p.goto(`https://sikhadenge.in/masterclass/claude/free?hero_final=${n}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3000));const x=await p.evaluate(()=>({h1:document.querySelector('h1')?.textContent||'',mark:document.querySelector('h1 mark')?.textContent||'',sections:document.querySelectorAll('main section').length,faq:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,ctas:document.querySelectorAll('a[href="/gen-ai-masterclass/register-one-step"]').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2}));console.log(n,JSON.stringify(x),'failedAssets',bad.length);if(norm(x.h1)!==want||norm(x.mark)!=='Claude + 25+ AI Tools'||x.sections!==18||x.faq!==15||x.ctas<7||x.overflow||bad.length)fail.push(n+': '+JSON.stringify(x)+' bad='+bad.join(','));await p.close()}await b.close();if(fail.length)throw Error(fail.join('\n'));console.log('CLAUDE_HERO_V1_3VIEW_QA_PASS')})().catch(e=>{console.error(e);process.exit(1)});
           JS
-          node check-claude-hero-v1.js
+          node qa.js
 
-      - name: Reseal and relock Golden baseline
-        if: success()
+      - name: Reseal and lock
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -233,26 +159,20 @@ jobs:
           echo 'CLAUDE_HERO_V1_RESEALED_LOCKED=PASS'
           REMOTE
 
-      - name: Roll back if browser QA or reseal fails
+      - name: Rollback on failure
         if: failure()
         shell: bash
         run: |
           set +e
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set +e
           M=/var/backups/sikhadenge/.claude-hero-v1-last
-          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
-          HERO_JS=/var/www/sikhadenge.in/claude-hero-message-match-v1.js
-          if [[ -s "$M" ]]; then
-            B="$(cat "$M")"
-            if [[ -s "$B/sikhadenge.in-ssl.before" ]]; then
-              sikhadenge-funnel-lockctl unlock 5 || true
-              cat "$B/sikhadenge.in-ssl.before" > "$SITE"
-              if [[ -f "$B/claude-hero-message-match-v1.js.before" ]]; then cp -a "$B/claude-hero-message-match-v1.js.before" "$HERO_JS"; else rm -f "$HERO_JS"; fi
-              nginx -t && systemctl reload nginx
-              sikhadenge-funnel-lockctl reseal || true
-              sikhadenge-funnel-lockctl lock || true
-              echo "ROLLBACK_DONE=$B"
-            fi
-          fi
+          [[ -s "$M" ]] || { sikhadenge-funnel-lockctl lock || true; exit 0; }
+          B=$(cat "$M"); SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl; CWD=/var/www/sikhadenge.in/releases/production-ai-video-icons-hotfix-20260829-091916; CLIENT="$CWD/.next/static/chunks/pages/masterclass/claude/free-802d96fd8696db68-v315r-20260830-204006-v316-20260830-204806.js"
+          sikhadenge-funnel-lockctl unlock 5 || true
+          [[ -s "$B/client.before.js" ]] && cp -a "$B/client.before.js" "$CLIENT"
+          [[ -s "$B/sikhadenge.in-ssl.before" ]] && cat "$B/sikhadenge.in-ssl.before" > "$SITE"
+          nginx -t && systemctl reload nginx
+          sikhadenge-funnel-lockctl reseal || true
+          sikhadenge-funnel-lockctl lock || true
+          echo "ROLLBACK_DONE=$B"
           REMOTE
