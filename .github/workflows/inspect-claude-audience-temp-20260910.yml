@@ -1,4 +1,4 @@
-name: Deploy Claude Audience V1 Temp 20260910
+name: Deploy Claude Audience V1 SSR Fixed 20260910
 
 on:
   push:
