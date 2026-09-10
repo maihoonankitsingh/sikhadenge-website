@@ -4,6 +4,7 @@ import AnalyticsManager from "../../components/analytics/AnalyticsManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./analytics-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
