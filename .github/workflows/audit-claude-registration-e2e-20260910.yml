@@ -1,0 +1,160 @@
+name: Audit Claude Registration E2E 20260910
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-registration-e2e-20260910.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only production owner trace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== GOLDEN STATUS ==='
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          echo '=== PORT 3955 / PM2 ==='
+          pm2 jlist | jq -r '.[] | select((.pm2_env.PORT|tostring)=="3955" or (.pm2_env.port|tostring)=="3955" or (.pm2_env.pm_exec_path|tostring|contains("3955"))) | {name:.name,pid:.pid,cwd:.pm2_env.pm_cwd,exec:.pm2_env.pm_exec_path,status:.pm2_env.status}' || true
+          ss -ltnp | grep ':3955' || true
+          echo '=== NGINX ROUTE REFERENCES ==='
+          grep -RIn --exclude='*.bak*' --exclude='*backup*' -E 'gen-ai-masterclass/register-one-step|api/masterclass/lead|3955' /etc/nginx/sites-enabled /etc/nginx/snippets 2>/dev/null | head -120 || true
+          echo '=== EXACT SITE CONTEXT ==='
+          python3 - <<'PY'
+          p='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          s=open(p,encoding='utf-8',errors='ignore').read().splitlines()
+          needles=('gen-ai-masterclass/register-one-step','api/masterclass/lead','3955')
+          hits=[]
+          for i,l in enumerate(s):
+              if any(n in l for n in needles): hits.append(i)
+          shown=set()
+          for i in hits:
+              a=max(0,i-8); b=min(len(s),i+14)
+              key=(a,b)
+              if key in shown: continue
+              shown.add(key)
+              print(f'--- lines {a+1}-{b} ---')
+              for j in range(a,b): print(f'{j+1}: {s[j]}')
+          PY
+          echo '=== READ-ONLY OWNER TRACE PASS ==='
+          REMOTE
+
+      - name: Browser E2E audit without backend lead creation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
+              const page=await browser.newPage();
+              await page.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[],errors=[],requests=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              page.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)))bad.push(`${r.status()} ${u}`)});
+              const landing=`https://sikhadenge.in/masterclass/claude/free?utm_source=internal_qa&utm_medium=e2e&utm_campaign=section12_${name}&utm_content=final_cta&qa_nonce=${Date.now()}`;
+              await page.goto(landing,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,4500));
+              const pre=await page.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const secs=[...document.querySelectorAll('main section')]; const sec=secs[17];
+                const a=sec?.querySelector('a[href]');
+                const ls={}; for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/sd_|utm|attribution/i.test(k))ls[k]=localStorage.getItem(k)}
+                return {h1:n(document.querySelector('h1')?.textContent),sections:secs.length,ctaText:n(a?.textContent),ctaHref:a?.href||'',ctaPath:a?new URL(a.href,location.href).pathname:'',localStorage:ls,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              });
+              if(pre.ctaPath!=='/gen-ai-masterclass/register-one-step') throw new Error(`${name} final CTA path mismatch`);
+              await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:30000}),page.evaluate(()=>document.querySelectorAll('main section')[17].querySelector('a[href]').click())]);
+              await new Promise(r=>setTimeout(r,3000));
+              const reg=await page.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const fields=[...document.querySelectorAll('input,select,textarea')].map(el=>({tag:el.tagName.toLowerCase(),type:el.getAttribute('type')||'',name:el.getAttribute('name')||'',id:el.id||'',placeholder:el.getAttribute('placeholder')||'',required:!!el.required,autocomplete:el.getAttribute('autocomplete')||'',value:el.tagName==='SELECT'?el.value:''}));
+                const buttons=[...document.querySelectorAll('button,input[type=submit]')].map(el=>({text:n(el.textContent||el.value),type:el.getAttribute('type')||'',disabled:!!el.disabled}));
+                const ls={}; for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/sd_|utm|attribution/i.test(k))ls[k]=localStorage.getItem(k)}
+                return {url:location.href,path:location.pathname,query:location.search,title:document.title,h1:n(document.querySelector('h1')?.textContent),body:n(document.body.innerText).slice(0,5000),fields,buttons,forms:document.forms.length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,localStorage:ls,scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/attribution|registration|masterclass|lead/i.test(s))};
+              });
+              console.log('REGISTRATION_ENTRY',name,JSON.stringify({pre,reg,bad,errorCount:errors.length}));
+              if(reg.path!=='/gen-ai-masterclass/register-one-step'||reg.forms<1||reg.overflow||bad.length) throw new Error(`${name} registration entry audit fail`);
+
+              await page.setRequestInterception(true);
+              page.on('request',req=>{
+                const u=req.url(); const method=req.method();
+                if(method==='POST' || /api\/masterclass\/lead/.test(u)){
+                  requests.push({url:u,method,postData:req.postData()||'',headers:Object.fromEntries(Object.entries(req.headers()).filter(([k])=>!['cookie','authorization'].includes(k.toLowerCase())))});
+                  if(/api\/masterclass\/lead/.test(u)) return req.respond({status:200,contentType:'application/json',body:JSON.stringify({ok:true,success:true,id:'qa-intercepted-no-backend-write'})});
+                  return req.abort();
+                }
+                if(req.isNavigationRequest() && /^https?:/.test(u) && !u.startsWith('https://sikhadenge.in/')) return req.abort();
+                req.continue();
+              });
+
+              const fill=await page.evaluate(()=>{
+                const set=(el,val)=>{const proto=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;const d=Object.getOwnPropertyDescriptor(proto,'value');if(d?.set)d.set.call(el,val);else el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};
+                const els=[...document.querySelectorAll('input,select,textarea')];
+                for(const el of els){
+                  if(el.disabled||el.readOnly) continue;
+                  const type=(el.type||'').toLowerCase(); const name=(el.name||el.id||el.placeholder||'').toLowerCase();
+                  if(el.tagName==='SELECT'){
+                    if(el.required){const opt=[...el.options].find(o=>o.value&&!o.disabled); if(opt){el.value=opt.value;el.dispatchEvent(new Event('change',{bubbles:true}))}}
+                  } else if(type==='checkbox'||type==='radio'){
+                    if(el.required&&!el.checked) el.click();
+                  } else if(type==='email'||name.includes('email')) set(el,'qa.section12@example.com');
+                  else if(type==='tel'||name.includes('phone')||name.includes('mobile')||name.includes('whatsapp')) set(el,'9999999999');
+                  else if(type==='text'||!type){
+                    if(name.includes('name')) set(el,'QA Section Twelve');
+                    else if(name.includes('city')) set(el,'Varanasi');
+                    else set(el,'QA Test');
+                  }
+                }
+                const submit=[...document.querySelectorAll('button,input[type=submit]')].find(x=>(x.type||'').toLowerCase()==='submit'||/register|reserve|submit|continue|get.*seat/i.test((x.textContent||x.value||'')));
+                return {submitFound:!!submit,submitText:(submit?.textContent||submit?.value||'').replace(/\s+/g,' ').trim(),invalid:[...document.querySelectorAll(':invalid')].map(x=>({tag:x.tagName,name:x.getAttribute('name')||'',type:x.getAttribute('type')||''})).slice(0,20)};
+              });
+              console.log('REGISTRATION_FILL',name,JSON.stringify(fill));
+              if(fill.submitFound && fill.invalid.length===0){
+                await page.evaluate(()=>{const submit=[...document.querySelectorAll('button,input[type=submit]')].find(x=>(x.type||'').toLowerCase()==='submit'||/register|reserve|submit|continue|get.*seat/i.test((x.textContent||x.value||''))); submit?.click();});
+                await new Promise(r=>setTimeout(r,2500));
+              }
+              const after=await page.evaluate(()=>({url:location.href,path:location.pathname,body:(document.body.innerText||'').replace(/\s+/g,' ').trim().slice(0,3500)}));
+              console.log('REGISTRATION_INTERCEPT_RESULT',name,JSON.stringify({requests,after}));
+              await page.close();
+            }
+            await browser.close();
+            console.log('CLAUDE_REGISTRATION_E2E_READONLY_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
