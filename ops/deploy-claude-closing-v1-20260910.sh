@@ -63,6 +63,7 @@ curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 \
 CLAUDE_BEFORE="$(sha256sum "$BK/claude.before.html" | awk '{print $1}')"
 echo "CLOSING_V1_CLAUDE_BEFORE_SHA=$CLAUDE_BEFORE"
 test "$CLAUDE_BEFORE" = "$EXPECTED_CLAUDE_BEFORE"
+grep -Fq "$OLD_SSR" "$BK/claude.before.html"
 
 sikhadenge-funnel-lockctl check
 test -s "$CURRENT"
@@ -134,16 +135,12 @@ old_line=f"        sub_filter '{baseurl}' '{currenturl}';"
 new_line=f"        sub_filter '{baseurl}' '{newurl}';"
 if route.count(old_line)!=1: raise SystemExit(f'current chunk mapping count={route.count(old_line)}')
 route=route.replace(old_line,new_line,1)
-if oldssr not in open('/var/backups/sikhadenge/.noop','w').name:
-    pass
-# Exact upstream HTML uses today&#x27;s. Add one narrow first-paint replacement.
 marker='        # SIKHADENGE_CLAUDE_CLOSING_V1_20260910\n'
 filter_line='        sub_filter '+repr(oldssr)+' '+repr(newcopy)+';\n'
 route=route.replace(new_line+'\n',new_line+'\n'+marker+filter_line,1)
 open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
 print('CLOSING_V1_ROUTE_PATCH=PASS')
 PY
-rm -f /var/backups/sikhadenge/.noop
 
 nginx -t
 systemctl reload nginx
