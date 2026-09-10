@@ -54,10 +54,10 @@ for (const viewport of VIEWPORTS) {
 
     const metrics = manager.locator(":scope > .suite-metrics > article");
     await expect(metrics).toHaveCount(4);
-    await expect(page.getByText("Contacts", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Open conversations", { exact: true })).toBeVisible();
-    await expect(page.getByText("Leads", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Revenue recorded", { exact: true })).toBeVisible();
+    await expect(metrics.nth(0).getByText("Contacts", { exact: true })).toBeVisible();
+    await expect(metrics.nth(1).getByText("Open conversations", { exact: true })).toBeVisible();
+    await expect(metrics.nth(2).getByText("Leads", { exact: true })).toBeVisible();
+    await expect(metrics.nth(3).getByText("Revenue recorded", { exact: true })).toBeVisible();
 
     const primaryGrid = manager.locator(":scope > .suite-grid.two");
     await expect(primaryGrid).toHaveCount(1);
@@ -86,7 +86,7 @@ for (const viewport of VIEWPORTS) {
     await expect(retargeting).toHaveCount(1);
     await expect(retargeting.locator(":scope > article")).toHaveCount(7);
     await expect(page.getByText("Consent-safe audiences ready for campaign preview", { exact: true })).toBeVisible();
-    await expect(page.getByText("Suppressed", { exact: true })).toBeVisible();
+    await expect(retargeting.getByText("Suppressed", { exact: true })).toBeVisible();
 
     const metricBoxes = await metrics.evaluateAll((nodes) =>
       nodes.map((node) => {
