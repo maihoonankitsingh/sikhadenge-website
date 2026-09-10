@@ -113,9 +113,19 @@ for (const viewport of VIEWPORTS) {
         clientWidth: node.clientWidth,
         scrollWidth: node.scrollWidth,
         overflowX: getComputedStyle(node).overflowX,
+        overscrollX: getComputedStyle(node).overscrollBehaviorX,
+        overscrollY: getComputedStyle(node).overscrollBehaviorY,
       }));
       expect(["auto", "scroll"]).toContain(tableGeometry.overflowX);
-      expect(tableGeometry.scrollWidth).toBeGreaterThanOrEqual(tableGeometry.clientWidth);
+      expect(tableGeometry.scrollWidth).toBeGreaterThan(tableGeometry.clientWidth);
+      expect(tableGeometry.overscrollX).toBe("contain");
+      expect(tableGeometry.overscrollY).not.toBe("contain");
+
+      const horizontalScroll = await tableWrap.evaluate((node) => {
+        node.scrollLeft = node.scrollWidth;
+        return node.scrollLeft;
+      });
+      expect(horizontalScroll).toBeGreaterThan(0);
     }
 
     if (viewport.width === 390) {
