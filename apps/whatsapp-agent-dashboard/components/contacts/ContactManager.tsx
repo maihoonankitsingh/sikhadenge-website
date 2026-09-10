@@ -161,7 +161,11 @@ export default function ContactManager({ userRole }: { userRole: string }) {
       setContacts(payload.contacts ?? []);
       setMetrics(payload.metrics ?? { total: 0, optedIn: 0, optedOut: 0, withLead: 0 });
       setOptions(payload.options ?? { users: [], tags: [] });
-      setSelectedId((current) => current ?? payload.contacts?.[0]?.id ?? null);
+      setSelectedId((current) =>
+        current && (payload.contacts ?? []).some((contact) => contact.id === current)
+          ? current
+          : null,
+      );
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Contacts could not be loaded.");
     } finally {
@@ -192,6 +196,7 @@ export default function ContactManager({ userRole }: { userRole: string }) {
   const selected = contacts.find((contact) => contact.id === selectedId) ?? null;
 
   function startCreate() {
+    setSelectedId(null);
     setMode("create");
     setForm(EMPTY_FORM);
     setNotice(null);
@@ -289,11 +294,11 @@ export default function ContactManager({ userRole }: { userRole: string }) {
 
       <section className="contact-toolbar">
         <div className="contact-search-group">
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, phone, email, city or course" />
-          <select value={consentFilter} onChange={(event) => setConsentFilter(event.target.value)}>
+          <input aria-label="Search contacts" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, phone, email, city or course" />
+          <select aria-label="Filter contacts by consent" value={consentFilter} onChange={(event) => setConsentFilter(event.target.value)}>
             <option value="ALL">All consent</option><option value="OPTED_IN">Opted-in</option><option value="UNKNOWN">Unknown</option><option value="OPTED_OUT">Opted-out</option>
           </select>
-          <select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)}>
+          <select aria-label="Filter contacts by lead stage" value={stageFilter} onChange={(event) => setStageFilter(event.target.value)}>
             <option value="ALL">All stages</option>{STAGES.map((stage) => <option key={stage} value={stage}>{readable(stage)}</option>)}
           </select>
         </div>
@@ -315,7 +320,7 @@ export default function ContactManager({ userRole }: { userRole: string }) {
               <table className="contact-table">
                 <thead><tr><th>Student</th><th>Consent</th><th>Lead</th><th>Owner</th><th>Activity</th></tr></thead>
                 <tbody>{filtered.map((contact) => (
-                  <tr key={contact.id} className={selectedId === contact.id ? "selected" : ""} onClick={() => { setSelectedId(contact.id); startEdit(contact); }}>
+                  <tr key={contact.id} className={selectedId === contact.id ? "selected" : ""} onClick={() => startEdit(contact)}>
                     <td><strong>{contact.name}</strong><span>{contact.phone}</span><small>{contact.city || contact.email || "Profile incomplete"}</small></td>
                     <td><span className={`contact-pill consent-${contact.consentStatus.toLowerCase()}`}>{readable(contact.consentStatus)}</span></td>
                     <td><strong>{readable(contact.lead?.stage)}</strong><span>{contact.lead?.interestedCourse || "Course not set"}</span><small>{contact.lead?.score ?? 0}/100 · {readable(contact.lead?.temperature)}</small></td>
@@ -329,7 +334,7 @@ export default function ContactManager({ userRole }: { userRole: string }) {
         </div>
 
         <aside className="contact-editor">
-          <header><div><span>{mode === "edit" ? "Profile editor" : "New learner"}</span><h3>{mode === "edit" ? selected?.name || "Edit contact" : "Add contact"}</h3></div>{selected?.conversation ? <button type="button" className="ghost" onClick={() => window.location.assign(`/inbox?conversationId=${encodeURIComponent(selected.conversation!.id)}`)}>Open inbox</button> : null}</header>
+          <header><div><span>{mode === "edit" ? "Profile editor" : "New learner"}</span><h3>{mode === "edit" ? selected?.name || "Edit contact" : "Add contact"}</h3></div>{mode === "edit" && selected?.conversation ? <button type="button" className="ghost" onClick={() => window.location.assign(`/inbox?conversationId=${encodeURIComponent(selected.conversation!.id)}`)}>Open inbox</button> : null}</header>
           <form onSubmit={saveContact}>
             <div className="contact-form-grid">
               <label><span>Name *</span><input required maxLength={120} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
