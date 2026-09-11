@@ -4,6 +4,7 @@ import AdminManager from "../../components/admin/AdminManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./admin-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,9 @@ export default async function AdminPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <AdminManager />
+      <div className="admin-enterprise-root">
+        <AdminManager />
+      </div>
     </DashboardModuleShell>
   );
 }
