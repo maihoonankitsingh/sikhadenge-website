@@ -40,9 +40,9 @@ jobs:
           set -Eeuo pipefail
           export PM2_HOME=/root/.pm2
           echo '===== RUNTIME ====='
-          pm2 jlist | node - <<'NODE'
-          let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{for(const x of JSON.parse(s)){if(/whatsapp|dashboard|registration|masterclass/i.test(x.name||'')) console.log(JSON.stringify({name:x.name,pid:x.pid,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,script:x.pm2_env?.pm_exec_path}))}})
-          NODE
+          pm2 jlist > /tmp/sd-pm2-jlist.json
+          node -e 'const a=require("/tmp/sd-pm2-jlist.json"); for(const x of a){if(/whatsapp|dashboard|registration|masterclass/i.test(x.name||"")) console.log(JSON.stringify({name:x.name,pid:x.pid,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,script:x.pm2_env?.pm_exec_path}))}'
+          rm -f /tmp/sd-pm2-jlist.json
 
           WA='/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard'
           echo '===== WHATSAPP_APP_PATH ====='
@@ -56,7 +56,7 @@ jobs:
             find "$WA" -maxdepth 7 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' -o -name '*.sql' \) \
               ! -path '*/node_modules/*' ! -path '*/.next/*' ! -path '*/.git/*' \
               | grep -Ei '/(api|route|webhook|worker|queue|job|cron|remind|campaign|message|template|lead|contact|conversation|whatsapp|scheduler|automation)' \
-              | sed "s#^$WA/##" | head -300
+              | sed "s#^$WA/##" | head -300 || true
           fi
 
           echo '===== WHATSAPP_HANDOFF_CODE_MATCHES ====='
