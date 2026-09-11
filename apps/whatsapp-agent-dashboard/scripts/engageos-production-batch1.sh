@@ -3,6 +3,7 @@
 # CI marker: validate canonical pinned host entry workflow fix on 2026-08-03
 # Retry marker: keep release branch stable during production execution on 2026-08-03
 # Production rollout marker: validated EngageOS + Enterprise UI release on 2026-09-10
+# Production rollout marker: final UI/UX audit closure deploy on 2026-09-11
 set -Eeuo pipefail
 
 : "${LIVE_APP:?LIVE_APP is required}"
