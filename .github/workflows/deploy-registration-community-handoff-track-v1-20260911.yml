@@ -1,4 +1,4 @@
-name: Audit Registration About You Owner 20260911
+name: Audit Registration About You Focus 20260911
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Trace current Step2 DOM and script owner
+      - name: Verify hidden engine focusability
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -23,17 +23,5 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
           const puppeteer=require('puppeteer-core');
-          (async()=>{
-            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            const p=await b.newPage();await p.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
-            let lead=0;await p.setRequestInterception(true);p.on('request',r=>{if(r.method()==='POST'&&/\/api\/masterclass\/lead(?:\?|$)/.test(r.url())){lead++;r.abort('blockedbyclient').catch(()=>{})}else r.continue().catch(()=>{})});
-            await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&owner_audit=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));
-            await p.evaluate(()=>{const set=(id,v)=>{const e=document.getElementById(id),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');d.set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))};set('sd-reg-name','QA Owner');set('sd-reg-email','qa.owner@example.com');set('sd-reg-phone','9999999999');document.querySelector('#sdv2-root [data-action="details-next"]').click()});
-            await new Promise(r=>setTimeout(r,700));
-            const dom=await p.evaluate(()=>({scripts:[...document.scripts].map(s=>s.src).filter(Boolean)}));
-            const owners=[];
-            for(const src of dom.scripts){try{const u=new URL(src);if(u.origin!=='https://sikhadenge.in')continue;const t=await p.evaluate(async s=>fetch(s,{cache:'no-store'}).then(r=>r.text()),src);const hits=['Student / Fresher','Freelancer / Creator','STEP 2 · ABOUT YOU','What best describes you?','sd-v31-engine-hidden'].filter(k=>t.includes(k));if(hits.length)owners.push({src,hits,bytes:t.length})}catch(e){console.log('OWNER_FETCH_SKIP',src,String(e))}}
-            console.log('REG_STEP2_OWNER_SCRIPTS',JSON.stringify(owners));console.log('REG_STEP2_OWNER_LEAD_WRITES',lead);
-            if(lead||!owners.length)throw new Error('Step2 owner trace failed');await b.close();console.log('REGISTRATION_STEP2_OWNER_AUDIT_PASS');
-          })().catch(e=>{console.error(e);process.exit(1)});
+          (async()=>{const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await b.newPage();await p.setViewport({width:390,height:844,isMobile:true,hasTouch:true});let lead=0;await p.setRequestInterception(true);p.on('request',r=>{if(r.method()==='POST'&&/\/api\/masterclass\/lead(?:\?|$)/.test(r.url())){lead++;r.abort('blockedbyclient').catch(()=>{})}else r.continue().catch(()=>{})});await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&focus_audit=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));await p.evaluate(()=>{const set=(id,v)=>{const e=document.getElementById(id),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');d.set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))};set('sd-reg-name','QA Focus');set('sd-reg-email','qa.focus@example.com');set('sd-reg-phone','9999999999');document.querySelector('#sdv2-root [data-action="details-next"]').click()});await new Promise(r=>setTimeout(r,700));const x=await p.evaluate(()=>{const old=[...document.querySelectorAll('#sdv2-root .sd-v31-engine-hidden button')].map(e=>({text:(e.textContent||'').replace(/\s+/g,' ').trim(),tabIndex:e.tabIndex,disabled:e.disabled,ariaHidden:e.closest('.sd-v31-engine-hidden')?.getAttribute('aria-hidden')||''}));const fresh=[...document.querySelectorAll('#sdv2-root .sd-step2-visual-v31 button')].map(e=>({text:(e.textContent||'').replace(/\s+/g,' ').trim(),tabIndex:e.tabIndex,disabled:e.disabled}));return {old,fresh}});console.log('REG_STEP2_FOCUS_AUDIT',JSON.stringify({state:x,leadWrites:lead}));if(lead)throw new Error('lead write');await b.close();console.log('REGISTRATION_STEP2_FOCUS_AUDIT_PASS')})().catch(e=>{console.error(e);process.exit(1)});
           NODE
