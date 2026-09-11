@@ -1,0 +1,47 @@
+name: Institutional Public Pages CI
+
+on:
+  pull_request:
+    paths:
+      - "app/institutions/**"
+      - "app/enroll/**"
+      - "app/verify/**"
+      - "app/sitemap.ts"
+      - "app/robots.ts"
+      - "lib/b2b-intake-config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ci-institutions-public.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: institutions-public-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 20.20.2
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Production build gate
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
