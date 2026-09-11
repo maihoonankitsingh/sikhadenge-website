@@ -4,6 +4,7 @@ import CutoverReadinessManager from "../../components/cutover/CutoverReadinessMa
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./cutover-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,9 @@ export default async function CutoverPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <CutoverReadinessManager />
+      <div className="cutover-enterprise-root">
+        <CutoverReadinessManager />
+      </div>
     </DashboardModuleShell>
   );
 }
