@@ -37,8 +37,6 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
         overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
         faqCount:document.querySelectorAll('section[data-sd-claude-faq-v2="1"] details').length,
         h1:n(document.querySelector('h1')?.textContent),
-        testimonialFlag:document.documentElement.getAttribute('data-claude-testimonials-conversion-v1'),
-        bonusFlag:document.documentElement.getAttribute('data-claude-bonus-value-v1'),
         handoffFlag:sec?.getAttribute('data-sd-claude-final-handoff-v1')||'',
         paymentFound:!!payment,paymentDisplay:payment?getComputedStyle(payment).display:'',dividerDisplay:divider?getComputedStyle(divider).display:'',
         legalVisible:!!legal&&getComputedStyle(legal).display!=='none'&&legal.getBoundingClientRect().height>0,
@@ -47,6 +45,8 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
         stylePresent:!!document.getElementById('sd-claude-free-final-trust-v1'),
         handoffScript:scripts.filter(s=>s.includes('/claude-final-handoff-v1-20260910.js')).length,
         faqScript:scripts.filter(s=>s.includes('/claude-faq-conversion-v1-20260910.js')).length,
+        testimonialScript:scripts.filter(s=>s.includes('/claude-testimonials-conversion-v1b-20260910.js')).length,
+        bonusScript:scripts.filter(s=>s.includes('/claude-bonus-value-v1-20260910.js')).length,
         attribution:scripts.some(s=>s.includes('/funnel-attribution-bridge-v1.js'))
       };
     });
@@ -54,7 +54,7 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
     const sig=signature(errors), errorsOK=errorsWithinBaseline(sig);
     const handoffOK=state.sectionCount===18&&state.idx===17&&state.handoffFlag==='1'&&state.h2==='Ready to build your first practical AI workflow?'&&state.p==='Join the free live masterclass and learn Claude + 25+ AI tools for real work — step by step, in easy Hinglish.'&&JSON.stringify(state.signals)===JSON.stringify(['Live Online','Easy Hinglish','No Coding Required'])&&state.note==='Joining details follow after registration.'&&state.links.length===1&&state.links[0].path==='/gen-ai-masterclass/register-one-step'&&state.links[0].aria==='Get My Free Seat — ₹999 value, Free now';
     const trustOK=state.paymentFound&&state.paymentDisplay==='none'&&state.dividerDisplay==='none'&&!state.visiblePaymentCopy&&state.stylePresent&&state.legalVisible&&state.footerVisible&&state.legalText.includes('Disclaimer:')&&state.legalText.includes('Privacy Policy')&&state.legalText.includes('Terms & Conditions');
-    const preserved=state.faqCount===15&&state.totalCtas===8&&state.h1.includes('Master Claude + 25+ AI Tools')&&state.testimonialFlag==='v1b'&&state.bonusFlag==='v1'&&state.handoffScript===1&&state.faqScript===1&&state.attribution;
+    const preserved=state.faqCount===15&&state.totalCtas===8&&state.h1.includes('Master Claude + 25+ AI Tools')&&state.handoffScript===1&&state.faqScript===1&&state.testimonialScript===1&&state.bonusScript===1&&state.attribution;
     const responsive=!state.overflow&&state.rect&&Math.abs(state.rect.w-width)<=2&&state.rect.x>=-1&&state.links[0]&&state.links[0].rect.x>=0&&state.links[0].rect.x+state.links[0].rect.w<=width+1&&state.links[0].rect.h>=44;
     const assets=bad.length===0;
     console.log('FREE_FINAL_TRUST_V1',name,JSON.stringify({state,sig,errorsOK,bad,handoffOK,trustOK,preserved,responsive,assets}));
