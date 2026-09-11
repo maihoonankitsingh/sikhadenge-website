@@ -1,0 +1,70 @@
+name: Audit Registration Community Click Tracking 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-registration-community-click-tracking-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 12
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Inspect registration tracking source read only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 -' <<'PY'
+          import os,re,hashlib
+          REG='/var/www/sikhadenge.in/releases/masterclass-registration-v72-tracking-fixed-20260902-213914'
+          print('AUDIT_MODE=READ_ONLY')
+          print('NO_WRITES=1')
+          pats=[r'COMMUNITY_LINK',r'Join Community',r'whatsapp',r'community',r'dataLayer',r'gtag\s*\(',r'fbq\s*\(',r'track',r'analytics',r'CustomEvent',r'dispatchEvent',r'event_name',r'eventName']
+          files=[]
+          for base,dirs,names in os.walk(REG):
+            dirs[:]=[d for d in dirs if d not in {'node_modules','.next','.git'}]
+            for n in names:
+              if n.endswith(('.js','.ts','.tsx','.mjs','.html')):
+                p=os.path.join(base,n)
+                try:s=open(p,encoding='utf-8',errors='ignore').read()
+                except:continue
+                score=sum(len(re.findall(x,s,re.I)) for x in pats)
+                if score: files.append((score,p,s))
+          for score,p,s in sorted(files,key=lambda x:(-x[0],x[1]))[:12]:
+            print(f'\n===== {p} SCORE={score} SHA={hashlib.sha256(s.encode()).hexdigest()} =====')
+            lines=s.splitlines(); hits=[]
+            rx=re.compile('|'.join(f'(?:{x})' for x in pats),re.I)
+            for i,l in enumerate(lines):
+              if rx.search(l): hits.append(i)
+            groups=[]
+            for i in hits[:60]:
+              a=max(0,i-7); b=min(len(lines),i+8)
+              if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
+              else: groups.append((a,b))
+            for a,b in groups[:16]:
+              print(f'--- lines {a+1}-{b} ---')
+              for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
+          print('\nCOMMUNITY_TRACKING_SOURCE_AUDIT_COMPLETE=1')
+          PY
