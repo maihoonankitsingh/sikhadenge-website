@@ -6,7 +6,6 @@ const NEW_ASSET='/registration-stable-page1-v72-trust-sync-v1-20260911.js';
 const OLD_ASSET='/registration-stable-page1-v72.js';
 const stable=['Live Activity','2 Hours Live','WhatsApp Community Access','5,00,000+ SikhaDenge Community'];
 const legacy=['3 Hours Live','WhatsApp Joining Link','Bonus Resources'];
-const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 
 (async()=>{
   const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -19,6 +18,7 @@ const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 
     await p.evaluateOnNewDocument((reg,stable,legacy)=>{
       const n=s=>(s||'').replace(/\s+/g,' ').trim();
+      const has=(hay,needle)=>hay.toLocaleLowerCase().includes(String(needle).toLocaleLowerCase());
       const vis=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0&&r.width>0&&r.height>0};
       function snap(){
         if(location.pathname!==reg||!document.body)return;
@@ -28,8 +28,8 @@ const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
         const cont=[...document.querySelectorAll('button')].find(b=>n(b.textContent).includes('Continue — 2 quick questions'));
         const row={
           t:Math.round(performance.now()),
-          stable:Object.fromEntries(stable.map(x=>[x,body.includes(x)])),
-          legacy:Object.fromEntries(legacy.map(x=>[x,body.includes(x)])),
+          stable:Object.fromEntries(stable.map(x=>[x,has(body,x)])),
+          legacy:Object.fromEntries(legacy.map(x=>[x,has(body,x)])),
           oldNativeVisible:oldNative.filter(vis).length,
           newInputsVisible:newInputs.filter(vis).length,
           continueVisible:vis(cont),
@@ -84,7 +84,7 @@ const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
     const canonicalAlways=sampled&&frames.every(f=>stable.every(x=>f.stable[x]===true));
     const formAlways=sampled&&frames.every(f=>f.oldNativeVisible===0&&f.newInputsVisible===3&&f.continueVisible&&!f.overflow);
     const assetsOK=state.newAssetCount===1&&state.oldAssetCount===0&&bad.length===0;
-    const stateOK=state.path===REG&&!state.pageOverflow&&state.inputsRequired&&state.nativeSuppressed&&state.attributionFunnel==='claude-masterclass'&&state.sessionId;
+    const stateOK=!!(state.path===REG&&!state.pageOverflow&&state.inputsRequired&&state.nativeSuppressed&&state.attributionFunnel==='claude-masterclass'&&state.sessionId);
 
     console.log('REG_TRUST_SYNC_V1',name,JSON.stringify({source,state:{...state,frames:undefined},sampled,noLegacy,canonicalAlways,formAlways,assetsOK,stateOK,firstFrame:frames[0],lastFrame:frames[frames.length-1],bad,pageErrors}));
     if(!(sampled&&noLegacy&&canonicalAlways&&formAlways&&assetsOK&&stateOK)) throw new Error(`registration trust sync QA failure ${name}`);
