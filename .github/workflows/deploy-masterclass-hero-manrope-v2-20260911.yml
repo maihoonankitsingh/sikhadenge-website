@@ -1,0 +1,207 @@
+name: Deploy Masterclass Hero Manrope V2 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-masterclass-hero-manrope-v2-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Force Manrope on every Claude hero text element only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="/var/backups/sikhadenge/masterclass-hero-manrope-v2-$TS"
+          PTR='/var/backups/sikhadenge/.masterclass-hero-manrope-v2-last'
+          MARK='SIKHADENGE_MASTERCLASS_HERO_MANROPE_V2_20260911'
+
+          test -f "$SITE"
+          test "$(curl -L -sS -o /dev/null -w '%{http_code}' 'https://sikhadenge.in/fonts/Manrope-Variable.ttf')" = '200'
+          mkdir -p "$BK"
+          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
+          printf '%s\n' "$BK" > "$PTR"
+
+          sikhadenge-funnel-lockctl unlock 12
+          sikhadenge-funnel-lockctl assert-unlocked
+
+          python3 - "$SITE" "$MARK" <<'PY'
+          from pathlib import Path
+          import sys
+
+          site=Path(sys.argv[1]); mark=sys.argv[2]
+          s=site.read_text(encoding='utf-8')
+          needle='location = /masterclass/claude/free {'
+          start=s.find(needle)
+          if start < 0:
+              raise SystemExit('Claude exact location missing')
+          q=s.find('{',start); depth=0; end=None
+          for i in range(q,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0:
+                      end=i+1; break
+          if end is None:
+              raise SystemExit('Claude route parse failed')
+          route=s[start:end]
+          if 'proxy_pass http://127.0.0.1:3930;' not in route:
+              raise SystemExit('Claude upstream guard failed')
+
+          style='''<style id="sd-masterclass-hero-manrope-v2">@font-face{font-family:"Manrope";src:url("/fonts/Manrope-Variable.ttf") format("truetype");font-weight:200 800;font-style:normal;font-display:swap}section[class*="claude-masterclass-live_hero__"],section[class*="claude-masterclass-live_hero__"] *{font-family:Manrope,Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}</style>'''
+          script='''<script id="sd-masterclass-hero-manrope-js-v2">(function(){var FF="Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";function f(e){if(!e||!e.style)return;if(e.style.getPropertyValue("font-family")!==FF||e.style.getPropertyPriority("font-family")!=="important"){e.style.setProperty("font-family",FF,"important");}}function a(){var h=document.querySelector("section[class*=\\"claude-masterclass-live_hero__\\"]");if(!h)return null;f(h);h.querySelectorAll("*").forEach(f);return h;}function start(){var h=a();if(!h)return;new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1){f(n);if(n.querySelectorAll)n.querySelectorAll("*").forEach(f);}});});}).observe(h,{childList:true,subtree:true});}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",start,{once:true});}else{start();}})();</script>'''
+          payload=style+script
+          if "'" in payload:
+              raise SystemExit('payload contains single quote; unsafe for nginx sub_filter quoting')
+
+          if mark not in route:
+              anchor='        proxy_set_header Accept-Encoding "";\n'
+              if route.count(anchor) != 1:
+                  raise SystemExit(f'Claude Accept-Encoding anchor count={route.count(anchor)}')
+              inject=anchor+'\n        # '+mark+'\n        sub_filter \'<head>\' \'<head>'+payload+'\';\n'
+              route=route.replace(anchor,inject,1)
+              s=s[:start]+route+s[end:]
+              site.write_text(s,encoding='utf-8')
+              print('CLAUDE_HERO_MANROPE_V2_APPLIED=1')
+          else:
+              print('ALREADY_APPLIED=1')
+          print('ONLY_FONT_FAMILY_BEHAVIOR_ADDED=1')
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+          out="$(mktemp)"
+          code="$(curl -L -sS --max-time 25 -o "$out" -w '%{http_code}' "https://sikhadenge.in/masterclass/claude/free?hero_manrope_v2=$TS")"
+          echo "CLAUDE_HTTP=$code"
+          test "$code" = '200'
+          grep -Fq 'sd-masterclass-hero-manrope-v2' "$out"
+          grep -Fq 'sd-masterclass-hero-manrope-js-v2' "$out"
+          rm -f "$out"
+          echo "BACKUP=$BK"
+          echo 'SERVER_FONT_ONLY_STAGE=PASS'
+          REMOTE
+
+      - name: Browser QA all hero text on all active masterclass pages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          const pages=[
+            ['/masterclass/claude/free','Master Claude + 25+ AI Tools to work smarter,create faster & get better results.'],
+            ['/masterclass/ai-video','Create cinematic AI videos from text & images.'],
+            ['/masterclass/chatgpt/free','Stop collecting prompts. Build real work with ChatGPT.']
+          ];
+          const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]];
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const failures=[];
+            for(const [route,want] of pages){
+              for(const [view,w,h,mob] of views){
+                const p=await b.newPage();
+                await p.setViewport({width:w,height:h,isMobile:mob,hasTouch:mob});
+                const res=await p.goto('https://sikhadenge.in'+route+'?hero_manrope_v2_qa='+view+'-'+Date.now(),{waitUntil:'domcontentloaded',timeout:45000});
+                await new Promise(r=>setTimeout(r,1800));
+                await p.evaluate(async()=>{if(document.fonts&&document.fonts.ready)await document.fonts.ready;});
+                const x=await p.evaluate((route)=>{
+                  const h1=document.querySelector('h1');
+                  const hero=h1&&(h1.closest('section')||h1.parentElement);
+                  const els=hero?[hero,...hero.querySelectorAll('h1,h2,h3,p,span,a,button,strong,small,em,mark')].filter(el=>(el.textContent||'').trim()&&getComputedStyle(el).display!=='none'):[];
+                  const families=[...new Set(els.map(el=>getComputedStyle(el).fontFamily))];
+                  return {
+                    h1:h1?.textContent||'',
+                    families,
+                    claudeV2:route.includes('/claude/')?!!document.getElementById('sd-masterclass-hero-manrope-js-v2'):true,
+                    fontReady:document.fonts.check('16px Manrope'),
+                    overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2
+                  };
+                },route);
+                const fontsOk=x.families.length>0&&x.families.every(f=>/^Manrope\b/i.test(f.trim()));
+                const h1Ok=norm(x.h1)===norm(want);
+                console.log(route,view,'HTTP',res&&res.status(),'H1_OK',h1Ok,'FONTS_OK',fontsOk,JSON.stringify(x));
+                if((res&&res.status())!==200||!h1Ok||!x.claudeV2||!x.fontReady||!fontsOk||x.overflow){failures.push(route+' '+view+' '+JSON.stringify(x));}
+                await p.close();
+              }
+            }
+            await b.close();
+            if(failures.length)throw Error(failures.join('\n'));
+            console.log('MASTERCLASS_HERO_ALL_TEXT_MANROPE_3PAGES_3VIEWS=PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa.js
+
+      - name: Reseal and lock on success
+        if: success()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl check
+          echo 'MASTERCLASS_HERO_MANROPE_V2_RESEALED_LOCKED=PASS'
+          REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          PTR='/var/backups/sikhadenge/.masterclass-hero-manrope-v2-last'
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          if [[ -s "$PTR" ]]; then
+            BK="$(cat "$PTR")"
+            sikhadenge-funnel-lockctl unlock 5 || true
+            [[ -s "$BK/sikhadenge.in-ssl.before" ]] && cat "$BK/sikhadenge.in-ssl.before" > "$SITE"
+            nginx -t && systemctl reload nginx
+          fi
+          sikhadenge-funnel-lockctl reseal || true
+          sikhadenge-funnel-lockctl lock || true
+          echo 'MASTERCLASS_HERO_MANROPE_V2_ROLLBACK_DONE=1'
+          REMOTE
