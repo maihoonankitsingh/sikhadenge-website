@@ -88,7 +88,7 @@ export default function InstitutionsPage() {
               SikhaDenge works with institutions to plan, deliver and document industry-oriented training with structured batches, learner records, attendance, assessments and verifiable completion credentials.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/contact" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500">
+              <Link href="/contact-us" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500">
                 Discuss an institutional program
               </Link>
               <a href="#operating-model" className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10">
@@ -176,7 +176,7 @@ export default function InstitutionsPage() {
               <p className="text-xs font-bold tracking-[0.2em] text-blue-200">FOR COLLEGES, UNIVERSITIES & ORGANIZATIONS</p>
               <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Need a custom institutional training plan?</h2>
               <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">Share the learner profile, preferred skill area, duration and delivery format. The final scope, commercials and responsibilities are documented before activation.</p>
-              <Link href="/contact" className="mt-7 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100">
+              <Link href="/contact-us" className="mt-7 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100">
                 Start a partnership discussion
               </Link>
             </div>
