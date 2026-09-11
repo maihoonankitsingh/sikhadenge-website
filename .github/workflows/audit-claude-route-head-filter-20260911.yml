@@ -1,0 +1,64 @@
+name: Audit Claude Route Head Filter 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-route-head-filter-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 8
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Print Claude exact route head filters
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 - <<'"'"'PY'"'"'
+          p="/etc/nginx/sites-enabled/sikhadenge.in-ssl"
+          s=open(p,encoding="utf-8",errors="ignore").read(); needle="location = /masterclass/claude/free {"; a=s.find(needle)
+          if a<0: raise SystemExit("route missing")
+          q=s.find("{",a); d=0; quote=None; esc=False; end=None
+          for i in range(q,len(s)):
+              ch=s[i]
+              if esc: esc=False; continue
+              if ch=="\\": esc=True; continue
+              if quote:
+                  if ch==quote: quote=None
+                  continue
+              if ch in ("\"","'"'"'"): quote=ch; continue
+              if ch=="{": d+=1
+              elif ch=="}":
+                  d-=1
+                  if d==0: end=i+1; break
+          route=s[a:end]
+          print("CLAUDE_ROUTE_START")
+          for line in route.splitlines():
+              if "sub_filter" in line or "SIKHADENGE" in line or "include" in line:
+                  print(line)
+          print("CLAUDE_ROUTE_END")
+          PY'
