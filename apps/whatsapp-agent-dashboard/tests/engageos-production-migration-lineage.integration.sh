@@ -73,13 +73,24 @@ bash scripts/engageos-production-migrate.sh
 legacy_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260723160037_init_whatsapp_agent' AND finished_at IS NOT NULL;")"
 baseline_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802000000_baseline_existing_schema' AND finished_at IS NOT NULL;")"
 additive_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802174500_add_engageos_security_persistence' AND finished_at IS NOT NULL;")"
+phase16a_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260911150000_add_phase16a_saas_persistence' AND finished_at IS NOT NULL;")"
 workspace_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc 'SELECT COUNT(*) FROM "EngageWorkspace";')"
 flag_enabled_count="$(psql "$LINEAGE_CLI_URL" -X -Atqc 'SELECT COUNT(*) FROM "EngageFeatureFlag" WHERE enabled = true;')"
 
 test "$legacy_count" = "1"
 test "$baseline_count" = "1"
 test "$additive_count" = "1"
+test "$phase16a_count" = "1"
 test "$workspace_count" = "1"
+
+for table_name in   EngageAgencyWorkspaceLink   EngageWorkspaceSaasState   EngagePublicApiKey   EngageWorkspaceUsageEvent   EngageWhiteLabelConfig   EngageCustomDomain   EngageDeveloperRequestLog; do
+
+  table_exists="$(
+    psql "$LINEAGE_CLI_URL"       -X       -Atqc       "SELECT CASE WHEN to_regclass('public.\"${table_name}\"') IS NULL THEN '0' ELSE '1' END;"
+  )"
+
+  test "$table_exists" = "1"
+done
 test "$flag_enabled_count" = "0"
 
 test -s "$LINEAGE_BACKUP_DIR/migration-evidence.txt"

@@ -50,6 +50,7 @@ migration_script="$script_root/engageos-production-migrate.sh"
 grep -Fq '20260723160037_init_whatsapp_agent' "$migration_script"
 grep -Fq '20260802000000_baseline_existing_schema' "$migration_script"
 grep -Fq '20260802174500_add_engageos_security_persistence' "$migration_script"
+grep -Fq '20260911150000_add_phase16a_saas_persistence' "$migration_script"
 grep -Fq 'prisma migrate resolve --applied' "$migration_script"
 grep -Fq 'prisma migrate deploy' "$migration_script"
 grep -Fq 'enabled_flag_count' "$migration_script"
@@ -75,6 +76,7 @@ grep -Fq 'cat "$LIVE_APP/.next/BUILD_ID"' "$verify_script"
 grep -Fq '/api/webhooks/whatsapp' "$verify_script"
 grep -Fq 'hub.challenge=987654' "$verify_script"
 grep -Fq 'enabled_flag_count' "$verify_script"
+grep -Fq '20260911150000_add_phase16a_saas_persistence' "$verify_script"
 grep -Fq 'PASS: POST_DEPLOY_VERIFICATION_COMPLETE' "$verify_script"
 
 rollback_script="$script_root/engageos-production-rollback.sh"
@@ -249,6 +251,7 @@ grep -Fq 'Retry marker: suppress generated staging package lock on 2026-08-03' "
 
 grep -Fq 'a17a92761bebc93eea76c7c443933b5a0c3443e3' "$lineage_test"
 grep -Fq '20260723160037_init_whatsapp_agent' "$lineage_test"
+grep -Fq '20260911150000_add_phase16a_saas_persistence' "$lineage_test"
 grep -Fq 'npm run test:production-migration-lineage:integration' ../../.github/workflows/whatsapp-agent-ci.yml
 
 printf 'EngageOS production batch 1 policy test passed.\n'
