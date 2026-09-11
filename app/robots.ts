@@ -6,11 +6,18 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/influencer/", "/v2-landing", "/reels"],
+        disallow: [
+          "/admin/",
+          "/api/",
+          "/influencer/",
+          "/enroll/",
+          "/verify/",
+          "/v2-landing",
+          "/reels",
+        ],
       },
     ],
     sitemap: "https://sikhadenge.in/sitemap.xml",
     host: "https://sikhadenge.in",
   };
 }
-
