@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const ADMIN_EMAIL = process.env.DASHBOARD_ADMIN_EMAIL || "admin@example.invalid";
 const ADMIN_PASSWORD = process.env.DASHBOARD_ADMIN_PASSWORD || "CI-only-password-12345";
+const BASE_URL = process.env.APP_URL || "http://127.0.0.1:3100";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
@@ -151,13 +152,13 @@ for (const viewport of VIEWPORTS) {
 }
 
 test("Root entry routes unauthenticated users to login and authenticated users to inbox", async ({ browser }) => {
-  const anonymousContext = await browser.newContext({ serviceWorkers: "block" });
+  const anonymousContext = await browser.newContext({ baseURL: BASE_URL, serviceWorkers: "block" });
   const anonymousPage = await anonymousContext.newPage();
   await anonymousPage.goto("/", { waitUntil: "domcontentloaded" });
   await expect(anonymousPage).toHaveURL(/\/login(?:\?|$)/);
   await anonymousContext.close();
 
-  const authenticatedContext = await browser.newContext({ serviceWorkers: "block" });
+  const authenticatedContext = await browser.newContext({ baseURL: BASE_URL, serviceWorkers: "block" });
   const authenticatedPage = await authenticatedContext.newPage();
   await login(authenticatedPage);
   await authenticatedPage.goto("/", { waitUntil: "domcontentloaded" });
@@ -167,7 +168,7 @@ test("Root entry routes unauthenticated users to login and authenticated users t
 
 test("PWA service worker precaches privacy-safe offline fallback and serves it during navigation failure", async ({ browser }) => {
   test.setTimeout(120_000);
-  const context = await browser.newContext({ serviceWorkers: "allow" });
+  const context = await browser.newContext({ baseURL: BASE_URL, serviceWorkers: "allow" });
   const page = await context.newPage();
 
   try {
