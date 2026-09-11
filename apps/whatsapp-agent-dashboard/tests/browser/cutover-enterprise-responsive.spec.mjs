@@ -271,7 +271,12 @@ for (const viewport of VIEWPORTS) {
         await expectInsideViewport(metrics.nth(index), viewport.width);
       }
       await expectInsideViewport(groupCards.nth(0), viewport.width);
-      await expectInsideViewport(metaList.locator(":scope > article").first(), viewport.width);
+      const firstEvidence = metaList.locator(":scope > article").first();
+      await expectInsideViewport(firstEvidence, viewport.width);
+      const evidenceFontSize = await firstEvidence.locator("p").evaluate(
+        (node) => Number.parseFloat(getComputedStyle(node).fontSize),
+      );
+      expect(evidenceFontSize).toBeGreaterThanOrEqual(11);
     }
 
     expect(forbiddenRequests).toEqual([]);
