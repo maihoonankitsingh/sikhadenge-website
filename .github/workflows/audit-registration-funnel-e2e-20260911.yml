@@ -1,0 +1,99 @@
+name: Audit Claude Registration Funnel E2E 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-registration-funnel-e2e-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Browser E2E audit without CRM write
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const failures=[];
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await browser.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const pageErrors=[],badAssets=[],failedReq=[],navs=[];
+              p.on('pageerror',e=>pageErrors.push(String(e)));
+              p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) badAssets.push(`${r.status()} ${u}`)});
+              p.on('requestfailed',r=>failedReq.push(`${r.failure()?.errorText||'FAIL'} ${r.url()}`));
+              p.on('framenavigated',f=>{if(f===p.mainFrame()) navs.push(f.url())});
+
+              const src=`https://sikhadenge.in/masterclass/claude/free?utm_source=qa&utm_medium=chatgpt&utm_campaign=registration_e2e_${name}&utm_content=section12&fbclid=QA_FBCLID_${name}`;
+              await p.goto(src,{waitUntil:'networkidle2',timeout:60000}); await new Promise(r=>setTimeout(r,4500));
+              const landing=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim(); const reg='/gen-ai-masterclass/register-one-step';
+                const as=[...document.querySelectorAll('a[href]')].filter(a=>{try{return new URL(a.href,location.href).pathname===reg}catch{return false}}).map((a,i)=>({i,text:n(a.textContent),href:a.href,aria:a.getAttribute('aria-label')||'',visible:!!(a.offsetWidth||a.offsetHeight||a.getClientRects().length)}));
+                return {ctas:as,count:as.length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,attr:localStorage.getItem('sd_funnel_attribution_v1'),anon:localStorage.getItem('sd_anonymous_id_v1'),session:localStorage.getItem('sd_session_id_v1')};
+              });
+              if(landing.count!==8||!landing.ctas.every(x=>x.visible)||landing.overflow||!landing.attr||!landing.anon||!landing.session) failures.push(`${name} landing invariant`);
+
+              const firstHref=landing.ctas[0]?.href; if(!firstHref) throw new Error(`No registration CTA ${name}`);
+              await p.goto(firstHref,{waitUntil:'networkidle2',timeout:60000}); await new Promise(r=>setTimeout(r,5000));
+              const regState=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const fields=[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({i,tag:el.tagName.toLowerCase(),type:el.type||'',name:el.name||'',id:el.id||'',placeholder:el.placeholder||'',required:!!el.required,autocomplete:el.autocomplete||'',value:el.value||'',visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)}));
+                const buttons=[...document.querySelectorAll('button,input[type=submit]')].map((b,i)=>({i,text:n(b.textContent||b.value),type:b.type||'',disabled:!!b.disabled,visible:!!(b.offsetWidth||b.offsetHeight||b.getClientRects().length)}));
+                return {url:location.href,path:location.pathname,search:location.search,title:document.title,h1:n(document.querySelector('h1')?.textContent),body:n(document.body.innerText).slice(0,5000),fields,buttons,formCount:document.querySelectorAll('form').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,attr:localStorage.getItem('sd_funnel_attribution_v1'),anon:localStorage.getItem('sd_anonymous_id_v1'),session:localStorage.getItem('sd_session_id_v1')};
+              });
+              console.log('REG_E2E_STATE',name,JSON.stringify({landing,regState,pageErrors,badAssets,failedReq,navs}));
+              if(regState.path!=='/gen-ai-masterclass/register-one-step'||regState.overflow||badAssets.length||regState.formCount<1) failures.push(`${name} registration structural`);
+              if(!regState.attr||!regState.anon||!regState.session) failures.push(`${name} attribution lost`);
+
+              // Fill common visible fields, but intercept lead writes so CRM remains clean.
+              await p.setRequestInterception(true);
+              let captured=null;
+              p.on('request',req=>{
+                const u=req.url();
+                if(req.method()==='POST' && /\/api\/masterclass\/lead(?:\?|$)/.test(u)){
+                  captured={url:u,method:req.method(),postData:req.postData()||'',headers:req.headers()};
+                  req.abort('blockedbyclient');
+                } else req.continue();
+              });
+              const fill=await p.evaluate(()=>{
+                const vis=el=>!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length);
+                const all=[...document.querySelectorAll('input,select,textarea')].filter(vis);
+                const set=(el,val)=>{const proto=Object.getPrototypeOf(el); const d=Object.getOwnPropertyDescriptor(proto,'value'); if(d&&d.set)d.set.call(el,val); else el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true}));};
+                let used=[];
+                for(const el of all){const key=((el.name||'')+' '+(el.id||'')+' '+(el.placeholder||'')).toLowerCase();
+                  if(el.type==='checkbox'||el.type==='radio'||el.type==='hidden'||el.disabled||el.readOnly) continue;
+                  if(el.tagName==='SELECT'){ if(el.options.length>1){el.selectedIndex=1; el.dispatchEvent(new Event('change',{bubbles:true})); used.push([key,el.value]);} continue; }
+                  if(/name/.test(key)){set(el,'QA Funnel Test');used.push([key,'QA Funnel Test']);}
+                  else if(/mail/.test(key)){set(el,'qa.registration.e2e@example.com');used.push([key,'qa.registration.e2e@example.com']);}
+                  else if(/phone|mobile|whatsapp/.test(key)){set(el,'9999999999');used.push([key,'9999999999']);}
+                  else if(el.required){set(el,'QA Test');used.push([key,'QA Test']);}
+                }
+                const consent=[...document.querySelectorAll('input[type=checkbox]')].filter(vis); for(const c of consent){if(!c.checked)c.click();}
+                const submit=[...document.querySelectorAll('button,input[type=submit]')].find(b=>vis(b)&&!b.disabled&&((b.type||'').toLowerCase()==='submit'||/register|reserve|seat|submit|continue|join/i.test(b.textContent||b.value||'')));
+                return {used,submitText:submit?(submit.textContent||submit.value||''):null,submitFound:!!submit};
+              });
+              if(fill.submitFound){
+                await p.evaluate(()=>{const vis=el=>!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length); const b=[...document.querySelectorAll('button,input[type=submit]')].find(x=>vis(x)&&!x.disabled&&((x.type||'').toLowerCase()==='submit'||/register|reserve|seat|submit|continue|join/i.test(x.textContent||x.value||''))); if(b)b.click();});
+                await new Promise(r=>setTimeout(r,2500));
+              }
+              console.log('REG_E2E_SUBMIT_INTERCEPT',name,JSON.stringify({fill,captured}));
+              if(fill.submitFound && !captured) failures.push(`${name} submit did not target /api/masterclass/lead`);
+              await p.close();
+            }
+            await browser.close();
+            if(failures.length) throw new Error(failures.join('; '));
+            console.log('CLAUDE_REGISTRATION_E2E_READONLY_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
