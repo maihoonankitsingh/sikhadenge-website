@@ -18,6 +18,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          echo REG_PAGE1_AUDIT_TRIGGER=2
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
