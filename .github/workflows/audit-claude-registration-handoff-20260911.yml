@@ -1,0 +1,107 @@
+name: Audit Claude Registration Handoff 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-registration-handoff-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 18
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Read-only Golden gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl check
+          sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
+          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = LOCKED
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          REMOTE
+
+      - name: Three-view CTA to registration browser audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await browser.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[],navs=[]; p.on('framenavigated',f=>{if(f===p.mainFrame())navs.push(f.url())});
+              p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?registration_handoff_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,3500));
+              const before=await p.evaluate(()=>{
+                const a=document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]');
+                const ls={}; for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']) ls[k]=localStorage.getItem(k);
+                return {url:location.href,ctaHref:a?.href||'',ctaPath:a?new URL(a.href,location.href).pathname:'',ctaText:(a?.innerText||'').replace(/\s+/g,' ').trim(),ls,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              });
+              if(before.ctaPath!=='/gen-ai-masterclass/register-one-step'||before.overflow) throw new Error(`source CTA precheck fail ${name}`);
+              await Promise.all([
+                p.waitForFunction(()=>location.pathname==='/gen-ai-masterclass/register-one-step',{timeout:30000}),
+                p.evaluate(()=>document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]').click())
+              ]);
+              await new Promise(r=>setTimeout(r,1800));
+              const samples=[];
+              for(let i=0;i<10;i++){
+                samples.push(await p.evaluate(()=>{
+                  const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                  const cs=getComputedStyle(document.body); const forms=[...document.querySelectorAll('form')];
+                  return {t:performance.now(),url:location.href,path:location.pathname,title:document.title,h1:n(document.querySelector('h1')?.textContent),forms:forms.length,inputs:document.querySelectorAll('input,select,textarea').length,buttons:[...document.querySelectorAll('button')].map(b=>n(b.textContent)).filter(Boolean).slice(0,12),bodyDisplay:cs.display,bodyVisibility:cs.visibility,bodyOpacity:cs.opacity,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,height:document.documentElement.scrollHeight};
+                }));
+                await new Promise(r=>setTimeout(r,500));
+              }
+              const state=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim(); const fields=[...document.querySelectorAll('input,select,textarea')].map(el=>({tag:el.tagName,type:el.getAttribute('type')||'',name:el.getAttribute('name')||'',id:el.id||'',placeholder:el.getAttribute('placeholder')||'',required:el.required,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)}));
+                const labels=[...document.querySelectorAll('label')].map(l=>n(l.textContent)).filter(Boolean);
+                const forms=[...document.querySelectorAll('form')].map(f=>({id:f.id||'',action:f.getAttribute('action')||'',method:f.getAttribute('method')||'',text:n(f.innerText).slice(0,1200)}));
+                const ls={}; for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']) ls[k]=localStorage.getItem(k);
+                const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/attribution|registration|masterclass|lead/.test(s));
+                return {url:location.href,path:location.pathname,title:document.title,h1:n(document.querySelector('h1')?.textContent),body:n(document.body.innerText).slice(0,3500),fields,labels,forms,ls,scripts,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              });
+              const stablePath=samples.every(s=>s.path==='/gen-ai-masterclass/register-one-step');
+              const stableVisible=samples.every(s=>s.bodyDisplay!=='none'&&s.bodyVisibility!=='hidden'&&Number(s.bodyOpacity||1)>0);
+              const stableForms=new Set(samples.map(s=>s.forms)).size<=2;
+              console.log('REG_HANDOFF_AUDIT',name,JSON.stringify({before,state,samples,navs,bad,stablePath,stableVisible,stableForms}));
+              if(state.path!=='/gen-ai-masterclass/register-one-step'||state.overflow||!stablePath||!stableVisible||bad.length) throw new Error(`registration handoff audit fail ${name}`);
+              await p.close();
+            }
+            await browser.close();
+            console.log('CLAUDE_REGISTRATION_HANDOFF_READONLY_3VIEW_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
