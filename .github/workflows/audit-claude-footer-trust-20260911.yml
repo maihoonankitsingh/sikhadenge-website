@@ -1,0 +1,50 @@
+name: Audit Claude Footer Trust 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-footer-trust-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Audit live footer trust layer
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const bad=[],errs=[]; p.on('pageerror',e=>errs.push(String(e))); p.on('response',r=>{const u=r.url(); if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u))) bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?footer_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,5000));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim(); const body=n(document.body.innerText);
+                const final=document.querySelector('section[data-sd-claude-final-handoff-v1="1"]');
+                const all=[...document.body.querySelectorAll('*')];
+                const payment=all.find(el=>{const t=n(el.textContent); return el.children.length>0&&/^SECURE PAYMENT OPTIONS\b/.test(t)&&t.length<1200;})||null;
+                const disclaimer=all.find(el=>{const t=n(el.textContent); return el.children.length>0&&t.startsWith('Disclaimer:')&&t.length<2500;})||null;
+                const pr=payment?.getBoundingClientRect(), dr=disclaimer?.getBoundingClientRect();
+                const paymentText=n(payment?.innerText||payment?.textContent); const disclaimerText=n(disclaimer?.innerText||disclaimer?.textContent);
+                const regLinks=[...document.querySelectorAll('a[href]')].filter(a=>{try{return new URL(a.href,location.href).pathname==='/gen-ai-masterclass/register-one-step'}catch{return false}}).length;
+                return {sectionCount:document.querySelectorAll('main section').length,final:!!final,finalText:n(final?.innerText),paymentText,disclaimerText,paymentRect:pr?{x:Math.round(pr.x),w:Math.round(pr.width),h:Math.round(pr.height)}:null,disclaimerRect:dr?{x:Math.round(dr.x),w:Math.round(dr.width),h:Math.round(dr.height)}:null,registerLinks:regLinks,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,bodyTail:body.slice(-3500),scripts:[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/payment|checkout|disclaimer|claude|final-handoff/.test(s))};
+              });
+              console.log('FOOTER_TRUST_AUDIT',name,JSON.stringify(x),'BAD',JSON.stringify(bad),'ERROR_COUNT',errs.length);
+              if(x.sectionCount!==18||!x.final||x.registerLinks!==8||x.overflow||bad.length) throw new Error(`footer trust audit fail ${name}`);
+              await p.close();
+            }
+            await b.close(); console.log('CLAUDE_FOOTER_TRUST_3VIEW_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
