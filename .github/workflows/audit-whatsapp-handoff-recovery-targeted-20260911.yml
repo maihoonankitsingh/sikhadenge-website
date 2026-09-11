@@ -1,0 +1,140 @@
+name: Audit WhatsApp Handoff Recovery Targeted 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-whatsapp-handoff-recovery-targeted-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 15
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Targeted read-only source audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 -' <<'PY'
+          import os,re,hashlib,subprocess,json
+          WA='/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard'
+          ROOT='/var/www/sikhadenge-whatsapp-agent/source'
+          REG='/var/www/sikhadenge.in/releases/masterclass-registration-v72-tracking-fixed-20260902-213914'
+          print('AUDIT_MODE=READ_ONLY')
+          print('NO_HTTP_POSTS=1')
+          print('NO_MESSAGES_SENT=1')
+          print('WA_EXISTS=',os.path.isdir(WA))
+          print('REG_EXISTS=',os.path.isdir(REG))
+
+          def sha(p):
+            h=hashlib.sha256()
+            with open(p,'rb') as f:
+              for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+            return h.hexdigest()
+
+          def contexts(path,patterns,around=10,max_hits=20):
+            if not os.path.isfile(path):
+              print(f'FILE_MISSING {path}'); return
+            try: lines=open(path,encoding='utf-8',errors='ignore').read().splitlines()
+            except Exception as e: print('READ_FAIL',path,e); return
+            print(f'\n===== FILE {path} SHA={sha(path)} LINES={len(lines)} =====')
+            rx=re.compile('|'.join(f'(?:{p})' for p in patterns),re.I)
+            hits=[i for i,l in enumerate(lines) if rx.search(l)]
+            if not hits:
+              print('NO_MATCHES'); return
+            groups=[]
+            for i in hits[:max_hits]:
+              a=max(0,i-around); b=min(len(lines),i+around+1)
+              if groups and a<=groups[-1][1]+2: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
+              else: groups.append((a,b))
+            for a,b in groups:
+              print(f'--- lines {a+1}-{b} ---')
+              for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
+
+          fixed=[
+            (WA+'/app/api/cron/route.ts',[r'scheduledReminder',r'retry',r'failed',r'sent',r'schedule',r'send',r'CampaignBatchRunner',r'consent']),
+            (WA+'/app/api/leads/reminders/route.ts',[r'reminder',r'create',r'update',r'delete',r'status',r'lead']),
+            (WA+'/app/api/messages/send/route.ts',[r'send',r'idempoten',r'retry',r'consent',r'opt',r'status',r'wamid',r'whatsapp']),
+            (WA+'/app/api/whatsapp/send/route.ts',[r'send',r'idempoten',r'retry',r'consent',r'opt',r'status',r'wamid',r'whatsapp']),
+            (WA+'/app/api/webhooks/meta/route.ts',[r'status',r'deliver',r'read',r'failed',r'wamid',r'webhook',r'message']),
+            (WA+'/app/api/webhooks/whatsapp/route.ts',[r'status',r'deliver',r'read',r'failed',r'wamid',r'webhook',r'message']),
+          ]
+          for p,pat in fixed: contexts(p,pat,around=8,max_hits=28)
+
+          # Find actual campaign/reminder implementation owners.
+          candidates=[]
+          for base,dirs,files in os.walk(WA):
+            dirs[:]=[d for d in dirs if d not in {'node_modules','.next','.git','dist','coverage'}]
+            for fn in files:
+              if not fn.endswith(('.ts','.tsx','.js','.mjs','.prisma')): continue
+              p=os.path.join(base,fn)
+              try: s=open(p,encoding='utf-8',errors='ignore').read()
+              except: continue
+              if re.search(r'CampaignBatchRunner|scheduledReminder|sendWhatsApp|sendTemplate|idempoten|retry',s,re.I):
+                candidates.append((p,len(re.findall(r'CampaignBatchRunner|scheduledReminder|sendWhatsApp|sendTemplate|idempoten|retry',s,re.I))))
+          print('\n===== OWNER_CANDIDATES =====')
+          for p,n in sorted(candidates,key=lambda x:(-x[1],x[0]))[:35]: print(n,p)
+          for p,n in sorted(candidates,key=lambda x:(-x[1],x[0]))[:8]:
+            contexts(p,[r'CampaignBatchRunner',r'scheduledReminder',r'idempoten',r'retry',r'sendWhatsApp',r'sendTemplate',r'consent'],around=9,max_hits=18)
+
+          # Prisma models only, not DB data.
+          schemas=[]
+          for base,dirs,files in os.walk(ROOT):
+            dirs[:]=[d for d in dirs if d not in {'node_modules','.next','.git'}]
+            for fn in files:
+              if fn=='schema.prisma': schemas.append(os.path.join(base,fn))
+          print('\n===== PRISMA_SCHEMAS =====')
+          for p in schemas: print(p,sha(p))
+          for p in schemas:
+            txt=open(p,encoding='utf-8',errors='ignore').read().splitlines()
+            for model in ['ScheduledReminder','Message','WhatsAppMessage','Lead','Campaign','CampaignMessage','OutboundMessage']:
+              start=None; depth=0
+              for i,l in enumerate(txt):
+                if re.match(rf'^\s*model\s+{re.escape(model)}\b',l): start=i; break
+              if start is None: continue
+              end=min(len(txt),start+120)
+              print(f'\n===== PRISMA MODEL {model} @ {p} =====')
+              for j in range(start,end):
+                print(f'{j+1:5d}: {txt[j]}')
+                if j>start and txt[j].strip()=='}': break
+
+          # Registration handoff: exact code contexts, no form submit.
+          reg_matches=[]
+          for base,dirs,files in os.walk(REG):
+            dirs[:]=[d for d in dirs if d not in {'node_modules','.next','.git'}]
+            for fn in files:
+              if not fn.endswith(('.ts','.tsx','.js','.mjs')): continue
+              p=os.path.join(base,fn)
+              try:s=open(p,encoding='utf-8',errors='ignore').read()
+              except:continue
+              n=len(re.findall(r'WhatsApp|whatsapp|wa\.me|chat\.whatsapp|community|confirmation|api/masterclass/lead|dashboard',s,re.I))
+              if n: reg_matches.append((p,n))
+          print('\n===== REGISTRATION_HANDOFF_CANDIDATES =====')
+          for p,n in sorted(reg_matches,key=lambda x:(-x[1],x[0]))[:30]: print(n,p)
+          for p,n in sorted(reg_matches,key=lambda x:(-x[1],x[0]))[:6]:
+            contexts(p,[r'WhatsApp',r'wa\.me',r'chat\.whatsapp',r'community',r'confirmation',r'api/masterclass/lead',r'dashboard'],around=9,max_hits=22)
+
+          print('\nTARGETED_AUDIT_COMPLETE=1')
+          PY
