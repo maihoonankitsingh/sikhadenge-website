@@ -1,0 +1,41 @@
+name: Audit Registration Cue Assets Fast 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-registration-cue-assets-fast-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Scan public registration assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import urllib.request,hashlib,re
+          urls=[
+            'https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023',
+            'https://sikhadenge.in/registration-stable-page1-v72.js?v=20260903-131023',
+            'https://sikhadenge.in/registration-native-suppress-v1-20260910.js?v=native-suppress-v1-20260910',
+            'https://sikhadenge.in/_next/static/chunks/app/gen-ai-masterclass/register-one-step/page-8e8245ba8d2c115f.js',
+            'https://sikhadenge.in/funnel-attribution-bridge-v1.js?v=20260903-1'
+          ]
+          needles=['3 Hours Live','2 Hours Live','WhatsApp Joining Link','WhatsApp Community Access','5,00,000+','Bonus Resources','joined in last 24 hours','Updates automatically','LIVE ACTIVITY']
+          for u in urls:
+            req=urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'})
+            with urllib.request.urlopen(req,timeout=30) as r: b=r.read()
+            s=b.decode('utf-8','ignore')
+            print('\nASSET',u,'BYTES',len(b),'SHA',hashlib.sha256(b).hexdigest())
+            for n in needles:
+              positions=[m.start() for m in re.finditer(re.escape(n),s)]
+              if positions:
+                print(' FOUND',repr(n),'COUNT',len(positions))
+                for i in positions[:5]: print('  CTX',repr(s[max(0,i-350):i+700]))
+          PY
