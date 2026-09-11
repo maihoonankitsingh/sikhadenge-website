@@ -6,7 +6,7 @@ on:
     paths:
       - '.github/workflows/deploy-registration-community-handoff-track-v1-20260911.yml'
       - 'ops/deploy-registration-community-handoff-track-v1-20260911.sh'
-      - 'ops/qa-registration-community-handoff-track-v1-20260911.js'
+      - 'ops/qa-registration-community-handoff-track-v1b-20260911.js'
 
 permissions:
   contents: read
@@ -31,10 +31,11 @@ jobs:
         run: |
           set -Eeuo pipefail
           bash -n ops/deploy-registration-community-handoff-track-v1-20260911.sh
-          node --check ops/qa-registration-community-handoff-track-v1-20260911.js
+          node --check ops/qa-registration-community-handoff-track-v1b-20260911.js
           grep -Fq "EXPECTED_OLD_SHA='bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
           grep -Fq "'whatsapp_community_handoff'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
-          grep -Fq 'analyticsGranted: false' ops/qa-registration-community-handoff-track-v1-20260911.js
+          grep -Fq 'analyticsGranted: false' ops/qa-registration-community-handoff-track-v1b-20260911.js
+          grep -Fq 'bonus-submit' ops/qa-registration-community-handoff-track-v1b-20260911.js
           echo REG_COMMUNITY_HANDOFF_TRACK_V1_STATIC=PASS
 
       - name: Configure pinned SSH
@@ -93,7 +94,7 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
-          node ops/qa-registration-community-handoff-track-v1-20260911.js
+          node ops/qa-registration-community-handoff-track-v1b-20260911.js
 
       - name: Post-stage integrity check
         shell: bash
