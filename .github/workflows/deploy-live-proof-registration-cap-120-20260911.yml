@@ -1,0 +1,99 @@
+name: Deploy Live Proof Registration Cap 120 20260911
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-live-proof-registration-cap-120-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Change registration number display only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          FILE='/var/www/sikhadenge.in/social-proof-live/sitewide-live-proof-v1.js'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BAK="${FILE}.cap120-backup-${TS}"
+          test -f "$FILE"
+          cp -a "$FILE" "$BAK"
+
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          p=Path(sys.argv[1])
+          before=p.read_text(encoding='utf-8')
+          old='if (number) number.textContent = fmt(data.recent24h);'
+          new='if (number) number.textContent = fmt(Math.min(Number(data.recent24h || 0), 120));'
+
+          if new in before:
+              print('ALREADY_CAP_120=1')
+              raise SystemExit(0)
+
+          if before.count(old) != 1:
+              raise SystemExit(f'guard failed: number render target count={before.count(old)}')
+
+          after=before.replace(old,new,1)
+          if after.replace(new,old,1) != before:
+              raise SystemExit('guard failed: change outside number render line detected')
+
+          p.write_text(after,encoding='utf-8')
+
+          verify=p.read_text(encoding='utf-8')
+          if verify.count(new) != 1 or old in verify:
+              raise SystemExit('verification failed')
+
+          print('NUMBER_RENDER_ONLY_CHANGE=1')
+          print('DISPLAY_CAP=120')
+          PY
+
+          node --check "$FILE"
+          grep -Fq 'fmt(Math.min(Number(data.recent24h || 0), 120))' "$FILE"
+          echo "BACKUP=$BAK"
+          echo 'LIVE_PROOF_NUMBER_CAP_120_OK=1 DESIGN_UNTOUCHED=1 API_UNTOUCHED=1 LABELS_UNTOUCHED=1'
+          REMOTE
+
+      - name: Verify public widget
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          TMP="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&cap120=20260911' -o "$TMP"
+          grep -Fq 'fmt(Math.min(Number(data.recent24h || 0), 120))' "$TMP"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?cap120=20260911' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent24h"), int)'
+          echo 'PUBLIC_NUMBER_CAP_120=PASS'
