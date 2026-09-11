@@ -263,7 +263,7 @@ for (const viewport of VIEWPORTS) {
         await expectInsideViewport(control, viewport.width);
       }
 
-      for (let index = 0; index < metrics.length; index += 1) {
+      for (let index = 0; index < 4; index += 1) {
         await expectInsideViewport(metrics.nth(index), viewport.width);
       }
     }
