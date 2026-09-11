@@ -21,7 +21,7 @@ jobs:
       SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
       SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
     steps:
-      - name: Inspect exact V72 asset read only
+      - name: Inspect exact V72 page and hot assets read only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -33,21 +33,26 @@ jobs:
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 -' <<'PY'
           import re,hashlib,os
-          p='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js'
-          assert os.path.isfile(p),p
-          s=open(p,encoding='utf-8',errors='ignore').read(); lines=s.splitlines()
-          print('READ_ONLY=1'); print('FILE',p); print('SHA',hashlib.sha256(s.encode()).hexdigest()); print('BYTES',len(s.encode()))
+          files=[
+            '/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-page1-v72.js',
+            '/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js',
+          ]
           terms=[r'COMMUNITY_LINK',r'Join Community',r'chat\.whatsapp\.com',r'wa\.me',r'dataLayer',r'gtag\s*\(',r'fbq\s*\(',r'CustomEvent',r'dispatchEvent',r'track',r'analytics',r'event']
-          for t in terms: print('COUNT',t,len(re.findall(t,s,re.I)))
           rx=re.compile('|'.join(f'(?:{t})' for t in terms),re.I)
-          hits=[i for i,l in enumerate(lines) if rx.search(l)]
-          groups=[]
-          for i in hits:
-            a=max(0,i-7); b=min(len(lines),i+8)
-            if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
-            else: groups.append((a,b))
-          for a,b in groups[:30]:
-            print(f'--- {a+1}-{b} ---')
-            for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
+          print('READ_ONLY=1')
+          for p in files:
+            assert os.path.isfile(p),p
+            s=open(p,encoding='utf-8',errors='ignore').read(); lines=s.splitlines()
+            print('\nFILE',p); print('SHA',hashlib.sha256(s.encode()).hexdigest()); print('BYTES',len(s.encode()))
+            for t in terms: print('COUNT',t,len(re.findall(t,s,re.I)))
+            hits=[i for i,l in enumerate(lines) if rx.search(l)]
+            groups=[]
+            for i in hits:
+              a=max(0,i-9); b=min(len(lines),i+10)
+              if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
+              else: groups.append((a,b))
+            for a,b in groups[:35]:
+              print(f'--- {a+1}-{b} ---')
+              for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
           print('V72_ASSET_COMMUNITY_AUDIT_PASS=1')
           PY
