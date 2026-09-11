@@ -35,6 +35,7 @@ jobs:
           grep -Fq "EXPECTED_AI='b03ab6b210bceed43573d2037816ae8f8208969ea73cecaba60e14eef10c12d2'" ops/deploy-claude-footer-trust-v1-20260911.sh
           grep -Fq "min-height','44px'" ops/assets/claude-footer-trust-v1-20260911.js
           grep -Fq "'/privacy-policy','/terms'" ops/qa-claude-footer-trust-v1-20260911.js
+          grep -Fq 'testimonialScript' ops/qa-claude-footer-trust-v1-20260911.js
           echo FOOTER_TRUST_V1_STATIC_VALIDATION=PASS
 
       - name: Configure pinned SSH
