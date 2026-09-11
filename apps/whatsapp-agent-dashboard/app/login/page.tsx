@@ -17,7 +17,15 @@ export default async function LoginPage() {
       <div className="auth__shell">
         <aside className="auth__aside" aria-hidden="true">
           <div className="auth__aside-top">
-            <img className="auth__logo" src={BRAND_MARK} alt="" width={46} height={46} />
+            <div className="auth__aside-brand">
+              <img
+                className="auth__brand-wordmark auth__brand-wordmark--aside"
+                src={BRAND_MARK}
+                alt=""
+                width={184}
+                height={56}
+              />
+            </div>
           </div>
           <div className="auth__aside-content">
             <h2 className="auth__aside-title">The WhatsApp AI Agent workspace</h2>
@@ -31,8 +39,13 @@ export default async function LoginPage() {
         <section className="auth__panel">
           <div className="auth__panel-inner">
             <div className="auth__brand-mobile">
-              <img src={BRAND_MARK} alt="" width={40} height={40} />
-              <span>SikhaDenge</span>
+              <img
+                className="auth__brand-wordmark auth__brand-wordmark--mobile"
+                src={BRAND_MARK}
+                alt="SikhaDenge"
+                width={176}
+                height={54}
+              />
             </div>
 
             <p className="auth__eyebrow">SikhaDenge owned system</p>
