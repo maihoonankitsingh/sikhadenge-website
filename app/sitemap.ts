@@ -30,11 +30,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const DATE_STATIC  = new Date("2025-02-01");
   const DATE_BLOG    = new Date("2025-04-15");
   const DATE_EXPERT  = new Date("2025-01-15");
+  const DATE_INSTITUTIONS = new Date("2026-09-11");
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${BASE}/`,              priority: 1.0,  changeFrequency: "weekly",  lastModified: DATE_HOME   },
     { url: `${BASE}/ai-expert`,     priority: 0.92, changeFrequency: "weekly",  lastModified: DATE_HOME   },
     { url: `${BASE}/blog`,          priority: 0.9,  changeFrequency: "weekly",  lastModified: DATE_BLOG   },
+    { url: `${BASE}/institutions`,  priority: 0.82, changeFrequency: "monthly", lastModified: DATE_INSTITUTIONS },
     { url: `${BASE}/about-us`,      priority: 0.75, changeFrequency: "monthly", lastModified: DATE_STATIC },
     { url: `${BASE}/reviews`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
     { url: `${BASE}/contact`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
@@ -42,7 +44,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/terms`,         priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
     { url: `${BASE}/privacy-policy`,priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
     { url: `${BASE}/refund-policy`, priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
-    // NOTE: /influencer is a private portal — never include in sitemap
+    // NOTE: private/dynamic portals such as /influencer, /enroll/* and /verify/* are never included in the sitemap.
   ];
 
   const blogRoutes: MetadataRoute.Sitemap = getBlogSlugs().map((slug) => ({
