@@ -1,0 +1,223 @@
+name: Deploy Masterclass Hero Manrope V1 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-masterclass-hero-manrope-v1-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Apply font-family only to all active masterclass hero sections
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          AI='/etc/nginx/snippets/sikhadenge-ai-video-3940.conf'
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="/var/backups/sikhadenge/masterclass-hero-manrope-v1-$TS"
+          PTR='/var/backups/sikhadenge/.masterclass-hero-manrope-v1-last'
+          MARK='SIKHADENGE_MASTERCLASS_HERO_MANROPE_V1_20260911'
+
+          test -f "$SITE"
+          test -f "$AI"
+          test "$(curl -L -sS -o /dev/null -w '%{http_code}' 'https://sikhadenge.in/fonts/Manrope-Variable.ttf')" = '200'
+
+          mkdir -p "$BK"
+          cp -L "$SITE" "$BK/sikhadenge.in-ssl.before"
+          cp -L "$AI" "$BK/sikhadenge-ai-video-3940.conf.before"
+          printf '%s\n' "$BK" > "$PTR"
+
+          sikhadenge-funnel-lockctl unlock 12
+          sikhadenge-funnel-lockctl assert-unlocked
+
+          python3 - "$SITE" "$AI" "$MARK" <<'PY'
+          from pathlib import Path
+          import sys
+
+          site=Path(sys.argv[1]); ai=Path(sys.argv[2]); mark=sys.argv[3]
+          STYLE='<style id="sd-masterclass-hero-manrope-v1">@font-face{font-family:"Manrope";src:url("/fonts/Manrope-Variable.ttf") format("truetype");font-weight:200 800;font-style:normal;font-display:swap}section[class*="claude-masterclass-live_hero__"],section[class*="claude-masterclass-live_hero__"] *,section[class*="chatgpt-masterclass-live_hero__"],section[class*="chatgpt-masterclass-live_hero__"] *,#ai-video-hero-v125,#ai-video-hero-v125 *{font-family:"Manrope",Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}</style>'
+          directive=f"        # {mark}\n        sub_filter '<head>' '<head>{STYLE}';\n"
+
+          def block_end(s, start):
+              q=s.find('{', start)
+              if q < 0: raise SystemExit('opening brace missing')
+              depth=0
+              for i in range(q, len(s)):
+                  if s[i]=='{': depth+=1
+                  elif s[i]=='}':
+                      depth-=1
+                      if depth==0: return i+1
+              raise SystemExit('block close missing')
+
+          def patch_location(text, needle, must_contain):
+              starts=[]; pos=0
+              while True:
+                  i=text.find(needle,pos)
+                  if i<0: break
+                  e=block_end(text,i)
+                  b=text[i:e]
+                  if must_contain in b: starts.append((i,e,b))
+                  pos=e
+              if len(starts)!=1:
+                  raise SystemExit(f'{needle!r} matches with guard={len(starts)}')
+              a,e,b=starts[0]
+              if mark in b:
+                  return text, False
+              anchor='        proxy_set_header Accept-Encoding "";\n'
+              if anchor not in b:
+                  raise SystemExit(f'Accept-Encoding anchor missing in {needle}')
+              b2=b.replace(anchor, anchor+'\n'+directive, 1)
+              return text[:a]+b2+text[e:], True
+
+          s=site.read_text(encoding='utf-8')
+          a=ai.read_text(encoding='utf-8')
+
+          # Generic main runtime: ChatGPT route inherits this; selectors are hero-scoped so other pages stay untouched.
+          s,c1=patch_location(s, 'location / {', 'proxy_pass http://127.0.0.1:3955;')
+          # Claude has its own exact runtime.
+          s,c2=patch_location(s, 'location = /masterclass/claude/free {', 'proxy_pass http://127.0.0.1:3930;')
+          # AI Video has its own included exact route.
+          a,c3=patch_location(a, 'location = /masterclass/ai-video {', 'proxy_pass http://127.0.0.1:3940;')
+
+          if not (c1 or c2 or c3):
+              print('ALREADY_APPLIED=1')
+          site.write_text(s,encoding='utf-8')
+          ai.write_text(a,encoding='utf-8')
+          print(f'PATCHED_MAIN={int(c1)} PATCHED_CLAUDE={int(c2)} PATCHED_AI_VIDEO={int(c3)}')
+          print('ONLY_FONT_FAMILY_RULE=1')
+          PY
+
+          nginx -t
+          systemctl reload nginx
+          sleep 2
+
+          for route in /masterclass/claude/free /masterclass/ai-video /masterclass/chatgpt/free; do
+            out="$(mktemp)"
+            code="$(curl -L -sS --max-time 25 -o "$out" -w '%{http_code}' "https://sikhadenge.in${route}?hero_manrope_v1=$TS")"
+            echo "ROUTE=$route HTTP=$code"
+            test "$code" = '200'
+            grep -Fq 'sd-masterclass-hero-manrope-v1' "$out"
+            grep -Fq 'font-family:"Manrope"' "$out"
+            rm -f "$out"
+          done
+          echo "BACKUP=$BK"
+          echo 'SERVER_FONT_ONLY_STAGE=PASS'
+          REMOTE
+
+      - name: Browser QA desktop tablet mobile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          cat > qa.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          const pages=[
+            ['/masterclass/claude/free','Master Claude + 25+ AI Tools to work smarter,create faster & get better results.'],
+            ['/masterclass/ai-video','Create cinematic AI videos from text & images.'],
+            ['/masterclass/chatgpt/free','Stop collecting prompts. Build real work with ChatGPT.']
+          ];
+          const views=[['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]];
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const failures=[];
+            for(const [route,want] of pages){
+              for(const [view,w,h,mob] of views){
+                const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:mob,hasTouch:mob});
+                const res=await p.goto('https://sikhadenge.in'+route+'?hero_manrope_qa='+view+'-'+Date.now(),{waitUntil:'domcontentloaded',timeout:45000});
+                await new Promise(r=>setTimeout(r,1600));
+                const x=await p.evaluate(()=>{
+                  const h1=document.querySelector('h1');
+                  const hero=h1&&(h1.closest('section')||h1.parentElement);
+                  const textEls=hero?[hero,...hero.querySelectorAll('h1,h2,h3,p,span,a,button,strong,small,em,mark')].filter(el=>(el.textContent||'').trim() && getComputedStyle(el).display!=='none'):[];
+                  const families=[...new Set(textEls.map(el=>getComputedStyle(el).fontFamily))];
+                  return {h1:h1?.textContent||'',style:!!document.getElementById('sd-masterclass-hero-manrope-v1'),families,fontReady:document.fonts.check('16px Manrope'),overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+                });
+                console.log(route,view,'HTTP',res&&res.status(),JSON.stringify(x));
+                const fontsOk=x.families.length>0 && x.families.every(f=>/^Manrope\b/i.test(f.trim()));
+                if((res&&res.status())!==200 || norm(x.h1)!==norm(want) || !x.style || !x.fontReady || !fontsOk || x.overflow){
+                  failures.push(route+' '+view+' '+JSON.stringify(x));
+                }
+                await p.close();
+              }
+            }
+            await b.close();
+            if(failures.length) throw Error(failures.join('\n'));
+            console.log('MASTERCLASS_HERO_MANROPE_3PAGES_3VIEWS=PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node qa.js
+
+      - name: Reseal and lock on success
+        if: success()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          sikhadenge-funnel-lockctl reseal
+          sikhadenge-funnel-lockctl lock
+          sikhadenge-funnel-lockctl check
+          echo 'MASTERCLASS_HERO_MANROPE_V1_RESEALED_LOCKED=PASS'
+          REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          PTR='/var/backups/sikhadenge/.masterclass-hero-manrope-v1-last'
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          AI='/etc/nginx/snippets/sikhadenge-ai-video-3940.conf'
+          if [[ -s "$PTR" ]]; then
+            BK="$(cat "$PTR")"
+            sikhadenge-funnel-lockctl unlock 5 || true
+            [[ -s "$BK/sikhadenge.in-ssl.before" ]] && cat "$BK/sikhadenge.in-ssl.before" > "$SITE"
+            [[ -s "$BK/sikhadenge-ai-video-3940.conf.before" ]] && cat "$BK/sikhadenge-ai-video-3940.conf.before" > "$AI"
+            nginx -t && systemctl reload nginx
+          fi
+          sikhadenge-funnel-lockctl reseal || true
+          sikhadenge-funnel-lockctl lock || true
+          echo 'MASTERCLASS_HERO_MANROPE_V1_ROLLBACK_DONE=1'
+          REMOTE
