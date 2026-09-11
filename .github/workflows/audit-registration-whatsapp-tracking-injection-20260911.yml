@@ -1,0 +1,96 @@
+name: Audit Registration WhatsApp Tracking Injection 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-registration-whatsapp-tracking-injection-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 8
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - name: Inspect consent and registration injection read only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo 'AUDIT_MODE=READ_ONLY'
+          HOT='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
+          SNIP='/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf'
+          SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
+          echo '===== CONSENT CONTEXT ====='
+          python3 - "$HOT" <<'PY'
+          import sys,re,hashlib
+          p=sys.argv[1]; s=open(p,encoding='utf-8',errors='ignore').read(); lines=s.splitlines()
+          print('HOT_SHA='+hashlib.sha256(s.encode()).hexdigest())
+          rx=re.compile(r'policyVersion|analytics|advertising|localStorage|sessionStorage|cookie|consent',re.I)
+          hits=[i for i,l in enumerate(lines) if rx.search(l)]
+          groups=[]
+          for i in hits:
+            if not (1080 <= i+1 <= 1260): continue
+            a=max(0,i-8); b=min(len(lines),i+9)
+            if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
+            else: groups.append((a,b))
+          for a,b in groups:
+            print(f'--- {a+1}-{b} ---')
+            for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
+          PY
+
+          echo '===== REGISTRATION SNIPPET ====='
+          if [[ -f "$SNIP" ]]; then
+            sha256sum "$SNIP"
+            nl -ba "$SNIP" | sed -n '1,260p'
+          else
+            echo 'SNIPPET_MISSING'
+          fi
+
+          echo '===== REGISTRATION ROUTE ====='
+          python3 - "$SITE" <<'PY'
+          import sys
+          p=sys.argv[1]; s=open(p,encoding='utf-8',errors='ignore').read()
+          for needle in ['location = /gen-ai-masterclass/register-one-step {','location /gen-ai-masterclass/register-one-step']:
+            a=s.find(needle)
+            if a<0: continue
+            q=s.find('{',a); d=0; quote=None; esc=False; end=None
+            for i in range(q,len(s)):
+              ch=s[i]
+              if esc: esc=False; continue
+              if ch=='\\': esc=True; continue
+              if quote:
+                if ch==quote: quote=None
+                continue
+              if ch in ('"',"'"): quote=ch; continue
+              if ch=='{': d+=1
+              elif ch=='}':
+                d-=1
+                if d==0: end=i+1; break
+            if end:
+              print(s[a:end]); break
+          PY
+
+          echo '===== CURRENT PUBLIC REGISTRATION ASSETS ====='
+          curl -fsSL --retry 2 --retry-all-errors --connect-timeout 5 --max-time 30 'https://sikhadenge.in/gen-ai-masterclass/register-one-step?wa_track_audit=1' -o /tmp/reg.html
+          grep -oE '<script[^>]+src="[^"]+"' /tmp/reg.html | sed -n '1,120p'
+          echo "PUBLIC_HTML_SHA=$(sha256sum /tmp/reg.html | awk '{print $1}')"
+          rm -f /tmp/reg.html
+          echo 'AUDIT_COMPLETE=1'
+          REMOTE
