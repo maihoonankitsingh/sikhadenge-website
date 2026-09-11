@@ -9,6 +9,7 @@ import "../dashboard-system.css";
 import "./graph-workspace.css";
 import "./masterclass-automation.css";
 import "./masterclass-image-upload.css";
+import "./automation-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +28,11 @@ export default async function AutomationPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <MasterclassAutomationPanel />
-      <AutomationFlowBuilder />
-      <AutomationGraphWorkspace />
+      <div className="automation-enterprise-route">
+        <MasterclassAutomationPanel />
+        <AutomationFlowBuilder />
+        <AutomationGraphWorkspace />
+      </div>
     </DashboardModuleShell>
   );
 }
