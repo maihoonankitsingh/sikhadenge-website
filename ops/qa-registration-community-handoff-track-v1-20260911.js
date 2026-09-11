@@ -134,17 +134,32 @@ async function runScenario(browser, cfg) {
     if (!clicked) throw new Error(`${cfg.name}: no visible primary button`);
   };
 
+  const clickVisible = async selector => {
+    const clicked = await page.evaluate(sel => {
+      const nodes = [...document.querySelectorAll(sel)];
+      const node = nodes.find(el => {
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden';
+      });
+      if (!node) return false;
+      node.click();
+      return true;
+    }, selector);
+    if (!clicked) throw new Error(`${cfg.name}: no visible element for ${selector}`);
+  };
+
   await clickPrimary();
   await page.waitForSelector('[data-role]', { timeout: 10000 });
-  await page.click('[data-role]');
+  await clickVisible('[data-role]');
   await clickPrimary();
 
   await page.waitForSelector('[data-goal]', { timeout: 10000 });
-  await page.click('[data-goal]');
+  await clickVisible('[data-goal]');
   await clickPrimary();
 
   await page.waitForSelector('[data-laptop]', { timeout: 10000 });
-  await page.click('[data-laptop]');
+  await clickVisible('[data-laptop]');
   await clickPrimary();
 
   await page.waitForSelector('.sdv2-success', { timeout: 10000 });
@@ -168,7 +183,7 @@ async function runScenario(browser, cfg) {
   }
 
   if (cfg.mode === 'manual') {
-    await page.click('[data-action="welcome"]');
+    await clickVisible('[data-action="welcome"]');
   }
 
   const gotWa = await waitNode(() => waAttempts.length >= 1, 7000);
