@@ -242,8 +242,8 @@ for (const viewport of VIEWPORTS) {
     await resetButton.click();
     const dialog = page.getByRole("dialog", { name: /Reset password for CI Security Administrator/ });
     await expect(dialog).toBeVisible();
-    const newPassword = dialog.getByLabel("New password");
-    const confirmPassword = dialog.getByLabel("Confirm new password");
+    const newPassword = dialog.getByLabel("New password", { exact: true });
+    const confirmPassword = dialog.getByLabel("Confirm new password", { exact: true });
     const cancelReset = dialog.getByRole("button", { name: "Cancel" });
     const submitReset = dialog.getByRole("button", { name: "Reset & revoke sessions" });
     await newPassword.fill("AnotherLocalPassword123");
