@@ -3,8 +3,8 @@
 const puppeteer = require('puppeteer-core');
 
 const URL_BASE = 'https://sikhadenge.in/gen-ai-masterclass/register-one-step';
-const NEW_ASSET = '/registration-stable-hot-v72-community-track-v1-20260911.js';
-const OLD_ASSET = '/registration-stable-hot-v72.js';
+const CURRENT_ASSET = '/registration-stable-hot-v72.js';
+const TRACK_MARKER = 'SIKHADENGE_REGISTRATION_COMMUNITY_HANDOFF_TRACK_V1_START';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const waitNode = async (fn, timeout = 10000, step = 100) => {
@@ -96,21 +96,23 @@ async function runScenario(browser, cfg) {
     };
   }, cfg.analyticsGranted);
 
-  const before = await page.evaluate(({ NEW_ASSET, OLD_ASSET }) => {
+  const before = await page.evaluate(({ CURRENT_ASSET, TRACK_MARKER }) => {
     const scripts = [...document.scripts].map(s => s.src || '');
     const html = document.documentElement;
-    return {
-      newAssetCount: scripts.filter(s => s.includes(NEW_ASSET)).length,
-      oldAssetCount: scripts.filter(s => s.includes(OLD_ASSET) && !s.includes('community-track')).length,
-      nativeSuppress: scripts.filter(s => s.includes('/registration-native-suppress-v1-20260910.js')).length,
-      overflow: html.scrollWidth > html.clientWidth + 2,
-      name: !!document.querySelector('[data-field="name"]'),
-      email: !!document.querySelector('[data-field="email"]'),
-      phone: !!document.querySelector('[data-field="phone"]'),
-    };
-  }, { NEW_ASSET, OLD_ASSET });
+    return Promise.all([
+      fetch(`${CURRENT_ASSET}?v=20260903-131023&community_handoff_qa=${Date.now()}`, { cache: 'no-store' }).then(r => r.text()),
+      Promise.resolve({
+        currentAssetCount: scripts.filter(s => s.includes(CURRENT_ASSET)).length,
+        nativeSuppress: scripts.filter(s => s.includes('/registration-native-suppress-v1-20260910.js')).length,
+        overflow: html.scrollWidth > html.clientWidth + 2,
+        name: !!document.querySelector('[data-field="name"]'),
+        email: !!document.querySelector('[data-field="email"]'),
+        phone: !!document.querySelector('[data-field="phone"]'),
+      })
+    ]).then(([source, state]) => ({ ...state, trackMarker: source.includes(TRACK_MARKER) }));
+  }, { CURRENT_ASSET, TRACK_MARKER });
 
-  if (before.newAssetCount !== 1 || before.oldAssetCount !== 0 || before.nativeSuppress !== 1 || before.overflow || !before.name || !before.email || !before.phone) {
+  if (before.currentAssetCount !== 1 || before.nativeSuppress !== 1 || !before.trackMarker || before.overflow || !before.name || !before.email || !before.phone) {
     throw new Error(`${cfg.name}: initial registration asset/layout assertion failed ${JSON.stringify(before)}`);
   }
 
