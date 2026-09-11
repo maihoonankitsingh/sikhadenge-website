@@ -1,5 +1,5 @@
 name: Deploy Claude Free Final Trust V1 20260911
-# retry-v2: raw SSR DOM-only assertions removed; browser QA remains authoritative
+# retry-v3: compose trust style into the existing attribution </head> filter
 
 on:
   push:
