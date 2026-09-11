@@ -41,9 +41,9 @@ CLAUDE_BEFORE="$(sha256sum "$BK/claude.before.html" | awk '{print $1}')"
 echo "FREE_FINAL_TRUST_V1_CLAUDE_BEFORE_SHA=$CLAUDE_BEFORE"
 test "$CLAUDE_BEFORE" = "$EXPECTED_CLAUDE_BEFORE"
 
-# Current user-facing final-handoff content is client/runtime enhanced. Do not
-# assert those DOM-only strings against raw SSR bytes. The exact Golden SHA
-# above plus the three-view browser suite below are the acceptance contract.
+# User-facing final handoff is runtime-enhanced; exact Golden SHA + browser QA
+# are authoritative. Validate the exact existing head filter composition before
+# any unlock/edit so attribution is preserved rather than duplicated.
 sikhadenge-funnel-lockctl check
 
 python3 - "$SITE" <<'PY'
@@ -65,10 +65,13 @@ for i in range(q,len(s)):
         if d==0: end=i+1; break
 if end is None: raise SystemExit('route parse failed')
 route=s[a:end]
+old="    sub_filter '</head>' '<script src=\"/funnel-attribution-bridge-v1.js?v=20260903-1\"></script></head>';"
 print('FREE_FINAL_TRUST_PREFLIGHT_HEAD_FILTERS', route.count("sub_filter '</head>'"))
+print('FREE_FINAL_TRUST_PREFLIGHT_EXPECTED_HEAD', route.count(old))
 print('FREE_FINAL_TRUST_PREFLIGHT_MARKERS', route.count('SIKHADENGE_CLAUDE_FREE_FINAL_TRUST_V1_20260911'))
 if route.count('SIKHADENGE_CLAUDE_FREE_FINAL_TRUST_V1_20260911')!=0: raise SystemExit('marker already exists')
-if route.count("sub_filter '</head>'")!=0: raise SystemExit('conflicting </head> sub_filter already exists')
+if route.count("sub_filter '</head>'")!=1: raise SystemExit('unexpected head filter count')
+if route.count(old)!=1: raise SystemExit('existing attribution head filter differs from expected')
 PY
 
 sikhadenge-funnel-lockctl unlock 15
@@ -93,10 +96,12 @@ for i in range(q,len(s)):
         if d==0: end=i+1; break
 if end is None: raise SystemExit('route parse failed')
 route=s[a:end]
-if 'SIKHADENGE_CLAUDE_FREE_FINAL_TRUST_V1_20260911' in route: raise SystemExit('marker already exists')
-css='<style id="sd-claude-free-final-trust-v1">.claude-payment-trust-footer_paymentArea__aYkQy{display:none!important}.claude-payment-trust-footer_divider___nkaU{display:none!important}</style></head>'
-insert="\n        # SIKHADENGE_CLAUDE_FREE_FINAL_TRUST_V1_20260911\n        sub_filter '</head>' "+repr(css)+";\n"
-route=route[:-1]+insert+'}'
+old="    sub_filter '</head>' '<script src=\"/funnel-attribution-bridge-v1.js?v=20260903-1\"></script></head>';"
+new="    # SIKHADENGE_CLAUDE_FREE_FINAL_TRUST_V1_20260911\n    sub_filter '</head>' '<style id=\"sd-claude-free-final-trust-v1\">.claude-payment-trust-footer_paymentArea__aYkQy{display:none!important}.claude-payment-trust-footer_divider___nkaU{display:none!important}</style><script src=\"/funnel-attribution-bridge-v1.js?v=20260903-1\"></script></head>';"
+if route.count(old)!=1: raise SystemExit('expected attribution head filter not found exactly once')
+route=route.replace(old,new,1)
+if route.count("sub_filter '</head>'")!=1: raise SystemExit('head filter count changed unexpectedly')
+if route.count('/funnel-attribution-bridge-v1.js?v=20260903-1')!=1: raise SystemExit('attribution bridge head injection count changed')
 open(p,'w',encoding='utf-8').write(s[:a]+route+s[end:])
 print('FREE_FINAL_TRUST_V1_ROUTE_PATCH=PASS')
 PY
@@ -107,6 +112,7 @@ sleep 2
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?free_final_trust_after=$TS" -o "$BK/claude.after.html"
 grep -Fq 'sd-claude-free-final-trust-v1' "$BK/claude.after.html"
+grep -Fq '/funnel-attribution-bridge-v1.js?v=20260903-1' "$BK/claude.after.html"
 CLAUDE_AFTER="$(sha256sum "$BK/claude.after.html" | awk '{print $1}')"
 echo "FREE_FINAL_TRUST_V1_CLAUDE_AFTER_SHA=$CLAUDE_AFTER"
 test "$CLAUDE_AFTER" != "$CLAUDE_BEFORE"
