@@ -1,4 +1,4 @@
-name: Audit Claude Registration Handoff 20260911
+name: Audit Claude Registration First Paint 20260911
 
 on:
   push:
@@ -30,10 +30,8 @@ jobs:
           install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
           if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
           chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"
-          test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
       - name: Read-only Golden gate
         shell: bash
@@ -48,7 +46,7 @@ jobs:
           systemctl is-active sikhadenge-funnel-golden-guard.timer
           REMOTE
 
-      - name: Three-view CTA to registration browser audit
+      - name: First-paint browser timing audit
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -57,51 +55,61 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
           const puppeteer=require('puppeteer-core');
-          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
           (async()=>{
             const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
               const p=await browser.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const bad=[],navs=[]; p.on('framenavigated',f=>{if(f===p.mainFrame())navs.push(f.url())});
-              p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?registration_handoff_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,3500));
-              const before=await p.evaluate(()=>{
-                const a=document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]');
-                const ls={}; for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']) ls[k]=localStorage.getItem(k);
-                return {url:location.href,ctaHref:a?.href||'',ctaPath:a?new URL(a.href,location.href).pathname:'',ctaText:(a?.innerText||'').replace(/\s+/g,' ').trim(),ls,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              await p.evaluateOnNewDocument(()=>{
+                const path='/gen-ai-masterclass/register-one-step';
+                const vis=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0&&r.width>0&&r.height>0};
+                const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+                function take(){
+                  if(location.pathname!==path||!document.body)return;
+                  const oldInputs=[...document.querySelectorAll('input')].filter(el=>['Enter name','Email','Phone number'].includes(el.getAttribute('placeholder')||''));
+                  const newInputs=['sd-reg-name','sd-reg-email','sd-reg-phone'].map(id=>document.getElementById(id)).filter(Boolean);
+                  const buttons=[...document.querySelectorAll('button')];
+                  const oldPrice=buttons.find(b=>norm(b.textContent).includes('₹1999'));
+                  const cont=buttons.find(b=>norm(b.textContent).includes('Continue — 2 quick questions'));
+                  const h1=document.querySelector('h1'); const h1kids=h1?[...h1.children].map(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return {tag:x.tagName,text:norm(x.textContent),display:cs.display,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}):[];
+                  const snap={t:Math.round(performance.now()),bodyText:norm(document.body.innerText).slice(0,800),oldInputsVisible:oldInputs.filter(vis).length,newInputsVisible:newInputs.filter(vis).length,oldPriceVisible:vis(oldPrice),continueVisible:vis(cont),h1:norm(h1?.textContent),h1html:h1?.innerHTML||'',h1kids,forms:document.querySelectorAll('form').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+                  let arr=[];try{arr=JSON.parse(localStorage.getItem('__sd_reg_paint_audit')||'[]')}catch{};arr.push(snap);if(arr.length>120)arr=arr.slice(-120);localStorage.setItem('__sd_reg_paint_audit',JSON.stringify(arr));
+                }
+                addEventListener('DOMContentLoaded',()=>{localStorage.removeItem('__sd_reg_paint_audit');let n=0;take();const id=setInterval(()=>{take();if(++n>=70)clearInterval(id)},50)});
               });
-              if(before.ctaPath!=='/gen-ai-masterclass/register-one-step'||before.overflow) throw new Error(`source CTA precheck fail ${name}`);
-              await Promise.all([
-                p.waitForFunction(()=>location.pathname==='/gen-ai-masterclass/register-one-step',{timeout:30000}),
-                p.evaluate(()=>document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]').click())
-              ]);
-              await new Promise(r=>setTimeout(r,1800));
-              const samples=[];
-              for(let i=0;i<10;i++){
-                samples.push(await p.evaluate(()=>{
-                  const n=s=>(s||'').replace(/\s+/g,' ').trim();
-                  const cs=getComputedStyle(document.body); const forms=[...document.querySelectorAll('form')];
-                  return {t:performance.now(),url:location.href,path:location.pathname,title:document.title,h1:n(document.querySelector('h1')?.textContent),forms:forms.length,inputs:document.querySelectorAll('input,select,textarea').length,buttons:[...document.querySelectorAll('button')].map(b=>n(b.textContent)).filter(Boolean).slice(0,12),bodyDisplay:cs.display,bodyVisibility:cs.visibility,bodyOpacity:cs.opacity,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,height:document.documentElement.scrollHeight};
-                }));
-                await new Promise(r=>setTimeout(r,500));
-              }
-              const state=await p.evaluate(()=>{
-                const n=s=>(s||'').replace(/\s+/g,' ').trim(); const fields=[...document.querySelectorAll('input,select,textarea')].map(el=>({tag:el.tagName,type:el.getAttribute('type')||'',name:el.getAttribute('name')||'',id:el.id||'',placeholder:el.getAttribute('placeholder')||'',required:el.required,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)}));
-                const labels=[...document.querySelectorAll('label')].map(l=>n(l.textContent)).filter(Boolean);
-                const forms=[...document.querySelectorAll('form')].map(f=>({id:f.id||'',action:f.getAttribute('action')||'',method:f.getAttribute('method')||'',text:n(f.innerText).slice(0,1200)}));
-                const ls={}; for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']) ls[k]=localStorage.getItem(k);
-                const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/attribution|registration|masterclass|lead/.test(s));
-                return {url:location.href,path:location.pathname,title:document.title,h1:n(document.querySelector('h1')?.textContent),body:n(document.body.innerText).slice(0,3500),fields,labels,forms,ls,scripts,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              const bad=[];p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?first_paint_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,3000));
+              await Promise.all([p.waitForFunction(()=>location.pathname==='/gen-ai-masterclass/register-one-step',{timeout:30000}),p.evaluate(()=>document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]').click())]);
+              await new Promise(r=>setTimeout(r,5000));
+              const out=await p.evaluate(()=>{
+                let frames=[];try{frames=JSON.parse(localStorage.getItem('__sd_reg_paint_audit')||'[]')}catch{}
+                const ss={},ls={};for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']){ss[k]=sessionStorage.getItem(k);ls[k]=localStorage.getItem(k)}
+                const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/registration|attribution/.test(s));
+                return {frames,ss,ls,scripts,url:location.href};
               });
-              const stablePath=samples.every(s=>s.path==='/gen-ai-masterclass/register-one-step');
-              const stableVisible=samples.every(s=>s.bodyDisplay!=='none'&&s.bodyVisibility!=='hidden'&&Number(s.bodyOpacity||1)>0);
-              const stableForms=new Set(samples.map(s=>s.forms)).size<=2;
-              console.log('REG_HANDOFF_AUDIT',name,JSON.stringify({before,state,samples,navs,bad,stablePath,stableVisible,stableForms}));
-              if(state.path!=='/gen-ai-masterclass/register-one-step'||state.overflow||!stablePath||!stableVisible||bad.length) throw new Error(`registration handoff audit fail ${name}`);
+              const f=out.frames;
+              const firstNew=f.find(x=>x.newInputsVisible===3&&x.continueVisible);
+              const oldEver=f.some(x=>x.oldInputsVisible>0||x.oldPriceVisible);
+              const blank=f.filter(x=>x.oldInputsVisible===0&&x.newInputsVisible===0&&!x.continueVisible).map(x=>x.t);
+              const overflowEver=f.some(x=>x.overflow);
+              console.log('REG_FIRST_PAINT',name,JSON.stringify({url:out.url,frames:f,firstNewMs:firstNew?.t??null,oldEver,blankCount:blank.length,blankRange:blank.length?[Math.min(...blank),Math.max(...blank)]:null,overflowEver,sessionStorage:out.ss,localStorage:out.ls,scripts:out.scripts,bad}));
+              if(oldEver||overflowEver||bad.length) throw new Error(`visible native flash or asset issue ${name}`);
               await p.close();
             }
-            await browser.close();
-            console.log('CLAUDE_REGISTRATION_HANDOFF_READONLY_3VIEW_PASS');
+            await browser.close(); console.log('REG_FIRST_PAINT_VISIBILITY_AUDIT_PASS');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
+
+      - name: Runtime owner evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for u in \
+            'https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023' \
+            'https://sikhadenge.in/registration-stable-page1-v72.js?v=20260903-131023' \
+            'https://sikhadenge.in/registration-native-suppress-v1-20260910.js?v=native-suppress-v1-20260910'; do
+            f="/tmp/$(echo "$u" | sed 's#https://sikhadenge.in/##;s#[?=&/]#_#g')"
+            curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 40 "$u" -o "$f"
+            echo "RUNTIME_ASSET $u SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c < "$f")"
+            grep -nE 'Become an AI Expert|₹1999|native|suppress|sd-reg-name|Continue — 2 quick questions|display|opacity' "$f" | head -80 || true
+          done
