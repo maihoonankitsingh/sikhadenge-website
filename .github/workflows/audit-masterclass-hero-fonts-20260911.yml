@@ -1,0 +1,50 @@
+name: Audit Masterclass Hero Fonts 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-masterclass-hero-fonts-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect live hero typography
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          cat > audit.js <<'JS'
+          const puppeteer=require('puppeteer-core');
+          const routes=['/masterclass/claude/free','/masterclass/ai-video','/masterclass/chatgpt/free','/masterclass/ai/free'];
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const route of routes){
+              const p=await b.newPage();
+              await p.setViewport({width:1440,height:1000});
+              const res=await p.goto('https://sikhadenge.in'+route+'?font_audit='+Date.now(),{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,1200));
+              const out=await p.evaluate(()=>{
+                const h1=document.querySelector('h1');
+                if(!h1) return {title:document.title,h1:null};
+                let hero=h1.closest('section')||h1.parentElement;
+                const pick=(el)=>el?{tag:el.tagName,cls:el.className,text:(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,180),font:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,line:getComputedStyle(el).lineHeight}:null;
+                const nodes=[...hero.querySelectorAll('h1,h2,h3,p,span,a,button,strong,mark')].filter(x=>(x.textContent||'').trim()).slice(0,30).map(pick);
+                return {title:document.title,h1:pick(h1),hero:{tag:hero.tagName,cls:hero.className,html:hero.outerHTML.slice(0,2500)},nodes};
+              });
+              console.log('ROUTE='+route+' HTTP='+(res&&res.status()));
+              console.log(JSON.stringify(out,null,2));
+              await p.close();
+            }
+            await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node audit.js
