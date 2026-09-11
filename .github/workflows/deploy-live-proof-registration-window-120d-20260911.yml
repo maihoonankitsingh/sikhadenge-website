@@ -1,0 +1,194 @@
+name: Deploy Live Proof Registration Window 120d 20260911
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-live-proof-registration-window-120d-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: whatsapp-agent-production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${SSH_PORT:=22}"
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"
+          KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"
+          test "$kt" = "ssh-ed25519"
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Switch displayed registration metric to actual last 120 days only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          DIR='/var/www/sikhadenge.in/social-proof-live'
+          SERVER="$DIR/server.js"
+          WIDGET="$DIR/sitewide-live-proof-v1.js"
+          TS="$(date +%Y%m%d-%H%M%S)"
+          BK="$DIR/backup-120d-${TS}"
+
+          test -f "$SERVER"
+          test -f "$WIDGET"
+          mkdir -p "$BK"
+          cp -a "$SERVER" "$BK/server.js.before"
+          cp -a "$WIDGET" "$BK/sitewide-live-proof-v1.js.before"
+
+          APP="$(pm2 jlist | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const a=JSON.parse(s);
+              const p=a.find(x=>String(x.pm2_env&&x.pm2_env.pm_cwd||"").includes("/var/www/sikhadenge.in/social-proof-live") || String(x.pm2_env&&x.pm2_env.pm_exec_path||"").endsWith("/social-proof-live/server.js"));
+              if(p) process.stdout.write(p.name||"");
+            });
+          ')"
+          test -n "$APP"
+          echo "PM2_APP=$APP"
+          echo "BACKUP=$BK"
+
+          rollback() {
+            set +e
+            echo 'AUTO_ROLLBACK_START'
+            cp -a "$BK/server.js.before" "$SERVER"
+            cp -a "$BK/sitewide-live-proof-v1.js.before" "$WIDGET"
+            pm2 restart "$APP" --update-env >/dev/null 2>&1 || true
+            echo 'AUTO_ROLLBACK_DONE'
+          }
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then rollback; fi; exit "$rc"' EXIT
+
+          python3 - "$SERVER" "$WIDGET" <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          server=Path(sys.argv[1])
+          widget=Path(sys.argv[2])
+          s=server.read_text(encoding='utf-8')
+          w=widget.read_text(encoding='utf-8')
+
+          # Add a 120-calendar-day IST start while preserving all existing metrics.
+          start120='  const start120 = midnightIST(119);\n'
+          if start120 not in s:
+              anchor='  const start30 = midnightIST(29);\n'
+              if s.count(anchor) != 1:
+                  raise SystemExit(f'server start30 anchor count={s.count(anchor)}')
+              s=s.replace(anchor, anchor + start120, 1)
+
+          # Add recent120d to the Promise.all destructuring without changing existing fields.
+          if not re.search(r'(?m)^  const \[[^\]]*\brecent120d\b[^\]]*\] =\s*$', s):
+              matches=list(re.finditer(r'(?m)^  const \[(?P<items>[^\]]*\brecent30d\b[^\]]*)\] =\s*$', s))
+              if len(matches) != 1:
+                  raise SystemExit(f'server stats destructure matches={len(matches)}')
+              m=matches[0]
+              items=[x.strip() for x in m.group('items').split(',')]
+              if 'recent120d' not in items:
+                  idx=items.index('recent30d')
+                  items.insert(idx, 'recent120d')
+              newline='  const [' + ', '.join(items) + '] ='
+              s=s[:m.start()] + newline + s[m.end():]
+
+          # Add one DB count for the 120-day window immediately before the existing 30-day count.
+          if 'createdAt: { gte: start120, lt: tomorrow }' not in s:
+              marker='''      prisma.masterclassLead.count({
+        where: {
+          createdAt: { gte: start30, lt: tomorrow }
+        }
+      }),
+'''
+              if s.count(marker) != 1:
+                  raise SystemExit(f'server recent30d query marker count={s.count(marker)}')
+              q120='''      prisma.masterclassLead.count({
+        where: {
+          createdAt: { gte: start120, lt: tomorrow }
+        }
+      }),
+'''
+              s=s.replace(marker, q120 + marker, 1)
+
+          # Return recent120d while preserving recent30d/recent24h and every other response field.
+          if not re.search(r'(?m)^    recent120d,$', s):
+              marker='    recent30d,\n'
+              if s.count(marker) != 1:
+                  raise SystemExit(f'server response recent30d marker count={s.count(marker)}')
+              s=s.replace(marker, '    recent120d,\n' + marker, 1)
+
+          # Change only the number source in the widget. Do not touch layout, text, labels or styling.
+          new_line='if (number) number.textContent = fmt(data.recent120d);'
+          if new_line not in w:
+              candidates=[
+                  'if (number) number.textContent = fmt(Math.min(Number(data.recent30d || 0), 120));',
+                  'if (number) number.textContent = fmt(data.recent30d);'
+              ]
+              found=[c for c in candidates if c in w]
+              if len(found) != 1:
+                  nearby=[line.strip() for line in w.splitlines() if 'number.textContent' in line]
+                  raise SystemExit(f'widget number source candidates={len(found)} nearby={nearby[:8]}')
+              old=found[0]
+              if w.count(old) != 1:
+                  raise SystemExit(f'widget old number line count={w.count(old)}')
+              w=w.replace(old,new_line,1)
+
+          server.write_text(s,encoding='utf-8')
+          widget.write_text(w,encoding='utf-8')
+
+          sv=server.read_text(encoding='utf-8')
+          wv=widget.read_text(encoding='utf-8')
+          assert 'const start120 = midnightIST(119);' in sv
+          assert 'createdAt: { gte: start120, lt: tomorrow }' in sv
+          assert re.search(r'(?m)^    recent120d,$', sv)
+          assert wv.count(new_line) == 1
+          print('SERVER_120D_FIELD=1')
+          print('WIDGET_NUMBER_SOURCE_120D=1')
+          print('DESIGN_TEXT_STYLE_UNTOUCHED=1')
+          PY
+
+          node --check "$SERVER"
+          node --check "$WIDGET"
+          grep -Fq 'fmt(data.recent120d)' "$WIDGET"
+
+          pm2 restart "$APP" --update-env >/dev/null
+          sleep 2
+          pm2 pid "$APP" | grep -Eq '^[1-9][0-9]*$'
+
+          API="$(curl -fsS 'http://127.0.0.1:3944/api/social-proof/live?check=120d')"
+          printf '%s' "$API" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True; assert isinstance(d.get("recent120d"), int); assert isinstance(d.get("recent30d"), int); assert d["recent120d"] >= d["recent30d"]; assert d["recent120d"] <= d["currentDbTotal"]; print("recent120d=",d["recent120d"],"recent30d=",d["recent30d"],"currentDbTotal=",d["currentDbTotal"])'
+
+          trap - EXIT
+          echo 'RESULT=ACTUAL_LAST_120_DAYS_REGISTRATION_METRIC_LIVE'
+          REMOTE
+
+      - name: Verify public API and widget
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?check=120d-public-20260911' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent120d"),int); assert d["recent120d"] >= d["recent30d"]; print("PUBLIC_RECENT120D=",d["recent120d"])'
+          TMP="$(mktemp)"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&check=120d-public-20260911' -o "$TMP"
+          grep -Fq 'fmt(data.recent120d)' "$TMP"
+          if grep -Fq 'fmt(Math.min(Number(data.recent30d || 0), 120))' "$TMP"; then
+            echo 'ERROR: old numeric cap is still present' >&2
+            exit 1
+          fi
+          echo 'PUBLIC_120D_METRIC=PASS NUMBER_SOURCE_ONLY_CHANGED=1'
