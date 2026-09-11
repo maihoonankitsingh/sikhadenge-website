@@ -39,7 +39,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/institutions`,  priority: 0.82, changeFrequency: "monthly", lastModified: DATE_INSTITUTIONS },
     { url: `${BASE}/about-us`,      priority: 0.75, changeFrequency: "monthly", lastModified: DATE_STATIC },
     { url: `${BASE}/reviews`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
-    { url: `${BASE}/contact`,       priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
+    { url: `${BASE}/contact-us`,    priority: 0.72, changeFrequency: "monthly", lastModified: DATE_STATIC },
     { url: `${BASE}/collab`,        priority: 0.6,  changeFrequency: "monthly", lastModified: DATE_STATIC },
     { url: `${BASE}/terms`,         priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
     { url: `${BASE}/privacy-policy`,priority: 0.4,  changeFrequency: "yearly",  lastModified: DATE_STATIC },
