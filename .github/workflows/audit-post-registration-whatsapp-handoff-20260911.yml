@@ -1,0 +1,93 @@
+name: Audit Post Registration WhatsApp Handoff 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-post-registration-whatsapp-handoff-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 15
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Read-only handoff and recovery audit
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          export PM2_HOME=/root/.pm2
+          echo '===== RUNTIME ====='
+          pm2 jlist | node - <<'NODE'
+          let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{for(const x of JSON.parse(s)){if(/whatsapp|dashboard|registration|masterclass/i.test(x.name||'')) console.log(JSON.stringify({name:x.name,pid:x.pid,status:x.pm2_env?.status,cwd:x.pm2_env?.pm_cwd,script:x.pm2_env?.pm_exec_path}))}})
+          NODE
+
+          WA='/var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard'
+          echo '===== WHATSAPP_APP_PATH ====='
+          if [[ -d "$WA" ]]; then echo "WA_PATH=$WA"; else echo 'WA_PATH_MISSING'; fi
+
+          echo '===== WHATSAPP_REPO_METADATA ====='
+          if [[ -d "$WA/.git" ]]; then git -C "$WA" status --short; git -C "$WA" rev-parse HEAD; git -C "$WA" remote -v | sed -E 's#(https?://)[^/@]+@#\1REDACTED@#g' | head -4; fi
+
+          echo '===== WHATSAPP_ROUTES_JOBS_FILES ====='
+          if [[ -d "$WA" ]]; then
+            find "$WA" -maxdepth 7 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' -o -name '*.sql' \) \
+              ! -path '*/node_modules/*' ! -path '*/.next/*' ! -path '*/.git/*' \
+              | grep -Ei '/(api|route|webhook|worker|queue|job|cron|remind|campaign|message|template|lead|contact|conversation|whatsapp|scheduler|automation)' \
+              | sed "s#^$WA/##" | head -300
+          fi
+
+          echo '===== WHATSAPP_HANDOFF_CODE_MATCHES ====='
+          if [[ -d "$WA" ]]; then
+            grep -RInE --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' \
+              'remind|follow.?up|retry|idempoten|queue|bull|cron|schedule|template|send(Message|Text|Template)?|community|confirmation|registered|lead|webhook|opt.?in|consent|whatsapp' "$WA" \
+              | grep -Ev '/(package-lock|pnpm-lock|yarn.lock|\.env)' | head -500 || true
+          fi
+
+          echo '===== PACKAGE_SCRIPTS ====='
+          if [[ -f "$WA/package.json" ]]; then node -e 'const p=require(process.argv[1]); console.log(JSON.stringify({name:p.name,scripts:p.scripts,dependencies:Object.keys(p.dependencies||{}).filter(x=>/whatsapp|bull|redis|cron|queue|prisma|drizzle|twilio|meta|axios/i.test(x)),devDependencies:Object.keys(p.devDependencies||{}).filter(x=>/prisma|drizzle/i.test(x))},null,2))' "$WA/package.json"; fi
+
+          echo '===== REGISTRATION_RUNTIME ====='
+          RPID="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3955$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+          if [[ "$RPID" =~ ^[0-9]+$ ]]; then
+            RCWD="$(readlink -f /proc/$RPID/cwd)"; echo "REG_PID=$RPID"; echo "REG_CWD=$RCWD"
+            find "$RCWD" -maxdepth 7 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' \) ! -path '*/node_modules/*' ! -path '*/.next/*' \
+              -print0 | xargs -0 grep -InE 'WhatsApp|whatsapp|community|confirmation|remind|follow.?up|api/masterclass/lead|wa\.me|chat\.whatsapp' \
+              | grep -Ev '/\.env' | head -300 || true
+          fi
+
+          echo '===== DASHBOARD_WHATSAPP_MATCHES ====='
+          D='/opt/sikhadenge-dashboard'
+          if [[ -d "$D" ]]; then
+            grep -RInE --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' \
+              'WhatsApp|whatsapp|remind|follow.?up|message|campaign|lead status|delivery|failed|retry|community' "$D/app" "$D/lib" "$D/src" 2>/dev/null \
+              | head -350 || true
+          fi
+
+          echo '===== NO_WRITE_PROOF ====='
+          echo 'AUDIT_MODE=READ_ONLY'
+          echo 'NO_HTTP_POSTS=1'
+          echo 'NO_MESSAGES_SENT=1'
+          REMOTE
