@@ -1,4 +1,5 @@
 name: Deploy Registration Trust Sync V1 20260911
+# QA matcher v2: trust labels are matched case-insensitively.
 
 on:
   push:
