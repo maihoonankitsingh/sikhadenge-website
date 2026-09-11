@@ -6,7 +6,6 @@ SITE='/etc/nginx/sites-enabled/sikhadenge.in-ssl'
 MARKER='/var/backups/sikhadenge/.claude-free-final-trust-v1-last'
 EXPECTED_AI='b03ab6b210bceed43573d2037816ae8f8208969ea73cecaba60e14eef10c12d2'
 EXPECTED_CLAUDE_BEFORE='8395c8d87636cea8d2f0f0f0a23def78a52a9cc77170399ec0aa50252782ed3f'
-STYLE_ID='sd-claude-free-final-trust-v1'
 
 rollback(){
   set +e
@@ -41,10 +40,10 @@ curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https
 CLAUDE_BEFORE="$(sha256sum "$BK/claude.before.html" | awk '{print $1}')"
 echo "FREE_FINAL_TRUST_V1_CLAUDE_BEFORE_SHA=$CLAUDE_BEFORE"
 test "$CLAUDE_BEFORE" = "$EXPECTED_CLAUDE_BEFORE"
-grep -Fq 'Ready to build your first practical' "$BK/claude.before.html"
-grep -Fq '/claude-final-handoff-v1-20260910.js' "$BK/claude.before.html"
-grep -Fq 'SECURE PAYMENT OPTIONS' "$BK/claude.before.html"
 
+# Current user-facing final-handoff content is client/runtime enhanced. Do not
+# assert those DOM-only strings against raw SSR bytes. The exact Golden SHA
+# above plus the three-view browser suite below are the acceptance contract.
 sikhadenge-funnel-lockctl check
 
 python3 - "$SITE" <<'PY'
@@ -108,8 +107,6 @@ sleep 2
 
 curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 35 "https://sikhadenge.in/masterclass/claude/free?free_final_trust_after=$TS" -o "$BK/claude.after.html"
 grep -Fq 'sd-claude-free-final-trust-v1' "$BK/claude.after.html"
-grep -Fq 'Ready to build your first practical' "$BK/claude.after.html"
-grep -Fq '/claude-final-handoff-v1-20260910.js' "$BK/claude.after.html"
 CLAUDE_AFTER="$(sha256sum "$BK/claude.after.html" | awk '{print $1}')"
 echo "FREE_FINAL_TRUST_V1_CLAUDE_AFTER_SHA=$CLAUDE_AFTER"
 test "$CLAUDE_AFTER" != "$CLAUDE_BEFORE"
