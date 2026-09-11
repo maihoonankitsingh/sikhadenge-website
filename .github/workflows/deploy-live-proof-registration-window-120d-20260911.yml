@@ -88,7 +88,6 @@ jobs:
           s=server.read_text(encoding='utf-8')
           w=widget.read_text(encoding='utf-8')
 
-          # Add a 120-calendar-day IST start while preserving all existing metrics.
           start120='  const start120 = midnightIST(119);\n'
           if start120 not in s:
               anchor='  const start30 = midnightIST(29);\n'
@@ -96,45 +95,30 @@ jobs:
                   raise SystemExit(f'server start30 anchor count={s.count(anchor)}')
               s=s.replace(anchor, anchor + start120, 1)
 
-          # Add recent120d to the Promise.all destructuring without changing existing fields.
           if not re.search(r'(?m)^  const \[[^\]]*\brecent120d\b[^\]]*\] =\s*$', s):
               matches=list(re.finditer(r'(?m)^  const \[(?P<items>[^\]]*\brecent30d\b[^\]]*)\] =\s*$', s))
               if len(matches) != 1:
                   raise SystemExit(f'server stats destructure matches={len(matches)}')
               m=matches[0]
               items=[x.strip() for x in m.group('items').split(',')]
-              if 'recent120d' not in items:
-                  idx=items.index('recent30d')
-                  items.insert(idx, 'recent120d')
+              idx=items.index('recent30d')
+              items.insert(idx, 'recent120d')
               newline='  const [' + ', '.join(items) + '] ='
               s=s[:m.start()] + newline + s[m.end():]
 
-          # Add one DB count for the 120-day window immediately before the existing 30-day count.
           if 'createdAt: { gte: start120, lt: tomorrow }' not in s:
-              marker='''      prisma.masterclassLead.count({
-        where: {
-          createdAt: { gte: start30, lt: tomorrow }
-        }
-      }),
-'''
+              marker='      prisma.masterclassLead.count({\n        where: {\n          createdAt: { gte: start30, lt: tomorrow }\n        }\n      }),\n'
+              q120='      prisma.masterclassLead.count({\n        where: {\n          createdAt: { gte: start120, lt: tomorrow }\n        }\n      }),\n'
               if s.count(marker) != 1:
                   raise SystemExit(f'server recent30d query marker count={s.count(marker)}')
-              q120='''      prisma.masterclassLead.count({
-        where: {
-          createdAt: { gte: start120, lt: tomorrow }
-        }
-      }),
-'''
               s=s.replace(marker, q120 + marker, 1)
 
-          # Return recent120d while preserving recent30d/recent24h and every other response field.
           if not re.search(r'(?m)^    recent120d,$', s):
               marker='    recent30d,\n'
               if s.count(marker) != 1:
                   raise SystemExit(f'server response recent30d marker count={s.count(marker)}')
               s=s.replace(marker, '    recent120d,\n' + marker, 1)
 
-          # Change only the number source in the widget. Do not touch layout, text, labels or styling.
           new_line='if (number) number.textContent = fmt(data.recent120d);'
           if new_line not in w:
               candidates=[
