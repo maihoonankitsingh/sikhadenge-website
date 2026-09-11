@@ -21,7 +21,7 @@ jobs:
       SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
       SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
     steps:
-      - name: Configure SSH and inspect exact registration file
+      - name: Configure SSH and inspect active V72 owners
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -31,22 +31,42 @@ jobs:
           chmod 600 "$KEY"
           read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 -' <<'PY'
-          import re,hashlib,os
-          p='/var/www/sikhadenge.in/releases/masterclass-registration-v72-tracking-fixed-20260902-213914/pages/gen-ai-masterclass/register-one-step.js'
-          s=open(p,encoding='utf-8',errors='ignore').read(); lines=s.splitlines()
-          print('FILE=',p); print('SHA=',hashlib.sha256(s.encode()).hexdigest()); print('LINES=',len(lines)); print('READ_ONLY=1')
-          pats=[r'COMMUNITY_LINK',r'Join Community',r'gtag\s*\(',r'fbq\s*\(',r'dataLayer',r'CustomEvent',r'dispatchEvent',r'track',r'analytics',r'event']
-          for pat in pats: print('COUNT',pat,len(re.findall(pat,s,re.I)))
-          rx=re.compile(r'COMMUNITY_LINK|Join Community|gtag\s*\(|fbq\s*\(|dataLayer|CustomEvent|dispatchEvent|track|analytics|event',re.I)
-          hits=[i for i,l in enumerate(lines) if rx.search(l)]
-          groups=[]
-          for i in hits:
-            a=max(0,i-10); b=min(len(lines),i+11)
-            if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
-            else: groups.append((a,b))
-          for a,b in groups:
-            print(f'--- {a+1}-{b} ---')
-            for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
+          ssh -p "$SSH_PORT" -i "$KEY" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo 'READ_ONLY=1'
+          RPID="$(ss -ltnp 2>/dev/null | awk '$4 ~ /:3955$/ {if(match($0,/pid=[0-9]+/)){print substr($0,RSTART+4,RLENGTH-4);exit}}')"
+          test "$RPID" -gt 1
+          RCWD="$(readlink -f /proc/$RPID/cwd)"
+          echo "REG_PID=$RPID"
+          echo "REG_CWD=$RCWD"
+          ROOTS=("$RCWD" '/var/www/sikhadenge.in/registration-stable-v72-20260903-131023')
+          mapfile -t OWNERS < <(
+            for r in "${ROOTS[@]}"; do
+              [[ -d "$r" ]] || continue
+              grep -RIlE --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude='*.map' \
+                'COMMUNITY_LINK|Join Community|chat\.whatsapp\.com|wa\.me' "$r" 2>/dev/null || true
+            done | sort -u
+          )
+          echo "OWNER_COUNT=${#OWNERS[@]}"
+          printf 'OWNER=%s\n' "${OWNERS[@]}"
+          test "${#OWNERS[@]}" -ge 1
+          python3 - "${OWNERS[@]}" <<'PY'
+          import sys,re,hashlib,os
+          pats=[r'COMMUNITY_LINK',r'Join Community',r'chat\.whatsapp\.com',r'wa\.me',r'gtag\s*\(',r'fbq\s*\(',r'dataLayer',r'CustomEvent',r'dispatchEvent',r'track',r'analytics',r'event']
+          rx=re.compile('|'.join(f'(?:{p})' for p in pats),re.I)
+          for p in sys.argv[1:]:
+            s=open(p,encoding='utf-8',errors='ignore').read(); lines=s.splitlines()
+            print(f'\n===== FILE={p} SHA={hashlib.sha256(s.encode()).hexdigest()} LINES={len(lines)} =====')
+            for pat in pats: print('COUNT',pat,len(re.findall(pat,s,re.I)))
+            hits=[i for i,l in enumerate(lines) if rx.search(l)]
+            groups=[]
+            for i in hits:
+              a=max(0,i-8); b=min(len(lines),i+9)
+              if groups and a<=groups[-1][1]+1: groups[-1]=(groups[-1][0],max(groups[-1][1],b))
+              else: groups.append((a,b))
+            for a,b in groups[:24]:
+              print(f'--- {a+1}-{b} ---')
+              for j in range(a,b): print(f'{j+1:5d}: {lines[j]}')
           print('FOCUSED_COMMUNITY_AUDIT_PASS=1')
           PY
+          REMOTE
