@@ -54,49 +54,37 @@ jobs:
 
           python3 - "$FILE" <<'PY'
           from pathlib import Path
-          import re, sys
+          import sys
 
           p=Path(sys.argv[1])
           before=p.read_text(encoding='utf-8')
-          target='if (number) number.textContent = fmt(Math.min(Number(data.recent24h || 0), 120));'
+          old='if (number) number.textContent = fmt(data.recent30d);'
+          new='if (number) number.textContent = fmt(Math.min(Number(data.recent30d || 0), 120));'
 
-          if target in before:
+          if new in before:
               print('ALREADY_CAP_120=1')
               raise SystemExit(0)
 
-          matches=[]
-          for m in re.finditer(r'(?m)^(?P<indent>\s*)if\s*\(number\)\s*number\.textContent\s*=\s*(?P<expr>[^;]+);\s*$', before):
-              expr=m.group('expr')
-              if 'recent24h' in expr:
-                  matches.append(m)
+          if before.count(old) != 1:
+              raise SystemExit(f'guard failed: exact current number line count={before.count(old)}')
 
-          if len(matches) != 1:
-              lines=[line.strip() for line in before.splitlines() if 'number.textContent' in line or 'recent24h' in line]
-              raise SystemExit(f'guard failed: recent24h number-render matches={len(matches)} nearby={lines[:12]}')
-
-          m=matches[0]
-          old=m.group(0)
-          new=f"{m.group('indent')}{target}"
-          after=before[:m.start()] + new + before[m.end():]
-
-          if after.count(target) != 1:
-              raise SystemExit('guard failed: target count after replacement is not 1')
-          if after[:m.start()] != before[:m.start()] or after[m.start()+len(new):] != before[m.end():]:
-              raise SystemExit('guard failed: content outside number line changed')
+          after=before.replace(old,new,1)
+          if after.replace(new,old,1) != before:
+              raise SystemExit('guard failed: change outside number render line detected')
 
           p.write_text(after,encoding='utf-8')
           verify=p.read_text(encoding='utf-8')
-          if verify.count(target) != 1:
+          if verify.count(new) != 1 or old in verify:
               raise SystemExit('verification failed')
 
-          print('OLD_NUMBER_LINE=' + old.strip())
-          print('NEW_NUMBER_LINE=' + target)
+          print('OLD_NUMBER_LINE=' + old)
+          print('NEW_NUMBER_LINE=' + new)
           print('NUMBER_RENDER_ONLY_CHANGE=1')
           print('DISPLAY_CAP=120')
           PY
 
           node --check "$FILE"
-          grep -Fq 'fmt(Math.min(Number(data.recent24h || 0), 120))' "$FILE"
+          grep -Fq 'fmt(Math.min(Number(data.recent30d || 0), 120))' "$FILE"
           echo "BACKUP=$BAK"
           echo 'LIVE_PROOF_NUMBER_CAP_120_OK=1 DESIGN_UNTOUCHED=1 API_UNTOUCHED=1 LABELS_UNTOUCHED=1'
           REMOTE
@@ -106,7 +94,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           TMP="$(mktemp)"
-          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&cap120=20260911b' -o "$TMP"
-          grep -Fq 'fmt(Math.min(Number(data.recent24h || 0), 120))' "$TMP"
-          curl -fsS 'https://sikhadenge.in/api/social-proof/live?cap120=20260911b' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent24h"), int)'
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?widget=1&cap120=20260911c' -o "$TMP"
+          grep -Fq 'fmt(Math.min(Number(data.recent30d || 0), 120))' "$TMP"
+          curl -fsS 'https://sikhadenge.in/api/social-proof/live?cap120=20260911c' | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("ok") is True and isinstance(d.get("recent30d"), int)'
           echo 'PUBLIC_NUMBER_CAP_120=PASS'
