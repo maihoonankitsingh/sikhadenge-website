@@ -12,7 +12,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
       - name: Inspect live hero typography
         shell: bash
@@ -30,15 +30,16 @@ jobs:
             for(const route of routes){
               const p=await b.newPage();
               await p.setViewport({width:1440,height:1000});
-              const res=await p.goto('https://sikhadenge.in'+route+'?font_audit='+Date.now(),{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,1200));
+              p.setDefaultNavigationTimeout(25000);
+              const res=await p.goto('https://sikhadenge.in'+route+'?font_audit='+Date.now(),{waitUntil:'domcontentloaded',timeout:25000});
+              await new Promise(r=>setTimeout(r,1800));
               const out=await p.evaluate(()=>{
                 const h1=document.querySelector('h1');
                 if(!h1) return {title:document.title,h1:null};
                 let hero=h1.closest('section')||h1.parentElement;
-                const pick=(el)=>el?{tag:el.tagName,cls:el.className,text:(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,180),font:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,line:getComputedStyle(el).lineHeight}:null;
-                const nodes=[...hero.querySelectorAll('h1,h2,h3,p,span,a,button,strong,mark')].filter(x=>(x.textContent||'').trim()).slice(0,30).map(pick);
-                return {title:document.title,h1:pick(h1),hero:{tag:hero.tagName,cls:hero.className,html:hero.outerHTML.slice(0,2500)},nodes};
+                const pick=(el)=>el?{tag:el.tagName,cls:String(el.className||''),text:(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,180),font:getComputedStyle(el).fontFamily,weight:getComputedStyle(el).fontWeight,size:getComputedStyle(el).fontSize,line:getComputedStyle(el).lineHeight}:null;
+                const nodes=[...hero.querySelectorAll('h1,h2,h3,p,span,a,button,strong,mark')].filter(x=>(x.textContent||'').trim()).slice(0,40).map(pick);
+                return {title:document.title,h1:pick(h1),hero:{tag:hero.tagName,cls:String(hero.className||''),html:hero.outerHTML.slice(0,3500)},nodes};
               });
               console.log('ROUTE='+route+' HTTP='+(res&&res.status()));
               console.log(JSON.stringify(out,null,2));
