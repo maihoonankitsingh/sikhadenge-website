@@ -34,35 +34,32 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-      - name: Read-only production source audit
+      - name: Read-only current V56R1 confirmation audit
         shell: bash
         run: |
           set -Eeuo pipefail
           ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
           JS='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
-          SNIP='/etc/nginx/snippets/sikhadenge-registration-v2-hot.conf'
-          test -f "$JS"; test -f "$SNIP"
+          test -f "$JS"
           echo "REG_JS_SHA=$(sha256sum "$JS" | awk '{print $1}')"
-          echo "REG_SNIP_SHA=$(sha256sum "$SNIP" | awk '{print $1}')"
-          python3 - "$JS" "$SNIP" <<'PY'
+          python3 - "$JS" <<'PY'
           import sys,re
           js=open(sys.argv[1],encoding='utf-8',errors='ignore').read()
-          sn=open(sys.argv[2],encoding='utf-8',errors='ignore').read()
-          terms=['click_whatsapp_button','JOIN WHATSAPP COMMUNITY','sd_consent_v1','policyVersion','registration_step_view','/api/masterclass/lead']
+          start='/* SIKHADENGE_CONFIRMATION_FINAL_WELCOME_V56_R1_START */'
+          end='/* SIKHADENGE_CONFIRMATION_FINAL_WELCOME_V56_R1_END */'
+          a=js.find(start); b=js.find(end,a+1) if a>=0 else -1
+          print('V56R1_MARKERS',a,b)
+          if a>=0:
+              seg=js[a:(b+len(end) if b>=0 else min(len(js),a+18000))]
+              print('===== V56R1_SEGMENT_START =====')
+              print(seg)
+              print('===== V56R1_SEGMENT_END =====')
+          terms=['whatsapp','community','dataLayer','gtag','fbq','ttq','analytics','advertising','addEventListener','onclick','href']
           for t in terms:
-              print('\n===== TERM',t,'=====')
-              start=0; n=0
-              while True:
-                  i=js.find(t,start)
-                  if i<0: break
-                  n+=1
-                  print('OCCURRENCE',n,'INDEX',i)
-                  print(js[max(0,i-900):min(len(js),i+1500)])
-                  start=i+len(t)
-              print('COUNT',n)
-          print('\n===== REGISTRATION SNIPPET =====')
-          print(sn)
-          print('===== END SNIPPET =====')
+              matches=list(re.finditer(re.escape(t),js,re.I))
+              print('\nTERM',t,'COUNT',len(matches))
+              for m in matches[:12]:
+                  i=m.start(); print('INDEX',i); print(js[max(0,i-420):min(len(js),i+800)])
           PY
           REMOTE
