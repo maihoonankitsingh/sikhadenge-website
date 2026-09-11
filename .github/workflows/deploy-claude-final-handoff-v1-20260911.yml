@@ -30,7 +30,7 @@ jobs:
           set -Eeuo pipefail
           bash -n ops/deploy-claude-final-handoff-v1-20260911.sh
           node --check ops/qa-claude-final-handoff-v1-20260911.js
-          grep -Fq "EXPECTED_CLAUDE_BEFORE='7c27c30a3d042e65eabb28d91d0a668e9f373f46df514d7d083e6f3d9ba41b85'" ops/deploy-claude-final-handoff-v1-20260911.sh
+          grep -Fq "EXPECTED_CLAUDE_BEFORE='6c89ce95c27a5f56ab90bbf36d646233fae94a90c2bf7cdc6d2504900bb4871f'" ops/deploy-claude-final-handoff-v1-20260911.sh
           grep -Fq "EXPECTED_CURRENT_CHUNK_SHA='59664d0c769afb5f1425beb15ea7f19008e0a12d1334c86cea58ca87a5c76f48'" ops/deploy-claude-final-handoff-v1-20260911.sh
           grep -Fq 'WhatsApp joining instructions to attend.' ops/qa-claude-final-handoff-v1-20260911.js
           echo FINAL_HANDOFF_V1_STATIC_VALIDATION=PASS
@@ -62,7 +62,7 @@ jobs:
           STATUS="$(sikhadenge-funnel-lockctl status)"
           printf '%s\n' "$STATUS" | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
           test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
-          test "$(printf '%s\n' "$STATUS" | awk -F= '/^CLAUDE_PUBLIC_SHA=/{print $2}')" = '7c27c30a3d042e65eabb28d91d0a668e9f373f46df514d7d083e6f3d9ba41b85'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^CLAUDE_PUBLIC_SHA=/{print $2}')" = '6c89ce95c27a5f56ab90bbf36d646233fae94a90c2bf7cdc6d2504900bb4871f'
           test "$(printf '%s\n' "$STATUS" | awk -F= '/^AI_PUBLIC_SHA=/{print $2}')" = 'b03ab6b210bceed43573d2037816ae8f8208969ea73cecaba60e14eef10c12d2'
           systemctl is-enabled sikhadenge-funnel-golden-guard.timer
           systemctl is-active sikhadenge-funnel-golden-guard.timer
