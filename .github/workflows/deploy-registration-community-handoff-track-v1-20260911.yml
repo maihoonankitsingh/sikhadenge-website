@@ -1,4 +1,4 @@
-name: Audit Registration About You Screen 20260911
+name: Audit Registration About You Owner 20260911
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Capture Step2 without lead write
+      - name: Trace current Step2 DOM and script owner
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -23,35 +23,17 @@ jobs:
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
           const puppeteer=require('puppeteer-core');
-          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
           (async()=>{
             const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
-              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              const lead=[],bad=[],errs=[];
-              await p.setRequestInterception(true);
-              p.on('request',req=>{if(req.method()==='POST'&&/\/api\/masterclass\/lead(?:\?|$)/.test(req.url())){lead.push(req.postData()||'');req.abort('blockedbyclient').catch(()=>{});}else req.continue().catch(()=>{});});
-              p.on('pageerror',e=>errs.push(String(e)));
-              p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&step2_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,3500));
-              await p.evaluate(()=>{
-                const set=(id,v)=>{const e=document.getElementById(id);const d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');d.set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));};
-                set('sd-reg-name','QA Step Two');set('sd-reg-email','qa.step2@example.com');set('sd-reg-phone','9999999999');
-                const b=document.querySelector('#sdv2-root [data-action="details-next"]');if(!b)throw new Error('details-next missing');b.click();
-              });
-              await new Promise(r=>setTimeout(r,700));
-              const x=await p.evaluate(()=>{
-                const n=s=>(s||'').replace(/\s+/g,' ').trim();const vis=e=>{if(!e)return false;const r=e.getBoundingClientRect(),c=getComputedStyle(e);return r.width>0&&r.height>0&&c.display!=='none'&&c.visibility!=='hidden'&&Number(c.opacity||1)>0};
-                const root=document.getElementById('sdv2-root');
-                const roles=[...root.querySelectorAll('[data-role]')].map(e=>{const r=e.getBoundingClientRect();return {value:e.getAttribute('data-role')||'',text:n(e.textContent),visible:vis(e),rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}});
-                const buttons=[...root.querySelectorAll('button')].filter(vis).map(e=>({text:n(e.textContent),action:e.getAttribute('data-action')||'',disabled:!!e.disabled}));
-                return {text:n(root.innerText),roles,buttons,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,rootRect:(()=>{const r=root.getBoundingClientRect();return {x:Math.round(r.x),w:Math.round(r.width),h:Math.round(r.height)}})()};
-              });
-              console.log('REG_ABOUT_YOU_AUDIT',name,JSON.stringify({state:x,leadWrites:lead.length,bad,errorCount:errs.length,errors:errs.slice(0,5)}));
-              if(lead.length||bad.length||x.overflow||!x.text.includes('About You')||x.roles.filter(r=>r.visible).length<3)throw new Error(`About You audit fail ${name}`);
-              await p.close();
-            }
-            await b.close();console.log('REGISTRATION_ABOUT_YOU_3VIEW_AUDIT_PASS');
+            const p=await b.newPage();await p.setViewport({width:390,height:844,isMobile:true,hasTouch:true});
+            let lead=0;await p.setRequestInterception(true);p.on('request',r=>{if(r.method()==='POST'&&/\/api\/masterclass\/lead(?:\?|$)/.test(r.url())){lead++;r.abort('blockedbyclient').catch(()=>{})}else r.continue().catch(()=>{})});
+            await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&owner_audit=${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});await new Promise(r=>setTimeout(r,3500));
+            await p.evaluate(()=>{const set=(id,v)=>{const e=document.getElementById(id),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');d.set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))};set('sd-reg-name','QA Owner');set('sd-reg-email','qa.owner@example.com');set('sd-reg-phone','9999999999');document.querySelector('#sdv2-root [data-action="details-next"]').click()});
+            await new Promise(r=>setTimeout(r,700));
+            const dom=await p.evaluate(()=>{const n=s=>(s||'').replace(/\s+/g,' ').trim(),vis=e=>{const r=e.getBoundingClientRect(),c=getComputedStyle(e);return r.width>0&&r.height>0&&c.display!=='none'&&c.visibility!=='hidden'&&Number(c.opacity||1)>0&&r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight};const root=document.getElementById('sdv2-root');const all=[...root.querySelectorAll('button')].map(e=>{const r=e.getBoundingClientRect();return {text:n(e.textContent),role:e.getAttribute('data-role')||'',action:e.getAttribute('data-action')||'',onScreen:vis(e),rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},parent:(e.parentElement?.outerHTML||'').slice(0,900)}});return {all,html:root.outerHTML.slice(0,14000),scripts:[...document.scripts].map(s=>s.src).filter(Boolean)}});
+            const owners=[];
+            for(const src of dom.scripts){try{const u=new URL(src);if(u.origin!==location.origin)continue;const t=await p.evaluate(async s=>fetch(s,{cache:'no-store'}).then(r=>r.text()),src);const hits=['Student / Fresher','Freelancer / Creator','STEP 2 · ABOUT YOU','What best describes you?'].filter(k=>t.includes(k));if(hits.length)owners.push({src,hits,bytes:t.length})}catch(e){}}
+            console.log('REG_STEP2_OWNER_DOM',JSON.stringify(dom));console.log('REG_STEP2_OWNER_SCRIPTS',JSON.stringify(owners));console.log('REG_STEP2_OWNER_LEAD_WRITES',lead);
+            if(lead||!owners.length)throw new Error('Step2 owner trace failed');await b.close();console.log('REGISTRATION_STEP2_OWNER_AUDIT_PASS');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
