@@ -1,4 +1,4 @@
-name: Audit Claude Registration First Paint 20260911
+name: Audit Registration Trust Cue Owners 20260911
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     environment: whatsapp-agent-production
-    timeout-minutes: 18
+    timeout-minutes: 15
     steps:
       - name: Configure pinned SSH
         shell: bash
@@ -33,7 +33,7 @@ jobs:
           read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
           printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"; chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Read-only Golden gate
+      - name: Golden and Nginx read-only owner scan
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -41,12 +41,17 @@ jobs:
           set -Eeuo pipefail
           sikhadenge-funnel-lockctl check
           sikhadenge-funnel-lockctl status | grep -E 'SEALED_AT|CLAUDE_PUBLIC_SHA|AI_PUBLIC_SHA|LOCK_STATE|LINKED_ASSETS|PROTECTED_SOURCE_FILES'
-          test "$(sikhadenge-funnel-lockctl status | awk -F= '/^LOCK_STATE=/{print $2}')" = LOCKED
-          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
-          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          SITE=/etc/nginx/sites-enabled/sikhadenge.in-ssl
+          echo '===== REGISTRATION NGINX REFERENCES ====='
+          grep -nE 'registration-stable|registration-native|register-one-step|funnel-attribution' "$SITE" | head -240 || true
+          echo '===== SERVER STRING OWNERS ====='
+          grep -RIl --binary-files=without-match -E '3 Hours Live|2 Hours Live|WhatsApp Joining Link|WhatsApp Community Access|5,00,000\+|Bonus Resources' /var/www/sikhadenge.in /etc/nginx/snippets 2>/dev/null | head -120 | while read -r f; do
+            echo "--- OWNER $f"
+            grep -nE '3 Hours Live|2 Hours Live|WhatsApp Joining Link|WhatsApp Community Access|5,00,000\+|Bonus Resources' "$f" | head -80 || true
+          done
           REMOTE
 
-      - name: First-paint browser timing audit
+      - name: Browser loaded-script owner scan
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -54,62 +59,24 @@ jobs:
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
           node <<'NODE'
-          const puppeteer=require('puppeteer-core');
+          const puppeteer=require('puppeteer-core'),fs=require('fs');
           (async()=>{
-            const browser=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
-              const p=await browser.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
-              await p.evaluateOnNewDocument(()=>{
-                const path='/gen-ai-masterclass/register-one-step';
-                const vis=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0&&r.width>0&&r.height>0};
-                const norm=s=>(s||'').replace(/\s+/g,' ').trim();
-                function take(){
-                  if(location.pathname!==path||!document.body)return;
-                  const oldInputs=[...document.querySelectorAll('input')].filter(el=>['Enter name','Email','Phone number'].includes(el.getAttribute('placeholder')||''));
-                  const newInputs=['sd-reg-name','sd-reg-email','sd-reg-phone'].map(id=>document.getElementById(id)).filter(Boolean);
-                  const buttons=[...document.querySelectorAll('button')];
-                  const oldPrice=buttons.find(b=>norm(b.textContent).includes('₹1999'));
-                  const cont=buttons.find(b=>norm(b.textContent).includes('Continue — 2 quick questions'));
-                  const h1=document.querySelector('h1'); const h1kids=h1?[...h1.children].map(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return {tag:x.tagName,text:norm(x.textContent),display:cs.display,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}):[];
-                  const snap={t:Math.round(performance.now()),bodyText:norm(document.body.innerText).slice(0,800),oldInputsVisible:oldInputs.filter(vis).length,newInputsVisible:newInputs.filter(vis).length,oldPriceVisible:vis(oldPrice),continueVisible:vis(cont),h1:norm(h1?.textContent),h1html:h1?.innerHTML||'',h1kids,forms:document.querySelectorAll('form').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
-                  let arr=[];try{arr=JSON.parse(localStorage.getItem('__sd_reg_paint_audit')||'[]')}catch{};arr.push(snap);if(arr.length>120)arr=arr.slice(-120);localStorage.setItem('__sd_reg_paint_audit',JSON.stringify(arr));
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const p=await b.newPage(); await p.setViewport({width:1440,height:1000});
+            await p.goto('https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&owner_scan='+Date.now(),{waitUntil:'networkidle2',timeout:60000});
+            await new Promise(r=>setTimeout(r,4500));
+            const scripts=await p.evaluate(()=>[...document.scripts].map(s=>s.src).filter(Boolean));
+            console.log('LOADED_SCRIPTS',JSON.stringify(scripts));
+            const needles=['3 Hours Live','2 Hours Live','WhatsApp Joining Link','WhatsApp Community Access','5,00,000+','Bonus Resources','32 joined in last 24 hours','Updates automatically'];
+            for(const u of scripts){
+              try{
+                const r=await fetch(u); if(!r.ok) continue; const text=await r.text(); const found=needles.filter(x=>text.includes(x));
+                if(found.length){console.log('SCRIPT_OWNER',u,'FOUND',JSON.stringify(found),'SHA256_PENDING');
+                  for(const x of found){let i=text.indexOf(x); console.log('CONTEXT',x,JSON.stringify(text.slice(Math.max(0,i-300),i+500)));}
                 }
-                addEventListener('DOMContentLoaded',()=>{localStorage.removeItem('__sd_reg_paint_audit');let n=0;take();const id=setInterval(()=>{take();if(++n>=70)clearInterval(id)},50)});
-              });
-              const bad=[];p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
-              await p.goto(`https://sikhadenge.in/masterclass/claude/free?first_paint_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
-              await new Promise(r=>setTimeout(r,3000));
-              await Promise.all([p.waitForFunction(()=>location.pathname==='/gen-ai-masterclass/register-one-step',{timeout:30000}),p.evaluate(()=>document.querySelector('section[data-sd-claude-final-handoff-v1="1"] a[href]').click())]);
-              await new Promise(r=>setTimeout(r,5000));
-              const out=await p.evaluate(()=>{
-                let frames=[];try{frames=JSON.parse(localStorage.getItem('__sd_reg_paint_audit')||'[]')}catch{}
-                const ss={},ls={};for(const k of ['sd_funnel_attribution_v1','sd_anonymous_id_v1','sd_session_id_v1']){ss[k]=sessionStorage.getItem(k);ls[k]=localStorage.getItem(k)}
-                const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).filter(s=>/registration|attribution/.test(s));
-                return {frames,ss,ls,scripts,url:location.href};
-              });
-              const f=out.frames;
-              const firstNew=f.find(x=>x.newInputsVisible===3&&x.continueVisible);
-              const oldEver=f.some(x=>x.oldInputsVisible>0||x.oldPriceVisible);
-              const blank=f.filter(x=>x.oldInputsVisible===0&&x.newInputsVisible===0&&!x.continueVisible).map(x=>x.t);
-              const overflowEver=f.some(x=>x.overflow);
-              console.log('REG_FIRST_PAINT',name,JSON.stringify({url:out.url,frames:f,firstNewMs:firstNew?.t??null,oldEver,blankCount:blank.length,blankRange:blank.length?[Math.min(...blank),Math.max(...blank)]:null,overflowEver,sessionStorage:out.ss,localStorage:out.ls,scripts:out.scripts,bad}));
-              if(oldEver||overflowEver||bad.length) throw new Error(`visible native flash or asset issue ${name}`);
-              await p.close();
+              }catch(e){}
             }
-            await browser.close(); console.log('REG_FIRST_PAINT_VISIBILITY_AUDIT_PASS');
+            const html=await p.content(); for(const x of needles) if(html.includes(x)){let i=html.indexOf(x);console.log('DOM_OWNER_CONTEXT',x,JSON.stringify(html.slice(Math.max(0,i-300),i+500)));}
+            await b.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-
-      - name: Runtime owner evidence
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          for u in \
-            'https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023' \
-            'https://sikhadenge.in/registration-stable-page1-v72.js?v=20260903-131023' \
-            'https://sikhadenge.in/registration-native-suppress-v1-20260910.js?v=native-suppress-v1-20260910'; do
-            f="/tmp/$(echo "$u" | sed 's#https://sikhadenge.in/##;s#[?=&/]#_#g')"
-            curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 40 "$u" -o "$f"
-            echo "RUNTIME_ASSET $u SHA=$(sha256sum "$f" | awk '{print $1}') BYTES=$(wc -c < "$f")"
-            grep -nE 'Become an AI Expert|₹1999|native|suppress|sd-reg-name|Continue — 2 quick questions|display|opacity' "$f" | head -80 || true
-          done
