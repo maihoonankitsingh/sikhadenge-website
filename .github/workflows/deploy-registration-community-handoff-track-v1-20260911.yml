@@ -1,0 +1,131 @@
+name: Deploy Registration Community Handoff Track V1 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-registration-community-handoff-track-v1-20260911.yml'
+
+permissions:
+  contents: read
+
+env:
+  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: whatsapp-agent-production
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Static validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ops/deploy-registration-community-handoff-track-v1-20260911.sh
+          node --check ops/qa-registration-community-handoff-track-v1-20260911.js
+          grep -Fq "EXPECTED_OLD_SHA='bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
+          grep -Fq "'whatsapp_community_handoff'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
+          grep -Fq 'analyticsGranted: false' ops/qa-registration-community-handoff-track-v1-20260911.js
+          echo REG_COMMUNITY_HANDOFF_TRACK_V1_STATIC=PASS
+
+      - name: Configure pinned SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
+          chmod 600 "$KEY"
+          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
+          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Production preflight
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          JS='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
+          EXPECTED='bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313'
+          test "$(sha256sum "$JS" | awk '{print $1}')" = "$EXPECTED"
+          ! grep -Fq 'SIKHADENGE_REGISTRATION_COMMUNITY_HANDOFF_TRACK_V1_START' "$JS"
+          sikhadenge-funnel-lockctl check
+          STATUS="$(sikhadenge-funnel-lockctl status)"
+          printf '%s\n' "$STATUS" | grep -E 'AI_PUBLIC_SHA|CLAUDE_PUBLIC_SHA|LOCK_STATE|SEALED_AT'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          TMP="$(mktemp)"
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 40 -H 'Cache-Control: no-cache' \
+            "https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023&preflight=$(date +%s%N)" -o "$TMP"
+          test "$(sha256sum "$TMP" | awk '{print $1}')" = "$EXPECTED"
+          rm -f "$TMP"
+          echo REG_COMMUNITY_HANDOFF_TRACK_V1_PREFLIGHT=PASS
+          REMOTE
+
+      - name: Stage deployment script
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ops/deploy-registration-community-handoff-track-v1-20260911.sh \
+            "$SSH_USER@$SSH_HOST:/tmp/deploy-registration-community-handoff-track-v1-20260911.sh"
+
+      - name: Controlled production stage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-registration-community-handoff-track-v1-20260911.sh stage'
+
+      - name: No-lead browser regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node ops/qa-registration-community-handoff-track-v1-20260911.js
+
+      - name: Post-stage integrity check
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          JS='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
+          grep -Fq 'SIKHADENGE_REGISTRATION_COMMUNITY_HANDOFF_TRACK_V1_START' "$JS"
+          test "$(grep -Fc "'whatsapp_community_handoff'" "$JS")" = '1'
+          sikhadenge-funnel-lockctl check
+          STATUS="$(sikhadenge-funnel-lockctl status)"
+          printf '%s\n' "$STATUS" | grep -E 'AI_PUBLIC_SHA|CLAUDE_PUBLIC_SHA|LOCK_STATE|SEALED_AT'
+          test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
+          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
+          systemctl is-active sikhadenge-funnel-golden-guard.timer
+          echo "REG_COMMUNITY_HANDOFF_TRACK_V1_FINAL_SHA=$(sha256sum "$JS" | awk '{print $1}')"
+          echo REG_COMMUNITY_HANDOFF_TRACK_V1_INTEGRITY=PASS
+          REMOTE
+
+      - name: Rollback on failure
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'if [ -f /tmp/deploy-registration-community-handoff-track-v1-20260911.sh ]; then bash /tmp/deploy-registration-community-handoff-track-v1-20260911.sh rollback; else true; fi'
+          exit 0
+
+      - name: Clean temporary server state
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            'rm -f /tmp/deploy-registration-community-handoff-track-v1-20260911.sh /tmp/registration-community-handoff-track-v1-20260911.state'
+          exit 0
