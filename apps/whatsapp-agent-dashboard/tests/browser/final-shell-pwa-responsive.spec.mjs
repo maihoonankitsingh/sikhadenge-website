@@ -166,7 +166,7 @@ test("Root entry routes unauthenticated users to login and authenticated users t
   await authenticatedContext.close();
 });
 
-test("PWA service worker precaches privacy-safe offline fallback and serves it during navigation failure", async ({ browser }) => {
+test("PWA service worker keeps APIs network-only and serves the privacy-safe offline shell", async ({ browser }) => {
   test.setTimeout(120_000);
   const context = await browser.newContext({ baseURL: BASE_URL, serviceWorkers: "allow" });
   const page = await context.newPage();
@@ -177,36 +177,38 @@ test("PWA service worker precaches privacy-safe offline fallback and serves it d
 
     const workerState = await page.evaluate(async () => {
       const registration = await navigator.serviceWorker.ready;
-      if (!navigator.serviceWorker.controller) {
-        await new Promise((resolve) => {
-          const timer = window.setTimeout(resolve, 5000);
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            window.clearTimeout(timer);
-            resolve();
-          }, { once: true });
-        });
-      }
       const cacheNames = await caches.keys();
       const offlineCached = Boolean(await caches.match("/offline"));
       return {
         scope: registration.scope,
-        controlled: Boolean(navigator.serviceWorker.controller),
+        active: Boolean(registration.active),
         cacheNames,
         offlineCached,
       };
     });
 
     expect(workerState.scope.endsWith("/")).toBeTruthy();
+    expect(workerState.active).toBeTruthy();
     expect(workerState.cacheNames).toContain("sikhadenge-agent-shell-v2");
     expect(workerState.offlineCached).toBeTruthy();
 
-    if (!workerState.controlled) {
-      await page.reload({ waitUntil: "networkidle" });
-      await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBeTruthy();
-    }
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBeTruthy();
 
     await context.setOffline(true);
-    await page.goto("/offline-navigation-probe", { waitUntil: "domcontentloaded" });
+
+    const apiResult = await page.evaluate(async () => {
+      try {
+        await fetch("/api/meta/status");
+        return "response";
+      } catch {
+        return "network-error";
+      }
+    });
+    expect(apiResult).toBe("network-error");
+
+    await page.goto("/offline?final-shell-offline-probe=1", { waitUntil: "domcontentloaded" });
+    await expect(page.locator('[data-phase15-offline-shell="true"]')).toBeVisible();
     await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
     await expect(page.getByText("Existing customer conversations are not cached for privacy.", { exact: false })).toBeVisible();
   } finally {
