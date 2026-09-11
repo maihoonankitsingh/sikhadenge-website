@@ -3,7 +3,6 @@ const puppeteer=require('puppeteer-core');
 
 const disclaimer='Disclaimer: The information, tools, examples and strategies shared in this masterclass are provided for educational and informational purposes only. Individual results depend on effort, experience, background and circumstances and are not guaranteed. Any testimonials, productivity examples, salary references or outcomes shown on this website are illustrative and should not be interpreted as a promise of specific results. Third-party trademarks, logos and product names belong to their respective owners. SikhaDenge and ThinkGrow Private Limited are not affiliated with or endorsed by those third-party brands unless explicitly stated. Session schedules, bonuses, prices and promotional terms may change where applicable. © 2026 ThinkGrow Private Limited · SikhaDenge Privacy Policy · Terms & Conditions';
 const errorMax={'react-418':26,'react-423':1,'react-425':2};
-const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 function signature(errs){const out={};for(const e of errs){const m=String(e).match(/Minified React error #(\d+)/);const k=m?`react-${m[1]}`:String(e);out[k]=(out[k]||0)+1;}return out;}
 function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual)){if(!(k in errorMax)||v>errorMax[k]) return false;}return true;}
 
@@ -45,12 +44,14 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
         links,
         regCount:regLinks.length,
         regPathsOK:regLinks.length===8&&regLinks.every(a=>new URL(a.href,location.href).pathname===reg),
-        testimonialFlag:document.documentElement.getAttribute('data-claude-testimonials-conversion-v1')||'',
-        bonusFlag:document.documentElement.getAttribute('data-claude-bonus-value-v1')||'',
         attribution:scripts.some(s=>s.includes('/funnel-attribution-bridge-v1.js')),
         faqScript:scripts.filter(s=>s.includes('/claude-faq-conversion-v1-20260910.js')).length,
+        testimonialScript:scripts.filter(s=>s.includes('/claude-testimonials-conversion-v1b-20260910.js')).length,
+        bonusScript:scripts.filter(s=>s.includes('/claude-bonus-value-v1-20260910.js')).length,
         handoffScript:scripts.filter(s=>s.includes('/claude-final-handoff-v1-20260910.js')).length,
         footerScript:scripts.filter(s=>s.includes('/claude-footer-trust-v1-20260911.js')).length,
+        testimonialText:n(document.body.innerText).includes('LEARNER VIDEO TESTIMONIALS'),
+        bonusText:n(document.body.innerText).includes('FREE AI MASTERCLASS BONUS KIT'),
         securePaymentVisible:n(document.body.innerText).includes('SECURE PAYMENT OPTIONS'),
         overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
         h1:n(document.querySelector('h1')?.textContent)
@@ -58,7 +59,7 @@ function errorsWithinBaseline(actual){for(const [k,v] of Object.entries(actual))
     });
 
     const errors=signature(pageErrors),errorsOK=errorsWithinBaseline(errors);
-    const coreOK=state.sectionCount===18&&state.faqCount===15&&state.final&&state.regCount===8&&state.regPathsOK&&state.testimonialFlag==='v1b'&&state.bonusFlag==='v1'&&state.attribution&&state.faqScript===1&&state.handoffScript===1&&state.h1.includes('Master Claude + 25+ AI Tools');
+    const coreOK=state.sectionCount===18&&state.faqCount===15&&state.final&&state.regCount===8&&state.regPathsOK&&state.attribution&&state.faqScript===1&&state.testimonialScript===1&&state.bonusScript===1&&state.handoffScript===1&&state.testimonialText&&state.bonusText&&state.h1.includes('Master Claude + 25+ AI Tools');
     const footerOK=state.footerFound&&state.footerText===disclaimer&&state.rootFlag==='1'&&state.sectionFlag==='1'&&state.footerScript===1&&!state.securePaymentVisible;
     const linksOK=state.links.length===2&&state.links[0].path==='/privacy-policy'&&state.links[1].path==='/terms'&&state.links.every(x=>x.flag==='1'&&x.rect.h>=44&&x.fontSize>=12&&x.rect.x>=0&&x.rect.x+x.rect.w<=width+1);
     const layoutOK=!state.overflow&&badAssets.length===0;
