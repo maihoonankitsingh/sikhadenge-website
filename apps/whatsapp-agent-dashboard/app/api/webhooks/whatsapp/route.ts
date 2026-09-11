@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { processWebhookAgentBridge } from "../../../../lib/agent/webhook-agent-bridge";
+import { mirrorMetaWebhookToCanonical } from "../../../../lib/meta/canonical-mirror";
 import {
   getWhatsAppAppSecret,
   getWhatsAppVerifyToken,
@@ -65,9 +66,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const signatureHeader = request.headers.get("x-hub-signature-256");
   const signatureIsValid = verifyMetaSignature({
     rawBody,
-    signatureHeader: request.headers.get("x-hub-signature-256"),
+    signatureHeader,
     appSecret,
   });
   if (!signatureIsValid) {
@@ -89,6 +91,23 @@ export async function POST(request: Request) {
 
   try {
     const result = await processWhatsAppWebhook(payload, rawBody);
+
+    // Transitional convergence path: preserve the existing live WhatsApp app
+    // as Meta's primary callback while optionally mirroring the exact signed
+    // envelope into the canonical SikhaDenge dashboard ingest. This feature is
+    // OFF by default and mirror failures never affect Meta acknowledgement.
+    void mirrorMetaWebhookToCanonical({ rawBody, signatureHeader })
+      .then((mirror) => {
+        if (mirror.attempted && !mirror.delivered) {
+          console.warn(
+            `[whatsapp-canonical-mirror] delivery failed status=${mirror.status ?? "none"} reason=${mirror.reason}`,
+          );
+        }
+      })
+      .catch(() => {
+        // The mirror is deliberately best-effort during convergence.
+      });
+
     let agent: Awaited<ReturnType<typeof processWebhookAgentBridge>> | null = null;
     try {
       agent = await processWebhookAgentBridge(payload);
