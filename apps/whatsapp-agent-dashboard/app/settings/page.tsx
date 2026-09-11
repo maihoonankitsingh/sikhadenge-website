@@ -2,6 +2,7 @@ import LiveAgentManager from "../../components/agent/LiveAgentManager";
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./settings-enterprise-polish.css";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export default async function SettingsPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <LiveAgentManager />
+      <div className="settings-enterprise-root">
+        <LiveAgentManager />
+      </div>
     </DashboardModuleShell>
   );
 }
