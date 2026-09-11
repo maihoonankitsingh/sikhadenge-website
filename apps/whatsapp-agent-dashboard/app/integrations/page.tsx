@@ -8,6 +8,7 @@ import DashboardModuleShell from "../../components/navigation/DashboardModuleShe
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
 import "./integrations-enterprise-polish.css";
+import "./integrations-enterprise-cascade.css";
 
 export const dynamic = "force-dynamic";
 
