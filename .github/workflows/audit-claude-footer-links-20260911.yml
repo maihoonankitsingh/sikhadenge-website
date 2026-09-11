@@ -1,0 +1,55 @@
+name: Audit Claude Footer Links 20260911
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-claude-footer-links-20260911.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Audit footer links and readability
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              await p.goto(`https://sikhadenge.in/masterclass/claude/free?footer_links=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,3500));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();
+                const nodes=[...document.querySelectorAll('body *')];
+                const root=nodes.find(el=>{const t=n(el.innerText||el.textContent);return t.startsWith('Disclaimer:')&&t.includes('ThinkGrow Private Limited')&&t.length<2500;})||null;
+                const links=root?[...root.querySelectorAll('a[href]')].map(a=>{const r=a.getBoundingClientRect(),cs=getComputedStyle(a);return {text:n(a.textContent),href:a.href,path:new URL(a.href,location.href).pathname,rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},fontSize:cs.fontSize,lineHeight:cs.lineHeight}}):[];
+                const rr=root?.getBoundingClientRect(), cs=root?getComputedStyle(root):null;
+                return {found:!!root,text:n(root?.innerText||root?.textContent),links,rect:rr?{x:Math.round(rr.x),w:Math.round(rr.width),h:Math.round(rr.height)}:null,fontSize:cs?.fontSize||'',lineHeight:cs?.lineHeight||'',overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+              });
+              console.log('FOOTER_LINK_AUDIT',name,JSON.stringify(x));
+              if(!x.found||x.overflow) throw new Error(`footer link audit fail ${name}`);
+              await p.close();
+            }
+            await b.close(); console.log('CLAUDE_FOOTER_LINK_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+        
+      - name: Validate discovered policy endpoints
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for u in 'https://sikhadenge.in/privacy-policy' 'https://sikhadenge.in/terms-and-conditions'; do
+            code="$(curl -L -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 30 "$u" || true)"
+            echo "$u HTTP=$code"
+          done
