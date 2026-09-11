@@ -7,6 +7,8 @@ import VerifiedConnectionHealth from "../../components/integrations/VerifiedConn
 import DashboardModuleShell from "../../components/navigation/DashboardModuleShell";
 import { requireDashboardUser } from "../../lib/auth/session";
 import "../dashboard-system.css";
+import "./integrations-enterprise-polish.css";
+import "./integrations-enterprise-cascade.css";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +27,14 @@ export default async function IntegrationsPage() {
       userName={user.name}
       userRole={user.role}
     >
-      <VerifiedConnectionHealth />
-      <InstagramCommentCapabilityHealth />
-      <MessengerPageCapabilityHealth />
-      <IntegrationsManager />
+      <div className="integrations-enterprise-root">
+        <div className="integrations-health-grid">
+          <VerifiedConnectionHealth />
+          <InstagramCommentCapabilityHealth />
+          <MessengerPageCapabilityHealth />
+        </div>
+        <IntegrationsManager />
+      </div>
     </DashboardModuleShell>
   );
 }
