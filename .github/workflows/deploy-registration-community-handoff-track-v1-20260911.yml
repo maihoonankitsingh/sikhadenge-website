@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/deploy-registration-community-handoff-track-v1-20260911.yml'
+      - 'ops/deploy-registration-community-handoff-track-v1-20260911.sh'
+      - 'ops/qa-registration-community-handoff-track-v1-20260911.js'
 
 permissions:
   contents: read
