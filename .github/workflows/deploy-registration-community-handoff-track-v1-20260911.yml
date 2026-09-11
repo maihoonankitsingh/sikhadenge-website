@@ -1,134 +1,57 @@
-name: Deploy Registration Community Handoff Track V1 20260911
+name: Audit Registration About You Screen 20260911
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/deploy-registration-community-handoff-track-v1-20260911.yml'
-      - 'ops/deploy-registration-community-handoff-track-v1-20260911.sh'
-      - 'ops/qa-registration-community-handoff-track-v1b-20260911.js'
 
 permissions:
   contents: read
 
-env:
-  SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
-  SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
-  SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
-  SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
-  SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-
 jobs:
-  deploy:
+  audit:
     runs-on: ubuntu-latest
-    environment: whatsapp-agent-production
-    timeout-minutes: 25
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Static validation
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          bash -n ops/deploy-registration-community-handoff-track-v1-20260911.sh
-          node --check ops/qa-registration-community-handoff-track-v1b-20260911.js
-          grep -Fq "EXPECTED_OLD_SHA='bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
-          grep -Fq "'whatsapp_community_handoff'" ops/deploy-registration-community-handoff-track-v1-20260911.sh
-          grep -Fq 'analyticsGranted: false' ops/qa-registration-community-handoff-track-v1b-20260911.js
-          grep -Fq 'bonus-submit' ops/qa-registration-community-handoff-track-v1b-20260911.js
-          echo REG_COMMUNITY_HANDOFF_TRACK_V1_STATIC=PASS
-
-      - name: Configure pinned SSH
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          SSH_PORT="${SSH_PORT:-22}"; echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
-          install -d -m 700 "$HOME/.ssh"; KEY="$HOME/.ssh/prod"
-          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY"; else printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$KEY"; fi
-          chmod 600 "$KEY"
-          read -r _ kt km _ <<< "$SSH_HOST_KEY"; test "$kt" = ssh-ed25519
-          printf '[%s]:%s %s %s\n' "$SSH_HOST" "$SSH_PORT" "$kt" "$km" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Production preflight
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          JS='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
-          EXPECTED='bc9e84f6800bbbe856aaded94361c76dc5aee23a6c2dfe979926e15b4d50b313'
-          test "$(sha256sum "$JS" | awk '{print $1}')" = "$EXPECTED"
-          ! grep -Fq 'SIKHADENGE_REGISTRATION_COMMUNITY_HANDOFF_TRACK_V1_START' "$JS"
-          sikhadenge-funnel-lockctl check
-          STATUS="$(sikhadenge-funnel-lockctl status)"
-          printf '%s\n' "$STATUS" | grep -E 'AI_PUBLIC_SHA|CLAUDE_PUBLIC_SHA|LOCK_STATE|SEALED_AT'
-          test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
-          TMP="$(mktemp)"
-          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 5 --max-time 40 -H 'Cache-Control: no-cache' \
-            "https://sikhadenge.in/registration-stable-hot-v72.js?v=20260903-131023&preflight=$(date +%s%N)" -o "$TMP"
-          test "$(sha256sum "$TMP" | awk '{print $1}')" = "$EXPECTED"
-          rm -f "$TMP"
-          echo REG_COMMUNITY_HANDOFF_TRACK_V1_PREFLIGHT=PASS
-          REMOTE
-
-      - name: Stage deployment script
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          scp -P "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            ops/deploy-registration-community-handoff-track-v1-20260911.sh \
-            "$SSH_USER@$SSH_HOST:/tmp/deploy-registration-community-handoff-track-v1-20260911.sh"
-
-      - name: Controlled production stage
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'bash /tmp/deploy-registration-community-handoff-track-v1-20260911.sh stage'
-
-      - name: No-lead browser regression
+      - name: Capture Step2 without lead write
         shell: bash
         run: |
           set -Eeuo pipefail
           npm init -y >/dev/null 2>&1
           npm install --silent puppeteer-core
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"; export CHROME
-          node ops/qa-registration-community-handoff-track-v1b-20260911.js
-
-      - name: Post-stage integrity check
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          JS='/var/www/sikhadenge.in/registration-stable-v72-20260903-131023/registration-stable-hot-v72.js'
-          grep -Fq 'SIKHADENGE_REGISTRATION_COMMUNITY_HANDOFF_TRACK_V1_START' "$JS"
-          test "$(grep -Fc "'whatsapp_community_handoff'" "$JS")" = '1'
-          sikhadenge-funnel-lockctl check
-          STATUS="$(sikhadenge-funnel-lockctl status)"
-          printf '%s\n' "$STATUS" | grep -E 'AI_PUBLIC_SHA|CLAUDE_PUBLIC_SHA|LOCK_STATE|SEALED_AT'
-          test "$(printf '%s\n' "$STATUS" | awk -F= '/^LOCK_STATE=/{print $2}')" = 'LOCKED'
-          systemctl is-enabled sikhadenge-funnel-golden-guard.timer
-          systemctl is-active sikhadenge-funnel-golden-guard.timer
-          echo "REG_COMMUNITY_HANDOFF_TRACK_V1_FINAL_SHA=$(sha256sum "$JS" | awk '{print $1}')"
-          echo REG_COMMUNITY_HANDOFF_TRACK_V1_INTEGRITY=PASS
-          REMOTE
-
-      - name: Rollback on failure
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'if [ -f /tmp/deploy-registration-community-handoff-track-v1-20260911.sh ]; then bash /tmp/deploy-registration-community-handoff-track-v1-20260911.sh rollback; else true; fi'
-          exit 0
-
-      - name: Clean temporary server state
-        if: always()
-        shell: bash
-        run: |
-          set +e
-          ssh -p "$SSH_PORT" -i "$HOME/.ssh/prod" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
-            'rm -f /tmp/deploy-registration-community-handoff-track-v1-20260911.sh /tmp/registration-community-handoff-track-v1-20260911.state'
-          exit 0
+          node <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+          (async()=>{
+            const b=await puppeteer.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            for(const [name,w,h,m] of [['desktop',1440,1000,false],['tablet',768,1024,true],['mobile',390,844,true]]){
+              const p=await b.newPage(); await p.setViewport({width:w,height:h,isMobile:m,hasTouch:m});
+              const lead=[],bad=[],errs=[];
+              await p.setRequestInterception(true);
+              p.on('request',req=>{if(req.method()==='POST'&&/\/api\/masterclass\/lead(?:\?|$)/.test(req.url())){lead.push(req.postData()||'');req.abort('blockedbyclient').catch(()=>{});}else req.continue().catch(()=>{});});
+              p.on('pageerror',e=>errs.push(String(e)));
+              p.on('response',r=>{const u=r.url();if(r.status()>=400&&(/\.css(?:\?|$)/.test(u)||/\.js(?:\?|$)/.test(u)||r.request().resourceType()==='document'))bad.push(`${r.status()} ${u}`)});
+              await p.goto(`https://sikhadenge.in/gen-ai-masterclass/register-one-step?source=claude-masterclass&step2_audit=${name}-${Date.now()}`,{waitUntil:'networkidle2',timeout:60000});
+              await new Promise(r=>setTimeout(r,3500));
+              await p.evaluate(()=>{
+                const set=(id,v)=>{const e=document.getElementById(id);const d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');d.set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));};
+                set('sd-reg-name','QA Step Two');set('sd-reg-email','qa.step2@example.com');set('sd-reg-phone','9999999999');
+                const b=document.querySelector('#sdv2-root [data-action="details-next"]');if(!b)throw new Error('details-next missing');b.click();
+              });
+              await new Promise(r=>setTimeout(r,700));
+              const x=await p.evaluate(()=>{
+                const n=s=>(s||'').replace(/\s+/g,' ').trim();const vis=e=>{if(!e)return false;const r=e.getBoundingClientRect(),c=getComputedStyle(e);return r.width>0&&r.height>0&&c.display!=='none'&&c.visibility!=='hidden'&&Number(c.opacity||1)>0};
+                const root=document.getElementById('sdv2-root');
+                const roles=[...root.querySelectorAll('[data-role]')].map(e=>{const r=e.getBoundingClientRect();return {value:e.getAttribute('data-role')||'',text:n(e.textContent),visible:vis(e),rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}});
+                const buttons=[...root.querySelectorAll('button')].filter(vis).map(e=>({text:n(e.textContent),action:e.getAttribute('data-action')||'',disabled:!!e.disabled}));
+                return {text:n(root.innerText),roles,buttons,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,rootRect:(()=>{const r=root.getBoundingClientRect();return {x:Math.round(r.x),w:Math.round(r.width),h:Math.round(r.height)}})()};
+              });
+              console.log('REG_ABOUT_YOU_AUDIT',name,JSON.stringify({state:x,leadWrites:lead.length,bad,errorCount:errs.length,errors:errs.slice(0,5)}));
+              if(lead.length||bad.length||x.overflow||!x.text.includes('About You')||x.roles.filter(r=>r.visible).length<3)throw new Error(`About You audit fail ${name}`);
+              await p.close();
+            }
+            await b.close();console.log('REGISTRATION_ABOUT_YOU_3VIEW_AUDIT_PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
