@@ -313,3 +313,57 @@
     background-image: none !important;
   }
 }
+
+/* Brand lock: always render the exact SikhaDenge header asset already shipped by this app.
+   The reference artwork remains the visual source of truth for desktop layout; these rules
+   replace only the visible logo treatment and do not alter authentication behavior. */
+.login01__brand {
+  background-image: url('/sikhadenge-header-safe-320.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: contain !important;
+}
+
+.login01__brand img {
+  opacity: 0 !important;
+}
+
+@media (min-width: 1180px) {
+  .login01__topbar {
+    opacity: 1 !important;
+    pointer-events: none !important;
+  }
+
+  .login01__home {
+    pointer-events: auto !important;
+  }
+
+  .login01__nav,
+  .login01__top-actions {
+    opacity: .001 !important;
+    pointer-events: auto !important;
+  }
+
+  .login01__panel-head {
+    position: fixed !important;
+    z-index: 110 !important;
+    left: 60.45% !important;
+    top: 15.45% !important;
+    width: 23.5% !important;
+    height: 7.2% !important;
+    display: flex !important;
+    align-items: center !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+  }
+
+  .login01__panel-head .login01__brand--panel {
+    width: 100% !important;
+    max-width: 248px !important;
+    height: 100% !important;
+  }
+
+  .login01__panel-meta {
+    display: none !important;
+  }
+}
