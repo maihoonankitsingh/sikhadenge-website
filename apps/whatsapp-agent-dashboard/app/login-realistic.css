@@ -1,0 +1,413 @@
+/* Page 01 realistic component pass.
+   The reference artwork is used only for ambient city/Earth decoration.
+   Header, typography, cards, metrics, login panel, controls and icons remain live DOM. */
+
+@media (min-width: 1180px) {
+  .login01 {
+    background:
+      radial-gradient(circle at 72% 22%, rgba(30, 101, 255, .10), transparent 31%),
+      linear-gradient(180deg, rgba(1, 8, 20, .05), rgba(1, 8, 20, .18)),
+      url('/page01-reference-bg.svg') center / cover no-repeat !important;
+  }
+
+  .login01::before {
+    background:
+      linear-gradient(90deg, rgba(14, 92, 173, .035) 1px, transparent 1px),
+      linear-gradient(rgba(14, 92, 173, .03) 1px, transparent 1px) !important;
+    background-size: 96px 96px !important;
+    opacity: .42 !important;
+  }
+
+  .login01::after {
+    inset: 77px 0 0 !important;
+    background:
+      linear-gradient(90deg, rgba(1, 8, 20, .24), transparent 31%, rgba(1, 8, 20, .05) 60%, rgba(1, 8, 20, .14)),
+      linear-gradient(180deg, rgba(1, 8, 20, .05), rgba(1, 8, 20, .12) 75%, rgba(1, 8, 20, .28)) !important;
+  }
+
+  /* The SVG supplies only environmental city/Earth art. Avoid duplicate generated scenery. */
+  .login01__city,
+  .login01__planet,
+  .login01__arc,
+  .login01__node {
+    display: none !important;
+  }
+
+  .login01__topbar {
+    height: 77px !important;
+    grid-template-columns: 260px 1fr 360px !important;
+    padding: 0 61px !important;
+    gap: 22px !important;
+    background: rgba(1, 12, 27, .78) !important;
+    border-bottom: 1px solid rgba(61, 139, 226, .20) !important;
+    backdrop-filter: blur(18px) saturate(115%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(115%) !important;
+  }
+
+  .login01__brand {
+    width: 222px !important;
+    height: 62px !important;
+  }
+
+  .login01__brand img {
+    width: 222px !important;
+    height: auto !important;
+    filter: drop-shadow(0 0 14px rgba(33, 155, 255, .08)) !important;
+  }
+
+  .login01__brand--panel,
+  .login01__brand--panel img {
+    width: 228px !important;
+  }
+
+  .login01__nav {
+    gap: clamp(38px, 3.2vw, 60px) !important;
+  }
+
+  .login01__nav a {
+    font-size: 14px !important;
+    color: #ced9e8 !important;
+  }
+
+  .login01__status {
+    height: 36px !important;
+    padding-inline: 18px !important;
+    background: rgba(5, 28, 55, .70) !important;
+    border-color: rgba(74, 158, 249, .28) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 0 24px rgba(21, 118, 220, .06) !important;
+  }
+
+  .login01__layout {
+    height: calc(100dvh - 77px) !important;
+    padding: 42px 54px 18px 64px !important;
+    grid-template-columns: minmax(0, 1.36fr) minmax(520px, .92fr) !important;
+    gap: clamp(45px, 4.2vw, 72px) !important;
+  }
+
+  .login01__hero {
+    padding-top: 5px !important;
+  }
+
+  .login01__hero-copy {
+    max-width: 720px !important;
+  }
+
+  .login01__eyebrow {
+    margin-bottom: 17px !important;
+    color: #72baff !important;
+    font-size: 11px !important;
+    letter-spacing: .39em !important;
+  }
+
+  .login01__title {
+    font-size: clamp(58px, 4.4vw, 75px) !important;
+    line-height: .95 !important;
+    letter-spacing: -.048em !important;
+  }
+
+  .login01__title > span {
+    margin-top: 8px !important;
+    background: linear-gradient(94deg, #1fe3e6 0%, #20cfee 30%, #318fff 62%, #6a59ff 100%) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+  }
+
+  .login01__lead {
+    margin-top: 12px !important;
+    font-size: 18px !important;
+    line-height: 1.45 !important;
+    color: #bdcadb !important;
+  }
+
+  .login01__handnote {
+    top: 5px !important;
+    right: 4.2% !important;
+    width: 170px !important;
+    font-size: 28px !important;
+    color: #28b8ff !important;
+    opacity: .95 !important;
+  }
+
+  .login01__feature-grid {
+    max-width: 842px !important;
+    margin-top: 26px !important;
+    gap: 15px !important;
+  }
+
+  .login01__feature-card {
+    min-height: 158px !important;
+    padding: 18px 16px 16px !important;
+    border-radius: 15px !important;
+    background:
+      linear-gradient(180deg, rgba(7, 37, 70, .87), rgba(5, 29, 58, .82)) !important;
+    border: 1px solid rgba(53, 144, 240, .39) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.025),
+      0 18px 42px rgba(0, 8, 21, .13) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .login01__feature-card:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(76, 170, 255, .58) !important;
+    box-shadow: 0 18px 44px rgba(0, 16, 38, .22), 0 0 20px rgba(31, 138, 255, .07) !important;
+  }
+
+  .login01__feature-icon {
+    width: 51px !important;
+    height: 51px !important;
+    border-radius: 13px !important;
+    margin-bottom: 13px !important;
+    box-shadow: 0 0 24px rgba(37, 151, 255, .12) !important;
+  }
+
+  .login01__feature-card h2 {
+    font-size: 16px !important;
+    margin-bottom: 7px !important;
+  }
+
+  .login01__feature-card p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    color: #aebed3 !important;
+  }
+
+  .login01__metrics {
+    max-width: 842px !important;
+    margin-top: 29px !important;
+    padding: 0 !important;
+  }
+
+  .login01__metrics > div {
+    min-height: 56px !important;
+  }
+
+  .login01__metrics dt {
+    font-size: 26px !important;
+    line-height: 1 !important;
+    color: #35d9fa !important;
+  }
+
+  .login01__metrics dd {
+    margin-top: 7px !important;
+    font-size: 12px !important;
+    color: #aabbd0 !important;
+  }
+
+  /* Keep the central WhatsApp node and labels as real interactive-quality DOM over the decorative Earth. */
+  .login01__network {
+    z-index: 9 !important;
+    left: -6px !important;
+    right: 0 !important;
+    bottom: -5px !important;
+    height: 220px !important;
+    pointer-events: none !important;
+  }
+
+  .login01__whatsapp-node {
+    left: 49.5% !important;
+    top: 63px !important;
+    width: 78px !important;
+    height: 78px !important;
+    transform: translateX(-50%) !important;
+    background: linear-gradient(145deg, rgba(15, 235, 174, .88), rgba(21, 130, 255, .82)) !important;
+    border: 1px solid rgba(75, 234, 255, .84) !important;
+    box-shadow: 0 0 0 8px rgba(23, 199, 245, .06), 0 0 42px rgba(24, 205, 245, .62) !important;
+  }
+
+  .login01__network-tag {
+    background: rgba(4, 24, 49, .80) !important;
+    border: 1px solid rgba(57, 149, 244, .42) !important;
+    box-shadow: 0 8px 24px rgba(0, 7, 17, .2) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  .login01__network-tag--left {
+    left: 1.6% !important;
+    top: 91px !important;
+  }
+
+  .login01__network-tag--right {
+    right: 1.4% !important;
+    top: 92px !important;
+  }
+
+  .login01__network-tag--center {
+    left: 49.5% !important;
+    top: 156px !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .login01__footer-caption {
+    bottom: -1px !important;
+    left: 0 !important;
+    letter-spacing: .34em !important;
+  }
+
+  .login01__login-side {
+    position: relative !important;
+    padding-top: 0 !important;
+  }
+
+  .login01__trusted {
+    top: 0 !important;
+    right: 4px !important;
+    z-index: 12 !important;
+  }
+
+  .login01__panel {
+    width: 100% !important;
+    max-width: 646px !important;
+    min-height: 705px !important;
+    margin: 0 0 0 auto !important;
+    padding: 33px 50px 26px !important;
+    border-radius: 18px !important;
+    border: 1.5px solid rgba(65, 182, 255, .88) !important;
+    background:
+      radial-gradient(circle at 78% 10%, rgba(62, 73, 255, .12), transparent 27%),
+      linear-gradient(155deg, rgba(7, 30, 58, .97), rgba(6, 24, 49, .965) 57%, rgba(5, 28, 56, .98)) !important;
+    box-shadow:
+      inset 0 0 0 1px rgba(87, 154, 255, .05),
+      0 24px 66px rgba(0, 5, 16, .34),
+      0 0 30px rgba(30, 139, 255, .12) !important;
+    backdrop-filter: blur(18px) saturate(112%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(112%) !important;
+  }
+
+  .login01__panel::before {
+    opacity: .86 !important;
+  }
+
+  .login01__panel-head {
+    margin-bottom: 23px !important;
+  }
+
+  .login01__panel-meta {
+    top: 19px !important;
+    right: 1px !important;
+    color: #4faeff !important;
+    font-size: 9px !important;
+    letter-spacing: .14em !important;
+  }
+
+  .login01__heading {
+    margin-bottom: 31px !important;
+  }
+
+  .login01__heading h3 {
+    font-size: 38px !important;
+    line-height: 1.02 !important;
+    letter-spacing: -.035em !important;
+    margin-bottom: 8px !important;
+  }
+
+  .login01__heading p {
+    font-size: 16px !important;
+    color: #aebfd5 !important;
+  }
+
+  .login01__form {
+    gap: 22px !important;
+  }
+
+  .login01__label {
+    margin-bottom: 9px !important;
+    font-size: 13px !important;
+  }
+
+  .login01__input-wrap {
+    height: 47px !important;
+  }
+
+  .login01__input {
+    height: 47px !important;
+    padding-left: 55px !important;
+    padding-right: 48px !important;
+    border-radius: 9px !important;
+    border: 1px solid rgba(98, 136, 177, .48) !important;
+    background: rgba(18, 42, 72, .86) !important;
+    color: #eaf4ff !important;
+    font-size: 14px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.018) !important;
+  }
+
+  .login01__input::placeholder {
+    color: #8399b7 !important;
+  }
+
+  .login01__input:focus,
+  .login01__input:focus-visible {
+    border-color: #39cfff !important;
+    outline: 2px solid rgba(39, 195, 255, .54) !important;
+    outline-offset: 2px !important;
+    background: rgba(18, 43, 74, .96) !important;
+    box-shadow: 0 0 18px rgba(29, 163, 255, .12) !important;
+  }
+
+  .login01__input-icon {
+    width: 21px !important;
+    height: 21px !important;
+    left: 18px !important;
+    color: #8aa4c4 !important;
+  }
+
+  .login01__form-options {
+    margin-top: -4px !important;
+  }
+
+  .login01__remember,
+  .login01__form-options a {
+    font-size: 12px !important;
+  }
+
+  .login01__submit {
+    height: 51px !important;
+    margin-top: -1px !important;
+    border-radius: 9px !important;
+    background: linear-gradient(93deg, #146efb 0%, #118dff 50%, #22c8e9 100%) !important;
+    box-shadow: 0 10px 26px rgba(12, 120, 255, .22), inset 0 1px rgba(255,255,255,.14) !important;
+    font-size: 16px !important;
+  }
+
+  .login01__submit:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 13px 30px rgba(10, 130, 255, .29), 0 0 22px rgba(31, 187, 255, .14) !important;
+  }
+
+  .login01__divider {
+    margin: 4px 0 0 !important;
+  }
+
+  .login01__google {
+    height: 52px !important;
+    border-radius: 9px !important;
+    background: rgba(5, 21, 41, .70) !important;
+    border: 1px solid rgba(127, 158, 196, .68) !important;
+  }
+
+  .login01__secure-note {
+    margin-top: 26px !important;
+    font-size: 11px !important;
+  }
+
+  .login01__signature {
+    right: -2px !important;
+    bottom: 4px !important;
+  }
+}
+
+/* Mid-size desktop/tablet: keep every UI element real while reducing density. */
+@media (min-width: 900px) and (max-width: 1179px) {
+  .login01 {
+    background:
+      linear-gradient(180deg, rgba(1, 8, 20, .08), rgba(1, 8, 20, .26)),
+      url('/page01-reference-bg.svg') center / cover no-repeat !important;
+  }
+
+  .login01__city,
+  .login01__planet {
+    display: none !important;
+  }
+}
