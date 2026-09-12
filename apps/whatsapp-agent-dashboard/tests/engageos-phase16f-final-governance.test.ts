@@ -135,11 +135,15 @@ function testCommittedPhase16GovernanceContracts() {
   assert.match(crypto, /createCipheriv/);
   assert.match(crypto, /aes-256-gcm/);
   assert.match(webhookService, /verifyOutboundWebhookSignature/);
+  assert.match(webhookService, /SIGNED_NO_NETWORK_DELIVERY/);
   assert.doesNotMatch(webhookService, /\bfetch\s*\(/);
 
   assert.match(workflow, /^\s*validate:/m);
   assert.match(workflow, /^\s*migration-regression:/m);
   assert.match(workflow, /^\s*browser-regression:/m);
+  assert.match(workflow, /- phase16-saas-enterprise-20260911/);
+  assert.match(workflow, /Test Phase 16 schema and migration parity/);
+  assert.match(workflow, /test:phase16-schema-parity:integration/);
 }
 
 testRepositoryExitDoesNotImplyProductionActivation();
