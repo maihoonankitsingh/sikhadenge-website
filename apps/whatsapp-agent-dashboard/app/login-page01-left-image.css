@@ -1,31 +1,35 @@
 /* Page 01 — generated visual on the LEFT only.
  * The RIGHT authentication panel and LoginForm are intentionally untouched.
- * The generated artwork is rendered as a build-bundled DOM image so the live
- * page does not depend on a public-root asset lookup in the mirror runtime.
+ * The artwork is imported by the login layout as Next static media, so the
+ * production mirror serves it from the active .next build instead of relying
+ * on a public-root lookup.
  */
+
+.page01-login-asset-root {
+  width: 100%;
+  min-height: 100dvh;
+}
 
 .split01__hero {
   background: #041334 !important;
 }
 
-.split01__generated-hero {
+/* Build-bundled generated composition. */
+.split01__hero::before {
+  content: "" !important;
   position: absolute !important;
   z-index: 0 !important;
   inset: 0 !important;
   display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: fill !important;
-  object-position: center center !important;
+  background-image: var(--page01-left-generated) !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 100% 100% !important;
   pointer-events: none !important;
-  user-select: none !important;
 }
 
-/* Remove the previous code-native hero artwork while retaining the generated
- * visual and the genuine SikhaDenge brand link layered above it. */
-.split01__hero > :not(.split01__brand):not(.split01__generated-hero) {
+/* Remove the previous code-native hero artwork while retaining the real brand link. */
+.split01__hero > :not(.split01__brand) {
   display: none !important;
 }
 
@@ -74,10 +78,6 @@
     height: auto !important;
     aspect-ratio: 962 / 749 !important;
     padding: 0 !important;
-  }
-
-  .split01__generated-hero {
-    object-fit: fill !important;
   }
 
   .split01__brand {
