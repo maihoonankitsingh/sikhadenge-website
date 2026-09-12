@@ -51,7 +51,7 @@ test "$(cat "$LIVE_APP/.next/BUILD_ID")" = "$NEW_BUILD_ID"
 PM2_JSON_FILE="$(mktemp)"
 trap 'rm -f "$PM2_JSON_FILE"' EXIT
 pm2 jlist > "$PM2_JSON_FILE"
-IFS='|' read -r pm2_status pm2_unstable pm2_restarts < <(
+IFS='|' read -r pm2_status pm2_unstable pm2_restarts pm2_cwd pm2_port < <(
   node - "$PM2_PROCESS_NAME" "$PM2_JSON_FILE" <<'NODE'
 const fs = require('node:fs');
 const [name, file] = process.argv.slice(2);
@@ -60,12 +60,38 @@ if (!processEntry) process.exit(1);
 const status = String(processEntry.pm2_env?.status || '');
 const unstable = String(processEntry.pm2_env?.unstable_restarts ?? 0);
 const restarts = String(processEntry.pm2_env?.restart_time ?? 0);
-process.stdout.write(`${status}|${unstable}|${restarts}\n`);
+const cwd = String(processEntry.pm2_env?.pm_cwd || '');
+const port = String(processEntry.pm2_env?.PORT || processEntry.pm2_env?.port || '3100');
+process.stdout.write(`${status}|${unstable}|${restarts}|${cwd}|${port}\n`);
 NODE
 )
 
 test "$pm2_status" = "online"
 test "$pm2_unstable" = "0"
+test -n "$pm2_port"
+printf 'PM2_CWD=%s\n' "$pm2_cwd"
+printf 'PM2_PORT=%s\n' "$pm2_port"
+
+public_login_html="$(curl -sS --max-time 20 "${PUBLIC_URL%/}/login")"
+local_login_html="$(curl -sS --max-time 20 "http://127.0.0.1:${pm2_port}/login")"
+
+public_new_marker=false
+public_old_marker=false
+local_new_marker=false
+local_old_marker=false
+if grep -Fq 'AI meets human potential' <<<"$public_login_html"; then public_new_marker=true; fi
+if grep -Fq 'The WhatsApp AI Agent workspace' <<<"$public_login_html"; then public_old_marker=true; fi
+if grep -Fq 'AI meets human potential' <<<"$local_login_html"; then local_new_marker=true; fi
+if grep -Fq 'The WhatsApp AI Agent workspace' <<<"$local_login_html"; then local_old_marker=true; fi
+printf 'PUBLIC_LOGIN_NEW_MARKER=%s\n' "$public_new_marker"
+printf 'PUBLIC_LOGIN_OLD_MARKER=%s\n' "$public_old_marker"
+printf 'LOCAL_LOGIN_NEW_MARKER=%s\n' "$local_new_marker"
+printf 'LOCAL_LOGIN_OLD_MARKER=%s\n' "$local_old_marker"
+
+if command -v nginx >/dev/null 2>&1; then
+  nginx_proxy_line="$(nginx -T 2>/dev/null | awk '/server_name[[:space:]]+whatsapp\.sikhadenge\.in/{found=1} found && /proxy_pass/{gsub(/^[[:space:]]+/, ""); print; exit}')"
+  printf 'NGINX_WHATSAPP_PROXY=%s\n' "${nginx_proxy_line:-not-found}"
+fi
 
 login_status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBLIC_URL%/}/login")"
 inbox_status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBLIC_URL%/}/inbox")"
@@ -73,6 +99,10 @@ contacts_status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBL
 analytics_status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${PUBLIC_URL%/}/analytics")"
 
 test "$login_status" = "200"
+test "$local_new_marker" = "true"
+test "$public_new_marker" = "true"
+test "$local_old_marker" = "false"
+test "$public_old_marker" = "false"
 [[ "$inbox_status" == "302" || "$inbox_status" == "307" ]]
 [[ "$contacts_status" == "302" || "$contacts_status" == "307" ]]
 [[ "$analytics_status" == "302" || "$analytics_status" == "307" ]]
@@ -128,7 +158,13 @@ BUILD_ID=$NEW_BUILD_ID
 PM2_STATUS=$pm2_status
 PM2_RESTARTS=$pm2_restarts
 PM2_UNSTABLE_RESTARTS=$pm2_unstable
+PM2_CWD=$pm2_cwd
+PM2_PORT=$pm2_port
 LOGIN_HTTP=$login_status
+PUBLIC_LOGIN_NEW_MARKER=$public_new_marker
+PUBLIC_LOGIN_OLD_MARKER=$public_old_marker
+LOCAL_LOGIN_NEW_MARKER=$local_new_marker
+LOCAL_LOGIN_OLD_MARKER=$local_old_marker
 INBOX_HTTP=$inbox_status
 CONTACTS_HTTP=$contacts_status
 ANALYTICS_HTTP=$analytics_status
