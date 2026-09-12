@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production rollout marker: Page 01 original SikhaDenge logo + responsive exact reference deploy — 2026-09-12
 # Production rollout marker: Page 01 pixel-reference exact live — 2026-09-12
 # Retry marker: dedicated GitHub Actions SSH port 2222 configured on 2026-08-03
 # CI marker: validate canonical pinned host entry workflow fix on 2026-08-03
