@@ -382,7 +382,7 @@ test(
 
     await expect(
       page.getByLabel(
-        "Email address",
+        "Work Email",
       ),
     ).toBeVisible();
 
