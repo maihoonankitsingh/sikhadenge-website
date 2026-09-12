@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import LoginForm from "../../components/auth/LoginForm";
 import { getCurrentDashboardUser } from "../../lib/auth/session";
 import "../login-page01-split.css";
+import "../login-page01-approved.css";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,7 @@ export default async function LoginPage() {
   if (user) redirect("/inbox");
 
   return (
-    <main className="split01" data-page="login-page01-split-v1">
+    <main className="split01" data-page="login-page01-approved-v2">
       <section className="split01__hero" aria-labelledby="split01-title">
         <div className="split01__dots split01__dots--top" aria-hidden="true" />
         <div className="split01__dots split01__dots--mid" aria-hidden="true" />
