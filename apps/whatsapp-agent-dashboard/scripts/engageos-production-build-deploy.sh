@@ -63,6 +63,19 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 
+# Validate the supplied-reference payloads before touching production state.
+for index in 0 1 2 3; do
+  payload="$STAGE_APP/public/page01-reference-slice-${index}.txt"
+  test -s "$payload"
+  decoded_probe="$(mktemp)"
+  base64 --decode "$payload" > "$decoded_probe"
+  test -s "$decoded_probe"
+  test "$(head -c 4 "$decoded_probe")" = "RIFF"
+  test "$(dd if="$decoded_probe" bs=1 skip=8 count=4 status=none)" = "WEBP"
+  rm -f "$decoded_probe"
+done
+printf 'PASS: PAGE01_REFERENCE_PAYLOADS_VALID\n'
+
 cd "$STAGE_APP"
 npx prisma generate
 npm run typecheck
@@ -133,6 +146,34 @@ chmod 600 "$BACKUP_DIR/deploy-state.txt"
 git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SHA"
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
+
+# Materialize the exact-reference WebP slices from tracked text payloads and copy the
+# login-specific public assets into the PM2 runtime tree. The runtime is a release
+# mirror, so updating only .next is insufficient for newly-added public assets.
+for index in 0 1 2 3; do
+  payload="$LIVE_APP/public/page01-reference-slice-${index}.txt"
+  output="$LIVE_APP/public/page01-reference-slice-${index}.webp"
+  temp_output="${output}.tmp-${RUN_ID}"
+  base64 --decode "$payload" > "$temp_output"
+  test -s "$temp_output"
+  test "$(head -c 4 "$temp_output")" = "RIFF"
+  test "$(dd if="$temp_output" bs=1 skip=8 count=4 status=none)" = "WEBP"
+  chmod 644 "$temp_output"
+  mv -f "$temp_output" "$output"
+done
+
+if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
+  install -d -m 755 "$RUNTIME_APP/public"
+  for index in 0 1 2 3; do
+    install -m 644 \
+      "$LIVE_APP/public/page01-reference-slice-${index}.webp" \
+      "$RUNTIME_APP/public/page01-reference-slice-${index}.webp"
+  done
+  # Keep login fallback brand assets in sync as well.
+  install -m 644 "$LIVE_APP/public/page01-reference-brand.svg" "$RUNTIME_APP/public/page01-reference-brand.svg"
+  install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
+fi
+printf 'PASS: PAGE01_REFERENCE_PUBLIC_ASSETS_SYNCED\n'
 
 cd "$LIVE_APP"
 npx prisma generate
