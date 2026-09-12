@@ -91,7 +91,7 @@ export default function LoginForm() {
             type="button"
             className="login01__password-toggle"
             onClick={() => setShowPassword((value) => !value)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? "Hide characters" : "Show characters"}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M2.75 12s3.3-5 9.25-5 9.25 5 9.25 5-3.3 5-9.25 5-9.25-5-9.25-5Z" />
