@@ -79,10 +79,10 @@ public_new_marker=false
 public_old_marker=false
 local_new_marker=false
 local_old_marker=false
-if grep -Fq 'AI MEETS HUMAN POTENTIAL' <<<"$public_login_html"; then public_new_marker=true; fi
-if grep -Fq 'The WhatsApp AI Agent workspace' <<<"$public_login_html"; then public_old_marker=true; fi
-if grep -Fq 'AI MEETS HUMAN POTENTIAL' <<<"$local_login_html"; then local_new_marker=true; fi
-if grep -Fq 'The WhatsApp AI Agent workspace' <<<"$local_login_html"; then local_old_marker=true; fi
+if grep -Fq 'login-page01-split-v1' <<<"$public_login_html"; then public_new_marker=true; fi
+if grep -Fq 'AI MEETS HUMAN POTENTIAL' <<<"$public_login_html"; then public_old_marker=true; fi
+if grep -Fq 'login-page01-split-v1' <<<"$local_login_html"; then local_new_marker=true; fi
+if grep -Fq 'AI MEETS HUMAN POTENTIAL' <<<"$local_login_html"; then local_old_marker=true; fi
 printf 'PUBLIC_LOGIN_NEW_MARKER=%s\n' "$public_new_marker"
 printf 'PUBLIC_LOGIN_OLD_MARKER=%s\n' "$public_old_marker"
 printf 'LOCAL_LOGIN_NEW_MARKER=%s\n' "$local_new_marker"
@@ -120,8 +120,8 @@ DATABASE_CLI_URL="$(node "$STAGE_APP/scripts/prisma-postgres-cli-url.mjs" "$DATA
 failed_migrations="$(psql_scalar 'SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NULL OR rolled_back_at IS NOT NULL;')"
 baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802000000_baseline_existing_schema' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802174500_add_engageos_security_persistence' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-user_count="$(psql_scalar 'SELECT COUNT(*) FROM "DashboardUser";')"
-membership_count="$(psql_scalar 'SELECT COUNT(*) FROM "EngageWorkspaceMembership" WHERE "workspaceId" = '\''engagews_default'\'';')"
+user_count="$(psql_scalar 'SELECT COUNT(*) FROM \"DashboardUser\";')"
+membership_count="$(psql_scalar 'SELECT COUNT(*) FROM \"EngageWorkspaceMembership\" WHERE \"workspaceId\" = '\''engagews_default'\'';')"
 flag_count="$(psql_scalar "SELECT COUNT(*) FROM \"EngageFeatureFlag\" WHERE \"workspaceId\" = 'engagews_default' AND key IN ('engageos.route_permissions','engageos.outbound_policy','engageos.webhook_replay');")"
 enabled_flag_count="$(psql_scalar "SELECT COUNT(*) FROM \"EngageFeatureFlag\" WHERE \"workspaceId\" = 'engagews_default' AND enabled = true;")"
 
