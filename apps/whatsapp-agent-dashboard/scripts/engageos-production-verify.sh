@@ -120,8 +120,8 @@ DATABASE_CLI_URL="$(node "$STAGE_APP/scripts/prisma-postgres-cli-url.mjs" "$DATA
 failed_migrations="$(psql_scalar 'SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NULL OR rolled_back_at IS NOT NULL;')"
 baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802000000_baseline_existing_schema' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260802174500_add_engageos_security_persistence' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-user_count="$(psql_scalar 'SELECT COUNT(*) FROM \"DashboardUser\";')"
-membership_count="$(psql_scalar 'SELECT COUNT(*) FROM \"EngageWorkspaceMembership\" WHERE \"workspaceId\" = '\''engagews_default'\'';')"
+user_count="$(psql_scalar 'SELECT COUNT(*) FROM "DashboardUser";')"
+membership_count="$(psql_scalar 'SELECT COUNT(*) FROM "EngageWorkspaceMembership" WHERE "workspaceId" = '\''engagews_default'\'';')"
 flag_count="$(psql_scalar "SELECT COUNT(*) FROM \"EngageFeatureFlag\" WHERE \"workspaceId\" = 'engagews_default' AND key IN ('engageos.route_permissions','engageos.outbound_policy','engageos.webhook_replay');")"
 enabled_flag_count="$(psql_scalar "SELECT COUNT(*) FROM \"EngageFeatureFlag\" WHERE \"workspaceId\" = 'engagews_default' AND enabled = true;")"
 
