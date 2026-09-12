@@ -73,7 +73,13 @@ export default async function LoginPage() {
       <header className="auth__topbar">
         <a className="auth__header-brand" href="https://sikhadenge.in/" aria-label="SikhaDenge home">
           <span className="auth__logo-surface">
-            <img src={BRAND_LOGO} alt="SikhaDenge" width={192} height={58} />
+            <img
+              className="auth__brand-wordmark--aside"
+              src={BRAND_LOGO}
+              alt="SikhaDenge"
+              width={192}
+              height={58}
+            />
           </span>
         </a>
 
@@ -89,8 +95,8 @@ export default async function LoginPage() {
         </div>
       </header>
 
-      <div className="auth__stage">
-        <section className="auth__hero" aria-labelledby="auth-hero-title">
+      <div className="auth__stage auth__shell">
+        <section className="auth__hero auth__aside" aria-labelledby="auth-hero-title">
           <div className="auth__hero-copy">
             <p className="auth__eyebrow">AI meets human potential</p>
             <h1 id="auth-hero-title" className="auth__hero-title">
@@ -143,14 +149,21 @@ export default async function LoginPage() {
           <div className="auth__panel-inner">
             <div className="auth__panel-brand-row">
               <span className="auth__logo-surface auth__logo-surface--panel">
-                <img src={BRAND_LOGO} alt="SikhaDenge" width={188} height={57} />
+                <img
+                  className="auth__brand-wordmark--mobile"
+                  src={BRAND_LOGO}
+                  alt="SikhaDenge"
+                  width={188}
+                  height={57}
+                />
               </span>
               <span className="auth__trust-label">Simple · Secure · Smart</span>
             </div>
 
             <div className="auth__panel-heading">
+              <h2 className="auth__compat-heading">Sign in</h2>
               <p className="auth__panel-kicker">SikhaDenge owned system</p>
-              <h2 id="login-title">Welcome Back</h2>
+              <h3 id="login-title">Welcome Back</h3>
               <p>Sign in to your WhatsApp Agent dashboard</p>
             </div>
 
