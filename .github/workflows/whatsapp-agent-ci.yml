@@ -189,6 +189,7 @@ jobs:
           if grep -Fxq "20260912194000_add_phase16e_enterprise_webhooks" prisma/phase-base-migrations.txt \
             && ! grep -q "model EngageOutboundWebhookEndpoint" prisma/phase-base.prisma; then
             npx prisma db execute \
+              --schema prisma/phase-base.prisma \
               --file prisma/migrations/20260912194000_add_phase16e_enterprise_webhooks/migration.sql
           fi
 
