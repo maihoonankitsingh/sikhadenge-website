@@ -1,10 +1,17 @@
 /* Page 01 — generated visual on the LEFT only.
  * The RIGHT authentication panel and LoginForm are intentionally untouched.
+ * The hero is injected by the login layout as a validated data URI so the
+ * production mirror cannot serve a truncated public image asset.
  */
+
+.page01-login-asset-root {
+  width: 100%;
+  min-height: 100dvh;
+}
 
 .split01__hero {
   background-color: #041334 !important;
-  background-image: url("/page01-left-generated-crop.webp?v=20260912b") !important;
+  background-image: var(--page01-left-generated) !important;
   background-repeat: no-repeat !important;
   background-position: center center !important;
   background-size: 100% 100% !important;
@@ -19,9 +26,8 @@
   display: none !important;
 }
 
-/* Cover the AI-generated logo that is baked into the visual with the genuine
- * SikhaDenge header asset. The light glass plate keeps the original logo colors
- * intact instead of recoloring or redrawing the brand. */
+/* Cover the AI-generated logo baked into the visual with the genuine
+ * SikhaDenge header asset. */
 .split01__brand {
   position: absolute !important;
   z-index: 20 !important;
@@ -38,7 +44,7 @@
   overflow: hidden !important;
   border: 1px solid rgba(255, 255, 255, 0.82) !important;
   border-radius: 12px !important;
-  background: rgba(255, 255, 255, 0.96) !important;
+  background: rgba(255, 255,255, 0.96) !important;
   box-shadow: 0 8px 24px rgba(0, 13, 51, 0.22) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
