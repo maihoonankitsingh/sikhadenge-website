@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production rollout marker: Page 01 hero asset delivery + cache-bust diagnostic — 2026-09-12
 # Production rollout marker: Page 01 bundled LEFT hero asset hotfix — 2026-09-12
 # Production rollout marker: Page 01 generated LEFT visual + genuine SikhaDenge logo overlay; RIGHT auth unchanged — 2026-09-12
 # Production rollout marker: Page 01 code-native DOM/CSS/SVG + real SikhaDenge asset — 2026-09-12
@@ -45,6 +46,27 @@ rollback_on_error() {
 }
 trap rollback_on_error ERR
 
+probe_page01_asset() {
+  local label="$1"
+  local probe_file
+  local headers_file
+  local http_status
+  local byte_count
+  local magic_hex
+  local content_type
+  probe_file="$(mktemp)"
+  headers_file="$(mktemp)"
+  http_status="$(curl -sS -L -D "$headers_file" -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/page01-left-generated-crop.webp?probe=${RUN_ID}-${label}")"
+  byte_count="$(wc -c < "$probe_file" | tr -d ' ')"
+  magic_hex="$(od -An -tx1 -N12 "$probe_file" | tr -d ' \n')"
+  content_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {gsub("\r", ""); sub(/^[^:]*:[[:space:]]*/, ""); value=$0} END{print value}' "$headers_file")"
+  printf 'PAGE01_ASSET_%s_HTTP=%s\n' "$label" "$http_status"
+  printf 'PAGE01_ASSET_%s_BYTES=%s\n' "$label" "$byte_count"
+  printf 'PAGE01_ASSET_%s_CONTENT_TYPE=%s\n' "$label" "$content_type"
+  printf 'PAGE01_ASSET_%s_MAGIC=%s\n' "$label" "$magic_hex"
+  rm -f "$probe_file" "$headers_file"
+}
+
 printf 'ENGAGEOS_PRODUCTION_BATCH_1_BEGIN\n'
 printf 'RUN_ID=%s\n' "$RUN_ID"
 printf 'RELEASE_SHA=%s\n' "$RELEASE_SHA"
@@ -75,8 +97,14 @@ sha256sum --check "$BACKUP_DIR/database.dump.sha256"
 printf '===== TASK 2/5: GUARDED PHASE 2 MIGRATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-migrate.sh"
 
+printf '===== PAGE 01 ASSET DELIVERY BEFORE ACTIVATION =====\n'
+probe_page01_asset BEFORE
+
 printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
+
+printf '===== PAGE 01 ASSET DELIVERY AFTER ACTIVATION =====\n'
+probe_page01_asset AFTER
 
 printf '===== TASK 4/5: POST-DEPLOY VERIFICATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-verify.sh"
