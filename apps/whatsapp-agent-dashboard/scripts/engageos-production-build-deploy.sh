@@ -66,6 +66,33 @@ test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
 test -s "$STAGE_APP/public/page01-left-generated-crop.webp"
 printf 'PASS: PAGE01_CODE_NATIVE_ASSET_GATE\n'
 
+# The public-root WebP was previously truncated in production. The login page now
+# carries a compact validated WebP through five TypeScript data chunks. Fail closed
+# before building if a chunk is missing, concatenation changes, or RIFF metadata is invalid.
+node - "$STAGE_APP" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const app = process.argv[2];
+const chunks = [];
+for (let index = 0; index < 5; index += 1) {
+  const file = path.join(app, 'app', 'login', `page01HeroChunk${index}.ts`);
+  const source = fs.readFileSync(file, 'utf8');
+  const match = source.match(/=\s*"([A-Za-z0-9+/=]+)";/);
+  if (!match) throw new Error(`invalid Page 01 hero chunk: ${file}`);
+  chunks.push(match[1]);
+}
+const base64 = chunks.join('');
+if (base64.length !== 33504) throw new Error(`unexpected Page 01 hero base64 length: ${base64.length}`);
+const bytes = Buffer.from(base64, 'base64');
+if (bytes.length !== 25128) throw new Error(`unexpected Page 01 hero byte length: ${bytes.length}`);
+if (bytes.subarray(0, 4).toString('ascii') !== 'RIFF') throw new Error('Page 01 hero is not RIFF');
+if (bytes.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 hero is not WEBP');
+const declaredSize = bytes.readUInt32LE(4) + 8;
+if (declaredSize !== bytes.length) throw new Error(`Page 01 hero RIFF size mismatch: ${declaredSize} != ${bytes.length}`);
+printf = console.log;
+printf(`PASS: PAGE01_INLINE_WEBP_GATE bytes=${bytes.length} base64=${base64.length}`);
+NODE
+
 cd "$STAGE_APP"
 npx prisma generate
 npm run typecheck
@@ -137,12 +164,11 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
-# The login page uses one generated LEFT visual plus genuine SikhaDenge assets.
-# Sync them into the separate PM2 runtime tree when production serves a mirror release.
+# Keep genuine SikhaDenge public assets available in the separate PM2 runtime.
+# The Page 01 hero itself is now embedded in the compiled login layout.
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   install -d -m 755 "$RUNTIME_APP/public"
   install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
-  install -m 644 "$LIVE_APP/public/page01-left-generated-crop.webp" "$RUNTIME_APP/public/page01-left-generated-crop.webp"
   if [[ -f "$LIVE_APP/public/sikhadenge-official-logo.png" ]]; then
     install -m 644 "$LIVE_APP/public/sikhadenge-official-logo.png" "$RUNTIME_APP/public/sikhadenge-official-logo.png"
   fi
