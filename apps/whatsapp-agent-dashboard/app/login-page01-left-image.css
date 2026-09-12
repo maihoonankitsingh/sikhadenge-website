@@ -1,0 +1,83 @@
+/* Page 01 — generated visual on the LEFT only.
+ * The RIGHT authentication panel and LoginForm are intentionally untouched.
+ */
+
+.split01__hero {
+  background-color: #041334 !important;
+  background-image: url("/page01-left-generated-crop.webp") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 100% 100% !important;
+}
+
+/* Remove the previous code-native hero artwork while retaining the real brand link. */
+.split01__hero > :not(.split01__brand) {
+  display: none !important;
+}
+
+.split01__hero::after {
+  display: none !important;
+}
+
+/* Cover the AI-generated logo that is baked into the visual with the genuine
+ * SikhaDenge header asset. The light glass plate keeps the original logo colors
+ * intact instead of recoloring or redrawing the brand. */
+.split01__brand {
+  position: absolute !important;
+  z-index: 20 !important;
+  top: 3.7% !important;
+  left: 6.2% !important;
+  width: 29.2% !important;
+  height: 10.3% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 5px 10px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.82) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 8px 24px rgba(0, 13, 51, 0.22) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.split01__brand img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+}
+
+/* Keep the complete generated composition visible on stacked/tablet/mobile views. */
+@media (max-width: 900px) {
+  .split01__hero {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: 962 / 749 !important;
+    padding: 0 !important;
+    background-position: center center !important;
+    background-size: 100% 100% !important;
+  }
+
+  .split01__brand {
+    top: 3.7% !important;
+    left: 6.2% !important;
+    width: 29.2% !important;
+    height: 10.3% !important;
+    padding: 4px 8px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .split01__brand {
+    padding: 3px 6px !important;
+    border-radius: 8px !important;
+  }
+}
