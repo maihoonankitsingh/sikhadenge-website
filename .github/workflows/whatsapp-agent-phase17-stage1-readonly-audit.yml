@@ -1,0 +1,193 @@
+name: WhatsApp Agent Phase17 Stage1 Read-Only Audit
+
+on:
+  push:
+    branches:
+      - phase17b-stage1-readonly-audit-20260912
+    paths:
+      - ".github/workflows/whatsapp-agent-phase17-stage1-readonly-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: whatsapp-agent-phase17-stage1-readonly-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: whatsapp-agent-production
+    env:
+      SSH_HOST: ${{ secrets.WHATSAPP_PROD_HOST }}
+      SSH_USER: ${{ secrets.WHATSAPP_PROD_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
+      SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
+      SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
+      APPROVED_SHA: "82621f39de95faa9eb4d266d9519cddb8174e5e9"
+      LIVE_APP: /var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard
+      LEDGER_ISSUE: "65"
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout approved audit code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APPROVED_SHA }}
+          fetch-depth: 0
+
+      - name: Initialize sanitized evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          {
+            printf 'PHASE17_STAGE1_READONLY_AUDIT_BEGIN\n'
+            printf 'AUDIT_RUN_ID=%s\n' "$GITHUB_RUN_ID"
+            printf 'AUDIT_APPROVED_SHA=%s\n' "$APPROVED_SHA"
+            printf 'TARGET_ROLLOUT_STAGE=INTERNAL_TEST_IDENTITIES\n'
+            printf 'TARGET_ROLLOUT_MODE=SHADOW\n'
+            printf 'EXTERNAL_WRITES_ALLOWED=false\n'
+          } > phase17-summary.txt
+
+      - name: Validate production SSH configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          for variable_name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_HOST_KEY SSH_PORT; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              printf 'Missing required production SSH configuration: %s\n' "$variable_name" >&2
+              exit 1
+            fi
+          done
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
+          (( SSH_PORT >= 1 && SSH_PORT <= 65535 ))
+          printf 'AUDIT_SSH_PORT=%s\n' "$SSH_PORT" >> phase17-summary.txt
+          printf 'PASS: production SSH configuration present\n' >> phase17-summary.txt
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          private_key_file="$HOME/.ssh/whatsapp-production-audit"
+          if [[ "$SSH_PRIVATE_KEY" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$private_key_file"
+          else
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
+          fi
+          chmod 600 "$private_key_file"
+
+          read -r _ supplied_key_type supplied_key_material _ <<< "$SSH_HOST_KEY"
+          test "$supplied_key_type" = "ssh-ed25519"
+          test -n "$supplied_key_material"
+          canonical_host="[$SSH_HOST]:$SSH_PORT"
+          printf '%s %s %s\n' "$canonical_host" "$supplied_key_type" "$supplied_key_material" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$private_key_file" >/dev/null
+          ssh-keygen -F "$canonical_host" -f "$HOME/.ssh/known_hosts" >/dev/null
+          printf 'PASS: pinned SSH identity configured\n' >> phase17-summary.txt
+
+      - name: Verify read-only SSH transport
+        id: transport
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +e
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production-audit" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" \
+            'test "$(id -u)" = "0"' >/dev/null 2>&1
+          transport_rc=$?
+          set -e
+          if [[ "$transport_rc" -eq 0 ]]; then
+            printf 'transport_ok=true\n' >> "$GITHUB_OUTPUT"
+            printf 'PASS: PINNED_SSH_TRANSPORT_VERIFIED\n' >> phase17-summary.txt
+          else
+            printf 'transport_ok=false\n' >> "$GITHUB_OUTPUT"
+            printf 'FAIL: PINNED_SSH_TRANSPORT_NOT_VERIFIED\n' >> phase17-summary.txt
+          fi
+
+      - name: Run audited Phase17 production readiness preflight
+        id: readiness
+        if: steps.transport.outputs.transport_ok == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          audit_script="apps/whatsapp-agent-dashboard/scripts/engageos-phase17-production-readiness.sh"
+          test -f "$audit_script"
+
+          set +e
+          ssh \
+            -p "$SSH_PORT" \
+            -i "$HOME/.ssh/whatsapp-production-audit" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "cd '$LIVE_APP' && EXPECTED_RELEASE_SHA='$APPROVED_SHA' ENV_FILE=.env PM2_PROCESS_NAME=sikhadenge-whatsapp-agent CHECK_HTTP_URL=https://whatsapp.sikhadenge.in bash -s" \
+            < "$audit_script" > phase17-raw.log 2>&1
+          readiness_rc=$?
+          set -e
+          printf 'readiness_exit_code=%s\n' "$readiness_rc" >> "$GITHUB_OUTPUT"
+          printf 'AUDIT_PREFLIGHT_EXIT_CODE=%s\n' "$readiness_rc" >> phase17-summary.txt
+
+          awk '
+            /^(ENGAGEOS_PHASE17_PRODUCTION_READINESS_(BEGIN|END)|UTC_TIMESTAMP=|TARGET_ROLLOUT_STAGE=|TARGET_ROLLOUT_MODE=|EXTERNAL_WRITES_ALLOWED=|CURRENT_GIT_SHA=|CURRENT_GIT_BRANCH=|ENGAGEOS_SECURITY_MASTER=|PRISMA_MIGRATION_TABLE_EXISTS=|PRISMA_UNFINISHED_OR_ROLLED_BACK_COUNT=|LEGACY_INIT_APPLIED_COUNT=|PENDING_REPO_MIGRATION_COUNT=|UNKNOWN_APPLIED_MIGRATION_COUNT=|PHASE16_MISSING_TABLE_COUNT=|PHASE16E_WEBHOOK_REQUIRED_ENCRYPTED_COLUMN_COUNT=|PHASE16E_WEBHOOK_PLAINTEXT_SECRET_COLUMN_COUNT=|ENGAGEOS_FLAGS_BEGIN|ENGAGEOS_FLAGS_END|engageos\.(route_permissions|outbound_policy|webhook_replay)=|PM2_PID=|LOGIN_HTTP_STATUS=|READINESS_WARNINGS=|READINESS_FAILURES=|PHASE17_STAGE1_READINESS=|PASS:|FAIL:|WARN:)/ { print }
+          ' phase17-raw.log >> phase17-summary.txt
+
+          cat phase17-summary.txt
+
+      - name: Record skipped readiness state
+        if: steps.transport.outputs.transport_ok != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf 'AUDIT_PREFLIGHT_EXIT_CODE=NOT_RUN\n' >> phase17-summary.txt
+          printf 'PHASE17_STAGE1_READINESS=BLOCKED_TRANSPORT\n' >> phase17-summary.txt
+
+      - name: Publish sanitized audit ledger
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ ! -f phase17-summary.txt ]]; then
+            printf 'PHASE17_STAGE1_READONLY_AUDIT_BEGIN\nAUDIT_WORKFLOW_SETUP=FAIL\n' > phase17-summary.txt
+          fi
+          printf 'PHASE17_STAGE1_READONLY_AUDIT_END\n' >> phase17-summary.txt
+          {
+            printf '## Phase 17 Stage 1 read-only readiness audit\n\n'
+            printf -- '- Workflow run: https://github.com/%s/actions/runs/%s\n' "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+            printf -- '- Approved repository SHA: `%s`\n' "$APPROVED_SHA"
+            printf -- '- Target: `INTERNAL_TEST_IDENTITIES / SHADOW / NO_EXTERNAL_WRITES`\n'
+            printf -- '- Production mutation requested: **No**\n\n'
+            printf '```text\n'
+            cat phase17-summary.txt
+            printf '```\n'
+          } > phase17-ledger-comment.md
+          gh issue comment "$LEDGER_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file phase17-ledger-comment.md
+
+      - name: Enforce fail-closed readiness gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          transport_ok="${{ steps.transport.outputs.transport_ok }}"
+          readiness_rc="${{ steps.readiness.outputs.readiness_exit_code }}"
+          if [[ "$transport_ok" != "true" ]]; then
+            printf 'Phase17 Stage 1 audit blocked: pinned SSH transport not verified.\n' >&2
+            exit 1
+          fi
+          if [[ "$readiness_rc" != "0" ]]; then
+            printf 'Phase17 Stage 1 readiness is not PASS (preflight exit=%s).\n' "${readiness_rc:-unset}" >&2
+            exit 1
+          fi
+          printf 'PHASE17_STAGE1_READONLY_AUDIT=PASS\n'
