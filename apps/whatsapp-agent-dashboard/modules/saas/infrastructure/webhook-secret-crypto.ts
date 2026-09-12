@@ -4,16 +4,15 @@ import {
   randomBytes,
 } from "node:crypto";
 
+import type {
+  EncryptedCredentialPayload,
+} from "@/modules/channels/core/security/credential-vault";
+
 export const WEBHOOK_SECRET_ALGORITHM =
   "AES_256_GCM" as const;
 
-export type EncryptedWebhookSecret = {
-  algorithm: typeof WEBHOOK_SECRET_ALGORITHM;
-  keyVersion: string;
-  initializationVector: string;
-  authenticationTag: string;
-  ciphertext: string;
-};
+export type EncryptedWebhookSecret =
+  EncryptedCredentialPayload;
 
 function assertEncryptionKey(
   key: Buffer,
