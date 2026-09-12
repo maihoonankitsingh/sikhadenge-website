@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production trigger marker: Page 01 exact reference UI deployment — 2026-09-12
 set -Eeuo pipefail
 
 : "${LIVE_APP:?LIVE_APP is required}"
