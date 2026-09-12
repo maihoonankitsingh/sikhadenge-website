@@ -63,6 +63,7 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
+test -s "$STAGE_APP/public/page01-left-generated-crop.webp"
 printf 'PASS: PAGE01_CODE_NATIVE_ASSET_GATE\n'
 
 cd "$STAGE_APP"
@@ -136,11 +137,12 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
-# The login page is code-native. Only real brand/static assets are synced into
-# the separate PM2 runtime tree when production is serving from a mirror release.
+# The login page uses one generated LEFT visual plus genuine SikhaDenge assets.
+# Sync them into the separate PM2 runtime tree when production serves a mirror release.
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   install -d -m 755 "$RUNTIME_APP/public"
   install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
+  install -m 644 "$LIVE_APP/public/page01-left-generated-crop.webp" "$RUNTIME_APP/public/page01-left-generated-crop.webp"
   if [[ -f "$LIVE_APP/public/sikhadenge-official-logo.png" ]]; then
     install -m 644 "$LIVE_APP/public/sikhadenge-official-logo.png" "$RUNTIME_APP/public/sikhadenge-official-logo.png"
   fi
