@@ -18,7 +18,7 @@ async function login(page) {
   await page.goto("/login");
 
   await page
-    .getByLabel("Email address")
+    .getByLabel("Work Email")
     .fill(ADMIN_EMAIL);
 
   await page
