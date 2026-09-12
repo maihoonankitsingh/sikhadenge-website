@@ -367,3 +367,11 @@
     display: none !important;
   }
 }
+
+/* Keep mobile auth fields at a touch-safe text size and avoid iOS focus zoom. */
+@media (max-width: 640px) {
+  .login01__input,
+  .login01 .auth-input {
+    font-size: 16px !important;
+  }
+}
