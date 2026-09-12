@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production rollout marker: Page 01 code-native DOM/CSS/SVG + real SikhaDenge asset — 2026-09-12
 # Production rollout marker: Page 01 approved reference exact visual — 2026-09-12
 # Production rollout marker: Page 01 approved split-screen responsive UI — 2026-09-12
 # Production rollout marker: Page 01 original SikhaDenge logo + responsive exact reference deploy — 2026-09-12
