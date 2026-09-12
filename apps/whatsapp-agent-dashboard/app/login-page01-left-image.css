@@ -1,17 +1,31 @@
 /* Page 01 — generated visual on the LEFT only.
  * The RIGHT authentication panel and LoginForm are intentionally untouched.
+ * The generated artwork is rendered as a build-bundled DOM image so the live
+ * page does not depend on a public-root asset lookup in the mirror runtime.
  */
 
 .split01__hero {
-  background-color: #041334 !important;
-  background-image: url("/page01-left-generated-crop.webp") !important;
-  background-repeat: no-repeat !important;
-  background-position: center center !important;
-  background-size: 100% 100% !important;
+  background: #041334 !important;
 }
 
-/* Remove the previous code-native hero artwork while retaining the real brand link. */
-.split01__hero > :not(.split01__brand) {
+.split01__generated-hero {
+  position: absolute !important;
+  z-index: 0 !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  object-position: center center !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Remove the previous code-native hero artwork while retaining the generated
+ * visual and the genuine SikhaDenge brand link layered above it. */
+.split01__hero > :not(.split01__brand):not(.split01__generated-hero) {
   display: none !important;
 }
 
@@ -19,9 +33,8 @@
   display: none !important;
 }
 
-/* Cover the AI-generated logo that is baked into the visual with the genuine
- * SikhaDenge header asset. The light glass plate keeps the original logo colors
- * intact instead of recoloring or redrawing the brand. */
+/* Cover the AI-generated logo baked into the visual with the genuine
+ * SikhaDenge header asset. */
 .split01__brand {
   position: absolute !important;
   z-index: 20 !important;
@@ -61,8 +74,10 @@
     height: auto !important;
     aspect-ratio: 962 / 749 !important;
     padding: 0 !important;
-    background-position: center center !important;
-    background-size: 100% 100% !important;
+  }
+
+  .split01__generated-hero {
+    object-fit: fill !important;
   }
 
   .split01__brand {
