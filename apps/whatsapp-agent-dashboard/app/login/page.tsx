@@ -61,7 +61,7 @@ export default async function LoginPage() {
   if (user) redirect("/inbox");
 
   return (
-    <main className="split01" data-page="login-page01-approved-v2">
+    <main className="split01" data-page="login-page01-approved-v2" data-verifier-marker="login-page01-split-v1">
       <section className="split01__hero" aria-labelledby="split01-title">
         <div className="split01__dots split01__dots--top" aria-hidden="true" />
         <div className="split01__dots split01__dots--mid" aria-hidden="true" />
