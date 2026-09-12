@@ -2,238 +2,190 @@ import { redirect } from "next/navigation";
 
 import LoginForm from "../../components/auth/LoginForm";
 import { getCurrentDashboardUser } from "../../lib/auth/session";
-import "../login-experience.css";
-import "../login-reference-exact.css";
+import "../login-page01-split.css";
 
 export const dynamic = "force-dynamic";
 
-const BRAND_LOGO = "/page01-reference-brand.svg";
+const BRAND_LOGO = "/sikhadenge-header-safe-320.png";
 
-const featureCards = [
-  {
-    title: "Inbox",
-    copy: "Manage all WhatsApp conversations in one place.",
-    tone: "green",
-    icon: (
+function FeatureIcon({ kind }: { kind: "inbox" | "leads" | "ai" | "analytics" | "automation" }) {
+  if (kind === "inbox") {
+    return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 6.75h14v9.5H9.5L6 19v-2.75H5z" />
+        <path d="M4.5 6.5h15v10h-10L6 19v-2.5H4.5z" />
         <path d="M8 10h8M8 13h5" />
       </svg>
-    ),
-  },
-  {
-    title: "Leads",
-    copy: "Capture, track and nurture every opportunity.",
-    tone: "violet",
-    icon: (
+    );
+  }
+  if (kind === "leads") {
+    return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9.25 11a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5ZM4 18.75c.25-3.25 2-5 5.25-5s5 1.75 5.25 5" />
-        <path d="M16.75 10.25a2.5 2.5 0 1 0 0-5M16 13.5c2.75.25 4 1.75 4 4.25" />
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 18c.5-3.2 2.4-5 5.5-5s5 1.8 5.5 5M16 11a2.5 2.5 0 1 0 0-5M16 13c2.6.3 4 1.8 4.3 4.5" />
       </svg>
-    ),
-  },
-  {
-    title: "Automation",
-    copy: "Save time with smart automations and workflows.",
-    tone: "cyan",
-    icon: (
+    );
+  }
+  if (kind === "analytics") {
+    return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.75v3M12 17.25v3M3.75 12h3M17.25 12h3M6.15 6.15l2.1 2.1M15.75 15.75l2.1 2.1M17.85 6.15l-2.1 2.1M8.25 15.75l-2.1 2.1" />
-        <circle cx="12" cy="12" r="4" />
+        <path d="M5 19v-6M10 19V9M15 19v-4M20 19V5" />
       </svg>
-    ),
-  },
-  {
-    title: "Analytics",
-    copy: "Turn conversations into measurable growth.",
-    tone: "blue",
-    icon: (
+    );
+  }
+  if (kind === "automation") {
+    return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 19V11M10 19V6M15 19v-9M20 19V4" />
+        <circle cx="12" cy="12" r="3.5" />
+        <path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.2 2.2M15.8 15.8 18 18M18 6l-2.2 2.2M8.2 15.8 6 18" />
       </svg>
-    ),
-  },
-] as const;
-
-const metrics = [
-  ["10K+", "Counselors Empowered"],
-  ["1M+", "Student Conversations"],
-  ["3x", "Higher Conversions"],
-  ["24/7", "AI Working for You"],
-] as const;
-
-function BrandLockup({ panel = false }: { panel?: boolean }) {
+    );
+  }
   return (
-    <span className={panel ? "login01__brand login01__brand--panel" : "login01__brand"}>
-      <img src={BRAND_LOGO} alt="SikhaDenge — Learn Today, Grow Tomorrow." width={320} height={82} />
-    </span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 7.5h8a4 4 0 0 1 4 4v2a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-2a4 4 0 0 1 4-4Z" />
+      <path d="M12 4v3.5M9 12h.01M15 12h.01M9.5 15h5" />
+    </svg>
   );
 }
+
+const conversations = [
+  ["RS", "Riya Sharma", "I’m interested in the course…", "10:24 AM"],
+  ["AV", "Aman Verma", "Can you share the details?", "09:48 AM"],
+  ["NG", "Neha Gupta", "Thank you for the information!", "09:12 AM"],
+  ["RM", "Rahul Mehta", "I have a few questions…", "08:45 AM"],
+] as const;
 
 export default async function LoginPage() {
   const user = await getCurrentDashboardUser();
   if (user) redirect("/inbox");
 
   return (
-    <main className="login01 auth">
-      <div className="login01__ambient login01__ambient--left" aria-hidden="true" />
-      <div className="login01__ambient login01__ambient--right" aria-hidden="true" />
-      <div className="login01__city" aria-hidden="true">
-        {Array.from({ length: 18 }).map((_, index) => (
-          <i key={index} style={{ "--i": index } as React.CSSProperties} />
-        ))}
-      </div>
+    <main className="split01" data-page="login-page01-split-v1">
+      <section className="split01__hero" aria-labelledby="split01-title">
+        <div className="split01__dots split01__dots--top" aria-hidden="true" />
+        <div className="split01__dots split01__dots--mid" aria-hidden="true" />
 
-      <header className="login01__topbar">
-        <a className="login01__home" href="https://sikhadenge.in/" aria-label="SikhaDenge home">
-          <BrandLockup />
+        <a className="split01__brand" href="https://sikhadenge.in/" aria-label="SikhaDenge home">
+          <img src={BRAND_LOGO} alt="SikhaDenge" width={320} height={80} />
         </a>
 
-        <nav className="login01__nav" aria-label="Public website navigation">
-          <a href="https://sikhadenge.in/">Product</a>
-          <a href="https://sikhadenge.in/">Solutions</a>
-          <a href="https://sikhadenge.in/">Pricing</a>
-          <a href="https://sikhadenge.in/">Resources</a>
-          <a href="https://sikhadenge.in/contact">Contact</a>
-        </nav>
-
-        <div className="login01__top-actions">
-          <span className="login01__status">
-            <i aria-hidden="true" />
-            All Systems Operational
-          </span>
-          <span className="login01__divider-v" aria-hidden="true" />
-          <span className="login01__lang" aria-label="Language English">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z" />
-            </svg>
-            EN
-            <span>⌄</span>
-          </span>
+        <div className="split01__copy">
+          <span className="split01__chip"><i />AI Agent workspace</span>
+          <h1 id="split01-title">The WhatsApp AI Agent <span>workspace</span></h1>
+          <p>Manage conversations, qualified leads, agent knowledge and counselor handoffs — all in one powerful platform.</p>
         </div>
-      </header>
 
-      <div className="login01__layout auth__shell">
-        <section className="login01__hero auth__aside" aria-labelledby="login01-hero-title">
-          <div className="login01__hero-copy">
-            <p className="login01__eyebrow">AI MEETS HUMAN POTENTIAL</p>
-            <h1 id="login01-hero-title" className="login01__title">
-              SikhaDenge
-              <span>WhatsApp Agent</span>
-            </h1>
-            <p className="login01__lead">
-              AI-powered conversations, lead management,
-              <br className="login01__desktop-break" /> automation, and growth.
-            </p>
+        <div className="split01__orbit" aria-hidden="true">
+          <div className="split01__ring split01__ring--one" />
+          <div className="split01__ring split01__ring--two" />
+          <div className="split01__ring split01__ring--three" />
+          <i className="split01__node split01__node--one" />
+          <i className="split01__node split01__node--two" />
+          <i className="split01__node split01__node--three" />
+          <i className="split01__node split01__node--four" />
+
+          <div className="split01__bot">
+            <span className="split01__antenna" />
+            <span className="split01__bot-face"><i /><i /></span>
           </div>
 
-          <div className="login01__handnote" aria-hidden="true">
-            <span>More</span>
-            <span>Students</span>
-            <span>Brighter</span>
-            <span>Futures</span>
-            <i />
-          </div>
+          <article className="split01__feature split01__feature--inbox">
+            <span className="split01__feature-icon split01__feature-icon--green"><FeatureIcon kind="inbox" /></span>
+            <span><b>Inbox</b><small>Live conversations</small></span>
+          </article>
+          <article className="split01__feature split01__feature--leads">
+            <span className="split01__feature-icon split01__feature-icon--violet"><FeatureIcon kind="leads" /></span>
+            <span><b>Leads</b><small>Qualified & nurtured</small></span>
+          </article>
+          <article className="split01__feature split01__feature--ai">
+            <span className="split01__feature-icon split01__feature-icon--cyan"><FeatureIcon kind="ai" /></span>
+            <span><b>AI Agent</b><small>Knowledge & RAG</small></span>
+          </article>
+          <article className="split01__feature split01__feature--automation">
+            <span className="split01__feature-icon split01__feature-icon--violet"><FeatureIcon kind="automation" /></span>
+            <span><b>Automation</b><small>Workflows & campaigns</small></span>
+          </article>
+          <article className="split01__feature split01__feature--analytics">
+            <span className="split01__feature-icon split01__feature-icon--blue"><FeatureIcon kind="analytics" /></span>
+            <span><b>Analytics</b><small>Insights & growth</small></span>
+          </article>
+        </div>
 
-          <div className="login01__feature-grid" aria-label="WhatsApp Agent capabilities">
-            {featureCards.map((feature) => (
-              <article className="login01__feature-card" data-tone={feature.tone} key={feature.title}>
-                <span className="login01__feature-icon">{feature.icon}</span>
-                <h2>{feature.title}</h2>
-                <p>{feature.copy}</p>
-              </article>
-            ))}
+        <div className="split01__preview" aria-hidden="true">
+          <div className="split01__preview-nav">
+            <span className="split01__mini-brand"><img src={BRAND_LOGO} alt="" /></span>
+            <span className="is-active">▣ <b>Inbox</b></span>
+            <span>♙ <b>Leads</b></span>
+            <span>▤ <b>Contacts</b></span>
+            <span>➤ <b>Campaigns</b></span>
+            <span>⚙ <b>Automation</b></span>
+            <span>▥ <b>Analytics</b></span>
+            <span>⚙ <b>Settings</b></span>
           </div>
-
-          <dl className="login01__metrics" aria-label="Platform highlights">
-            {metrics.map(([value, label]) => (
-              <div key={label}>
-                <dt>{value}</dt>
-                <dd>{label}</dd>
+          <div className="split01__preview-list">
+            <div className="split01__preview-title">Inbox</div>
+            <div className="split01__search">⌕&nbsp;&nbsp; Search conversations…</div>
+            {conversations.map(([initials, name, message, time], index) => (
+              <div className={index === 0 ? "split01__conversation is-active" : "split01__conversation"} key={name}>
+                <span className="split01__avatar">{initials}</span>
+                <span><b>{name}</b><small>{message}</small></span>
+                <time>{time}</time>
               </div>
             ))}
-          </dl>
+          </div>
+          <div className="split01__preview-ai">
+            <div className="split01__preview-ai-head"><span><FeatureIcon kind="ai" /></span>AI Agent</div>
+            <p>Here are the best next steps for this lead…</p>
+            <div className="split01__preview-card"><span className="green-dot" /> <b>Lead Status</b><small>✓ Qualified</small></div>
+            <div className="split01__preview-card"><span className="violet-dot" /> <b>Counselor Handoff</b><small>Ready for human support</small></div>
+          </div>
+        </div>
 
-          <div className="login01__network" aria-hidden="true">
-            <div className="login01__planet">
-              <span className="login01__continent login01__continent--one" />
-              <span className="login01__continent login01__continent--two" />
-              <span className="login01__continent login01__continent--three" />
-            </div>
-            <i className="login01__arc login01__arc--1" />
-            <i className="login01__arc login01__arc--2" />
-            <i className="login01__arc login01__arc--3" />
-            <i className="login01__arc login01__arc--4" />
-            <i className="login01__node login01__node--1" />
-            <i className="login01__node login01__node--2" />
-            <i className="login01__node login01__node--3" />
-            <i className="login01__node login01__node--4" />
+        <svg className="split01__wave" viewBox="0 0 900 250" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="waveStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop stopColor="#0dc8ff" stopOpacity=".12" />
+              <stop offset=".42" stopColor="#1b70ff" stopOpacity=".9" />
+              <stop offset=".76" stopColor="#7b3fff" stopOpacity=".72" />
+              <stop offset="1" stopColor="#1136ff" stopOpacity=".12" />
+            </linearGradient>
+          </defs>
+          {Array.from({ length: 14 }).map((_, i) => (
+            <path key={i} d={`M-40 ${112 + i * 7} C160 ${38 + i * 4}, 285 ${238 - i * 3}, 470 ${155 + i * 2} S770 ${80 + i * 5}, 940 ${132 + i * 5}`} fill="none" stroke="url(#waveStroke)" strokeWidth="1" opacity={0.2 + i * 0.045} />
+          ))}
+        </svg>
 
-            <div className="login01__whatsapp-node">
-              <svg viewBox="0 0 24 24">
-                <path d="M19.4 4.6A10 10 0 0 0 3.7 16.65L2.5 21.5l5-1.15A10 10 0 1 0 19.4 4.6Z" />
-                <path d="M8.35 7.65c.35-.25.7-.15.9.25l.9 2.05c.15.35.1.6-.15.85l-.7.75c.65 1.35 1.8 2.5 3.15 3.15l.75-.7c.25-.25.5-.3.85-.15l2.05.9c.4.2.5.55.25.9-.55.8-1.5 1.3-2.5 1.3-3.75 0-7.75-4-7.75-7.75 0-1 .5-1.95 1.3-2.5Z" />
-              </svg>
-            </div>
+        <div className="split01__hero-foot"><span>⬡</span> Owned SikhaDenge system <i /> Secure team access</div>
+      </section>
 
-            <span className="login01__network-tag login01__network-tag--left">
-              <b>◉</b>
-              <span>Conversations<br /><strong>Create Opportunities</strong></span>
-            </span>
-            <span className="login01__network-tag login01__network-tag--right">
-              <b>◉</b>
-              <span>Automation<br /><strong>Drives Real Growth</strong></span>
-            </span>
-            <span className="login01__network-tag login01__network-tag--center">
-              <b>◉</b>
-              <span>Students<br /><strong>Build Brighter Futures</strong></span>
-            </span>
+      <section className="split01__signin" aria-labelledby="login-title">
+        <div className="split01__orb split01__orb--top" aria-hidden="true" />
+        <div className="split01__orb split01__orb--bottom" aria-hidden="true" />
+        <div className="split01__right-dots" aria-hidden="true" />
+
+        <div className="split01__signin-inner">
+          <div className="split01__signin-brand">
+            <img src={BRAND_LOGO} alt="SikhaDenge" width={320} height={80} />
+            <strong>EngageOS</strong>
           </div>
 
-          <p className="login01__footer-caption">EDUCATION × TECHNOLOGY × A BRIGHTER TOMORROW</p>
-        </section>
-
-        <section className="login01__login-side" aria-labelledby="login-title">
-          <div className="login01__trusted">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3 19 6v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" />
-              <path d="m9 12 2 2 4-5" />
-            </svg>
-            <span>TRUSTED BY<br /><b>LEADING EDUCATION BRANDS</b></span>
+          <div className="split01__signin-heading">
+            <p>SECURE TEAM ACCESS</p>
+            <h2 id="login-title">Welcome back</h2>
+            <span>Sign in to manage conversations, qualified leads, agent knowledge and counselor handoffs.</span>
           </div>
 
-          <div className="login01__panel">
-            <div className="login01__panel-notch" aria-hidden="true" />
-            <div className="login01__panel-head">
-              <BrandLockup panel />
-              <span className="login01__panel-meta">••• &nbsp; SIMPLE&nbsp;&nbsp; SECURE&nbsp;&nbsp; SMART</span>
-            </div>
-
-            <div className="login01__heading">
-              <h2 className="auth__compat-heading">Sign in</h2>
-              <h3 id="login-title">Welcome Back</h3>
-              <p>Sign in to your WhatsApp Agent dashboard</p>
-            </div>
-
+          <div className="split01__form-card">
             <LoginForm />
-
-            <p className="login01__secure-note">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="10" width="14" height="10" rx="2" />
-                <path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
-              </svg>
-              Secure access for counselors, managers, and admins.
+            <p className="split01__access-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" /></svg>
+              Access is restricted to authorized SikhaDenge team members.
             </p>
           </div>
+        </div>
 
-          <div className="login01__signature" aria-hidden="true">
-            <span>Conversations</span>
-            <span>Change Lives</span>
-            <i />
-          </div>
-        </section>
-      </div>
+        <div className="split01__tagline"><i /> Better Conversations. Brighter Futures.</div>
+      </section>
     </main>
   );
 }
