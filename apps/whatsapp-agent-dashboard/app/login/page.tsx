@@ -2,19 +2,20 @@ import { redirect } from "next/navigation";
 
 import LoginForm from "../../components/auth/LoginForm";
 import { getCurrentDashboardUser } from "../../lib/auth/session";
-import "../login-page01-split.css";
-import "../login-page01-approved.css";
+import "../login-page01-code.css";
 
 export const dynamic = "force-dynamic";
 
+// Canonical cropped SikhaDenge header mark already used by the dashboard.
+// The page itself is fully DOM/CSS/SVG; this is the only visual brand asset.
 const BRAND_LOGO = "/sikhadenge-header-safe-320.png";
 
 function FeatureIcon({ kind }: { kind: "inbox" | "leads" | "ai" | "analytics" | "automation" }) {
   if (kind === "inbox") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4.5 6.5h15v10h-10L6 19v-2.5H4.5z" />
-        <path d="M8 10h8M8 13h5" />
+        <path d="M4 5.5h16v13H4z" />
+        <path d="m5.5 7 6.5 5 6.5-5" />
       </svg>
     );
   }
@@ -49,11 +50,20 @@ function FeatureIcon({ kind }: { kind: "inbox" | "leads" | "ai" | "analytics" | 
   );
 }
 
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3 19 6v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" />
+      <path d="m9.2 12.2 1.8 1.8 3.8-4" />
+    </svg>
+  );
+}
+
 const conversations = [
-  ["RS", "Riya Sharma", "I’m interested in the course…", "10:24 AM"],
-  ["AV", "Aman Verma", "Can you share the details?", "09:48 AM"],
-  ["NG", "Neha Gupta", "Thank you for the information!", "09:12 AM"],
-  ["RM", "Rahul Mehta", "I have a few questions…", "08:45 AM"],
+  ["RS", "Riya Sharma", "I’m interested in the course…", "10:24 AM", "2"],
+  ["AV", "Aman Verma", "Can you share the details?", "09:48 AM", "1"],
+  ["NG", "Neha Gupta", "Thank you for the information!", "09:12 AM", ""],
+  ["RM", "Rahul Mehta", "I have a few questions…", "08:45 AM", ""],
 ] as const;
 
 export default async function LoginPage() {
@@ -61,8 +71,11 @@ export default async function LoginPage() {
   if (user) redirect("/inbox");
 
   return (
-    <main className="split01" data-page="login-page01-approved-v2" data-verifier-marker="login-page01-split-v1">
+    <main className="split01" data-page="login-page01-split-v1" data-rendering="code-native-v3">
       <section className="split01__hero" aria-labelledby="split01-title">
+        <div className="split01__ambient split01__ambient--one" aria-hidden="true" />
+        <div className="split01__ambient split01__ambient--two" aria-hidden="true" />
+        <div className="split01__grid" aria-hidden="true" />
         <div className="split01__dots split01__dots--top" aria-hidden="true" />
         <div className="split01__dots split01__dots--mid" aria-hidden="true" />
 
@@ -84,10 +97,11 @@ export default async function LoginPage() {
           <i className="split01__node split01__node--two" />
           <i className="split01__node split01__node--three" />
           <i className="split01__node split01__node--four" />
+          <i className="split01__node split01__node--five" />
 
           <div className="split01__bot">
-            <span className="split01__antenna" />
-            <span className="split01__bot-face"><i /><i /></span>
+            <span className="split01__antenna"><i /></span>
+            <span className="split01__bot-face"><i /><i /><b /></span>
           </div>
 
           <article className="split01__feature split01__feature--inbox">
@@ -96,67 +110,68 @@ export default async function LoginPage() {
           </article>
           <article className="split01__feature split01__feature--leads">
             <span className="split01__feature-icon split01__feature-icon--violet"><FeatureIcon kind="leads" /></span>
-            <span><b>Leads</b><small>Qualified & nurtured</small></span>
+            <span><b>Leads</b><small>Qualified &amp; nurtured</small></span>
           </article>
           <article className="split01__feature split01__feature--ai">
             <span className="split01__feature-icon split01__feature-icon--cyan"><FeatureIcon kind="ai" /></span>
-            <span><b>AI Agent</b><small>Knowledge & RAG</small></span>
+            <span><b>AI Agent</b><small>Knowledge &amp; RAG</small></span>
           </article>
           <article className="split01__feature split01__feature--automation">
             <span className="split01__feature-icon split01__feature-icon--violet"><FeatureIcon kind="automation" /></span>
-            <span><b>Automation</b><small>Workflows & campaigns</small></span>
+            <span><b>Automation</b><small>Workflows &amp; campaigns</small></span>
           </article>
           <article className="split01__feature split01__feature--analytics">
             <span className="split01__feature-icon split01__feature-icon--blue"><FeatureIcon kind="analytics" /></span>
-            <span><b>Analytics</b><small>Insights & growth</small></span>
+            <span><b>Analytics</b><small>Insights &amp; growth</small></span>
           </article>
         </div>
 
         <div className="split01__preview" aria-hidden="true">
           <div className="split01__preview-nav">
             <span className="split01__mini-brand"><img src={BRAND_LOGO} alt="" /></span>
-            <span className="is-active">▣ <b>Inbox</b></span>
-            <span>♙ <b>Leads</b></span>
-            <span>▤ <b>Contacts</b></span>
-            <span>➤ <b>Campaigns</b></span>
-            <span>⚙ <b>Automation</b></span>
-            <span>▥ <b>Analytics</b></span>
-            <span>⚙ <b>Settings</b></span>
+            <span className="is-active"><FeatureIcon kind="inbox" /><b>Inbox</b></span>
+            <span><FeatureIcon kind="leads" /><b>Leads</b></span>
+            <span><i className="split01__nav-glyph">▣</i><b>Contacts</b></span>
+            <span><i className="split01__nav-glyph">➤</i><b>Campaigns</b></span>
+            <span><FeatureIcon kind="automation" /><b>Automation</b></span>
+            <span><FeatureIcon kind="analytics" /><b>Analytics</b></span>
+            <span><i className="split01__nav-glyph">⚙</i><b>Settings</b></span>
           </div>
           <div className="split01__preview-list">
             <div className="split01__preview-title">Inbox</div>
-            <div className="split01__search">⌕&nbsp;&nbsp; Search conversations…</div>
-            {conversations.map(([initials, name, message, time], index) => (
+            <div className="split01__search"><span>⌕</span> Search conversations…</div>
+            {conversations.map(([initials, name, message, time, badge], index) => (
               <div className={index === 0 ? "split01__conversation is-active" : "split01__conversation"} key={name}>
                 <span className="split01__avatar">{initials}</span>
-                <span><b>{name}</b><small>{message}</small></span>
+                <span className="split01__conversation-copy"><b>{name}</b><small>{message}</small></span>
                 <time>{time}</time>
+                {badge ? <em>{badge}</em> : null}
               </div>
             ))}
           </div>
           <div className="split01__preview-ai">
-            <div className="split01__preview-ai-head"><span><FeatureIcon kind="ai" /></span>AI Agent</div>
+            <div className="split01__preview-ai-head"><span><FeatureIcon kind="ai" /></span><b>AI Agent</b></div>
             <p>Here are the best next steps for this lead…</p>
             <div className="split01__preview-card"><span className="green-dot" /> <b>Lead Status</b><small>✓ Qualified</small></div>
             <div className="split01__preview-card"><span className="violet-dot" /> <b>Counselor Handoff</b><small>Ready for human support</small></div>
           </div>
         </div>
 
-        <svg className="split01__wave" viewBox="0 0 900 250" preserveAspectRatio="none" aria-hidden="true">
+        <svg className="split01__wave" viewBox="0 0 900 270" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <linearGradient id="waveStroke" x1="0" y1="0" x2="1" y2="0">
-              <stop stopColor="#0dc8ff" stopOpacity=".12" />
-              <stop offset=".42" stopColor="#1b70ff" stopOpacity=".9" />
-              <stop offset=".76" stopColor="#7b3fff" stopOpacity=".72" />
-              <stop offset="1" stopColor="#1136ff" stopOpacity=".12" />
+            <linearGradient id="waveStrokeCode" x1="0" y1="0" x2="1" y2="0">
+              <stop stopColor="#10d7ff" stopOpacity=".05" />
+              <stop offset=".42" stopColor="#1b70ff" stopOpacity=".92" />
+              <stop offset=".78" stopColor="#7b3fff" stopOpacity=".8" />
+              <stop offset="1" stopColor="#1136ff" stopOpacity=".05" />
             </linearGradient>
           </defs>
-          {Array.from({ length: 14 }).map((_, i) => (
-            <path key={i} d={`M-40 ${112 + i * 7} C160 ${38 + i * 4}, 285 ${238 - i * 3}, 470 ${155 + i * 2} S770 ${80 + i * 5}, 940 ${132 + i * 5}`} fill="none" stroke="url(#waveStroke)" strokeWidth="1" opacity={0.2 + i * 0.045} />
+          {Array.from({ length: 18 }).map((_, i) => (
+            <path key={i} d={`M-50 ${115 + i * 7} C155 ${38 + i * 3.8}, 286 ${246 - i * 3.2}, 470 ${158 + i * 2} S770 ${78 + i * 4.7}, 950 ${132 + i * 5}`} fill="none" stroke="url(#waveStrokeCode)" strokeWidth={i === 7 ? 1.6 : 0.8} opacity={0.16 + i * 0.038} />
           ))}
         </svg>
 
-        <div className="split01__hero-foot"><span>⬡</span> Owned SikhaDenge system <i /> Secure team access</div>
+        <div className="split01__hero-foot"><span><ShieldIcon /></span> Owned SikhaDenge system <i /> Secure team access</div>
       </section>
 
       <section className="split01__signin" aria-labelledby="login-title">
@@ -173,13 +188,13 @@ export default async function LoginPage() {
           <div className="split01__signin-heading">
             <p>SECURE TEAM ACCESS</p>
             <h2 id="login-title">Welcome back</h2>
-            <span>Sign in to manage conversations, qualified leads, agent knowledge and counselor handoffs.</span>
+            <span>Sign in to manage conversations, qualified leads,<br className="split01__desktop-break" /> agent knowledge and counselor handoffs.</span>
           </div>
 
           <div className="split01__form-card">
             <LoginForm />
             <p className="split01__access-note">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.6-2.8 8-7 10-4.2-2-7-5.4-7-10V6l7-3Z" /></svg>
+              <ShieldIcon />
               Access is restricted to authorized SikhaDenge team members.
             </p>
           </div>
