@@ -61,7 +61,6 @@ export default function LoginForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             aria-invalid={hasError}
-            autoFocus
             required
           />
         </div>

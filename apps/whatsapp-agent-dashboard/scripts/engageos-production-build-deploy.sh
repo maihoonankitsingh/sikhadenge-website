@@ -63,6 +63,24 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 
+# The supplied Page 01 reference is one WebP encoded as twelve consecutive
+# base64 text parts so each tracked payload remains small and reviewable.
+PAGE01_REFERENCE_PARTS=()
+for index in $(seq -w 0 11); do
+  part="$STAGE_APP/public/page01-reference-part-${index}.txt"
+  test -s "$part"
+  PAGE01_REFERENCE_PARTS+=("$part")
+done
+REFERENCE_PROBE="$(mktemp)"
+cat "${PAGE01_REFERENCE_PARTS[@]}" \
+  | tr -d '\r\n' \
+  | base64 --decode > "$REFERENCE_PROBE"
+test -s "$REFERENCE_PROBE"
+test "$(head -c 4 "$REFERENCE_PROBE")" = "RIFF"
+test "$(dd if="$REFERENCE_PROBE" bs=1 skip=8 count=4 status=none)" = "WEBP"
+rm -f "$REFERENCE_PROBE"
+printf 'PASS: PAGE01_REFERENCE_MASTER_PAYLOAD_VALID\n'
+
 cd "$STAGE_APP"
 npx prisma generate
 npm run typecheck
@@ -133,6 +151,33 @@ chmod 600 "$BACKUP_DIR/deploy-state.txt"
 git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SHA"
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
+
+# Materialize the exact supplied-reference WebP from the twelve tracked base64 parts.
+REFERENCE_OUTPUT="$LIVE_APP/public/page01-reference-master.webp"
+REFERENCE_TEMP="${REFERENCE_OUTPUT}.tmp-${RUN_ID}"
+LIVE_REFERENCE_PARTS=()
+for index in $(seq -w 0 11); do
+  part="$LIVE_APP/public/page01-reference-part-${index}.txt"
+  test -s "$part"
+  LIVE_REFERENCE_PARTS+=("$part")
+done
+cat "${LIVE_REFERENCE_PARTS[@]}" \
+  | tr -d '\r\n' \
+  | base64 --decode > "$REFERENCE_TEMP"
+test -s "$REFERENCE_TEMP"
+test "$(head -c 4 "$REFERENCE_TEMP")" = "RIFF"
+test "$(dd if="$REFERENCE_TEMP" bs=1 skip=8 count=4 status=none)" = "WEBP"
+chmod 644 "$REFERENCE_TEMP"
+mv -f "$REFERENCE_TEMP" "$REFERENCE_OUTPUT"
+
+if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
+  install -d -m 755 "$RUNTIME_APP/public"
+  install -m 644 "$REFERENCE_OUTPUT" "$RUNTIME_APP/public/page01-reference-master.webp"
+  # Keep login fallback brand assets in sync as well.
+  install -m 644 "$LIVE_APP/public/page01-reference-brand.svg" "$RUNTIME_APP/public/page01-reference-brand.svg"
+  install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
+fi
+printf 'PASS: PAGE01_REFERENCE_MASTER_PUBLIC_ASSET_SYNCED\n'
 
 cd "$LIVE_APP"
 npx prisma generate
