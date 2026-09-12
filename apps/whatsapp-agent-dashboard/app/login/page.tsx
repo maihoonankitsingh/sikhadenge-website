@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import LoginForm from "../../components/auth/LoginForm";
 import { getCurrentDashboardUser } from "../../lib/auth/session";
 import "../login-experience.css";
+import "../login-reference-exact.css";
 
 export const dynamic = "force-dynamic";
 
-const BRAND_LOGO = "/sikhadenge-header-safe-320.png";
+const BRAND_LOGO = "/page01-reference-brand.svg";
 
 const featureCards = [
   {
@@ -64,7 +65,7 @@ const metrics = [
 function BrandLockup({ panel = false }: { panel?: boolean }) {
   return (
     <span className={panel ? "login01__brand login01__brand--panel" : "login01__brand"}>
-      <img src={BRAND_LOGO} alt="SikhaDenge" width={214} height={64} />
+      <img src={BRAND_LOGO} alt="SikhaDenge — Learn Today, Grow Tomorrow." width={320} height={82} />
     </span>
   );
 }
