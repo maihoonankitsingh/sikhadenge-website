@@ -450,22 +450,23 @@ model EngageWorkspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships         EngageWorkspaceMembership[]
-  connections         EngageChannelConnection[]
-  consentEvents       EngageCustomerConsentEvent[]
-  suppressions        EngageCustomerSuppression[]
-  killSwitches        EngageKillSwitch[]
-  replayRecords       EngageWebhookReplayRecord[]
-  auditEvents         EngageSecurityAuditEvent[]
-  featureFlags        EngageFeatureFlag[]
-  agencyClientLinks   EngageAgencyWorkspaceLink[] @relation("EngageAgencyClientWorkspace")
-  agencyParentLinks   EngageAgencyWorkspaceLink[] @relation("EngageAgencyParentWorkspace")
-  saasState           EngageWorkspaceSaasState?
-  publicApiKeys       EngagePublicApiKey[]
-  usageEvents         EngageWorkspaceUsageEvent[]
-  whiteLabelConfig    EngageWhiteLabelConfig?
-  customDomains       EngageCustomDomain[]
-  developerRequestLogs EngageDeveloperRequestLog[]
+  memberships             EngageWorkspaceMembership[]
+  connections             EngageChannelConnection[]
+  consentEvents           EngageCustomerConsentEvent[]
+  suppressions            EngageCustomerSuppression[]
+  killSwitches            EngageKillSwitch[]
+  replayRecords           EngageWebhookReplayRecord[]
+  auditEvents             EngageSecurityAuditEvent[]
+  featureFlags            EngageFeatureFlag[]
+  agencyClientLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyClientWorkspace")
+  agencyParentLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyParentWorkspace")
+  saasState               EngageWorkspaceSaasState?
+  publicApiKeys           EngagePublicApiKey[]
+  usageEvents             EngageWorkspaceUsageEvent[]
+  whiteLabelConfig        EngageWhiteLabelConfig?
+  customDomains           EngageCustomDomain[]
+  developerRequestLogs    EngageDeveloperRequestLog[]
+  outboundWebhookEndpoints EngageOutboundWebhookEndpoint[]
 
   @@index([isActive, createdAt])
 }
@@ -787,4 +788,28 @@ model EngageDeveloperRequestLog {
   @@unique([workspaceId, requestId])
   @@index([workspaceId, occurredAt])
   @@index([apiKeyWorkspaceId, apiKeyId, occurredAt])
+}
+
+model EngageOutboundWebhookEndpoint {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  name                 String
+  url                  String
+  events               Json
+  status               String   @default("ACTIVE")
+  algorithm            String   @default("AES_256_GCM")
+  keyVersion           String
+  initializationVector String
+  authenticationTag    String
+  ciphertext           String
+  pausedAt             DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, status, createdAt])
 }
