@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { processWebhookAgentBridge } from "../../../../lib/agent/webhook-agent-bridge";
+import { mirrorMetaWebhookToCanonical } from "../../../../lib/meta/canonical-mirror";
 import {
   getWhatsAppAppSecret,
   getWhatsAppVerifyToken,
@@ -52,6 +53,28 @@ async function recordSignedWebhookEvidence(): Promise<void> {
     channel: "WHATSAPP",
     externalAccountId,
   }).catch(() => undefined);
+}
+
+function mirrorAcceptedWebhook(input: {
+  rawBody: string;
+  signatureHeader: string | null;
+}): void {
+  // Transitional convergence path: Meta remains pointed at this production
+  // callback. Only after the existing local persistence/queue accepts the
+  // signed webhook do we optionally mirror the exact signed envelope to the
+  // canonical SikhaDenge dashboard. The feature is OFF by default and mirror
+  // failure never changes the primary Meta acknowledgement.
+  void mirrorMetaWebhookToCanonical(input)
+    .then((mirror) => {
+      if (mirror.attempted && !mirror.delivered) {
+        console.warn(
+          `[whatsapp-canonical-mirror] delivery failed status=${mirror.status ?? "none"} reason=${mirror.reason}`,
+        );
+      }
+    })
+    .catch(() => {
+      // Best-effort only during the controlled SA1 convergence canary.
+    });
 }
 
 export async function GET(request: Request) {
@@ -159,6 +182,9 @@ export async function POST(request: Request) {
         rawBody,
         ...dependencies,
       });
+
+      mirrorAcceptedWebhook({ rawBody, signatureHeader });
+
       return NextResponse.json(
         {
           received: true,
@@ -180,6 +206,9 @@ export async function POST(request: Request) {
 
   try {
     const result = await processWhatsAppWebhook(payload, rawBody);
+
+    mirrorAcceptedWebhook({ rawBody, signatureHeader });
+
     let agent: Awaited<ReturnType<typeof processWebhookAgentBridge>> | null = null;
     try {
       agent = await processWebhookAgentBridge(payload);
