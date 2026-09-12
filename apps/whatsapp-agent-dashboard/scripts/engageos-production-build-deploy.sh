@@ -63,17 +63,16 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 
-# The supplied reference is stored as four consecutive base64 text chunks only to
-# keep each tracked file small. They are chunks of ONE WebP, not four WebP files.
-for index in 0 1 2 3; do
-  test -s "$STAGE_APP/public/page01-reference-slice-${index}.txt"
+# The supplied Page 01 reference is one WebP encoded as twelve consecutive
+# base64 text parts so each tracked payload remains small and reviewable.
+PAGE01_REFERENCE_PARTS=()
+for index in $(seq -w 0 11); do
+  part="$STAGE_APP/public/page01-reference-part-${index}.txt"
+  test -s "$part"
+  PAGE01_REFERENCE_PARTS+=("$part")
 done
 REFERENCE_PROBE="$(mktemp)"
-cat \
-  "$STAGE_APP/public/page01-reference-slice-0.txt" \
-  "$STAGE_APP/public/page01-reference-slice-1.txt" \
-  "$STAGE_APP/public/page01-reference-slice-2.txt" \
-  "$STAGE_APP/public/page01-reference-slice-3.txt" \
+cat "${PAGE01_REFERENCE_PARTS[@]}" \
   | tr -d '\r\n' \
   | base64 --decode > "$REFERENCE_PROBE"
 test -s "$REFERENCE_PROBE"
@@ -153,14 +152,16 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
-# Materialize the single supplied-reference WebP from the four tracked base64 chunks.
+# Materialize the exact supplied-reference WebP from the twelve tracked base64 parts.
 REFERENCE_OUTPUT="$LIVE_APP/public/page01-reference-master.webp"
 REFERENCE_TEMP="${REFERENCE_OUTPUT}.tmp-${RUN_ID}"
-cat \
-  "$LIVE_APP/public/page01-reference-slice-0.txt" \
-  "$LIVE_APP/public/page01-reference-slice-1.txt" \
-  "$LIVE_APP/public/page01-reference-slice-2.txt" \
-  "$LIVE_APP/public/page01-reference-slice-3.txt" \
+LIVE_REFERENCE_PARTS=()
+for index in $(seq -w 0 11); do
+  part="$LIVE_APP/public/page01-reference-part-${index}.txt"
+  test -s "$part"
+  LIVE_REFERENCE_PARTS+=("$part")
+done
+cat "${LIVE_REFERENCE_PARTS[@]}" \
   | tr -d '\r\n' \
   | base64 --decode > "$REFERENCE_TEMP"
 test -s "$REFERENCE_TEMP"
