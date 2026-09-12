@@ -67,6 +67,35 @@ export default async function LoginPage() {
 
   return (
     <main className="auth">
+      <style>{`
+        .auth .auth__logo-surface { background: #ffffff !important; }
+        .auth .auth__panel-heading .auth__compat-heading {
+          margin: 0 0 7px !important;
+          color: #5bc2ff !important;
+          font-size: 11px !important;
+          line-height: 1.2 !important;
+          font-weight: 700 !important;
+          letter-spacing: .14em !important;
+          text-transform: uppercase !important;
+        }
+        .auth .auth__panel-heading h3 {
+          margin: 0;
+          color: #ffffff;
+          font-size: clamp(31px, 2.8vw, 43px);
+          line-height: 1.05;
+          font-weight: 760;
+          letter-spacing: -.035em;
+        }
+        .auth .auth-input:focus,
+        .auth .auth-input:focus-visible {
+          outline: 2px solid #8beaff !important;
+          outline-offset: 2px !important;
+        }
+        @media (max-width: 860px) {
+          .auth .auth__aside { display: none !important; }
+        }
+      `}</style>
+
       <div className="auth__ambient auth__ambient--one" aria-hidden="true" />
       <div className="auth__ambient auth__ambient--two" aria-hidden="true" />
 
