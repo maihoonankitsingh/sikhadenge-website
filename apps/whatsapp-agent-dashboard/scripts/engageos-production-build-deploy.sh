@@ -61,18 +61,22 @@ test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
 test -s "$STAGE_APP/public/sikhadenge-header-safe-360.png"
 test -s "$STAGE_APP/public/page01-left-approved-hq.webp"
 
+# Fail closed on the exact reviewed binary assets committed to the release.
+test "$(git -C "$STAGE_APP" hash-object "$STAGE_APP/public/page01-left-approved-hq.webp")" = "02ff2992f03249ccae1c617970ca053cd6d8e55c"
+test "$(git -C "$STAGE_APP" hash-object "$STAGE_APP/public/sikhadenge-header-safe-360.png")" = "727ef4fda8587b11fd43534e25dfdf5d30261278"
+
 node - "$STAGE_APP" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const app = process.argv[2];
 const hero = fs.readFileSync(path.join(app, 'public', 'page01-left-approved-hq.webp'));
 const logo = fs.readFileSync(path.join(app, 'public', 'sikhadenge-header-safe-360.png'));
-if (hero.length < 200000) throw new Error(`Page 01 HQ hero unexpectedly small: ${hero.length}`);
+if (hero.length !== 14998) throw new Error(`Page 01 reviewed hero byte length mismatch: ${hero.length}`);
 if (hero.subarray(0, 4).toString('ascii') !== 'RIFF' || hero.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 HQ hero is not a valid RIFF/WEBP payload');
 if (hero.readUInt32LE(4) + 8 !== hero.length) throw new Error('Page 01 HQ hero RIFF size mismatch');
-if (logo.length < 10000) throw new Error(`SikhaDenge 360 logo unexpectedly small: ${logo.length}`);
+if (logo.length !== 14990) throw new Error(`SikhaDenge reviewed logo byte length mismatch: ${logo.length}`);
 if (logo.subarray(1, 4).toString('ascii') !== 'PNG') throw new Error('SikhaDenge 360 logo is not PNG');
-console.log(`PASS: PAGE01_HQ_ASSET_GATE hero_bytes=${hero.length} logo_bytes=${logo.length}`);
+console.log(`PASS: PAGE01_EXACT_ASSET_GATE hero_bytes=${hero.length} logo_bytes=${logo.length}`);
 NODE
 
 cd "$STAGE_APP"
