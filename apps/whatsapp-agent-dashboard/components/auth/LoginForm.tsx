@@ -56,6 +56,7 @@ export default function LoginForm() {
             placeholder="you@sikhadenge.in"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            aria-label="Work Email"
             aria-invalid={hasError}
             required
           />
