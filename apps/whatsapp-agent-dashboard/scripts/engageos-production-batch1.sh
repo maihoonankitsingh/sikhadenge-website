@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production rollout marker: Phase17 Stage1 persisted SHADOW activation — 2026-09-13
 # Production rollout marker: validated inline Page 01 hero + canonical SikhaDenge logo — 2026-09-13
 # Production rollout marker: Phase16E migration-lineage compatibility gate — 2026-09-13
 # Production rollout marker: intentional preflight failure capture hardened — 2026-09-13
@@ -162,10 +163,9 @@ if [[ "$PHASE16E_COMPAT" == "true" ]]; then
     BACKUP_DIR="$BACKUP_DIR" \
     WRITE_EVIDENCE=1 \
     bash "$STAGE_APP/scripts/engageos-production-phase16e-lineage-gate.sh"
-  printf 'PASS: MIGRATION_NOOP_PHASE16E_ALREADY_APPLIED\n'
-else
-  bash "$STAGE_APP/scripts/engageos-production-migrate.sh"
+  printf 'PASS: PHASE16E_EXISTING_LINEAGE_VERIFIED\n'
 fi
+bash "$STAGE_APP/scripts/engageos-production-migrate-v2.sh"
 
 printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
@@ -184,6 +184,26 @@ test -f "$BACKUP_DIR/source-before.sha"
 test -f "$BACKUP_DIR/build-before.id"
 printf 'PASS: ROLLBACK_ARTIFACTS_PRESERVED\n'
 
+# The application is now independently verified. Stage1 persistence is additive
+# database state and automatic application rollback would not undo it, so failures
+# from this point fail closed without creating a misleading app/DB version split.
+trap - ERR
+
+printf '===== PHASE17 STAGE1: PERSISTED SHADOW BOOTSTRAP =====\n'
+ENV_FILE="$ENV_FILE" \
+  bash "$STAGE_APP/scripts/engageos-production-phase17-stage1-bootstrap.sh"
+
+printf '===== PHASE17 STAGE1: READ-ONLY READINESS RECHECK =====\n'
+EXPECTED_RELEASE_SHA="$RELEASE_SHA" \
+  ENV_FILE="$ENV_FILE" \
+  PM2_PROCESS_NAME="$PM2_PROCESS_NAME" \
+  CHECK_HTTP_URL="$PUBLIC_URL" \
+  bash "$STAGE_APP/scripts/engageos-phase17-production-readiness.sh"
+
+printf '===== PHASE17 STAGE1: PERSISTED STATE VERIFICATION =====\n'
+ENV_FILE="$ENV_FILE" \
+  bash "$STAGE_APP/scripts/engageos-production-phase17-stage1-verify.sh"
+
 cat > "$BACKUP_DIR/batch-result.txt" <<EOF
 RUN_ID=$RUN_ID
 RELEASE_SHA=$RELEASE_SHA
@@ -191,6 +211,7 @@ STATUS=PASS
 BACKUP_MANIFEST=$BACKUP_DIR/manifest.txt
 MIGRATION_EVIDENCE=$BACKUP_DIR/migration-evidence.txt
 POST_DEPLOY_EVIDENCE=$BACKUP_DIR/post-deploy-evidence.txt
+PHASE17_STAGE1_EVIDENCE=$BACKUP_DIR/phase17-stage1-evidence.txt
 COMPLETED_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 EOF
 chmod 600 "$BACKUP_DIR/batch-result.txt"
