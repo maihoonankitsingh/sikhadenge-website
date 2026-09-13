@@ -26,6 +26,7 @@ PUBLIC_URL="${PUBLIC_URL:-https://whatsapp.sikhadenge.in}"
 BACKUP_ROOT="${BACKUP_ROOT:-/root/sikhadenge-backups}"
 BACKUP_DIR="${BACKUP_ROOT}/engageos-${RUN_ID}"
 ENV_FILE="${ENV_FILE:-${LIVE_APP}/.env}"
+APPROVED_PAGE01_HERO_BLOB="02ff2992f03249ccae1c617970ca053cd6d8e55c"
 
 export LIVE_APP STAGE_APP RELEASE_SHA RUN_ID PM2_PROCESS_NAME PUBLIC_URL
 export BACKUP_ROOT BACKUP_DIR ENV_FILE
@@ -53,7 +54,8 @@ probe_asset() {
   local label="$2"
   local min_bytes="$3"
   local expected_type="$4"
-  local probe_file headers_file http_status byte_count content_type
+  local expected_blob="${5:-}"
+  local probe_file headers_file http_status byte_count content_type actual_blob
   probe_file="$(mktemp)"
   headers_file="$(mktemp)"
   http_status="$(curl -sS -L -D "$headers_file" -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}${path}?probe=${RUN_ID}-${label}")"
@@ -65,6 +67,15 @@ probe_asset() {
   test "$http_status" = "200"
   test "$byte_count" -ge "$min_bytes"
   case "$content_type" in "$expected_type"*) ;; *) printf 'FAIL: %s unexpected content type: %s\n' "$label" "$content_type" >&2; rm -f "$probe_file" "$headers_file"; return 1 ;; esac
+  if [[ -n "$expected_blob" ]]; then
+    actual_blob="$(git hash-object --stdin < "$probe_file")"
+    printf '%s_GIT_BLOB=%s\n' "$label" "$actual_blob"
+    if [[ "$actual_blob" != "$expected_blob" ]]; then
+      printf 'FAIL: %s asset integrity mismatch expected=%s actual=%s\n' "$label" "$expected_blob" "$actual_blob" >&2
+      rm -f "$probe_file" "$headers_file"
+      return 1
+    fi
+  fi
   rm -f "$probe_file" "$headers_file"
 }
 
@@ -110,7 +121,7 @@ printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
 
 printf '===== PAGE 01 HQ PUBLIC ASSET PROBES =====\n'
-probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 200000 image/webp
+probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 10000 image/webp "$APPROVED_PAGE01_HERO_BLOB"
 probe_asset '/sikhadenge-header-safe-360.png' PAGE01_EXACT_LOGO 10000 image/png
 probe_login_hq_marker
 
