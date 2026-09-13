@@ -56,6 +56,7 @@ export default function LoginForm() {
             placeholder="you@sikhadenge.in"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            aria-label="Work Email"
             aria-invalid={hasError}
             required
           />
@@ -84,7 +85,7 @@ export default function LoginForm() {
             type="button"
             className="split01-form__eye"
             onClick={() => setShowPassword((value) => !value)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? "Hide characters" : "Show characters"}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M2.75 12s3.3-5 9.25-5 9.25 5 9.25 5-3.3 5-9.25 5-9.25-5-9.25-5Z" />

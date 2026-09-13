@@ -22,7 +22,7 @@ async function login(page) {
     .fill(ADMIN_EMAIL);
 
   await page
-    .getByLabel("Password")
+    .getByLabel("Password", { exact: true })
     .fill(ADMIN_PASSWORD);
 
   await page
@@ -382,13 +382,14 @@ test(
 
     await expect(
       page.getByLabel(
-        "Email address",
+        "Work Email",
       ),
     ).toBeVisible();
 
     await expect(
       page.getByLabel(
         "Password",
+        { exact: true },
       ),
     ).toBeVisible();
 

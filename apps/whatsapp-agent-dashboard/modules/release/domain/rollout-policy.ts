@@ -1,8 +1,12 @@
+export const ROLLOUT_MODES = [
+  "SHADOW",
+  "APPROVAL_ONLY",
+  "LIMITED_AUTOPILOT",
+  "FULL_AUTOPILOT_FOR_APPROVED_FLOWS",
+] as const;
+
 export type RolloutMode =
-  | "SHADOW"
-  | "APPROVAL_ONLY"
-  | "LIMITED_AUTOPILOT"
-  | "FULL_AUTOPILOT_FOR_APPROVED_FLOWS";
+  (typeof ROLLOUT_MODES)[number];
 
 export type RolloutEvidence = {
   exactShaVerified: boolean;
@@ -20,12 +24,11 @@ export type RolloutDecision =
   | { allowed: true; targetMode: RolloutMode }
   | { allowed: false; reason: string };
 
-const ORDER: readonly RolloutMode[] = [
-  "SHADOW",
-  "APPROVAL_ONLY",
-  "LIMITED_AUTOPILOT",
-  "FULL_AUTOPILOT_FOR_APPROVED_FLOWS",
-];
+export function rolloutModeIndex(
+  mode: RolloutMode,
+): number {
+  return ROLLOUT_MODES.indexOf(mode);
+}
 
 export function evaluateRolloutPromotion(input: {
   currentMode?: RolloutMode;
@@ -52,12 +55,33 @@ export function evaluateRolloutPromotion(input: {
     return { allowed: false, reason: "Required release evidence is incomplete." };
   }
 
-  if (input.currentMode) {
-    const current = ORDER.indexOf(input.currentMode);
-    const target = ORDER.indexOf(input.targetMode);
-    if (target > current + 1) {
-      return { allowed: false, reason: "Rollout modes must be promoted one controlled step at a time." };
+  const target = rolloutModeIndex(input.targetMode);
+
+  if (!input.currentMode) {
+    if (target !== 0) {
+      return {
+        allowed: false,
+        reason: "A new rollout must start in SHADOW mode.",
+      };
     }
+    return { allowed: true, targetMode: input.targetMode };
   }
+
+  const current = rolloutModeIndex(input.currentMode);
+
+  if (target < current) {
+    return {
+      allowed: false,
+      reason: "Rollout promotion cannot move backwards; use the controlled rollback path.",
+    };
+  }
+
+  if (target > current + 1) {
+    return {
+      allowed: false,
+      reason: "Rollout modes must be promoted one controlled step at a time.",
+    };
+  }
+
   return { allowed: true, targetMode: input.targetMode };
 }

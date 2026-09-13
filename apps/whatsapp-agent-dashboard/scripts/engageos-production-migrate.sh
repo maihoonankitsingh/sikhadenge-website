@@ -9,6 +9,7 @@ ENV_FILE="${ENV_FILE:-${LIVE_APP}/.env}"
 LEGACY_INIT="20260723160037_init_whatsapp_agent"
 BASELINE="20260802000000_baseline_existing_schema"
 ADDITIVE="20260802174500_add_engageos_security_persistence"
+PHASE16A="20260911150000_add_phase16a_saas_persistence"
 
 read_env_value() {
   local key="$1"
@@ -62,12 +63,14 @@ failed_count="$(psql_scalar 'SELECT COUNT(*) FROM _prisma_migrations WHERE finis
 legacy_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${LEGACY_INIT}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${BASELINE}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${ADDITIVE}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-unknown_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('${LEGACY_INIT}','${BASELINE}','${ADDITIVE}');")"
+phase16a_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE16A}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+unknown_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('${LEGACY_INIT}','${BASELINE}','${ADDITIVE}','${PHASE16A}');")"
 
 printf 'MIGRATION_FAILED_COUNT_BEFORE=%s\n' "$failed_count"
 printf 'LEGACY_INIT_COUNT_BEFORE=%s\n' "$legacy_count"
 printf 'BASELINE_COUNT_BEFORE=%s\n' "$baseline_count"
 printf 'ADDITIVE_COUNT_BEFORE=%s\n' "$additive_count"
+printf 'PHASE16A_COUNT_BEFORE=%s\n' "$phase16a_count"
 printf 'UNKNOWN_COUNT_BEFORE=%s\n' "$unknown_count"
 
 test "$failed_count" = "0"
@@ -75,6 +78,12 @@ test "$legacy_count" = "1"
 test "$unknown_count" = "0"
 test "$baseline_count" = "0" -o "$baseline_count" = "1"
 test "$additive_count" = "0" -o "$additive_count" = "1"
+test "$phase16a_count" = "0" -o "$phase16a_count" = "1"
+
+if [[ "$phase16a_count" == "1" && "$additive_count" != "1" ]]; then
+  printf 'FAIL: Phase 16A migration exists without additive security migration\n' >&2
+  exit 1
+fi
 
 if [[ "$additive_count" == "1" && "$baseline_count" != "1" ]]; then
   printf 'FAIL: additive migration exists without baseline\n' >&2
@@ -83,17 +92,30 @@ fi
 
 if [[ "$baseline_count" == "0" ]]; then
   test "$additive_count" = "0"
+  test "$phase16a_count" = "0"
   npx prisma migrate resolve --applied "$BASELINE"
   printf 'PASS: ONE_TIME_BASELINE_RECORDED\n'
 else
   printf 'PASS: ONE_TIME_BASELINE_ALREADY_RECORDED\n'
 fi
 
-if [[ "$additive_count" == "0" ]]; then
+if [[ "$additive_count" == "0" || "$phase16a_count" == "0" ]]; then
   npx prisma migrate deploy
-  printf 'PASS: ADDITIVE_MIGRATION_DEPLOYED\n'
+
+  if [[ "$additive_count" == "0" ]]; then
+    printf 'PASS: ADDITIVE_SECURITY_MIGRATION_DEPLOYED\n'
+  else
+    printf 'PASS: ADDITIVE_SECURITY_MIGRATION_ALREADY_DEPLOYED\n'
+  fi
+
+  if [[ "$phase16a_count" == "0" ]]; then
+    printf 'PASS: PHASE16A_MIGRATION_DEPLOYED\n'
+  else
+    printf 'PASS: PHASE16A_MIGRATION_ALREADY_DEPLOYED\n'
+  fi
 else
-  printf 'PASS: ADDITIVE_MIGRATION_ALREADY_DEPLOYED\n'
+  printf 'PASS: ADDITIVE_SECURITY_MIGRATION_ALREADY_DEPLOYED\n'
+  printf 'PASS: PHASE16A_MIGRATION_ALREADY_DEPLOYED\n'
 fi
 
 npx prisma migrate status
@@ -101,6 +123,7 @@ npx prisma migrate status
 failed_after="$(psql_scalar 'SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NULL OR rolled_back_at IS NOT NULL;')"
 baseline_after="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${BASELINE}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 additive_after="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${ADDITIVE}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+phase16a_after="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE16A}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 workspace_count="$(psql_scalar 'SELECT COUNT(*) FROM "EngageWorkspace" WHERE "id" = '\''engagews_default'\'';')"
 user_count="$(psql_scalar 'SELECT COUNT(*) FROM "DashboardUser";')"
 membership_count="$(psql_scalar 'SELECT COUNT(*) FROM "EngageWorkspaceMembership" WHERE "workspaceId" = '\''engagews_default'\'';')"
@@ -110,6 +133,7 @@ enabled_flag_count="$(psql_scalar "SELECT COUNT(*) FROM \"EngageFeatureFlag\" WH
 printf 'MIGRATION_FAILED_COUNT_AFTER=%s\n' "$failed_after"
 printf 'BASELINE_COUNT_AFTER=%s\n' "$baseline_after"
 printf 'ADDITIVE_COUNT_AFTER=%s\n' "$additive_after"
+printf 'PHASE16A_COUNT_AFTER=%s\n' "$phase16a_after"
 printf 'DEFAULT_WORKSPACE_COUNT=%s\n' "$workspace_count"
 printf 'DASHBOARD_USER_COUNT=%s\n' "$user_count"
 printf 'DEFAULT_MEMBERSHIP_COUNT=%s\n' "$membership_count"
@@ -119,8 +143,15 @@ printf 'ENABLED_FEATURE_FLAG_COUNT=%s\n' "$enabled_flag_count"
 test "$failed_after" = "0"
 test "$baseline_after" = "1"
 test "$additive_after" = "1"
+test "$phase16a_after" = "1"
 test "$workspace_count" = "1"
 test "$membership_count" = "$user_count"
+
+for phase16a_table in   EngageAgencyWorkspaceLink   EngageWorkspaceSaasState   EngagePublicApiKey   EngageWorkspaceUsageEvent   EngageWhiteLabelConfig   EngageCustomDomain   EngageDeveloperRequestLog; do
+
+  phase16a_exists="$(psql_scalar "SELECT CASE WHEN to_regclass('public.\"${phase16a_table}\"') IS NULL THEN '0' ELSE '1' END;")"
+  test "$phase16a_exists" = "1"
+done
 test "$flag_count" = "3"
 test "$enabled_flag_count" = "0"
 
@@ -128,6 +159,8 @@ test "$enabled_flag_count" = "0"
   printf 'LEGACY_INIT=%s\n' "$LEGACY_INIT"
   printf 'BASELINE=%s\n' "$BASELINE"
   printf 'ADDITIVE=%s\n' "$ADDITIVE"
+  printf 'PHASE16A=%s\n' "$PHASE16A"
+  printf 'PHASE16A_COUNT=%s\n' "$phase16a_after"
   printf 'DASHBOARD_USER_COUNT=%s\n' "$user_count"
   printf 'DEFAULT_MEMBERSHIP_COUNT=%s\n' "$membership_count"
   printf 'FEATURE_FLAGS_ENABLED=%s\n' "$enabled_flag_count"
