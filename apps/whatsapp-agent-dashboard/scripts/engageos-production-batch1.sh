@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Production rollout marker: Page 01 HQ approved hero + exact uploaded SikhaDenge logo — 2026-09-13
+# Production rollout marker: Phase16E migration-lineage compatibility gate — 2026-09-13
 # Production rollout marker: Page 01 inline WebP hero live fix — 2026-09-12
 # Production rollout marker: Page 01 hero asset delivery + cache-bust diagnostic — 2026-09-12
 # Production rollout marker: Page 01 bundled LEFT hero asset hotfix — 2026-09-12
@@ -26,6 +27,7 @@ PUBLIC_URL="${PUBLIC_URL:-https://whatsapp.sikhadenge.in}"
 BACKUP_ROOT="${BACKUP_ROOT:-/root/sikhadenge-backups}"
 BACKUP_DIR="${BACKUP_ROOT}/engageos-${RUN_ID}"
 ENV_FILE="${ENV_FILE:-${LIVE_APP}/.env}"
+PHASE16E_COMPAT=false
 
 export LIVE_APP STAGE_APP RELEASE_SHA RUN_ID PM2_PROCESS_NAME PUBLIC_URL
 export BACKUP_ROOT BACKUP_DIR ENV_FILE
@@ -82,6 +84,48 @@ probe_login_hq_marker() {
   printf 'PASS: PAGE01_HQ_LOGIN_MARKER_RENDERED\n'
 }
 
+run_readonly_preflight() {
+  local preflight_log preflight_code failure_count
+  preflight_log="$(mktemp)"
+  set +e
+  EXPECTED_RELEASE_SHA="$RELEASE_SHA" \
+    ENV_FILE="$ENV_FILE" \
+    PM2_PROCESS_NAME="$PM2_PROCESS_NAME" \
+    CHECK_HTTP_URL="$PUBLIC_URL" \
+    VERIFY_PG_DUMP=1 \
+    bash "$STAGE_APP/scripts/engageos-production-preflight.sh" >"$preflight_log" 2>&1
+  preflight_code=$?
+  set -e
+  cat "$preflight_log"
+
+  if [[ "$preflight_code" == "0" ]]; then
+    rm -f "$preflight_log"
+    printf 'PASS: STANDARD_PREFLIGHT_COMPLETE\n'
+    return 0
+  fi
+
+  # The release now contains the additive Phase16E enterprise-webhook migration,
+  # while the legacy preflight's hard-coded allowlist predates it. Permit only
+  # this exact, independently verified lineage mismatch; every other preflight
+  # failure remains fail-closed.
+  failure_count="$(grep -c '^FAIL:' "$preflight_log" || true)"
+  if [[ "$failure_count" == "1" ]] \
+    && grep -Fxq 'FAIL: Prisma history contains unrecognized migrations' "$preflight_log" \
+    && grep -Fxq 'UNKNOWN_MIGRATION_COUNT=1' "$preflight_log"; then
+    ENV_FILE="$ENV_FILE" \
+      STAGE_APP="$STAGE_APP" \
+      bash "$STAGE_APP/scripts/engageos-production-phase16e-lineage-gate.sh"
+    PHASE16E_COMPAT=true
+    rm -f "$preflight_log"
+    printf 'PASS: PREFLIGHT_PHASE16E_ALLOWLIST_COMPATIBILITY_VERIFIED\n'
+    return 0
+  fi
+
+  rm -f "$preflight_log"
+  printf 'FAIL: READ_ONLY_PREFLIGHT_REJECTED code=%s failures=%s\n' "$preflight_code" "$failure_count" >&2
+  return "$preflight_code"
+}
+
 printf 'ENGAGEOS_PRODUCTION_BATCH_1_BEGIN\n'
 printf 'RUN_ID=%s\n' "$RUN_ID"
 printf 'RELEASE_SHA=%s\n' "$RELEASE_SHA"
@@ -92,7 +136,7 @@ test -z "$(git -C "$LIVE_APP" status --porcelain --untracked-files=no)"
 git -C "$LIVE_APP" merge-base --is-ancestor "$(git -C "$LIVE_APP" rev-parse HEAD)" "$RELEASE_SHA"
 
 printf '===== GATE: READ-ONLY PREFLIGHT =====\n'
-EXPECTED_RELEASE_SHA="$RELEASE_SHA" ENV_FILE="$ENV_FILE" PM2_PROCESS_NAME="$PM2_PROCESS_NAME" CHECK_HTTP_URL="$PUBLIC_URL" VERIFY_PG_DUMP=1 bash "$STAGE_APP/scripts/engageos-production-preflight.sh"
+run_readonly_preflight
 
 printf '===== GATE: HIGH-RISK FLAGS FAIL-CLOSED =====\n'
 ENV_FILE="$ENV_FILE" bash "$STAGE_APP/scripts/engageos-production-high-risk-flag-gate.sh"
@@ -103,8 +147,19 @@ test -s "$BACKUP_DIR/database.dump"
 test -s "$BACKUP_DIR/database.dump.sha256"
 sha256sum --check "$BACKUP_DIR/database.dump.sha256"
 
-printf '===== TASK 2/5: GUARDED PHASE 2 MIGRATION =====\n'
-bash "$STAGE_APP/scripts/engageos-production-migrate.sh"
+printf '===== TASK 2/5: GUARDED MIGRATION LINEAGE =====\n'
+if [[ "$PHASE16E_COMPAT" == "true" ]]; then
+  # The strict gate proved all five expected migrations are already fully applied,
+  # with no failed or additional rows. Do not mutate the production database.
+  ENV_FILE="$ENV_FILE" \
+    STAGE_APP="$STAGE_APP" \
+    BACKUP_DIR="$BACKUP_DIR" \
+    WRITE_EVIDENCE=1 \
+    bash "$STAGE_APP/scripts/engageos-production-phase16e-lineage-gate.sh"
+  printf 'PASS: MIGRATION_NOOP_PHASE16E_ALREADY_APPLIED\n'
+else
+  bash "$STAGE_APP/scripts/engageos-production-migrate.sh"
+fi
 
 printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
