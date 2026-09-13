@@ -91,6 +91,24 @@ npx prisma generate
 npm run typecheck
 NODE_ENV=production npm run build
 
+# Next may rewrite next-env.d.ts while building the isolated staging worktree.
+# That file is generated metadata, not a release mutation. Normalize only this
+# exact known path back to HEAD; any other tracked build-time mutation fails closed.
+GENERATED_NEXT_ENV_PATH="apps/whatsapp-agent-dashboard/next-env.d.ts"
+post_build_dirty_paths="$(git -C "$STAGE_APP" diff HEAD --name-only --no-renames | sed '/^$/d')"
+if [[ -n "$post_build_dirty_paths" ]]; then
+  if [[ "$post_build_dirty_paths" != "$GENERATED_NEXT_ENV_PATH" ]]; then
+    printf 'FAIL: unexpected tracked staging mutation after build\n' >&2
+    printf '%s\n' "$post_build_dirty_paths" >&2
+    exit 1
+  fi
+  git -C "$STAGE_APP" checkout HEAD -- "$GENERATED_NEXT_ENV_PATH"
+  test -z "$(git -C "$STAGE_APP" status --porcelain --untracked-files=no)"
+  printf 'PASS: NEXT_BUILD_GENERATED_TRACKED_DIFF_NORMALIZED path=%s\n' "$GENERATED_NEXT_ENV_PATH"
+else
+  printf 'PASS: NEXT_BUILD_GENERATED_TRACKED_DIFF_NONE\n'
+fi
+
 NEW_BUILD_ID="$(cat "$STAGE_APP/.next/BUILD_ID")"
 test -n "$NEW_BUILD_ID"
 test "$NEW_BUILD_ID" != "$OLD_BUILD_ID"
