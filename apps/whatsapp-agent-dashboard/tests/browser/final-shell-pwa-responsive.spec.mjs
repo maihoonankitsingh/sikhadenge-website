@@ -44,15 +44,15 @@ for (const viewport of VIEWPORTS) {
     await page.goto("/login", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/login(?:\?|$)/);
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 
-    const shell = page.locator(".auth__shell");
+    const shell = page.locator(".split01");
     const email = page.getByLabel("Work Email");
     const password = page.getByLabel("Password", { exact: true });
     const submit = page.getByRole("button", { name: "Sign In" });
-    const hero = page.locator(".login01__hero");
-    const topBrand = page.locator(".login01__topbar .login01__brand img").first();
-    const panelBrand = page.locator(".login01__brand--panel img");
+    const hero = page.locator(".split01__hero");
+    const topBrand = page.locator(".split01__brand img").first();
+    const panelBrand = page.locator(".split01__signin-brand img").first();
 
     await expect(shell).toBeVisible();
     await expect(email).toBeVisible();
