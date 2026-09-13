@@ -1,7 +1,6 @@
-/* Page 01 — generated visual on the LEFT only.
+/* Page 01 — approved high-quality visual on the LEFT only.
  * The RIGHT authentication panel and LoginForm are intentionally untouched.
- * The hero is injected by the login layout as a validated data URI so the
- * production mirror cannot serve a truncated public image asset.
+ * Genuine SikhaDenge branding is overlaid with the exact uploaded logo asset.
  */
 
 .page01-login-asset-root {
@@ -9,7 +8,8 @@
   min-height: 100dvh;
 }
 
-.split01__hero {
+.page01-login-asset-root .split01__hero {
+  position: relative !important;
   background-color: #041334 !important;
   background-image: var(--page01-left-generated) !important;
   background-repeat: no-repeat !important;
@@ -17,40 +17,36 @@
   background-size: 100% 100% !important;
 }
 
-/* Remove the previous code-native hero artwork while retaining the real brand link. */
-.split01__hero > :not(.split01__brand) {
+/* The approved visual supplies the complete left composition. Keep only the real
+ * top brand link from the DOM; all previous decorative/code-native hero pieces are hidden. */
+.page01-login-asset-root .split01__hero > :not(.split01__brand) {
   display: none !important;
 }
 
-.split01__hero::after {
-  display: none !important;
-}
-
-/* Cover the AI-generated logo baked into the visual with the genuine
- * SikhaDenge header asset. */
-.split01__brand {
+/* Genuine top SikhaDenge logo, on the requested white rounded brand plate. */
+.page01-login-asset-root .split01__brand {
   position: absolute !important;
-  z-index: 20 !important;
-  top: 3.7% !important;
-  left: 6.2% !important;
-  width: 29.2% !important;
-  height: 10.3% !important;
+  z-index: 30 !important;
+  top: 4.2% !important;
+  left: 4.6% !important;
+  width: 36% !important;
+  height: 8.2% !important;
   min-width: 0 !important;
   max-width: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  padding: 5px 10px !important;
+  padding: 6px 12px !important;
   overflow: hidden !important;
-  border: 1px solid rgba(255, 255, 255, 0.82) !important;
-  border-radius: 12px !important;
-  background: rgba(255, 255,255, 0.96) !important;
-  box-shadow: 0 8px 24px rgba(0, 13, 51, 0.22) !important;
+  border: 1px solid rgba(255,255,255,.92) !important;
+  border-radius: 13px !important;
+  background: rgba(255,255,255,.98) !important;
+  box-shadow: 0 8px 24px rgba(0,13,51,.24) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
 
-.split01__brand img {
+.page01-login-asset-root .split01__brand img {
   display: block !important;
   width: 100% !important;
   height: 100% !important;
@@ -59,31 +55,66 @@
   object-position: left center !important;
 }
 
-/* Keep the complete generated composition visible on stacked/tablet/mobile views. */
+/* Replace the generated mini-dashboard logo with the exact same uploaded logo. */
+.page01-login-asset-root .split01__hero::before {
+  content: "" !important;
+  position: absolute !important;
+  z-index: 29 !important;
+  left: 9.8% !important;
+  top: 49.8% !important;
+  width: 17.4% !important;
+  height: 5.8% !important;
+  pointer-events: none !important;
+  border: 1px solid rgba(255,255,255,.9) !important;
+  border-radius: 8px !important;
+  background-color: rgba(255,255,255,.98) !important;
+  background-image: url("/sikhadenge-header-safe-360.png?v=20260913") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 88% auto !important;
+  box-shadow: 0 5px 16px rgba(0,10,40,.28) !important;
+}
+
+.page01-login-asset-root .split01__hero::after {
+  display: none !important;
+}
+
+/* Tablet/mobile: preserve the square approved artwork instead of stretching it. */
 @media (max-width: 900px) {
-  .split01__hero {
+  .page01-login-asset-root .split01__hero {
     width: 100% !important;
     min-height: 0 !important;
     height: auto !important;
-    aspect-ratio: 962 / 749 !important;
+    aspect-ratio: 1 / 1 !important;
     padding: 0 !important;
     background-position: center center !important;
     background-size: 100% 100% !important;
   }
 
-  .split01__brand {
-    top: 3.7% !important;
-    left: 6.2% !important;
-    width: 29.2% !important;
-    height: 10.3% !important;
-    padding: 4px 8px !important;
-    border-radius: 10px !important;
+  .page01-login-asset-root .split01__brand {
+    top: 4.2% !important;
+    left: 4.6% !important;
+    width: 36% !important;
+    height: 8.2% !important;
+    padding: 5px 9px !important;
+    border-radius: 11px !important;
+  }
+
+  .page01-login-asset-root .split01__hero::before {
+    left: 9.8% !important;
+    top: 49.8% !important;
+    width: 17.4% !important;
+    height: 5.8% !important;
+    border-radius: 7px !important;
   }
 }
 
 @media (max-width: 620px) {
-  .split01__brand {
+  .page01-login-asset-root .split01__brand {
     padding: 3px 6px !important;
     border-radius: 8px !important;
+  }
+  .page01-login-asset-root .split01__hero::before {
+    border-radius: 5px !important;
   }
 }
