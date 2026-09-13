@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Production rollout marker: Page 01 HQ approved hero + exact uploaded SikhaDenge logo — 2026-09-13
 # Production rollout marker: Page 01 inline WebP hero live fix — 2026-09-12
 # Production rollout marker: Page 01 hero asset delivery + cache-bust diagnostic — 2026-09-12
 # Production rollout marker: Page 01 bundled LEFT hero asset hotfix — 2026-09-12
@@ -47,43 +48,38 @@ rollback_on_error() {
 }
 trap rollback_on_error ERR
 
-probe_page01_asset() {
-  local label="$1"
-  local probe_file
-  local headers_file
-  local http_status
-  local byte_count
-  local magic_hex
-  local content_type
+probe_asset() {
+  local path="$1"
+  local label="$2"
+  local min_bytes="$3"
+  local expected_type="$4"
+  local probe_file headers_file http_status byte_count content_type
   probe_file="$(mktemp)"
   headers_file="$(mktemp)"
-  http_status="$(curl -sS -L -D "$headers_file" -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/page01-left-generated-crop.webp?probe=${RUN_ID}-${label}")"
+  http_status="$(curl -sS -L -D "$headers_file" -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}${path}?probe=${RUN_ID}-${label}")"
   byte_count="$(wc -c < "$probe_file" | tr -d ' ')"
-  magic_hex="$(od -An -tx1 -N12 "$probe_file" | tr -d ' \n')"
   content_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {gsub("\r", ""); sub(/^[^:]*:[[:space:]]*/, ""); value=$0} END{print value}' "$headers_file")"
-  printf 'PAGE01_LEGACY_PUBLIC_ASSET_%s_HTTP=%s\n' "$label" "$http_status"
-  printf 'PAGE01_LEGACY_PUBLIC_ASSET_%s_BYTES=%s\n' "$label" "$byte_count"
-  printf 'PAGE01_LEGACY_PUBLIC_ASSET_%s_CONTENT_TYPE=%s\n' "$label" "$content_type"
-  printf 'PAGE01_LEGACY_PUBLIC_ASSET_%s_MAGIC=%s\n' "$label" "$magic_hex"
+  printf '%s_HTTP=%s\n' "$label" "$http_status"
+  printf '%s_BYTES=%s\n' "$label" "$byte_count"
+  printf '%s_CONTENT_TYPE=%s\n' "$label" "$content_type"
+  test "$http_status" = "200"
+  test "$byte_count" -ge "$min_bytes"
+  case "$content_type" in "$expected_type"*) ;; *) printf 'FAIL: %s unexpected content type: %s\n' "$label" "$content_type" >&2; rm -f "$probe_file" "$headers_file"; return 1 ;; esac
   rm -f "$probe_file" "$headers_file"
 }
 
-probe_page01_inline_login() {
-  local probe_file
-  local http_status
-  local inline_marker
+probe_login_hq_marker() {
+  local probe_file http_status marker
   probe_file="$(mktemp)"
-  http_status="$(curl -sS -L -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/login?inline-probe=${RUN_ID}")"
-  inline_marker=false
-  if grep -Fq 'data:image/webp;base64,UklG' "$probe_file"; then
-    inline_marker=true
-  fi
-  printf 'PAGE01_LOGIN_INLINE_HTTP=%s\n' "$http_status"
-  printf 'PAGE01_LOGIN_INLINE_HERO=%s\n' "$inline_marker"
+  http_status="$(curl -sS -L -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/login?hq-probe=${RUN_ID}")"
+  marker=false
+  if grep -Fq 'data-page01-hero="approved-hq-v4"' "$probe_file" || grep -Fq 'approved-hq-v4' "$probe_file"; then marker=true; fi
+  printf 'PAGE01_LOGIN_HQ_HTTP=%s\n' "$http_status"
+  printf 'PAGE01_LOGIN_HQ_MARKER=%s\n' "$marker"
   test "$http_status" = "200"
-  test "$inline_marker" = "true"
+  test "$marker" = "true"
   rm -f "$probe_file"
-  printf 'PASS: PAGE01_INLINE_HERO_PUBLICLY_RENDERED\n'
+  printf 'PASS: PAGE01_HQ_LOGIN_MARKER_RENDERED\n'
 }
 
 printf 'ENGAGEOS_PRODUCTION_BATCH_1_BEGIN\n'
@@ -96,16 +92,10 @@ test -z "$(git -C "$LIVE_APP" status --porcelain --untracked-files=no)"
 git -C "$LIVE_APP" merge-base --is-ancestor "$(git -C "$LIVE_APP" rev-parse HEAD)" "$RELEASE_SHA"
 
 printf '===== GATE: READ-ONLY PREFLIGHT =====\n'
-EXPECTED_RELEASE_SHA="$RELEASE_SHA" \
-ENV_FILE="$ENV_FILE" \
-PM2_PROCESS_NAME="$PM2_PROCESS_NAME" \
-CHECK_HTTP_URL="$PUBLIC_URL" \
-VERIFY_PG_DUMP=1 \
-bash "$STAGE_APP/scripts/engageos-production-preflight.sh"
+EXPECTED_RELEASE_SHA="$RELEASE_SHA" ENV_FILE="$ENV_FILE" PM2_PROCESS_NAME="$PM2_PROCESS_NAME" CHECK_HTTP_URL="$PUBLIC_URL" VERIFY_PG_DUMP=1 bash "$STAGE_APP/scripts/engageos-production-preflight.sh"
 
 printf '===== GATE: HIGH-RISK FLAGS FAIL-CLOSED =====\n'
-ENV_FILE="$ENV_FILE" \
-bash "$STAGE_APP/scripts/engageos-production-high-risk-flag-gate.sh"
+ENV_FILE="$ENV_FILE" bash "$STAGE_APP/scripts/engageos-production-high-risk-flag-gate.sh"
 
 printf '===== TASK 1/5: VERIFIED DATABASE BACKUP =====\n'
 bash "$STAGE_APP/scripts/engageos-production-backup.sh"
@@ -116,14 +106,13 @@ sha256sum --check "$BACKUP_DIR/database.dump.sha256"
 printf '===== TASK 2/5: GUARDED PHASE 2 MIGRATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-migrate.sh"
 
-printf '===== LEGACY PAGE 01 PUBLIC ASSET DIAGNOSTIC =====\n'
-probe_page01_asset BEFORE
-
 printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
 
-printf '===== PAGE 01 INLINE HERO PUBLIC PROBE =====\n'
-probe_page01_inline_login
+printf '===== PAGE 01 HQ PUBLIC ASSET PROBES =====\n'
+probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 200000 image/webp
+probe_asset '/sikhadenge-header-safe-360.png' PAGE01_EXACT_LOGO 10000 image/png
+probe_login_hq_marker
 
 printf '===== TASK 4/5: POST-DEPLOY VERIFICATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-verify.sh"
