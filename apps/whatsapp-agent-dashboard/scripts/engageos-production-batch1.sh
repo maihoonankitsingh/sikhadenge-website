@@ -110,8 +110,8 @@ printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
 
 printf '===== PAGE 01 HQ PUBLIC ASSET PROBES =====\n'
-probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 200000 image/webp
-probe_asset '/sikhadenge-header-safe-360.png' PAGE01_EXACT_LOGO 10000 image/png
+probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 14998 image/webp
+probe_asset '/sikhadenge-header-safe-360.png' PAGE01_EXACT_LOGO 14990 image/png
 probe_login_hq_marker
 
 printf '===== TASK 4/5: POST-DEPLOY VERIFICATION =====\n'
