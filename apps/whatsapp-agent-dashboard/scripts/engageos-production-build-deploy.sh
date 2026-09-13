@@ -58,25 +58,32 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
-test -s "$STAGE_APP/public/sikhadenge-header-safe-360.png"
-test -s "$STAGE_APP/public/page01-left-approved-hq.webp"
+test "$(git -C "$STAGE_APP" hash-object "$STAGE_APP/public/sikhadenge-header-safe-320.png")" = "473006e2913e828fe70f7eab869af8a29327295d"
 
-# Fail closed on the exact reviewed binary assets committed to the release.
-test "$(git -C "$STAGE_APP" hash-object "$STAGE_APP/public/page01-left-approved-hq.webp")" = "02ff2992f03249ccae1c617970ca053cd6d8e55c"
-test "$(git -C "$STAGE_APP" hash-object "$STAGE_APP/public/sikhadenge-header-safe-360.png")" = "727ef4fda8587b11fd43534e25dfdf5d30261278"
-
+# Page 01 uses a validated inline WebP reconstructed from the five committed
+# TypeScript chunks. This avoids serving previously corrupted binary uploads.
 node - "$STAGE_APP" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const app = process.argv[2];
-const hero = fs.readFileSync(path.join(app, 'public', 'page01-left-approved-hq.webp'));
-const logo = fs.readFileSync(path.join(app, 'public', 'sikhadenge-header-safe-360.png'));
-if (hero.length !== 14998) throw new Error(`Page 01 reviewed hero byte length mismatch: ${hero.length}`);
-if (hero.subarray(0, 4).toString('ascii') !== 'RIFF' || hero.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 HQ hero is not a valid RIFF/WEBP payload');
-if (hero.readUInt32LE(4) + 8 !== hero.length) throw new Error('Page 01 HQ hero RIFF size mismatch');
-if (logo.length !== 14990) throw new Error(`SikhaDenge reviewed logo byte length mismatch: ${logo.length}`);
-if (logo.subarray(1, 4).toString('ascii') !== 'PNG') throw new Error('SikhaDenge 360 logo is not PNG');
-console.log(`PASS: PAGE01_EXACT_ASSET_GATE hero_bytes=${hero.length} logo_bytes=${logo.length}`);
+const chunks = [];
+for (let index = 0; index < 5; index += 1) {
+  const file = path.join(app, 'app', 'login', `page01HeroChunk${index}.ts`);
+  const source = fs.readFileSync(file, 'utf8');
+  const match = source.match(/=\s*"([A-Za-z0-9+/=]+)";/);
+  if (!match) throw new Error(`invalid Page 01 hero chunk: ${file}`);
+  chunks.push(match[1]);
+}
+const base64 = chunks.join('');
+if (base64.length !== 33504) throw new Error(`unexpected Page 01 hero base64 length: ${base64.length}`);
+const bytes = Buffer.from(base64, 'base64');
+if (bytes.length !== 25128) throw new Error(`unexpected Page 01 hero byte length: ${bytes.length}`);
+if (bytes.subarray(0, 4).toString('ascii') !== 'RIFF') throw new Error('Page 01 hero is not RIFF');
+if (bytes.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 hero is not WEBP');
+if (bytes.readUInt32LE(4) + 8 !== bytes.length) throw new Error('Page 01 hero RIFF size mismatch');
+const logo = fs.readFileSync(path.join(app, 'public', 'sikhadenge-header-safe-320.png'));
+if (logo.length < 1000 || logo.subarray(1, 4).toString('ascii') !== 'PNG') throw new Error('canonical SikhaDenge logo is not a valid PNG');
+console.log(`PASS: PAGE01_VALIDATED_INLINE_ASSET_GATE hero_bytes=${bytes.length} base64=${base64.length} logo_bytes=${logo.length}`);
 NODE
 
 cd "$STAGE_APP"
@@ -133,18 +140,16 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
-# Production may run from a mirror release directory. Sync the exact user-uploaded
-# logo plus approved HQ hero into that runtime public directory before restart.
+# The hero is embedded in the build. Keep the canonical SikhaDenge logo available
+# in a separate PM2 runtime if production serves from a mirror directory.
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   install -d -m 755 "$RUNTIME_APP/public"
   install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
-  install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-360.png" "$RUNTIME_APP/public/sikhadenge-header-safe-360.png"
-  install -m 644 "$LIVE_APP/public/page01-left-approved-hq.webp" "$RUNTIME_APP/public/page01-left-approved-hq.webp"
   if [[ -f "$LIVE_APP/public/sikhadenge-official-logo.png" ]]; then
     install -m 644 "$LIVE_APP/public/sikhadenge-official-logo.png" "$RUNTIME_APP/public/sikhadenge-official-logo.png"
   fi
 fi
-printf 'PASS: PAGE01_HQ_PUBLIC_ASSETS_SYNCED\n'
+printf 'PASS: PAGE01_CANONICAL_PUBLIC_LOGO_SYNCED\n'
 
 cd "$LIVE_APP"
 npx prisma generate
