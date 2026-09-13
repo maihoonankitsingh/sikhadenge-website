@@ -203,7 +203,7 @@ async function testTenantIsolation() {
       activeWorkspaceId: "workspace-b",
       workspaceId: "workspace-a",
     }),
-    /workspace/i,
+    /cross-tenant/i,
   );
 
   await assert.rejects(
@@ -217,7 +217,7 @@ async function testTenantIsolation() {
       evidence: completeEvidence,
       reason: "cross-tenant attempt",
     }),
-    /workspace/i,
+    /cross-tenant/i,
   );
 }
 
