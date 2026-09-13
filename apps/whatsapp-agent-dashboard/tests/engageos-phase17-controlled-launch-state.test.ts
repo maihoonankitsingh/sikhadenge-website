@@ -321,10 +321,17 @@ async function testModePromotionDerivesWritePermissionFromPolicy() {
   assert.equal(promoted.version, 2);
 }
 
-await testStage1BootstrapIsFailClosedAndIdempotent();
-await testTenantIsolation();
-await testOptimisticConcurrencyAndImmutableHistory();
-await testShadowCannotEverEnableWrites();
-await testModePromotionDerivesWritePermissionFromPolicy();
+async function main() {
+  await testStage1BootstrapIsFailClosedAndIdempotent();
+  await testTenantIsolation();
+  await testOptimisticConcurrencyAndImmutableHistory();
+  await testShadowCannotEverEnableWrites();
+  await testModePromotionDerivesWritePermissionFromPolicy();
 
-console.log("EngageOS Phase17 controlled launch persistence: PASS");
+  console.log("EngageOS Phase17 controlled launch persistence: PASS");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
