@@ -42,7 +42,7 @@
     "test:phase16d-agency-branding": "tsx tests/engageos-phase16d-agency-branding.test.ts",
     "test:phase16e-enterprise-webhooks": "tsx tests/engageos-phase16e-enterprise-webhooks.test.ts",
     "test:phase16f-final-governance": "tsx tests/engageos-phase16f-final-governance.test.ts",
-    "test:phase17-controlled-launch": "tsx tests/engageos-phase17-controlled-launch.test.ts",
+    "test:phase17-controlled-launch": "tsx tests/engageos-phase17-controlled-launch.test.ts && tsx tests/engageos-phase17-controlled-launch-state.test.ts",
     "test:phase17-production-readiness": "bash tests/engageos-phase17-production-readiness-policy.test.sh",
     "test:migration-bridges": "tsx tests/engageos-migration-bridges.test.ts",
     "test:integration-verification": "tsx tests/integration-read-only-verifier.test.ts",
