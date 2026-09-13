@@ -1,6 +1,5 @@
-/* Page 01 — validated inline visual on the LEFT only.
- * The RIGHT authentication panel and LoginForm are intentionally untouched.
- * The hero is compiled into the login layout to avoid public binary corruption.
+/* Page 01 v6 — approved image is a real IMG element on the LEFT only.
+ * The RIGHT authentication panel is intentionally not overridden here.
  */
 
 .page01-login-asset-root {
@@ -8,32 +7,45 @@
   min-height: 100dvh;
 }
 
-.page01-login-asset-root .split01__hero {
+.page01-login-asset-root .split01__hero--approved-image {
   position: relative !important;
-  background-color: #041334 !important;
-  background-image: var(--page01-left-generated) !important;
-  background-repeat: no-repeat !important;
-  background-position: center center !important;
-  background-size: 100% 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #041334 !important;
+  isolation: isolate !important;
 }
 
-/* The validated visual supplies the complete left composition. Keep only the real
- * top brand link from the DOM; all previous decorative/code-native hero pieces are hidden. */
-.page01-login-asset-root .split01__hero > :not(.split01__brand) {
+.page01-login-asset-root .split01__hero--approved-image::before,
+.page01-login-asset-root .split01__hero--approved-image::after {
   display: none !important;
+  content: none !important;
 }
 
-.page01-login-asset-root .split01__hero::before,
-.page01-login-asset-root .split01__hero::after {
-  display: none !important;
-}
-
-/* Genuine SikhaDenge header mark already present in the repository. */
-.page01-login-asset-root .split01__brand {
+.page01-login-asset-root .split01__hero-approved-image {
   position: absolute !important;
-  z-index: 30 !important;
+  z-index: 1 !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  object-position: center center !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Exact Sikhadenge asset, overlaid above the generated artwork so the brand mark
+ * is never AI-redrawn. */
+.page01-login-asset-root .split01__brand--approved-image {
+  position: absolute !important;
+  z-index: 3 !important;
   top: 3.7% !important;
   left: 6.2% !important;
+  right: auto !important;
+  bottom: auto !important;
   width: 29.2% !important;
   height: 10.3% !important;
   min-width: 0 !important;
@@ -43,37 +55,35 @@
   justify-content: flex-start !important;
   padding: 5px 10px !important;
   overflow: hidden !important;
-  border: 1px solid rgba(255,255,255,.82) !important;
+  border: 1px solid rgba(255,255,255,.86) !important;
   border-radius: 12px !important;
-  background: rgba(255,255,255,.96) !important;
+  background: rgba(255,255,255,.97) !important;
   box-shadow: 0 8px 24px rgba(0,13,51,.22) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+  text-decoration: none !important;
 }
 
-.page01-login-asset-root .split01__brand img {
+.page01-login-asset-root .split01__brand--approved-image img {
   display: block !important;
   opacity: 1 !important;
   width: 100% !important;
   height: 100% !important;
+  max-width: 100% !important;
   max-height: none !important;
   object-fit: contain !important;
   object-position: left center !important;
 }
 
-/* Keep the complete validated 962×749 composition visible on stacked views. */
 @media (max-width: 900px) {
-  .page01-login-asset-root .split01__hero {
+  .page01-login-asset-root .split01__hero--approved-image {
     width: 100% !important;
     min-height: 0 !important;
     height: auto !important;
     aspect-ratio: 962 / 749 !important;
     padding: 0 !important;
-    background-position: center center !important;
-    background-size: 100% 100% !important;
   }
 
-  .page01-login-asset-root .split01__brand {
+  .page01-login-asset-root .split01__brand--approved-image {
+    position: absolute !important;
     top: 3.7% !important;
     left: 6.2% !important;
     width: 29.2% !important;
@@ -84,7 +94,7 @@
 }
 
 @media (max-width: 620px) {
-  .page01-login-asset-root .split01__brand {
+  .page01-login-asset-root .split01__brand--approved-image {
     padding: 3px 6px !important;
     border-radius: 8px !important;
   }
