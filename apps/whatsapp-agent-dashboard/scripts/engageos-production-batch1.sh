@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Production rollout marker: Page 01 HQ approved hero + exact uploaded SikhaDenge logo — 2026-09-13
+# Production rollout marker: validated inline Page 01 hero + canonical SikhaDenge logo — 2026-09-13
 # Production rollout marker: Phase16E migration-lineage compatibility gate — 2026-09-13
 # Production rollout marker: intentional preflight failure capture hardened — 2026-09-13
 # Production rollout marker: Page 01 inline WebP hero live fix — 2026-09-12
@@ -71,18 +71,22 @@ probe_asset() {
   rm -f "$probe_file" "$headers_file"
 }
 
-probe_login_hq_marker() {
-  local probe_file http_status marker
+probe_login_inline() {
+  local probe_file http_status marker inline_hero
   probe_file="$(mktemp)"
-  http_status="$(curl -sS -L -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/login?hq-probe=${RUN_ID}")"
+  http_status="$(curl -sS -L -o "$probe_file" -w '%{http_code}' "${PUBLIC_URL}/login?inline-probe=${RUN_ID}")"
   marker=false
-  if grep -Fq 'data-page01-hero="approved-hq-v4"' "$probe_file" || grep -Fq 'approved-hq-v4' "$probe_file"; then marker=true; fi
-  printf 'PAGE01_LOGIN_HQ_HTTP=%s\n' "$http_status"
-  printf 'PAGE01_LOGIN_HQ_MARKER=%s\n' "$marker"
+  inline_hero=false
+  if grep -Fq 'approved-inline-v5' "$probe_file"; then marker=true; fi
+  if grep -Fq 'data:image/webp;base64,UklG' "$probe_file"; then inline_hero=true; fi
+  printf 'PAGE01_LOGIN_INLINE_HTTP=%s\n' "$http_status"
+  printf 'PAGE01_LOGIN_INLINE_MARKER=%s\n' "$marker"
+  printf 'PAGE01_LOGIN_INLINE_HERO=%s\n' "$inline_hero"
   test "$http_status" = "200"
   test "$marker" = "true"
+  test "$inline_hero" = "true"
   rm -f "$probe_file"
-  printf 'PASS: PAGE01_HQ_LOGIN_MARKER_RENDERED\n'
+  printf 'PASS: PAGE01_VALIDATED_INLINE_HERO_PUBLICLY_RENDERED\n'
 }
 
 run_readonly_preflight() {
@@ -112,10 +116,6 @@ run_readonly_preflight() {
     return 0
   fi
 
-  # The release now contains the additive Phase16E enterprise-webhook migration,
-  # while the legacy preflight's hard-coded allowlist predates it. Permit only
-  # this exact, independently verified lineage mismatch; every other preflight
-  # failure remains fail-closed.
   failure_count="$(grep -c '^FAIL:' "$preflight_log" || true)"
   if [[ "$failure_count" == "1" ]] \
     && grep -Fxq 'FAIL: Prisma history contains unrecognized migrations' "$preflight_log" \
@@ -157,8 +157,6 @@ sha256sum --check "$BACKUP_DIR/database.dump.sha256"
 
 printf '===== TASK 2/5: GUARDED MIGRATION LINEAGE =====\n'
 if [[ "$PHASE16E_COMPAT" == "true" ]]; then
-  # The strict gate proved all five expected migrations are already fully applied,
-  # with no failed or additional rows. Do not mutate the production database.
   ENV_FILE="$ENV_FILE" \
     STAGE_APP="$STAGE_APP" \
     BACKUP_DIR="$BACKUP_DIR" \
@@ -172,10 +170,9 @@ fi
 printf '===== TASK 3/5: ISOLATED BUILD AND ATOMIC ACTIVATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-build-deploy.sh"
 
-printf '===== PAGE 01 HQ PUBLIC ASSET PROBES =====\n'
-probe_asset '/page01-left-approved-hq.webp' PAGE01_HQ_HERO 14998 image/webp
-probe_asset '/sikhadenge-header-safe-360.png' PAGE01_EXACT_LOGO 14990 image/png
-probe_login_hq_marker
+printf '===== PAGE 01 VALIDATED PUBLIC PROBES =====\n'
+probe_asset '/sikhadenge-header-safe-320.png' PAGE01_CANONICAL_LOGO 1000 image/png
+probe_login_inline
 
 printf '===== TASK 4/5: POST-DEPLOY VERIFICATION =====\n'
 bash "$STAGE_APP/scripts/engageos-production-verify.sh"
