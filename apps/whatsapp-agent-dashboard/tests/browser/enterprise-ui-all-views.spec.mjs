@@ -60,9 +60,9 @@ async function expectInterFont(page) {
 
 async function login(page) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await expect(page.locator(".auth")).toBeVisible();
+  await expect(page.locator(".split01")).toBeVisible();
   await page.getByLabel("Work Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Password").fill(ADMIN_PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign In" }).click();
   await expect(page).toHaveURL(/\/inbox(?:\?|$)/);
   await expect(page.locator(".sx-inbox")).toBeVisible();
@@ -86,10 +86,6 @@ async function validateModuleShell(page, viewport) {
   if (viewport.width <= 767) {
     await expect(page.locator(".sx-mobile-dock")).toBeVisible();
 
-    // The legacy desktop sidebar remains in the DOM for navigation/accessibility
-    // compatibility and may retain a layout box even when it is visually covered.
-    // Validate the user-visible mobile invariant instead: the workspace owns the
-    // full viewport width and the mobile navigation is the exposed navigation UI.
     const mobileLayout = await page.evaluate(() => {
       const workspaceNode = document.querySelector(".sx-module > .sx-workspace");
       if (!(workspaceNode instanceof HTMLElement)) {
@@ -144,8 +140,6 @@ async function validateInbox(page, viewport) {
     const list = page.locator(".sx-list");
     const chat = page.locator(".sx-chat");
 
-    // The seeded Inbox may restore/open the selected conversation directly.
-    // Validate the real mobile List → Chat flow regardless of initial state.
     if (await chat.isVisible()) {
       const back = page.getByRole("button", { name: "Back to conversations" });
       await expect(back).toBeVisible();
@@ -194,7 +188,7 @@ for (const viewport of VIEWPORTS) {
 
     await page.goto("/login", { waitUntil: "domcontentloaded" });
     await waitForFonts(page);
-    await expect(page.locator(".auth__shell")).toBeVisible();
+    await expect(page.locator(".split01")).toBeVisible();
     await expectInterFont(page);
     await expectNoRootHorizontalOverflow(page);
     await attachViewport(page, testInfo, `${viewport.name}-login`);

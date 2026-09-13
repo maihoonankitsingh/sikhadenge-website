@@ -10,6 +10,7 @@ VERIFY_PG_DUMP="${VERIFY_PG_DUMP:-1}"
 LEGACY_INIT_MIGRATION="20260723160037_init_whatsapp_agent"
 PHASE2_BASELINE_MIGRATION="20260802000000_baseline_existing_schema"
 PHASE2_ADDITIVE_MIGRATION="20260802174500_add_engageos_security_persistence"
+PHASE16A_MIGRATION="20260911150000_add_phase16a_saas_persistence"
 
 failures=0
 warnings=0
@@ -194,7 +195,8 @@ if [[ -n "$DATABASE_CLI_URL" ]] && command -v psql >/dev/null 2>&1; then
       legacy_init_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${LEGACY_INIT_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
       baseline_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE2_BASELINE_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
       additive_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE2_ADDITIVE_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
-      unknown_migration_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('${LEGACY_INIT_MIGRATION}','${PHASE2_BASELINE_MIGRATION}','${PHASE2_ADDITIVE_MIGRATION}');")"
+      phase16a_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '${PHASE16A_MIGRATION}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
+      unknown_migration_count="$(psql_scalar "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name NOT IN ('${LEGACY_INIT_MIGRATION}','${PHASE2_BASELINE_MIGRATION}','${PHASE2_ADDITIVE_MIGRATION}','${PHASE16A_MIGRATION}');")"
 
       printf 'LEGACY_INIT_APPLIED_COUNT=%s\n' "$legacy_init_count"
       printf 'UNKNOWN_MIGRATION_COUNT=%s\n' "$unknown_migration_count"
@@ -214,11 +216,53 @@ if [[ -n "$DATABASE_CLI_URL" ]] && command -v psql >/dev/null 2>&1; then
       legacy_init_count=0
       baseline_count=0
       additive_count=0
+      phase16a_count=0
       info "Prisma migration history is absent; one-time baseline is still pending"
     fi
 
     printf 'BASELINE_APPLIED_COUNT=%s\n' "$baseline_count"
     printf 'ADDITIVE_MIGRATION_APPLIED_COUNT=%s\n' "$additive_count"
+    printf 'PHASE16A_MIGRATION_APPLIED_COUNT=%s\n' "$phase16a_count"
+
+    if [[ "$phase16a_count" != "0" && "$phase16a_count" != "1" ]]; then
+      fail "Phase 16A migration is missing or duplicated"
+    fi
+
+    if [[ "$phase16a_count" == "1" && "$additive_count" != "1" ]]; then
+      fail "Phase 16A migration exists without completed security persistence"
+    fi
+
+    phase16a_tables=(
+      EngageAgencyWorkspaceLink
+      EngageWorkspaceSaasState
+      EngagePublicApiKey
+      EngageWorkspaceUsageEvent
+      EngageWhiteLabelConfig
+      EngageCustomDomain
+      EngageDeveloperRequestLog
+    )
+
+    phase16a_table_count=0
+    for table_name in "${phase16a_tables[@]}"; do
+      exists="$(psql_scalar "SELECT CASE WHEN to_regclass('public.\"${table_name}\"') IS NULL THEN 'false' ELSE 'true' END;")"
+      if [[ "$exists" == "true" ]]; then
+        phase16a_table_count=$((phase16a_table_count + 1))
+      fi
+    done
+
+    printf 'PHASE16A_TABLE_COUNT=%s\n' "$phase16a_table_count"
+
+    if [[ "$phase16a_count" == "1" ]]; then
+      if [[ "$phase16a_table_count" == "7" ]]; then
+        pass "Phase 16A persistence schema is fully applied"
+      else
+        fail "Phase 16A migration is recorded but persistence schema is incomplete"
+      fi
+    elif [[ "$phase16a_table_count" == "0" ]]; then
+      pass "Phase 16A persistence schema is not yet applied"
+    else
+      fail "Phase 16A persistence tables exist without completed migration record"
+    fi
 
     engage_workspace_exists="$(psql_scalar "SELECT CASE WHEN to_regclass('public.\"EngageWorkspace\"') IS NULL THEN 'false' ELSE 'true' END;")"
     printf 'ENGAGE_WORKSPACE_TABLE_EXISTS=%s\n' "$engage_workspace_exists"

@@ -33,7 +33,7 @@ async function expectInsideViewport(locator, viewportWidth) {
 async function login(page) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Work Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Password").fill(ADMIN_PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Sign In" }).click();
   await expect(page).toHaveURL(/\/inbox(?:\?|$)/);
 }
@@ -44,20 +44,23 @@ for (const viewport of VIEWPORTS) {
     await page.goto("/login", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/login(?:\?|$)/);
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 
-    const shell = page.locator(".auth__shell");
+    const shell = page.locator(".split01");
     const email = page.getByLabel("Work Email");
-    const password = page.getByLabel("Password");
+    const password = page.getByLabel("Password", { exact: true });
     const submit = page.getByRole("button", { name: "Sign In" });
-    const aside = page.locator(".auth__aside");
-    const desktopBrand = page.locator(".auth__brand-wordmark--aside");
-    const mobileBrand = page.locator(".auth__brand-wordmark--mobile");
+    const hero = page.locator(".split01__hero");
+    const topBrand = page.locator(".split01__brand img").first();
+    const panelBrand = page.locator(".split01__signin-brand img").first();
 
     await expect(shell).toBeVisible();
     await expect(email).toBeVisible();
     await expect(password).toBeVisible();
     await expect(submit).toBeVisible();
+    await expect(hero).toBeVisible();
+    await expect(topBrand).toBeVisible();
+    await expect(panelBrand).toBeVisible();
 
     for (const control of [email, password, submit]) {
       const height = await control.evaluate((node) => node.getBoundingClientRect().height);
@@ -65,25 +68,14 @@ for (const viewport of VIEWPORTS) {
       await expectInsideViewport(control, viewport.width);
     }
 
-    if (viewport.width > 860) {
-      await expect(aside).toBeVisible();
-      await expect(desktopBrand).toBeVisible();
-      const brandGeometry = await desktopBrand.evaluate((node) => {
+    for (const brand of [topBrand, panelBrand]) {
+      const geometry = await brand.evaluate((node) => {
         const rect = node.getBoundingClientRect();
-        const surface = node.parentElement;
-        return {
-          width: rect.width,
-          height: rect.height,
-          surfaceBackground: surface ? getComputedStyle(surface).backgroundColor : "",
-        };
+        return { width: rect.width, height: rect.height };
       });
-      expect(brandGeometry.width).toBeGreaterThanOrEqual(150);
-      expect(brandGeometry.height).toBeGreaterThan(20);
-      expect(brandGeometry.surfaceBackground).toBe("rgb(255, 255, 255)");
-    } else {
-      await expect(aside).toBeHidden();
-      await expect(mobileBrand).toBeVisible();
-      await expectInsideViewport(mobileBrand, viewport.width);
+      expect(geometry.width).toBeGreaterThanOrEqual(viewport.width <= 767 ? 96 : 120);
+      expect(geometry.height).toBeGreaterThan(20);
+      await expectInsideViewport(brand, viewport.width);
     }
 
     if (viewport.width <= 767) {

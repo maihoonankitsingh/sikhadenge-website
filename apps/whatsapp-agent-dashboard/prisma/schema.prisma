@@ -450,14 +450,23 @@ model EngageWorkspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships   EngageWorkspaceMembership[]
-  connections   EngageChannelConnection[]
-  consentEvents EngageCustomerConsentEvent[]
-  suppressions  EngageCustomerSuppression[]
-  killSwitches  EngageKillSwitch[]
-  replayRecords EngageWebhookReplayRecord[]
-  auditEvents   EngageSecurityAuditEvent[]
-  featureFlags  EngageFeatureFlag[]
+  memberships             EngageWorkspaceMembership[]
+  connections             EngageChannelConnection[]
+  consentEvents           EngageCustomerConsentEvent[]
+  suppressions            EngageCustomerSuppression[]
+  killSwitches            EngageKillSwitch[]
+  replayRecords           EngageWebhookReplayRecord[]
+  auditEvents             EngageSecurityAuditEvent[]
+  featureFlags            EngageFeatureFlag[]
+  agencyClientLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyClientWorkspace")
+  agencyParentLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyParentWorkspace")
+  saasState               EngageWorkspaceSaasState?
+  publicApiKeys           EngagePublicApiKey[]
+  usageEvents             EngageWorkspaceUsageEvent[]
+  whiteLabelConfig        EngageWhiteLabelConfig?
+  customDomains           EngageCustomDomain[]
+  developerRequestLogs    EngageDeveloperRequestLog[]
+  outboundWebhookEndpoints EngageOutboundWebhookEndpoint[]
 
   @@index([isActive, createdAt])
 }
@@ -654,4 +663,153 @@ model EngageFeatureFlag {
 
   @@unique([workspaceId, key])
   @@index([key, enabled])
+}
+
+model EngageAgencyWorkspaceLink {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  agencyWorkspaceId String
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  clientWorkspace EngageWorkspace @relation("EngageAgencyClientWorkspace", fields: [workspaceId], references: [id], onDelete: Cascade)
+  agencyWorkspace EngageWorkspace @relation("EngageAgencyParentWorkspace", fields: [agencyWorkspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyWorkspaceId, workspaceId])
+  @@index([workspaceId, status])
+  @@index([agencyWorkspaceId, status])
+}
+
+model EngageWorkspaceSaasState {
+  id          String   @id @default(cuid())
+  workspaceId String   @unique
+  planKey     String   @default("internal")
+  status      String   @default("INTERNAL")
+  effectiveAt DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([planKey, status])
+}
+
+model EngagePublicApiKey {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  prefix      String
+  sha256      String   @unique
+  scopes      Json
+  revokedAt   DateTime?
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   EngageWorkspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requestLogs EngageDeveloperRequestLog[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, prefix])
+  @@index([workspaceId, revokedAt, expiresAt])
+}
+
+model EngageWorkspaceUsageEvent {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  idempotencyKey String
+  metric         String
+  quantity       Int      @default(1)
+  occurredAt     DateTime
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, metric, occurredAt])
+}
+
+model EngageWhiteLabelConfig {
+  id           String   @id @default(cuid())
+  workspaceId  String   @unique
+  enabled      Boolean  @default(false)
+  brandName    String?
+  logoUrl      String?
+  faviconUrl   String?
+  primaryColor String?
+  supportEmail String?
+  branding     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EngageCustomDomain {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  hostname           String   @unique
+  status             String   @default("PENDING")
+  verificationDigest String?
+  verifiedAt         DateTime?
+  lastCheckedAt      DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+}
+
+model EngageDeveloperRequestLog {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  apiKeyWorkspaceId String?
+  apiKeyId          String?
+  requestId         String
+  method            String
+  path              String
+  statusCode        Int?
+  durationMs        Int?
+  rateLimitDecision String?
+  ipHash            String?
+  userAgentHash     String?
+  metadata          Json?
+  occurredAt        DateTime
+  createdAt         DateTime @default(now())
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  apiKey    EngagePublicApiKey? @relation(fields: [apiKeyWorkspaceId, apiKeyId], references: [workspaceId, id], onDelete: Restrict)
+
+  @@unique([workspaceId, requestId])
+  @@index([workspaceId, occurredAt])
+  @@index([apiKeyWorkspaceId, apiKeyId, occurredAt])
+}
+
+model EngageOutboundWebhookEndpoint {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  name                 String
+  url                  String
+  events               Json
+  status               String   @default("ACTIVE")
+  algorithm            String   @default("AES_256_GCM")
+  keyVersion           String
+  initializationVector String
+  authenticationTag    String
+  ciphertext           String
+  pausedAt             DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  workspace EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, status, createdAt])
 }
