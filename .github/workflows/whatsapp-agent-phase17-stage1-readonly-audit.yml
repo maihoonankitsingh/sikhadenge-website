@@ -27,7 +27,7 @@ jobs:
       SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
       SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
       SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-      APPROVED_SHA: "da1e08e9a8b7bbd9c2f2ce6878fb1b528b63b745"
+      APPROVED_SHA: "b3c9f0b984c96f7281b4f80e4cf2af5b61e36b62"
       LIVE_APP: /var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard
       LEDGER_ISSUE: "65"
       GH_TOKEN: ${{ github.token }}
