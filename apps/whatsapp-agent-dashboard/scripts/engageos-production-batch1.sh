@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Production rollout marker: Page 01 HQ approved hero + exact uploaded SikhaDenge logo — 2026-09-13
 # Production rollout marker: Phase16E migration-lineage compatibility gate — 2026-09-13
+# Production rollout marker: intentional preflight failure capture hardened — 2026-09-13
 # Production rollout marker: Page 01 inline WebP hero live fix — 2026-09-12
 # Production rollout marker: Page 01 hero asset delivery + cache-bust diagnostic — 2026-09-12
 # Production rollout marker: Page 01 bundled LEFT hero asset hotfix — 2026-09-12
@@ -87,6 +88,11 @@ probe_login_hq_marker() {
 run_readonly_preflight() {
   local preflight_log preflight_code failure_count
   preflight_log="$(mktemp)"
+
+  # A non-zero status is expected only for the one legacy allowlist mismatch we
+  # independently verify below. Temporarily disable the inherited ERR trap so
+  # the status can be inspected instead of triggering the batch rollback handler.
+  trap - ERR
   set +e
   EXPECTED_RELEASE_SHA="$RELEASE_SHA" \
     ENV_FILE="$ENV_FILE" \
@@ -96,6 +102,8 @@ run_readonly_preflight() {
     bash "$STAGE_APP/scripts/engageos-production-preflight.sh" >"$preflight_log" 2>&1
   preflight_code=$?
   set -e
+  trap rollback_on_error ERR
+
   cat "$preflight_log"
 
   if [[ "$preflight_code" == "0" ]]; then
