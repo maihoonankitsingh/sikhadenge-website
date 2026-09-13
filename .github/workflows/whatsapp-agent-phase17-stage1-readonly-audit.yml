@@ -109,6 +109,17 @@ jobs:
             printf 'FAIL: PINNED_SSH_TRANSPORT_NOT_VERIFIED\n' >> phase17-summary.txt
           fi
 
+      - name: Capture sanitized live worktree paths
+        if: steps.transport.outputs.transport_ok == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/whatsapp-production-audit" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "cd '$LIVE_APP' && printf 'LIVE_WORKTREE_STATUS_BEGIN\\n' && git status --porcelain --untracked-files=normal && printf 'LIVE_WORKTREE_STATUS_END\\n'" \
+            >> phase17-summary.txt
+
       - name: Run audited Phase17 production readiness preflight
         id: readiness
         if: steps.transport.outputs.transport_ok == 'true'
