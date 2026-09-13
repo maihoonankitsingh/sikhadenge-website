@@ -1,3 +1,4 @@
+# External audit rerun after Page 01 v6 production deployment — 2026-09-13
 name: WhatsApp Page 01 Public Audit
 
 on:
@@ -21,7 +22,8 @@ jobs:
           set -Eeuo pipefail
           url="https://whatsapp.sikhadenge.in/login?external-audit=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           curl -4 --connect-timeout 10 --max-time 30 -fsSL -D headers.txt -o login.html "$url"
-          printf 'HTTP_MARKER_INLINE=' && (grep -Fq 'approved-inline-v5' login.html && echo true || echo false)
+          printf 'HTTP_MARKER_V6=' && (grep -Fq 'left-inline-image-v6' login.html && echo true || echo false)
+          printf 'HTTP_HERO_V6=' && (grep -Fq 'split01__hero-approved-image' login.html && echo true || echo false)
           printf 'HTTP_MARKER_CODE_NATIVE=' && (grep -Fq 'code-native-v3' login.html && echo true || echo false)
           grep -iE '^(cache-control|age|cf-cache-status|server|etag|last-modified|x-cache):' headers.txt || true
 
