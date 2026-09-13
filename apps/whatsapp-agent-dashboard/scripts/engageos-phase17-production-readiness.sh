@@ -83,10 +83,13 @@ else
   fail "Git HEAD does not match EXPECTED_RELEASE_SHA"
 fi
 
-if [[ -z "$(git status --porcelain --untracked-files=normal 2>/dev/null)" ]]; then
-  pass "Git worktree is clean"
+# Production keeps rollback builds and diagnostic helpers as untracked recovery
+# artifacts. They must not invalidate Stage 1 readiness. Any tracked source
+# modification still fails closed, matching the production deployment gate.
+if [[ -z "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
+  pass "Git tracked worktree is clean"
 else
-  fail "Git worktree has tracked or untracked changes"
+  fail "Git tracked worktree has changes"
 fi
 
 if [[ -f "$ENV_FILE" ]]; then
