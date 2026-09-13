@@ -34,10 +34,7 @@ if [[ -z "$RUNTIME_APP" ]]; then
 fi
 case "$RUNTIME_APP" in
   /var/www/sikhadenge-whatsapp-agent/*) ;;
-  *)
-    printf 'FAIL: unexpected PM2 runtime cwd: %s\n' "$RUNTIME_APP" >&2
-    exit 1
-    ;;
+  *) printf 'FAIL: unexpected PM2 runtime cwd: %s\n' "$RUNTIME_APP" >&2; exit 1 ;;
 esac
 
 test -d "$RUNTIME_APP"
@@ -50,9 +47,7 @@ RUNTIME_STAGED_NEXT="$RUNTIME_APP/.next-stage-engageos-${RUN_ID}"
 RUNTIME_FAILED_NEXT="$RUNTIME_APP/.next-failed-engageos-${RUN_ID}"
 
 cleanup_staged_next() {
-  if [[ -d "$STAGED_NEXT" ]]; then
-    find "$STAGED_NEXT" -depth -delete
-  fi
+  [[ ! -d "$STAGED_NEXT" ]] || find "$STAGED_NEXT" -depth -delete
   if [[ "$RUNTIME_APP" != "$LIVE_APP" && -d "$RUNTIME_STAGED_NEXT" ]]; then
     find "$RUNTIME_STAGED_NEXT" -depth -delete
   fi
@@ -63,34 +58,21 @@ test "$(git -C "$STAGE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 test -d "$STAGE_APP/node_modules"
 test -f "$STAGE_APP/.env"
 test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
-test -s "$STAGE_APP/public/page01-left-generated-crop.webp"
-printf 'PASS: PAGE01_CODE_NATIVE_ASSET_GATE\n'
+test -s "$STAGE_APP/public/sikhadenge-header-safe-360.png"
+test -s "$STAGE_APP/public/page01-left-approved-hq.webp"
 
-# The public-root WebP was previously truncated in production. The login page now
-# carries a compact validated WebP through five TypeScript data chunks. Fail closed
-# before building if a chunk is missing, concatenation changes, or RIFF metadata is invalid.
 node - "$STAGE_APP" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const app = process.argv[2];
-const chunks = [];
-for (let index = 0; index < 5; index += 1) {
-  const file = path.join(app, 'app', 'login', `page01HeroChunk${index}.ts`);
-  const source = fs.readFileSync(file, 'utf8');
-  const match = source.match(/=\s*"([A-Za-z0-9+/=]+)";/);
-  if (!match) throw new Error(`invalid Page 01 hero chunk: ${file}`);
-  chunks.push(match[1]);
-}
-const base64 = chunks.join('');
-if (base64.length !== 33504) throw new Error(`unexpected Page 01 hero base64 length: ${base64.length}`);
-const bytes = Buffer.from(base64, 'base64');
-if (bytes.length !== 25128) throw new Error(`unexpected Page 01 hero byte length: ${bytes.length}`);
-if (bytes.subarray(0, 4).toString('ascii') !== 'RIFF') throw new Error('Page 01 hero is not RIFF');
-if (bytes.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 hero is not WEBP');
-const declaredSize = bytes.readUInt32LE(4) + 8;
-if (declaredSize !== bytes.length) throw new Error(`Page 01 hero RIFF size mismatch: ${declaredSize} != ${bytes.length}`);
-printf = console.log;
-printf(`PASS: PAGE01_INLINE_WEBP_GATE bytes=${bytes.length} base64=${base64.length}`);
+const hero = fs.readFileSync(path.join(app, 'public', 'page01-left-approved-hq.webp'));
+const logo = fs.readFileSync(path.join(app, 'public', 'sikhadenge-header-safe-360.png'));
+if (hero.length < 200000) throw new Error(`Page 01 HQ hero unexpectedly small: ${hero.length}`);
+if (hero.subarray(0, 4).toString('ascii') !== 'RIFF' || hero.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 HQ hero is not a valid RIFF/WEBP payload');
+if (hero.readUInt32LE(4) + 8 !== hero.length) throw new Error('Page 01 HQ hero RIFF size mismatch');
+if (logo.length < 10000) throw new Error(`SikhaDenge 360 logo unexpectedly small: ${logo.length}`);
+if (logo.subarray(1, 4).toString('ascii') !== 'PNG') throw new Error('SikhaDenge 360 logo is not PNG');
+console.log(`PASS: PAGE01_HQ_ASSET_GATE hero_bytes=${hero.length} logo_bytes=${logo.length}`);
 NODE
 
 cd "$STAGE_APP"
@@ -105,7 +87,6 @@ test "$NEW_BUILD_ID" != "$OLD_BUILD_ID"
 cleanup_staged_next
 cp -a "$STAGE_APP/.next" "$STAGED_NEXT"
 test "$(cat "$STAGED_NEXT/BUILD_ID")" = "$NEW_BUILD_ID"
-
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   cp -a "$STAGE_APP/.next" "$RUNTIME_STAGED_NEXT"
   test "$(cat "$RUNTIME_STAGED_NEXT/BUILD_ID")" = "$NEW_BUILD_ID"
@@ -117,31 +98,15 @@ test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$OLD_SOURCE_SHA"
 test -z "$(git -C "$LIVE_APP" status --porcelain --untracked-files=no)"
 git -C "$LIVE_APP" merge-base --is-ancestor "$OLD_SOURCE_SHA" "$RELEASE_SHA"
 
-if [[ -e "$OLD_NEXT" ]]; then
-  printf 'FAIL: rollback build path already exists: %s\n' "$OLD_NEXT" >&2
-  exit 1
-fi
-if [[ -e "$FAILED_NEXT" ]]; then
-  printf 'FAIL: failed-build path already exists: %s\n' "$FAILED_NEXT" >&2
-  exit 1
-fi
+[[ ! -e "$OLD_NEXT" ]] || { printf 'FAIL: rollback build path already exists: %s\n' "$OLD_NEXT" >&2; exit 1; }
+[[ ! -e "$FAILED_NEXT" ]] || { printf 'FAIL: failed-build path already exists: %s\n' "$FAILED_NEXT" >&2; exit 1; }
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
-  if [[ -e "$RUNTIME_OLD_NEXT" ]]; then
-    printf 'FAIL: runtime rollback build path already exists: %s\n' "$RUNTIME_OLD_NEXT" >&2
-    exit 1
-  fi
-  if [[ -e "$RUNTIME_FAILED_NEXT" ]]; then
-    printf 'FAIL: runtime failed-build path already exists: %s\n' "$RUNTIME_FAILED_NEXT" >&2
-    exit 1
-  fi
+  [[ ! -e "$RUNTIME_OLD_NEXT" ]] || { printf 'FAIL: runtime rollback build path already exists: %s\n' "$RUNTIME_OLD_NEXT" >&2; exit 1; }
+  [[ ! -e "$RUNTIME_FAILED_NEXT" ]] || { printf 'FAIL: runtime failed-build path already exists: %s\n' "$RUNTIME_FAILED_NEXT" >&2; exit 1; }
 fi
 
 ERROR_LOG="/root/.pm2/logs/${PM2_PROCESS_NAME}-error.log"
-if [[ -f "$ERROR_LOG" ]]; then
-  stat -c '%s' "$ERROR_LOG" > "$BACKUP_DIR/error-log-size-before.txt"
-else
-  printf '0\n' > "$BACKUP_DIR/error-log-size-before.txt"
-fi
+if [[ -f "$ERROR_LOG" ]]; then stat -c '%s' "$ERROR_LOG" > "$BACKUP_DIR/error-log-size-before.txt"; else printf '0\n' > "$BACKUP_DIR/error-log-size-before.txt"; fi
 
 cat > "$BACKUP_DIR/deploy-state.txt" <<EOF
 LIVE_APP=$LIVE_APP
@@ -164,16 +129,18 @@ git -C "$LIVE_APP" branch "backup/vps-before-engageos-${RUN_ID}" "$OLD_SOURCE_SH
 git -C "$LIVE_APP" merge --ff-only "$RELEASE_SHA"
 test "$(git -C "$LIVE_APP" rev-parse HEAD)" = "$RELEASE_SHA"
 
-# Keep genuine SikhaDenge public assets available in the separate PM2 runtime.
-# The Page 01 hero itself is now embedded in the compiled login layout.
+# Production may run from a mirror release directory. Sync the exact user-uploaded
+# logo plus approved HQ hero into that runtime public directory before restart.
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   install -d -m 755 "$RUNTIME_APP/public"
   install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-320.png" "$RUNTIME_APP/public/sikhadenge-header-safe-320.png"
+  install -m 644 "$LIVE_APP/public/sikhadenge-header-safe-360.png" "$RUNTIME_APP/public/sikhadenge-header-safe-360.png"
+  install -m 644 "$LIVE_APP/public/page01-left-approved-hq.webp" "$RUNTIME_APP/public/page01-left-approved-hq.webp"
   if [[ -f "$LIVE_APP/public/sikhadenge-official-logo.png" ]]; then
     install -m 644 "$LIVE_APP/public/sikhadenge-official-logo.png" "$RUNTIME_APP/public/sikhadenge-official-logo.png"
   fi
 fi
-printf 'PASS: PAGE01_CODE_NATIVE_PUBLIC_ASSETS_SYNCED\n'
+printf 'PASS: PAGE01_HQ_PUBLIC_ASSETS_SYNCED\n'
 
 cd "$LIVE_APP"
 npx prisma generate
@@ -181,7 +148,6 @@ npx prisma generate
 mv "$LIVE_APP/.next" "$OLD_NEXT"
 mv "$STAGED_NEXT" "$LIVE_APP/.next"
 test "$(cat "$LIVE_APP/.next/BUILD_ID")" = "$NEW_BUILD_ID"
-
 if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
   mv "$RUNTIME_APP/.next" "$RUNTIME_OLD_NEXT"
   mv "$RUNTIME_STAGED_NEXT" "$RUNTIME_APP/.next"
@@ -189,7 +155,6 @@ if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
 fi
 
 printf 'ACTIVATED_UTC=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$BACKUP_DIR/deploy-state.txt"
-
 pm2 restart "$PM2_PROCESS_NAME"
 sleep 5
 
@@ -199,7 +164,5 @@ printf 'RUNTIME_APP=%s\n' "$RUNTIME_APP"
 printf 'OLD_RUNTIME_BUILD_ID=%s\n' "$OLD_RUNTIME_BUILD_ID"
 printf 'NEW_BUILD_ID=%s\n' "$NEW_BUILD_ID"
 printf 'ROLLBACK_BUILD_PATH=%s\n' "$OLD_NEXT"
-if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then
-  printf 'RUNTIME_ROLLBACK_BUILD_PATH=%s\n' "$RUNTIME_OLD_NEXT"
-fi
+if [[ "$RUNTIME_APP" != "$LIVE_APP" ]]; then printf 'RUNTIME_ROLLBACK_BUILD_PATH=%s\n' "$RUNTIME_OLD_NEXT"; fi
 printf 'PASS: RELEASE_BUILD_ACTIVATED\n'
