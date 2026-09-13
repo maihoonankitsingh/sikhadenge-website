@@ -29,7 +29,7 @@ PUBLIC_URL="${PUBLIC_URL:-https://whatsapp.sikhadenge.in}"
 BACKUP_ROOT="${BACKUP_ROOT:-/root/sikhadenge-backups}"
 BACKUP_DIR="${BACKUP_ROOT}/engageos-${RUN_ID}"
 ENV_FILE="${ENV_FILE:-${LIVE_APP}/.env}"
-PHASE16E_COMPAT=false
+DYNAMIC_LINEAGE_COMPAT=false
 
 export LIVE_APP STAGE_APP RELEASE_SHA RUN_ID PM2_PROCESS_NAME PUBLIC_URL
 export BACKUP_ROOT BACKUP_DIR ENV_FILE
@@ -94,9 +94,9 @@ run_readonly_preflight() {
   local preflight_log preflight_code failure_count
   preflight_log="$(mktemp)"
 
-  # A non-zero status is expected only for the one legacy allowlist mismatch we
-  # independently verify below. Temporarily disable the inherited ERR trap so
-  # the status can be inspected instead of triggering the batch rollback handler.
+  # The legacy preflight has a fixed migration allowlist. A non-zero result is
+  # tolerated only when its sole failure is that fixed allowlist; the target
+  # release is then independently checked against the dynamic committed lineage.
   trap - ERR
   set +e
   EXPECTED_RELEASE_SHA="$RELEASE_SHA" \
@@ -119,14 +119,13 @@ run_readonly_preflight() {
 
   failure_count="$(grep -c '^FAIL:' "$preflight_log" || true)"
   if [[ "$failure_count" == "1" ]] \
-    && grep -Fxq 'FAIL: Prisma history contains unrecognized migrations' "$preflight_log" \
-    && grep -Fxq 'UNKNOWN_MIGRATION_COUNT=1' "$preflight_log"; then
+    && grep -Fxq 'FAIL: Prisma history contains unrecognized migrations' "$preflight_log"; then
     ENV_FILE="$ENV_FILE" \
       STAGE_APP="$STAGE_APP" \
-      bash "$STAGE_APP/scripts/engageos-production-phase16e-lineage-gate.sh"
-    PHASE16E_COMPAT=true
+      bash "$STAGE_APP/scripts/engageos-production-dynamic-lineage-readonly.sh"
+    DYNAMIC_LINEAGE_COMPAT=true
     rm -f "$preflight_log"
-    printf 'PASS: PREFLIGHT_PHASE16E_ALLOWLIST_COMPATIBILITY_VERIFIED\n'
+    printf 'PASS: PREFLIGHT_DYNAMIC_LINEAGE_COMPATIBILITY_VERIFIED\n'
     return 0
   fi
 
@@ -157,13 +156,8 @@ test -s "$BACKUP_DIR/database.dump.sha256"
 sha256sum --check "$BACKUP_DIR/database.dump.sha256"
 
 printf '===== TASK 2/5: GUARDED MIGRATION LINEAGE =====\n'
-if [[ "$PHASE16E_COMPAT" == "true" ]]; then
-  ENV_FILE="$ENV_FILE" \
-    STAGE_APP="$STAGE_APP" \
-    BACKUP_DIR="$BACKUP_DIR" \
-    WRITE_EVIDENCE=1 \
-    bash "$STAGE_APP/scripts/engageos-production-phase16e-lineage-gate.sh"
-  printf 'PASS: PHASE16E_EXISTING_LINEAGE_VERIFIED\n'
+if [[ "$DYNAMIC_LINEAGE_COMPAT" == "true" ]]; then
+  printf 'PASS: LEGACY_PREFLIGHT_LINEAGE_RECONCILED_WITH_TARGET_RELEASE\n'
 fi
 bash "$STAGE_APP/scripts/engageos-production-migrate-v2.sh"
 
