@@ -9,6 +9,8 @@ set -Eeuo pipefail
 
 PM2_PROCESS_NAME="${PM2_PROCESS_NAME:-sikhadenge-whatsapp-agent}"
 RELEASE_BRANCH="${RELEASE_BRANCH:-release/whatsapp-instagram-agent-flow-20260731}"
+APPROVED_PAGE01_HERO_BLOB="02ff2992f03249ccae1c617970ca053cd6d8e55c"
+APPROVED_PAGE01_HERO_BYTES="14998"
 OLD_SOURCE_SHA="$(cat "$BACKUP_DIR/source-before.sha")"
 OLD_BUILD_ID="$(cat "$BACKUP_DIR/build-before.id")"
 OLD_NEXT="$LIVE_APP/.next-before-engageos-${RUN_ID}"
@@ -61,19 +63,31 @@ test -s "$STAGE_APP/public/sikhadenge-header-safe-320.png"
 test -s "$STAGE_APP/public/sikhadenge-header-safe-360.png"
 test -s "$STAGE_APP/public/page01-left-approved-hq.webp"
 
+actual_hero_blob="$(git -C "$STAGE_APP" hash-object "public/page01-left-approved-hq.webp")"
+actual_hero_bytes="$(wc -c < "$STAGE_APP/public/page01-left-approved-hq.webp" | tr -d ' ')"
+test "$actual_hero_blob" = "$APPROVED_PAGE01_HERO_BLOB" || {
+  printf 'FAIL: Page 01 HQ hero blob mismatch expected=%s actual=%s\n' "$APPROVED_PAGE01_HERO_BLOB" "$actual_hero_blob" >&2
+  exit 1
+}
+test "$actual_hero_bytes" = "$APPROVED_PAGE01_HERO_BYTES" || {
+  printf 'FAIL: Page 01 HQ hero byte-size mismatch expected=%s actual=%s\n' "$APPROVED_PAGE01_HERO_BYTES" "$actual_hero_bytes" >&2
+  exit 1
+}
+
 node - "$STAGE_APP" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const app = process.argv[2];
 const hero = fs.readFileSync(path.join(app, 'public', 'page01-left-approved-hq.webp'));
 const logo = fs.readFileSync(path.join(app, 'public', 'sikhadenge-header-safe-360.png'));
-if (hero.length < 200000) throw new Error(`Page 01 HQ hero unexpectedly small: ${hero.length}`);
+if (hero.length !== 14998) throw new Error(`Page 01 HQ hero byte-size mismatch: ${hero.length}`);
 if (hero.subarray(0, 4).toString('ascii') !== 'RIFF' || hero.subarray(8, 12).toString('ascii') !== 'WEBP') throw new Error('Page 01 HQ hero is not a valid RIFF/WEBP payload');
 if (hero.readUInt32LE(4) + 8 !== hero.length) throw new Error('Page 01 HQ hero RIFF size mismatch');
 if (logo.length < 10000) throw new Error(`SikhaDenge 360 logo unexpectedly small: ${logo.length}`);
 if (logo.subarray(1, 4).toString('ascii') !== 'PNG') throw new Error('SikhaDenge 360 logo is not PNG');
 console.log(`PASS: PAGE01_HQ_ASSET_GATE hero_bytes=${hero.length} logo_bytes=${logo.length}`);
 NODE
+printf 'PASS: PAGE01_HQ_ASSET_INTEGRITY blob=%s bytes=%s\n' "$actual_hero_blob" "$actual_hero_bytes"
 
 cd "$STAGE_APP"
 npx prisma generate
