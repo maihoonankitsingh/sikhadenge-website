@@ -34,6 +34,7 @@ export default async function LoginPage() {
       data-page="login-page01-split-v1"
       data-rendering="left-inline-image-v6"
       data-page01-hero="approved-inline-v6"
+      data-page01-compat="approved-inline-v5"
     >
       <section className="split01__hero split01__hero--approved-image" aria-label="SikhaDenge WhatsApp AI Agent workspace">
         <img
