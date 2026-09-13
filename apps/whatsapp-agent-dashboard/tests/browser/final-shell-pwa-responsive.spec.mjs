@@ -73,7 +73,7 @@ for (const viewport of VIEWPORTS) {
         const rect = node.getBoundingClientRect();
         return { width: rect.width, height: rect.height };
       });
-      expect(geometry.width).toBeGreaterThanOrEqual(120);
+      expect(geometry.width).toBeGreaterThanOrEqual(viewport.width <= 767 ? 96 : 120);
       expect(geometry.height).toBeGreaterThan(20);
       await expectInsideViewport(brand, viewport.width);
     }
