@@ -1,6 +1,6 @@
 /* Page 01 — approved high-quality visual on the LEFT only.
- * The RIGHT authentication panel and LoginForm are intentionally untouched.
- * Genuine SikhaDenge branding is overlaid with the exact uploaded logo asset.
+ * The RIGHT authentication form/behavior is intentionally untouched.
+ * Genuine SikhaDenge branding uses the exact user-uploaded logo asset.
  */
 
 .page01-login-asset-root {
@@ -17,13 +17,11 @@
   background-size: 100% 100% !important;
 }
 
-/* The approved visual supplies the complete left composition. Keep only the real
- * top brand link from the DOM; all previous decorative/code-native hero pieces are hidden. */
 .page01-login-asset-root .split01__hero > :not(.split01__brand) {
   display: none !important;
 }
 
-/* Genuine top SikhaDenge logo, on the requested white rounded brand plate. */
+/* Genuine top SikhaDenge logo on requested white rounded plate. */
 .page01-login-asset-root .split01__brand {
   position: absolute !important;
   z-index: 30 !important;
@@ -33,29 +31,28 @@
   height: 8.2% !important;
   min-width: 0 !important;
   max-width: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
+  display: block !important;
   padding: 6px 12px !important;
   overflow: hidden !important;
   border: 1px solid rgba(255,255,255,.92) !important;
   border-radius: 13px !important;
-  background: rgba(255,255,255,.98) !important;
+  background-color: rgba(255,255,255,.98) !important;
+  background-image: url("/sikhadenge-header-safe-360.png?v=20260913") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 91% auto !important;
   box-shadow: 0 8px 24px rgba(0,13,51,.24) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
 
 .page01-login-asset-root .split01__brand img {
-  display: block !important;
+  opacity: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  max-height: none !important;
-  object-fit: contain !important;
-  object-position: left center !important;
 }
 
-/* Replace the generated mini-dashboard logo with the exact same uploaded logo. */
+/* Genuine mini-dashboard SikhaDenge logo on the same white plate. */
 .page01-login-asset-root .split01__hero::before {
   content: "" !important;
   position: absolute !important;
@@ -77,6 +74,26 @@
 
 .page01-login-asset-root .split01__hero::after {
   display: none !important;
+}
+
+/* Right-side logo is corrected to the exact uploaded brand asset without
+ * changing the auth panel layout, form, copy or behavior. */
+.page01-login-asset-root .split01__signin-brand {
+  position: relative !important;
+}
+.page01-login-asset-root .split01__signin-brand img {
+  opacity: 0 !important;
+}
+.page01-login-asset-root .split01__signin-brand::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 208px !important;
+  max-width: 48% !important;
+  height: 53px !important;
+  background: url("/sikhadenge-header-safe-360.png?v=20260913") left center / contain no-repeat !important;
+  pointer-events: none !important;
 }
 
 /* Tablet/mobile: preserve the square approved artwork instead of stretching it. */
@@ -107,6 +124,12 @@
     height: 5.8% !important;
     border-radius: 7px !important;
   }
+
+  .page01-login-asset-root .split01__signin-brand::before {
+    width: 190px !important;
+    max-width: 52% !important;
+    height: 50px !important;
+  }
 }
 
 @media (max-width: 620px) {
@@ -116,5 +139,10 @@
   }
   .page01-login-asset-root .split01__hero::before {
     border-radius: 5px !important;
+  }
+  .page01-login-asset-root .split01__signin-brand::before {
+    width: 175px !important;
+    max-width: 58% !important;
+    height: 46px !important;
   }
 }
