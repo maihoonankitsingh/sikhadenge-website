@@ -287,8 +287,8 @@ model Lead {
   nextFollowUpAt      DateTime?
   qualifiedAt         DateTime?
   closedAt             DateTime?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   contact      WhatsAppContact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
   conversation WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -450,23 +450,25 @@ model EngageWorkspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships             EngageWorkspaceMembership[]
-  connections             EngageChannelConnection[]
-  consentEvents           EngageCustomerConsentEvent[]
-  suppressions            EngageCustomerSuppression[]
-  killSwitches            EngageKillSwitch[]
-  replayRecords           EngageWebhookReplayRecord[]
-  auditEvents             EngageSecurityAuditEvent[]
-  featureFlags            EngageFeatureFlag[]
-  agencyClientLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyClientWorkspace")
-  agencyParentLinks       EngageAgencyWorkspaceLink[] @relation("EngageAgencyParentWorkspace")
-  saasState               EngageWorkspaceSaasState?
-  publicApiKeys           EngagePublicApiKey[]
-  usageEvents             EngageWorkspaceUsageEvent[]
-  whiteLabelConfig        EngageWhiteLabelConfig?
-  customDomains           EngageCustomDomain[]
-  developerRequestLogs    EngageDeveloperRequestLog[]
+  memberships              EngageWorkspaceMembership[]
+  connections              EngageChannelConnection[]
+  consentEvents            EngageCustomerConsentEvent[]
+  suppressions             EngageCustomerSuppression[]
+  killSwitches             EngageKillSwitch[]
+  replayRecords            EngageWebhookReplayRecord[]
+  auditEvents              EngageSecurityAuditEvent[]
+  featureFlags             EngageFeatureFlag[]
+  agencyClientLinks        EngageAgencyWorkspaceLink[] @relation("EngageAgencyClientWorkspace")
+  agencyParentLinks        EngageAgencyWorkspaceLink[] @relation("EngageAgencyParentWorkspace")
+  saasState                EngageWorkspaceSaasState?
+  publicApiKeys            EngagePublicApiKey[]
+  usageEvents              EngageWorkspaceUsageEvent[]
+  whiteLabelConfig         EngageWhiteLabelConfig?
+  customDomains            EngageCustomDomain[]
+  developerRequestLogs     EngageDeveloperRequestLog[]
   outboundWebhookEndpoints EngageOutboundWebhookEndpoint[]
+  controlledLaunchState    EngageControlledLaunchState?
+  controlledLaunchHistory  EngageControlledLaunchTransition[]
 
   @@index([isActive, createdAt])
 }
@@ -812,4 +814,48 @@ model EngageOutboundWebhookEndpoint {
   @@unique([workspaceId, id])
   @@unique([workspaceId, name])
   @@index([workspaceId, status, createdAt])
+}
+
+model EngageControlledLaunchState {
+  id                    String   @id @default(cuid())
+  workspaceId           String   @unique
+  stage                 String
+  mode                  String
+  writePolicy           String
+  externalWritesAllowed Boolean  @default(false)
+  scope                 Json
+  version               Int      @default(1)
+  activatedAt           DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  workspace   EngageWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transitions EngageControlledLaunchTransition[]
+
+  @@index([stage, mode])
+}
+
+model EngageControlledLaunchTransition {
+  id                        String   @id @default(cuid())
+  workspaceId               String
+  stateId                   String
+  fromStage                 String?
+  toStage                   String
+  fromMode                  String?
+  toMode                    String
+  fromWritePolicy           String?
+  toWritePolicy             String
+  fromExternalWritesAllowed Boolean?
+  toExternalWritesAllowed   Boolean
+  expectedVersion           Int?
+  resultingVersion          Int
+  actorUserId               String?
+  reason                    String
+  scope                     Json
+  createdAt                 DateTime @default(now())
+
+  workspace EngageWorkspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  state     EngageControlledLaunchState @relation(fields: [stateId], references: [id], onDelete: Cascade)
+
+  @@unique([stateId, resultingVersion])
+  @@index([workspaceId, createdAt])
 }
