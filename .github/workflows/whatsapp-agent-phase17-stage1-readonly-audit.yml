@@ -27,7 +27,7 @@ jobs:
       SSH_PRIVATE_KEY: ${{ secrets.WHATSAPP_PROD_SSH_PRIVATE_KEY }}
       SSH_HOST_KEY: ${{ secrets.WHATSAPP_PROD_SSH_HOST_KEY }}
       SSH_PORT: ${{ vars.WHATSAPP_PROD_SSH_PORT }}
-      APPROVED_SHA: "82621f39de95faa9eb4d266d9519cddb8174e5e9"
+      APPROVED_SHA: "da1e08e9a8b7bbd9c2f2ce6878fb1b528b63b745"
       LIVE_APP: /var/www/sikhadenge-whatsapp-agent/source/apps/whatsapp-agent-dashboard
       LEDGER_ISSUE: "65"
       GH_TOKEN: ${{ github.token }}
@@ -80,7 +80,6 @@ jobs:
             printf '%s' "$SSH_PRIVATE_KEY" | base64 --decode > "$private_key_file"
           fi
           chmod 600 "$private_key_file"
-
           read -r _ supplied_key_type supplied_key_material _ <<< "$SSH_HOST_KEY"
           test "$supplied_key_type" = "ssh-ed25519"
           test -n "$supplied_key_material"
@@ -97,15 +96,9 @@ jobs:
         run: |
           set -Eeuo pipefail
           set +e
-          ssh \
-            -p "$SSH_PORT" \
-            -i "$HOME/.ssh/whatsapp-production-audit" \
-            -o BatchMode=yes \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            -o ConnectTimeout=15 \
-            "$SSH_USER@$SSH_HOST" \
-            'test "$(id -u)" = "0"' >/dev/null 2>&1
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/whatsapp-production-audit" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" 'test "$(id -u)" = "0"' >/dev/null 2>&1
           transport_rc=$?
           set -e
           if [[ "$transport_rc" -eq 0 ]]; then
@@ -124,14 +117,9 @@ jobs:
           set -Eeuo pipefail
           audit_script="apps/whatsapp-agent-dashboard/scripts/engageos-phase17-production-readiness.sh"
           test -f "$audit_script"
-
           set +e
-          ssh \
-            -p "$SSH_PORT" \
-            -i "$HOME/.ssh/whatsapp-production-audit" \
-            -o BatchMode=yes \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/whatsapp-production-audit" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             "$SSH_USER@$SSH_HOST" \
             "cd '$LIVE_APP' && EXPECTED_RELEASE_SHA='$APPROVED_SHA' ENV_FILE=.env PM2_PROCESS_NAME=sikhadenge-whatsapp-agent CHECK_HTTP_URL=https://whatsapp.sikhadenge.in bash -s" \
             < "$audit_script" > phase17-raw.log 2>&1
@@ -139,18 +127,13 @@ jobs:
           set -e
           printf 'readiness_exit_code=%s\n' "$readiness_rc" >> "$GITHUB_OUTPUT"
           printf 'AUDIT_PREFLIGHT_EXIT_CODE=%s\n' "$readiness_rc" >> phase17-summary.txt
-
-          awk '
-            /^(ENGAGEOS_PHASE17_PRODUCTION_READINESS_(BEGIN|END)|UTC_TIMESTAMP=|TARGET_ROLLOUT_STAGE=|TARGET_ROLLOUT_MODE=|EXTERNAL_WRITES_ALLOWED=|CURRENT_GIT_SHA=|CURRENT_GIT_BRANCH=|ENGAGEOS_SECURITY_MASTER=|PRISMA_MIGRATION_TABLE_EXISTS=|PRISMA_UNFINISHED_OR_ROLLED_BACK_COUNT=|LEGACY_INIT_APPLIED_COUNT=|PENDING_REPO_MIGRATION_COUNT=|UNKNOWN_APPLIED_MIGRATION_COUNT=|PHASE16_MISSING_TABLE_COUNT=|PHASE16E_WEBHOOK_REQUIRED_ENCRYPTED_COLUMN_COUNT=|PHASE16E_WEBHOOK_PLAINTEXT_SECRET_COLUMN_COUNT=|ENGAGEOS_FLAGS_BEGIN|ENGAGEOS_FLAGS_END|engageos\.(route_permissions|outbound_policy|webhook_replay)=|PM2_PID=|LOGIN_HTTP_STATUS=|READINESS_WARNINGS=|READINESS_FAILURES=|PHASE17_STAGE1_READINESS=|PASS:|FAIL:|WARN:)/ { print }
-          ' phase17-raw.log >> phase17-summary.txt
-
+          awk '/^(ENGAGEOS_PHASE17_PRODUCTION_READINESS_(BEGIN|END)|UTC_TIMESTAMP=|TARGET_ROLLOUT_STAGE=|TARGET_ROLLOUT_MODE=|EXTERNAL_WRITES_ALLOWED=|CURRENT_GIT_SHA=|CURRENT_GIT_BRANCH=|ENGAGEOS_SECURITY_MASTER=|PRISMA_MIGRATION_TABLE_EXISTS=|PRISMA_UNFINISHED_OR_ROLLED_BACK_COUNT=|LEGACY_INIT_APPLIED_COUNT=|PENDING_REPO_MIGRATION_COUNT=|UNKNOWN_APPLIED_MIGRATION_COUNT=|PHASE16_MISSING_TABLE_COUNT=|PHASE16E_WEBHOOK_REQUIRED_ENCRYPTED_COLUMN_COUNT=|PHASE16E_WEBHOOK_PLAINTEXT_SECRET_COLUMN_COUNT=|ENGAGEOS_FLAGS_BEGIN|ENGAGEOS_FLAGS_END|engageos\.(route_permissions|outbound_policy|webhook_replay)=|PM2_PID=|LOGIN_HTTP_STATUS=|READINESS_WARNINGS=|READINESS_FAILURES=|PHASE17_STAGE1_READINESS=|PASS:|FAIL:|WARN:)/ { print }' phase17-raw.log >> phase17-summary.txt
           cat phase17-summary.txt
 
       - name: Record skipped readiness state
         if: steps.transport.outputs.transport_ok != 'true'
         shell: bash
         run: |
-          set -Eeuo pipefail
           printf 'AUDIT_PREFLIGHT_EXIT_CODE=NOT_RUN\n' >> phase17-summary.txt
           printf 'PHASE17_STAGE1_READINESS=BLOCKED_TRANSPORT\n' >> phase17-summary.txt
 
